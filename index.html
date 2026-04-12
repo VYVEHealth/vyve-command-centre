@@ -574,7 +574,7 @@ body.dark{--bg:#0f172a;--card:#1e293b;--text:#f1f5f9;--muted:#94a3b8;--border:#3
 <!-- TASKS -->
 <div class="page" id="tasks">
   <div class="page-header"><h1>Tasks</h1><p>Company-wide task management</p></div>
-  <div style="display:flex;justify-conte" class="swot-items"></div><button class="topbar-btn" style="margin-top:10px;" onclick="addSwot('o')">+ Add</button></div>
+  <div style="display:flex;justify-content:space-between" class="swot-items"></div><button class="topbar-btn" style="margin-top:10px;" onclick="addSwot('o')">+ Add</button></div>
       <div class="swot-cell t"><h3>Threats</h3><div id="swot-t" class="swot-items"></div><button class="topbar-btn" style="margin-top:10px;" onclick="addSwot('t')">+ Add</button></div>
     </div>
   </div>
@@ -937,106 +937,27 @@ var TEAM=[
      {obj:"Establish governance framework",kr:"Clinical governance document approved and adopted",pct:50,status:"on-track"}
    ],
    targets:[{m:"Resources Published",curr:"5",tgt:"20"},{m:"Governance Docs",curr:"1",tgt:"3"},{m:"Clinical Review",curr:"Pending",tgt:"Complete"}],
-   span class="modal-title">Add Investor</span><button class="modal-close" onclick="closeModal('investor-modal')">x</button></div>
-    <div class="form-row cols-2"><div class="form-group"><label>Investor / Fund</label><input id="im-name"></div><div class="form-group"><label>Contact</label><input id="im-contact"></div></div>
-    <div class="form-row cols-2"><div class="form-group"><label>Type</label><select id="im-type"><option>Angel</option><option>VC</option><option>Family Office</option><option>Grant Body</option><option>Corporate</option></select></div><div class="form-group"><label>Stage</label><select id="im-stage"><option value="cold">Cold</option><option value="intro">Intro Made</option><option value="meeting">Meeting Booked</option><option value="due-diligence">Due Diligence</option><option value="term-sheet">Term Sheet</option><option value="passed">Passed</option></select></div></div>
-    <div class="form-row cols-2"><div class="form-group"><label>Potential Amount</label><input id="im-amount" placeholder="GBP50,000"></div><div class="form-group"><label>Next Action</label><input id="im-next" placeholder="Send deck by..."></div></div>
-    <div class="form-group" style="margin-bottom:12px;"><label>Notes</label><textarea id="im-notes" rows="2"></textarea></div>
-    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('investor-modal')">Cancel</button><button class="btn btn-primary" onclick="saveInvestor()">Add Investor</button></div>
-  </div>
-</div>
+  }
+];
+
+</script>
+
 
 <!-- DECISION MODAL -->
-<div class="modal-overlay" id="decision-modal">
-  <div class="modal">
-    <div class="modal-header"><span class="modal-title">Log Decision</span><button class="modal-close" onclick="closeModal('decision-modal')">x</button></div>
-    <div class="form-group" style="margin-bottom:12px;"><label>Decision</label><input id="dm-title" placeholder="What was decided?"></div>
-    <div class="form-row cols-2"><div class="form-group"><label>Date</label><input type="date" id="dm-date"></div><div class="form-group"><label>Made By</label><input id="dm-by" placeholder="Lewis, Dean..."></div></div>
-    <div class="form-group" style="margin-bottom:12px;"><label>Context &amp; Rationale</label><textarea id="dm-context" rows="3" placeholder="Why this decision? What alternatives were considered?"></textarea></div>
-    <div class="form-group" style="margin-bottom:12px;"><label>Expected Outcome</label><textarea id="dm-outcome" rows="2" placeholder="What do we expect to happen as a result?"></textarea></div>
-    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('decision-modal')">Cancel</button><button class="btn btn-primary" onclick="saveDecision()">Log Decision</button></div>
-  </div>
-</div>
 
 <!-- COMPANY OKR MODAL -->
-<div class="modal-overlay" id="company-okr-modal">
-  <div class="modal">
-    <div class="modal-header"><span class="modal-title">Add Company OKR</span><button class="modal-close" onclick="closeModal('company-okr-modal')">x</button></div>
-    <div class="form-group" style="margin-bottom:12px;"><label>Objective</label><input id="okr-obj" placeholder="What are we trying to achieve?"></div>
-    <div class="form-group" style="margin-bottom:12px;"><label>Key Result</label><input id="okr-kr" placeholder="How will we measure success?"></div>
-    <div class="form-row cols-2"><div class="form-group"><label>Owner</label><select id="okr-owner"><option>Lewis</option><option>Dean</option><option>Alan</option><option>Calum</option><option>Phil</option><option>Team</option></select></div><div class="form-group"><label>Status</label><select id="okr-status"><option value="on-track">On Track</option><option value="at-risk">At Risk</option><option value="off-track">Off Track</option></select></div></div>
-    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('company-okr-modal')">Cancel</button><button class="btn btn-primary" onclick="saveCompanyOkr()">Add OKR</button></div>
-  </div>
-</div>
 
 <!-- IMPORT MODAL -->
-<div class="modal-overlay" id="import-modal">
-  <div class="modal" style="width:600px;">
-    <div class="modal-header"><span class="modal-title" id="import-modal-title">Import Agent Output</span><button class="modal-close" onclick="closeModal('import-modal')">x</button></div>
-    <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6;">Paste the JSON output from your scheduled agent below. Each item should have: title, body/summary, date, and optionally: url, value, deadline, relevance, category.</p>
-    <div class="import-area"><textarea id="import-modal-json" rows="10" placeholder='{"items":[{"title":"...","body":"...","date":"2026-04-12","relevance":"High"}]}'></textarea></div>
-    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('import-modal')">Cancel</button><button class="btn btn-primary" onclick="doImportModal()">Import</button></div>
-  </div>
-</div>
 
 <!-- GRANT MODAL -->
-<div class="modal-overlay" id="grant-modal">
-  <div class="modal">
-    <div class="modal-header"><span class="modal-title">Track Grant Application</span><button class="modal-close" onclick="closeModal('grant-modal')">x</button></div>
-    <div class="form-group" style="margin-bottom:12px;"><label>Grant Name</label><input id="gm-name"></div>
-    <div class="form-row cols-2"><div class="form-group"><label>Funder</label><input id="gm-funder" placeholder="Innovate UK, NHSX..."></div><div class="form-group"><label>Amount</label><input id="gm-amount" placeholder="GBP50,000"></div></div>
-    <div class="form-row cols-2"><div class="form-group"><label>Deadline</label><input type="date" id="gm-deadline"></div><div class="form-group"><label>Status</label><select id="gm-status"><option value="identified">Identified</option><option value="applying">Applying</option><option value="submitted">Submitted</option><option value="awarded">Awarded</option><option value="rejected">Rejected</option></select></div></div>
-    <div class="form-group" style="margin-bottom:12px;"><label>Notes</label><textarea id="gm-notes" rows="2"></textarea></div>
-    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('grant-modal')">Cancel</button><button class="btn btn-primary" onclick="saveGrant()">Save</button></div>
-  </div>
-</div>
 
 <!-- KB MODAL -->
-<div class="modal-overlay" id="kb-modal">
-  <div class="modal">
-    <div class="modal-header"><span class="modal-title" id="kb-modal-title">Add SOP</span><button class="modal-close" onclick="closeModal('kb-modal')">x</button></div>
-    <input type="hidden" id="kb-type">
-    <div class="form-group" style="margin-bottom:12px;"><label>Title</label><input id="kb-title" placeholder="Process name"></div>
-    <div class="form-group" style="margin-bottom:12px;"><label>Description</label><textarea id="kb-body" rows="5" placeholder="Describe the process, steps, or template content..."></textarea></div>
-    <div class="form-row cols-2"><div class="form-group"><label>Owner</label><input id="kb-owner" placeholder="Lewis / Dean / Alan..."></div><div class="form-group"><label>Category</label><input id="kb-cat" placeholder="Sales / Ops / HR..."></div></div>
-    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('kb-modal')">Cancel</button><button class="btn btn-primary" onclick="saveKbItem()">Save</button></div>
-  </div>
-</div>
 
 <!-- DOC VIEW MODAL -->
-<div class="modal-overlay" id="doc-view-modal">
-  <div class="modal" style="width:700px;max-height:85vh;">
-    <div class="modal-header"><span class="modal-title" id="doc-view-title">Document</span><button class="modal-close" onclick="closeModal('doc-view-modal')">x</button></div>
-    <div id="doc-view-body" style="font-size:13px;line-height:1.8;color:var(--text);white-space:pre-wrap;overflow-y:auto;max-height:60vh;background:var(--surface);padding:14px;border-radius:8px;border:1px solid var(--border);"></div>
-    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('doc-view-modal')">Close</button></div>
-  </div>
-</div>
 
 <!-- FINANCE MODAL -->
-<div class="modal-overlay" id="finance-modal">
-  <div class="modal">
-    <div class="modal-header"><span class="modal-title">Update Finance Metrics</span><button class="modal-close" onclick="closeModal('finance-modal')">x</button></div>
-    <div class="form-row cols-2">
-      <div class="form-group"><label>Monthly Burn Rate (GBP)</label><input type="number" id="fm-burn" placeholder="5000"></div>
-      <div class="form-group"><label>Cash in Bank (GBP)</label><input type="number" id="fm-cash" placeholder="50000"></div>
-    </div>
-    <div class="form-row cols-2">
-      <div class="form-group"><label>Current MRR (GBP)</label><input type="number" id="fm-mrr" placeholder="0"></div>
-      <div class="form-group"><label>Q2 Target MRR (GBP)</label><input type="number" id="fm-target" placeholder="25000"></div>
-    </div>
-    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('finance-modal')">Cancel</button><button class="btn btn-primary" onclick="saveFinance()">Update</button></div>
-  </div>
-</div>
 
 <!-- REVENUE MODAL -->
-<div class="modal-overlay" id="revenue-modal">
-  <div class="modal">
-    <div class="modal-header"><span class="modal-title">Add Revenue</span><button class="modal-close" onclick="closeModal('revenue-modal')">x</button></div>
-    <div class="form-row cols-2"><div class="form-group"><label>Client / Source</label><input id="rm-source"></div><div class="form-group"><label>Monthly Value (GBP)</label><input type="number" id="rm-amount"></div></div>
-    <div class="form-row cols-2"><div class="form-group"><label>Type</label><select id="rm-type"><option>Subscription</option><option>One-off</option><option>Grant</option></select></div><div class="form-group"><label>Start Date</label><input type="date" id="rm-date"></div></div>
-    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('revenue-modal')">Cancel</button><button class="btn btn-primary" onclick="saveRevenue()">Add</button></div>
-  </div>
-</div>
 
 <script>
 // -- DATA ----------------------------------------------------------------------
@@ -1266,7 +1187,7 @@ function renderBrief(){
   var okrEl=document.getElementById("brief-okrs");
   if(companyOkrs.length){
     okrEl.innerHTML=companyOkrs.slice(0,3).map(function(o){
-      var bar=o.pct>66?"green":o.pct>33?"":"red";
+      var bar=o.pct>66?"green":o.pct>33?"amber":"red";
       return'<div style="margin-bottom:12px;"><div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px;">'+o.obj+'</div>'+
         '<div class="okr-progress"><div class="progress-bar-wrap"><div class="progress-bar '+bar+'" style="width:'+o.pct+'%"></div></div><span class="okr-pct">'+o.pct+'%</span></div></div>';
     }).join("");
@@ -1551,23 +1472,18 @@ function renderStrategy(){
   var el2=document.getElementById("company-okrs-list");if(!el2)return;
   if(!companyOkrs.length){el2.innerHTML='<div class="empty"><svg class="empty-icon" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><h3>No company OKRs yet</h3><p>Add your Q2 objectives and key results.</p></div>';}
   else el2.innerHTML=companyOkrs.map(function(o,i){
-    var bar=o.pct>66?"green":o.pct>33?"":"red";
+    var bar=o.pct>66?"green":o.pct>33?"amber":"red";
     var sb={"on-track":"badge-green","at-risk":"badge-amber","off-track":"badge-red"}[o.status]||"badge-grey";
     return'<div class="okr-item"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"><div class="okr-obj">'+o.obj+'</div><span class="badge '+sb+'">'+o.status.replace("-"," ")+'</span></div>'+
       '<div class="okr-kr">'+o.kr+'</div>'+
       '<div class="okr-progress"><div class="progress-bar-wrap"><div class="progress-bar '+bar+'" style="width:'+o.pct+'%"></div></div><span class="okr-pct">'+o.pct+'%</span>'+
-      '<input type="range" min="0" max="100" value="'+o.pct+'" style="width:80px;margin-left:8px;" oninput="updateOkrPct('+i++his.value)"></div>'+
-      (o.owner?'<div style="font-size:11px;color:var(--m]Y
-NÛX\Ú[]ÜÈÝÛ\	ÊÛËÝÛ\ÉÏÙ]ÎJÉÏÙ]ÎÂJKÚ[NÂËÈÕÓÕÈÈÈÈKÜXXÚ
-[Ý[ÛÊ^Â\[ÏYØÝ[Y[Ù][[Y[RY
-ÝÛÝHÚÊNÚYY[Ê\]\Â\][\Ï\ÝÛÝ]VÚ×_×NÂ[Ë[\SZ][\ËX\
-[Ý[Û][KJ^Â]\Ï]Ý[OH\Ü^N^Ø[YÛZ][\ÎÙ[\ÙØ\ÛX\Ú[XÝÛNÈÜ[Ý[OHÛ\Ú^NLÜÙ^NÈÊÚ][JÉÏÜÜ[]ÛÛÛXÚÏH[[ÝTÝÛÝ
-	ÉÊÚÊÉ×	Ë	ÊÚJÉÊHÝ[OHXÚÙÜÝ[ÛNØÜ\ÛNØÝ\ÛÜÚ[\ØÛÛÜ\K[]]Y
-NÙÛ\Ú^NMÈØ]ÛÙ]ÎÂJKÚ[NÂJNÂËÈXÚ\Ú[ÛÂ\YØÝ[Y[Ù][[Y[RY
-XÚ\Ú[ÛË[\ÝNÂY	XÚ\Ú[ÛÑ]K[Ý
-Y[\SYXÚ\Ú[ÛÑ]KX\
-[Ý[Û
-^Â]\Ï]Û\ÜÏHXÚ\Úion-item"><div class="decision-date">'+fmtDate(d.date)+" -- "+d.by+'</div><div class="decision-title">'+d.title+'</div><div class="decision-body">'+d.context+'</div>'+
+      '<input type="range" min="0" max="100" value="'+o.pct+'" style="width:80px;margin-left:8px;" oninput="updateOkrPct('+i+', this.value)"></div>'+
+      (o.owner?'<div style="font-size:11px;color:var(--mmuted)">'+o.owner+'</div>':'')+'</div>';}).join('');
+    }
+
+    var dl=document.getElementById('decisions-list');if(dl){
+      if(!decisionsData.length){dl.innerHTML='<div class="empty"><h3>No decisions logged yet</h3><p>Capture key decisions and their context.</p></div>';}
+      else dl.innerHTML=decisionsData.map(function(d,i){return'<div class="decion-item"><div class="decision-date">'+fmtDate(d.date)+" -- "+d.by+'</div><div class="decision-title">'+d.title+'</div><div class="decision-body">'+d.context+'</div>'+
       (d.outcome?'<div style="font-size:12px;color:var(--green);margin-top:6px;font-weight:600;">Expected: '+d.outcome+'</div>':"")+'</div>';
   }).join("");
   // Learnings
@@ -1671,7 +1587,7 @@ function renderTeam(memberId){
     '<div class="grid-2" style="margin-bottom:16px;">'+
     '<div class="card"><div class="card-header"><span class="card-title">OKRs -- Q2 2026</span></div>'+
     member.okrs.map(function(o){
-      var bar=o.pct>66?"green":o.pct>33?"":"red";
+      var bar=o.pct>66?"green":o.pct>33?"amber":"red";
       var sb={"on-track":"badge-green","at-risk":"badge-amber","off-track":"badge-red"}[o.status]||"badge-grey";
       return'<div class="okr-item"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;"><div class="okr-obj">'+o.obj+'</div><span class="badge '+sb+'">'+o.status.replace("-"," ")+'</span></div>'+
         '<div class="okr-kr">'+o.kr+'</div>'+
@@ -1757,7 +1673,7 @@ function saveGrant(){
   grantsData.unshift(d);persist("grants_pipeline",grantsData);closeModal("grant-modal");renderFinance();showToast("Grant added","success");
 }
 function saveKbItem(){
-  var d={type:¾("kb-type"),title:v("kb-title"),body:v("kb-body"),owner:¾("kb-owner"),cat:¾("kb-cat"),date:today()};
+  var d={type:v("kb-type"),title:v("kb-title"),body:v("kb-body"),owner:v("kb-owner"),cat:v("kb-cat"),date:today()};
   if(!d.title)return showToast("Title required","error");
   kbData.unshift(d);persist("kb",kbData);closeModal("kb-modal");renderKb();showToast("Saved","success");
 }
