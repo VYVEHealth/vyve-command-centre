@@ -253,7 +253,7 @@ body.dark{--bg:#0f172a;--card:#1e293b;--text:#f1f5f9;--muted:#94a3b8;--border:#3
 <div id="loginScreen" class="login-screen">
   <div class="login-box">
     <div class="login-logo">VYVE Health</div>
-    <div class="login-sub">Command Centre â Operational &amp; Strategic Brain</div>
+    <div class="login-sub">Command Centre -- Operational &amp; Strategic Brain</div>
     <div class="field-group"><label>Email</label><input type="email" id="loginEmail" value="admin@vyve.co.uk"></div>
     <div class="field-group"><label>Password</label><input type="password" id="loginPass" value="vyve2026"></div>
     <button class="login-btn" onclick="doLogin()">Sign In</button>
@@ -362,13 +362,13 @@ body.dark{--bg:#0f172a;--card:#1e293b;--text:#f1f5f9;--muted:#94a3b8;--border:#3
 <div class="page active" id="brief">
   <div class="page-header">
     <h1>Morning Brief</h1>
-    <p id="brief-subtitle">Your proactive business intelligence â updated daily</p>
+    <p id="brief-subtitle">Your proactive business intelligence -- updated daily</p>
   </div>
   <div class="grid-2" style="margin-bottom:16px;">
     <div>
       <div class="card" style="margin-bottom:12px;">
         <div class="card-header"><span class="card-title">Alerts Requiring Action</span><span id="alert-count" class="badge badge-red">0</span></div>
-        <div id="brief-alerts"><div class="empty"><p>No alerts â all systems green.</p></div></div>
+        <div id="brief-alerts"><div class="empty"><p>No alerts -- all systems green.</p></div></div>
       </div>
       <div class="card">
         <div class="card-header"><span class="card-title">Latest Intelligence</span><button class="topbar-btn" onclick="navigate('intel')">View All</button></div>
@@ -394,7 +394,7 @@ body.dark{--bg:#0f172a;--card:#1e293b;--text:#f1f5f9;--muted:#94a3b8;--border:#3
 <div class="page" id="intel">
   <div class="page-header">
     <h1>Research &amp; Grants</h1>
-    <p>Outputs from your scheduled intelligence agents â grants, legislation, research findings, market signals</p>
+    <p>Outputs from your scheduled intelligence agents -- grants, legislation, research findings, market signals</p>
   </div>
   <div class="tab-bar">
     <button class="tab-btn active" onclick="switchTab('intel','intel-grants',this)">Grant Opportunities</button>
@@ -437,7 +437,7 @@ body.dark{--bg:#0f172a;--card:#1e293b;--text:#f1f5f9;--muted:#94a3b8;--border:#3
 <div class="page" id="competitors">
   <div class="page-header">
     <h1>Competitor Watch</h1>
-    <p>Daily competitor scan outputs â pricing moves, product launches, content, positioning shifts</p>
+    <p>Daily competitor scan outputs -- pricing moves, product launches, content, positioning shifts</p>
   </div>
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
     <span class="card-title" id="comp-count">0 updates</span>
@@ -451,78 +451,9 @@ body.dark{--bg:#0f172a;--card:#1e293b;--text:#f1f5f9;--muted:#94a3b8;--border:#3
 <div class="page" id="dashboard">
   <div class="page-header"><h1>Dashboard</h1><p>Business health at a glance</p></div>
   <div class="grid-4" style="margin-bottom:20px;" id="dash-stats">
-    <div class="stat-card"><div class="stat-value">Â£0</div><div class="stat-label">Monthly Revenue</div><div class="stat-delta flat">Target: Â£25,000</div></div>
+    <div class="stat-card"><div class="stat-value">GBP0</div><div class="stat-label">Monthly Revenue</div><div class="stat-delta flat">Target: GBP25,000</div></div>
     <div class="stat-card"><div class="stat-value">0</div><div class="stat-label">Active Clients</div><div class="stat-delta flat">Pipeline: 0</div></div>
-    <div class="stat-card"><div class="stat-value">0</div><div class="stat-label">Open Tasks</div><div class="stat-delta flat">0 overdue</div></div>
-    <div class="stat-card"><div class="stat-value">0</div><div class="stat-label">Pending Invoices</div><div class="stat-delta flat">Â£0 outstanding</div></div>
-  </div>
-  <div class="grid-2">
-    <div class="card"><div class="card-header"><span class="card-title">Business Operations</span></div>
-      <div id="dash-ops-links" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-        <div class="card-sm" style="cursor:pointer;" onclick="navigate('finance')"><div style="font-size:12px;font-weight:700;color:var(--text);">Finance &amp; Funding</div><div style="font-size:11px;color:var(--muted);margin-top:3px;">MRR, runway, grants</div></div>
-        <div class="card-sm" style="cursor:pointer;" onclick="navigate('clients')"><div style="font-size:12px;font-weight:700;color:var(--text);">Clients</div><div style="font-size:11px;color:var(--muted);margin-top:3px;">Manage accounts</div></div>
-        <div class="card-sm" style="cursor:pointer;" onclick="navigate('crm')"><div style="font-size:12px;font-weight:700;color:var(--text);">Sales Pipeline</div><div style="font-size:11px;color:var(--muted);margin-top:3px;">Leads &amp; deals</div></div>
-        <div class="card-sm" style="cursor:pointer;" onclick="navigate('investor')"><div style="font-size:12px;font-weight:700;color:var(--text);">Investor Relations</div><div style="font-size:11px;color:var(--muted);margin-top:3px;">Funding pipeline</div></div>
-        <div class="card-sm" style="cursor:pointer;" onclick="navigate('tasks')"><div style="font-size:12px;font-weight:700;color:var(--text);">Tasks</div><div style="font-size:11px;color:var(--muted);margin-top:3px;">Team to-dos</div></div>
-        <div class="card-sm" style="cursor:pointer;" onclick="navigate('strategy')"><div style="font-size:12px;font-weight:700;color:var(--text);">Strategy Room</div><div style="font-size:11px;color:var(--muted);margin-top:3px;">OKRs &amp; decisions</div></div>
-      </div>
-    </div>
-    <div class="card"><div class="card-header"><span class="card-title">Intelligence &amp; Content</span></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-        <div class="card-sm" style="cursor:pointer;" onclick="navigate('brief')"><div style="font-size:12px;font-weight:700;color:var(--text);">Morning Brief</div><div style="font-size:11px;color:var(--muted);margin-top:3px;">Daily intelligence</div></div>
-        <div class="card-sm" style="cursor:pointer;" onclick="navigate('intel')"><div style="font-size:12px;font-weight:700;color:var(--text);">Research &amp; Grants</div><div style="font-size:11px;color:var(--muted);margin-top:3px;">Agent outputs</div></div>
-        <div class="card-sm" style="cursor:pointer;" onclick="navigate('competitors')"><div style="font-size:12px;font-weight:700;color:var(--text);">Competitor Watch</div><div style="font-size:11px;color:var(--muted);margin-top:3px;">Market moves</div></div>
-        <div class="card-sm" style="cursor:pointer;" onclick="navigate('content')"><div style="font-size:12px;font-weight:700;color:var(--text);">Content</div><div style="font-size:11px;color:var(--muted);margin-top:3px;">Schedule &amp; plan</div></div>
-        <div class="card-sm" style="cursor:pointer;" onclick="navigate('documents')"><div style="font-size:12px;font-weight:700;color:var(--text);">Documents</div><div style="font-size:11px;color:var(--muted);margin-top:3px;">Upload &amp; search</div></div>
-        <div class="card-sm" style="cursor:pointer;" onclick="navigate('knowledge')"><div style="font-size:12px;font-weight:700;color:var(--text);">Knowledge Base</div><div style="font-size:11px;color:var(--muted);margin-top:3px;">SOPs &amp; playbooks</div></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-<!-- FINANCE & FUNDING -->
-<div class="page" id="finance">
-  <div class="page-header"><h1>Finance &amp; Funding</h1><p>Revenue tracking, runway, grants pipeline, P&amp;L overview</p></div>
-  <div class="tab-bar">
-    <button class="tab-btn active" onclick="switchTab('fin','fin-overview',this)">Overview</button>
-    <button class="tab-btn" onclick="switchTab('fin','fin-revenue',this)">Revenue</button>
-    <button class="tab-btn" onclick="switchTab('fin','fin-grants',this)">Grants Pipeline</button>
-    <button class="tab-btn" onclick="switchTab('fin','fin-forecast',this)">Forecast</button>
-  </div>
-  <div id="fin-overview" class="tab-panel active">
-    <div class="grid-4" style="margin-bottom:16px;">
-      <div class="stat-card"><div class="stat-value" id="fin-mrr">Â£0</div><div class="stat-label">MRR</div><div class="stat-delta flat">Target Â£25k Q2</div></div>
-      <div class="stat-card"><div class="stat-value" id="fin-arr">Â£0</div><div class="stat-label">ARR Run Rate</div><div class="stat-delta flat">Annualised</div></div>
-      <div class="stat-card"><div class="stat-value" id="fin-runway">â</div><div class="stat-label">Runway</div><div class="stat-delta flat">At current burn</div></div>
-      <div class="stat-card"><div class="stat-value" id="fin-grants-total">Â£0</div><div class="stat-label">Grants Applied</div><div class="stat-delta flat">0 pending</div></div>
-    </div>
-    <div class="grid-2">
-      <div class="card">
-        <div class="card-header"><span class="card-title">Key Metrics</span><button class="topbar-btn" onclick="openFinanceModal()">Edit</button></div>
-        <div class="metric-row"><span class="metric-label">Monthly Burn Rate</span><span class="metric-value" id="fin-burn">Not set</span></div>
-        <div class="metric-row"><span class="metric-label">Cash in Bank</span><span class="metric-value" id="fin-cash">Not set</span></div>
-        <div class="metric-row"><span class="metric-label">Outstanding Invoices</span><span class="metric-value" id="fin-outstanding">Â£0</span></div>
-        <div class="metric-row"><span class="metric-label">Clients Paying</span><span class="metric-value" id="fin-paying">0</span></div>
-        <div class="metric-row"><span class="metric-label">Avg Contract Value</span><span class="metric-value" id="fin-acv">â</span></div>
-      </div>
-      <div class="card">
-        <div class="card-header"><span class="card-title">Q2 Progress</span></div>
-        <div style="margin-bottom:14px;">
-          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;"><span>MRR vs Target (Â£25k)</span><span id="fin-q2-pct">0%</span></div>
-          <div class="progress-bar-wrap"><div class="progress-bar" id="fin-q2-bar" style="width:0%"></div></div>
-        </div>
-        <div class="metric-row"><span class="metric-label">Days Remaining in Q2</span><span class="metric-value" id="fin-days-q2">â</span></div>
-        <div class="metric-row"><span class="metric-label">Revenue Needed / Month</span><span class="metric-value" id="fin-needed">â</span></div>
-        <div class="metric-row"><span class="metric-label">Biggest Revenue Risk</span><span class="metric-value" style="color:var(--amber);">No paying clients yet</span></div>
-      </div>
-    </div>
-  </div>
-  <div id="fin-revenue" class="tab-panel">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-      <span class="card-title">Revenue Log</span><button class="topbar-btn primary" onclick="openRevenueModal()">+ Add Revenue</button>
-    </div>
-    <div id="revenue-list"><div class="empty"><svg class="empty-icon" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><h3>No revenue recorded yet</h3><p>Add your first payment or contract value to start tracking MRR.</p></div></div>
+    <div class="stat-card"><div class="stat-value">><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><h3>No revenue recorded yet</h3><p>Add your first payment or contract value to start tracking MRR.</p></div></div>
   </div>
   <div id="fin-grants" class="tab-panel">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
@@ -580,7 +511,7 @@ body.dark{--bg:#0f172a;--card:#1e293b;--text:#f1f5f9;--muted:#94a3b8;--border:#3
       <div class="card">
         <div class="card-header"><span class="card-title">Pre-Seed Round</span><button class="topbar-btn" onclick="openRoundModal()">Edit</button></div>
         <div class="metric-row"><span class="metric-label">Target Raise</span><span class="metric-value" id="inv-target">Not set</span></div>
-        <div class="metric-row"><span class="metric-label">Committed</span><span class="metric-value" id="inv-committed">Â£0</span></div>
+        <div class="metric-row"><span class="metric-label">Committed</span><span class="metric-value" id="inv-committed">GBP0</span></div>
         <div class="metric-row"><span class="metric-label">Investors Met</span><span class="metric-value" id="inv-met">0</span></div>
         <div class="metric-row"><span class="metric-label">Target Close</span><span class="metric-value" id="inv-close">Not set</span></div>
         <div style="margin-top:14px;">
@@ -600,10 +531,10 @@ body.dark{--bg:#0f172a;--card:#1e293b;--text:#f1f5f9;--muted:#94a3b8;--border:#3
         <div id="inv-materials-list"><div class="empty" style="padding:20px 0;"><p>Upload pitch deck and materials in Documents, then link them here.</p></div></div>
       </div>
       <div class="card"><div class="card-header"><span class="card-title">Key Metrics for Deck</span></div>
-        <div class="metric-row"><span class="metric-label">Total Addressable Market</span><span class="metric-value">Â£43bn (UK)</span></div>
+        <div class="metric-row"><span class="metric-label">Total Addressable Market</span><span class="metric-value">GBP43bn (UK)</span></div>
         <div class="metric-row"><span class="metric-label">Target Market (SME)</span><span class="metric-value">~800k businesses</span></div>
-        <div class="metric-row"><span class="metric-label">Price per user/month</span><span class="metric-value">Â£8â15</span></div>
-        <div class="metric-row"><span class="metric-label">5yr Revenue Target</span><span class="metric-value">Â£10M ARR</span></div>
+        <div class="metric-row"><span class="metric-label">Price per user/month</span><span class="metric-value">GBP8-15</span></div>
+        <div class="metric-row"><span class="metric-label">5yr Revenue Target</span><span class="metric-value">GBP10M ARR</span></div>
       </div>
     </div>
   </div>
@@ -624,7 +555,7 @@ body.dark{--bg:#0f172a;--card:#1e293b;--text:#f1f5f9;--muted:#94a3b8;--border:#3
 <div class="page" id="invoicing">
   <div class="page-header"><h1>Invoicing</h1><p>Client invoices and payment tracking</p></div>
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-    <span class="card-title" id="inv-total">Â£0 outstanding</span>
+    <span class="card-title" id="inv-total">GBP0 outstanding</span>
     <button class="topbar-btn primary" onclick="openInvoiceModal()">+ Create Invoice</button>
   </div>
   <div id="invoicing-list"><div class="empty"><svg class="empty-icon" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 15h0M2 9.5h20"/></svg><h3>No invoices yet</h3><p>Create your first invoice to start tracking revenue.</p></div></div>
@@ -643,107 +574,7 @@ body.dark{--bg:#0f172a;--card:#1e293b;--text:#f1f5f9;--muted:#94a3b8;--border:#3
 <!-- TASKS -->
 <div class="page" id="tasks">
   <div class="page-header"><h1>Tasks</h1><p>Company-wide task management</p></div>
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-    <span class="card-title" id="tasks-count">0 open tasks</span>
-    <button class="topbar-btn primary" onclick="openTaskModal()">+ Add Task</button>
-  </div>
-  <div class="kanban-board" id="tasks-kanban"></div>
-</div>
-
-<!-- COMPLIANCE -->
-<div class="page" id="compliance">
-  <div class="page-header"><h1>Compliance Vault</h1><p>Policies, certifications, regulatory documents and audit trail</p></div>
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-    <span class="card-title">0 documents</span>
-    <button class="topbar-btn primary" onclick="openComplianceModal()">+ Upload Document</button>
-  </div>
-  <div class="grid-3" style="margin-bottom:16px;">
-    <div class="stat-card"><div class="stat-value" style="font-size:18px;color:var(--amber);">Pending</div><div class="stat-label">ICO Registration</div></div>
-    <div class="stat-card"><div class="stat-value" style="font-size:18px;color:var(--amber);">Pending</div><div class="stat-label">CIC Registration</div></div>
-    <div class="stat-card"><div class="stat-value" style="font-size:18px;color:var(--amber);">Pending</div><div class="stat-label">ISO 27001</div></div>
-  </div>
-  <div id="compliance-list"><div class="empty"><svg class="empty-icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><h3>No compliance documents uploaded</h3><p>Upload policies, certifications and regulatory documents to build your audit trail.</p></div></div>
-</div>
-
-
-<!-- CONTENT -->
-<div class="page" id="content">
-  <div class="page-header"><h1>Content Planner</h1><p>Schedule, create and manage VYVE content across all platforms</p></div>
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-    <span class="card-title" id="content-count">0 posts scheduled</span>
-    <button class="topbar-btn primary" onclick="openPostModal()">+ Schedule Post</button>
-  </div>
-  <div class="kanban-board" id="content-kanban"></div>
-</div>
-
-<!-- PERFORMANCE -->
-<div class="page" id="performance">
-  <div class="page-header"><h1>Performance</h1><p>Social media analytics and content performance</p></div>
-  <div class="grid-4" style="margin-bottom:16px;">
-    <div class="stat-card"><div class="stat-value">127</div><div class="stat-label">Facebook Followers</div><div class="stat-delta up">Growing</div></div>
-    <div class="stat-card"><div class="stat-value">84</div><div class="stat-label">Instagram Followers</div><div class="stat-delta up">Growing</div></div>
-    <div class="stat-card"><div class="stat-value">342</div><div class="stat-label">LinkedIn Followers</div><div class="stat-delta up">Growing</div></div>
-    <div class="stat-card"><div class="stat-value">12</div><div class="stat-label">Podcast Episodes</div><div class="stat-delta up">Active</div></div>
-  </div>
-  <div class="grid-2" style="margin-bottom:16px;">
-    <div class="card"><div class="card-header"><span class="card-title">Engagement Rate (30d)</span></div><div class="chart-wrap"><canvas id="chart-engagement"></canvas></div></div>
-    <div class="card"><div class="card-header"><span class="card-title">Platform Breakdown</span></div><div class="chart-wrap"><canvas id="chart-platforms"></canvas></div></div>
-  </div>
-  <div class="card">
-    <div class="card-header"><span class="card-title">Best Time to Post</span></div>
-    <div id="heatmap-wrap" style="overflow-x:auto;"></div>
-  </div>
-</div>
-
-<!-- PODCAST -->
-<div class="page" id="podcast">
-  <div class="page-header"><h1>Everyman Podcast Hub</h1><p>Episode management, research and performance</p></div>
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-    <span class="card-title" id="podcast-count">0 episodes</span>
-    <button class="topbar-btn primary" onclick="openEpisodeModal()">+ New Episode</button>
-  </div>
-  <div id="podcast-list"></div>
-</div>
-
-<!-- BRAND & VOICE -->
-<div class="page" id="brand">
-  <div class="page-header"><h1>Brand &amp; Voice</h1><p>VYVE tone of voice, messaging pillars and brand guidelines</p></div>
-  <div class="grid-2">
-    <div class="card"><div class="card-header"><span class="card-title">Our Three Pillars</span></div>
-      <div style="margin-bottom:12px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span style="width:10px;height:10px;border-radius:50%;background:var(--physical);display:inline-block;"></span><strong style="font-size:13px;">Physical</strong></div><p style="font-size:13px;color:var(--muted);margin-left:18px;">Movement, nutrition, sleep and energy â helping people feel physically capable and well.</p></div>
-      <div style="margin-bottom:12px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span style="width:10px;height:10px;border-radius:50%;background:var(--mental);display:inline-block;"></span><strong style="font-size:13px;">Mental</strong></div><p style="font-size:13px;color:var(--muted);margin-left:18px;">Resilience, mindset, stress management â building psychological strength and clarity.</p></div>
-      <div><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span style="width:10px;height:10px;border-radius:50%;background:var(--social);display:inline-block;"></span><strong style="font-size:13px;">Social</strong></div><p style="font-size:13px;color:var(--muted);margin-left:18px;">Connection, belonging, community â fostering meaningful relationships at work.</p></div>
-    </div>
-    <div class="card"><div class="card-header"><span class="card-title">Tone of Voice</span></div>
-      <div style="display:flex;flex-direction:column;gap:8px;" id="brand-tov">
-        <div class="pill">Human, not corporate</div><div class="pill">Evidence-led, not preachy</div><div class="pill">Proactive, not reactive</div><div class="pill">Warm, not patronising</div><div class="pill">Ambitious, not arrogant</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-<!-- STRATEGY ROOM -->
-<div class="page" id="strategy">
-  <div class="page-header"><h1>Strategy Room</h1><p>Company OKRs, SWOT analysis, decision log and strategic learnings</p></div>
-  <div class="tab-bar">
-    <button class="tab-btn active" onclick="switchTab('strat','strat-okrs',this)">Company OKRs</button>
-    <button class="tab-btn" onclick="switchTab('strat','strat-swot',this)">SWOT</button>
-    <button class="tab-btn" onclick="switchTab('strat','strat-decisions',this)">Decision Log</button>
-    <button class="tab-btn" onclick="switchTab('strat','strat-learnings',this)">Learnings</button>
-  </div>
-  <div id="strat-okrs" class="tab-panel active">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-      <span class="card-title">Q2 2026 Company OKRs</span>
-      <button class="topbar-btn primary" onclick="openCompanyOkrModal()">+ Add OKR</button>
-    </div>
-    <div id="company-okrs-list"></div>
-  </div>
-  <div id="strat-swot" class="tab-panel">
-    <div class="swot-grid">
-      <div class="swot-cell s"><h3>Strengths</h3><div id="swot-s" class="swot-items"></div><button class="topbar-btn" style="margin-top:10px;" onclick="addSwot('s')">+ Add</button></div>
-      <div class="swot-cell w"><h3>Weaknesses</h3><div id="swot-w" class="swot-items"></div><button class="topbar-btn" style="margin-top:10px;" onclick="addSwot('w')">+ Add</button></div>
-      <div class="swot-cell o"><h3>Opportunities</h3><div id="swot-o" class="swot-items"></div><button class="topbar-btn" style="margin-top:10px;" onclick="addSwot('o')">+ Add</button></div>
+  <div style="display:flex;justify-conte" class="swot-items"></div><button class="topbar-btn" style="margin-top:10px;" onclick="addSwot('o')">+ Add</button></div>
       <div class="swot-cell t"><h3>Threats</h3><div id="swot-t" class="swot-items"></div><button class="topbar-btn" style="margin-top:10px;" onclick="addSwot('t')">+ Add</button></div>
     </div>
   </div>
@@ -785,7 +616,7 @@ body.dark{--bg:#0f172a;--card:#1e293b;--text:#f1f5f9;--muted:#94a3b8;--border:#3
   <div class="drop-zone" id="drop-zone" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="handleDocDrop(event)">
     <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
     <p><strong>Drag &amp; drop files here</strong> or click Upload Document above</p>
-    <p style="font-size:12px;margin-top:4px;">PDF, Word, Excel, PowerPoint, TXT â all stored locally in your browser</p>
+    <p style="font-size:12px;margin-top:4px;">PDF, Word, Excel, PowerPoint, TXT -- all stored locally in your browser</p>
   </div>
   <div id="doc-list" style="margin-top:16px;"></div>
 </div>
@@ -810,14 +641,14 @@ body.dark{--bg:#0f172a;--card:#1e293b;--text:#f1f5f9;--muted:#94a3b8;--border:#3
       <span class="card-title">Playbooks</span>
       <button class="topbar-btn primary" onclick="openKbModal('playbook')">+ Add Playbook</button>
     </div>
-    <div id="playbooks-list"><div class="empty"><svg class="empty-icon" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><h3>No playbooks yet</h3><p>Sales playbook, onboarding playbook, delivery playbook â build them as you learn what works.</p></div></div>
+    <div id="playbooks-list"><div class="empty"><svg class="empty-icon" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><h3>No playbooks yet</h3><p>Sales playbook, onboarding playbook, delivery playbook -- build them as you learn what works.</p></div></div>
   </div>
   <div id="kb-templates" class="tab-panel">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
       <span class="card-title">Templates</span>
       <button class="topbar-btn primary" onclick="openKbModal('template')">+ Add Template</button>
     </div>
-    <div id="templates-list"><div class="empty"><svg class="empty-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/></svg><h3>No templates yet</h3><p>Email templates, proposal templates, client report templates â store them all here.</p></div></div>
+    <div id="templates-list"><div class="empty"><svg class="empty-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/></svg><h3>No templates yet</h3><p>Email templates, proposal templates, client report templates -- store them all here.</p></div></div>
   </div>
 </div>
 
@@ -869,7 +700,7 @@ body.dark{--bg:#0f172a;--card:#1e293b;--text:#f1f5f9;--muted:#94a3b8;--border:#3
       <div class="import-area"><textarea id="agent-import-json" placeholder='Paste agent JSON output here...
 
 Example format:
-{"items":[{"title":"Innovate UK Smart Grant","body":"Up to Â£500k for health tech startups...","date":"2026-04-12","url":"https://...","value":"Â£500,000","deadline":"2026-05-30","relevance":"High"}]}'></textarea></div>
+{"items":[{"title":"Innovate UK Smart Grant","body":"Up to GBP500k for health tech startups...","date":"2026-04-12","url":"https://...","value":"GBP500,000","deadline":"2026-05-30","relevance":"High"}]}'></textarea></div>
       <div style="display:flex;gap:10px;margin-top:10px;">
         <button class="btn btn-primary" onclick="importAgentData()">Import Data</button>
         <button class="btn btn-secondary" onclick="document.getElementById('agent-import-json').value=''">Clear</button>
@@ -922,7 +753,7 @@ Example format:
   <div class="modal">
     <div class="modal-header"><span class="modal-title">Add Client</span><button class="modal-close" onclick="closeModal('client-modal')">x</button></div>
     <div class="form-row cols-2"><div class="form-group"><label>Company Name</label><input id="cm-company" placeholder="Company Ltd"></div><div class="form-group"><label>Contact Name</label><input id="cm-contact" placeholder="Jane Smith"></div></div>
-    <div class="form-row cols-2"><div class="form-group"><label>Email</label><input id="cm-email" type="email"></div><div class="form-group"><label>Contract Value</label><input id="cm-value" placeholder="Â£5,000/year"></div></div>
+    <div class="form-row cols-2"><div class="form-group"><label>Email</label><input id="cm-email" type="email"></div><div class="form-group"><label>Contract Value</label><input id="cm-value" placeholder="GBP5,000/year"></div></div>
     <div class="form-group" style="margin-bottom:12px;"><label>Stage</label><select id="cm-stage"><option value="onboarding">Onboarding</option><option value="active">Active</option><option value="review">Under Review</option></select></div>
     <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('client-modal')">Cancel</button><button class="btn btn-primary" onclick="saveClient()">Add Client</button></div>
   </div>
@@ -933,7 +764,7 @@ Example format:
   <div class="modal">
     <div class="modal-header"><span class="modal-title">Add Lead</span><button class="modal-close" onclick="closeModal('lead-modal')">x</button></div>
     <div class="form-row cols-2"><div class="form-group"><label>Company</label><input id="lm-company"></div><div class="form-group"><label>Contact</label><input id="lm-contact"></div></div>
-    <div class="form-row cols-2"><div class="form-group"><label>Deal Value</label><input id="lm-value" placeholder="Â£10,000"></div><div class="form-group"><label>Stage</label><select id="lm-stage"><option value="prospect">Prospect</option><option value="qualified">Qualified</option><option value="proposal">Proposal Sent</option><option value="negotiation">Negotiation</option></select></div></div>
+    <div class="form-row cols-2"><div class="form-group"><label>Deal Value</label><input id="lm-value" placeholder="GBP10,000"></div><div class="form-group"><label>Stage</label><select id="lm-stage"><option value="prospect">Prospect</option><option value="qualified">Qualified</option><option value="proposal">Proposal Sent</option><option value="negotiation">Negotiation</option></select></div></div>
     <div class="form-group" style="margin-bottom:12px;"><label>Notes</label><textarea id="lm-notes" rows="2"></textarea></div>
     <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('lead-modal')">Cancel</button><button class="btn btn-primary" onclick="saveLead()">Add Lead</button></div>
   </div>
@@ -945,7 +776,7 @@ Example format:
     <div class="modal-header"><span class="modal-title">Add Investor</span><button class="modal-close" onclick="closeModal('investor-modal')">x</button></div>
     <div class="form-row cols-2"><div class="form-group"><label>Investor / Fund</label><input id="im-name"></div><div class="form-group"><label>Contact</label><input id="im-contact"></div></div>
     <div class="form-row cols-2"><div class="form-group"><label>Type</label><select id="im-type"><option>Angel</option><option>VC</option><option>Family Office</option><option>Grant Body</option><option>Corporate</option></select></div><div class="form-group"><label>Stage</label><select id="im-stage"><option value="cold">Cold</option><option value="intro">Intro Made</option><option value="meeting">Meeting Booked</option><option value="due-diligence">Due Diligence</option><option value="term-sheet">Term Sheet</option><option value="passed">Passed</option></select></div></div>
-    <div class="form-row cols-2"><div class="form-group"><label>Potential Amount</label><input id="im-amount" placeholder="Â£50,000"></div><div class="form-group"><label>Next Action</label><input id="im-next" placeholder="Send deck by..."></div></div>
+    <div class="form-row cols-2"><div class="form-group"><label>Potential Amount</label><input id="im-amount" placeholder="GBP50,000"></div><div class="form-group"><label>Next Action</label><input id="im-next" placeholder="Send deck by..."></div></div>
     <div class="form-group" style="margin-bottom:12px;"><label>Notes</label><textarea id="im-notes" rows="2"></textarea></div>
     <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('investor-modal')">Cancel</button><button class="btn btn-primary" onclick="saveInvestor()">Add Investor</button></div>
   </div>
@@ -989,7 +820,7 @@ Example format:
   <div class="modal">
     <div class="modal-header"><span class="modal-title">Track Grant Application</span><button class="modal-close" onclick="closeModal('grant-modal')">x</button></div>
     <div class="form-group" style="margin-bottom:12px;"><label>Grant Name</label><input id="gm-name"></div>
-    <div class="form-row cols-2"><div class="form-group"><label>Funder</label><input id="gm-funder" placeholder="Innovate UK, NHSX..."></div><div class="form-group"><label>Amount</label><input id="gm-amount" placeholder="Â£50,000"></div></div>
+    <div class="form-row cols-2"><div class="form-group"><label>Funder</label><input id="gm-funder" placeholder="Innovate UK, NHSX..."></div><div class="form-group"><label>Amount</label><input id="gm-amount" placeholder="GBP50,000"></div></div>
     <div class="form-row cols-2"><div class="form-group"><label>Deadline</label><input type="date" id="gm-deadline"></div><div class="form-group"><label>Status</label><select id="gm-status"><option value="identified">Identified</option><option value="applying">Applying</option><option value="submitted">Submitted</option><option value="awarded">Awarded</option><option value="rejected">Rejected</option></select></div></div>
     <div class="form-group" style="margin-bottom:12px;"><label>Notes</label><textarea id="gm-notes" rows="2"></textarea></div>
     <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('grant-modal')">Cancel</button><button class="btn btn-primary" onclick="saveGrant()">Save</button></div>
@@ -1022,12 +853,12 @@ Example format:
   <div class="modal">
     <div class="modal-header"><span class="modal-title">Update Finance Metrics</span><button class="modal-close" onclick="closeModal('finance-modal')">x</button></div>
     <div class="form-row cols-2">
-      <div class="form-group"><label>Monthly Burn Rate (Â£)</label><input type="number" id="fm-burn" placeholder="5000"></div>
-      <div class="form-group"><label>Cash in Bank (Â£)</label><input type="number" id="fm-cash" placeholder="50000"></div>
+      <div class="form-group"><label>Monthly Burn Rate (GBP)</label><input type="number" id="fm-burn" placeholder="5000"></div>
+      <div class="form-group"><label>Cash in Bank (GBP)</label><input type="number" id="fm-cash" placeholder="50000"></div>
     </div>
     <div class="form-row cols-2">
-      <div class="form-group"><label>Current MRR (Â£)</label><input type="number" id="fm-mrr" placeholder="0"></div>
-      <div class="form-group"><label>Q2 Target MRR (Â£)</label><input type="number" id="fm-target" placeholder="25000"></div>
+      <div class="form-group"><label>Current MRR (GBP)</label><input type="number" id="fm-mrr" placeholder="0"></div>
+      <div class="form-group"><label>Q2 Target MRR (GBP)</label><input type="number" id="fm-target" placeholder="25000"></div>
     </div>
     <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('finance-modal')">Cancel</button><button class="btn btn-primary" onclick="saveFinance()">Update</button></div>
   </div>
@@ -1037,16 +868,14 @@ Example format:
 <div class="modal-overlay" id="revenue-modal">
   <div class="modal">
     <div class="modal-header"><span class="modal-title">Add Revenue</span><button class="modal-close" onclick="closeModal('revenue-modal')">x</button></div>
-    <div class="form-row cols-2"><div class="form-group"><label>Client / Source</label><input id="rm-source"></div><div class="form-group"><label>Monthly Value (Â£)</label><input type="number" id="rm-amount"></div></div>
+    <div class="form-row cols-2"><div class="form-group"><label>Client / Source</label><input id="rm-source"></div><div class="form-group"><label>Monthly Value (GBP)</label><input type="number" id="rm-amount"></div></div>
     <div class="form-row cols-2"><div class="form-group"><label>Type</label><select id="rm-type"><option>Subscription</option><option>One-off</option><option>Grant</option></select></div><div class="form-group"><label>Start Date</label><input type="date" id="rm-date"></div></div>
     <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('revenue-modal')">Cancel</button><button class="btn btn-primary" onclick="saveRevenue()">Add</button></div>
   </div>
 </div>
 
-
-
 <script>
-// ââ DATA ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// -- DATA ----------------------------------------------------------------------
 var clientsData=[], crmData=[], investorsData=[], partnersData=[], invoicesData=[];
 var sessionsData=[], tasksData=[], complianceData=[], postsData=[], documentsData=[];
 var decisionsData=[], companyOkrs=[], revenueData=[], grantsData=[], kbData=[];
@@ -1063,12 +892,12 @@ var TEAM=[
   {id:"lewis",initials:"LV",name:"Lewis Vines",role:"Chief Executive Officer",color:"#006D6F",
    resp:["Company Strategy","Investor Relations","Sales & Partnerships","Brand & Marketing","Product Vision","Operations"],
    okrs:[
-     {obj:"Scale revenue to Â£25k MRR",kr:"Secure 3 enterprise + 5 SME clients",pct:10,status:"at-risk"},
-     {obj:"Raise Pre-Seed funding round",kr:"Complete 20 investor meetings, secure Â£250k",pct:15,status:"on-track"},
+     {obj:"Scale revenue to GBP25k MRR",kr:"Secure 3 enterprise + 5 SME clients",pct:10,status:"at-risk"},
+     {obj:"Raise Pre-Seed funding round",kr:"Complete 20 investor meetings, secure GBP250k",pct:15,status:"on-track"},
      {obj:"Build 5-star team culture",kr:"All team scoring 8+/10 satisfaction quarterly",pct:60,status:"on-track"}
    ],
-   targets:[{m:"Q2 MRR",curr:"Â£0",tgt:"Â£25,000"},{m:"Investor Meetings",curr:"0",tgt:"20"},{m:"LinkedIn Followers",curr:"342",tgt:"1,000"}],
-   todos:["Finalise investor deck","Review Q2 OKR progress","Brief Alan on enterprise strategy","Book speaking slot â wellbeing summit"]
+   targets:[{m:"Q2 MRR",curr:"GBP0",tgt:"GBP25,000"},{m:"Investor Meetings",curr:"0",tgt:"20"},{m:"LinkedIn Followers",curr:"342",tgt:"1,000"}],
+   todos:["Finalise investor deck","Review Q2 OKR progress","Brief Alan on enterprise strategy","Book speaking slot -- wellbeing summit"]
   },
   {id:"dean",initials:"DB",name:"Dean Brown",role:"Chief Technology Officer",color:"#2563EB",
    resp:["Product Architecture","Platform Development","Data & Security","AI Integration","Technical Roadmap","DevOps"],
@@ -1083,15 +912,15 @@ var TEAM=[
   {id:"alan",initials:"AB",name:"Alan Bird",role:"Chief Commercial Officer",color:"#D97706",
    resp:["Revenue Growth","Enterprise Sales","Partnerships","Client Success","Pricing Strategy","Market Positioning"],
    okrs:[
-     {obj:"Land first enterprise client",kr:"Sign contract worth Â£20k+ by end Q2",pct:20,status:"at-risk"},
-     { obj:"Build partnership ecosystem",kr:"Sign 3 strategic channel partners",pct:10,status:"at-risk"},
+     {obj:"Land first enterprise client",kr:"Sign contract worth GBP20k+ by end Q2",pct:20,status:"at-risk"},
+     {obj:"Build partnership ecosystem",kr:"Sign 3 strategic channel partners",pct:10,status:"at-risk"},
      {obj:"Develop repeatable sales process",kr:"Document and test sales playbook with 10 prospects",pct:30,status:"on-track"}
    ],
-   targets:[{m:"Enterprise Meetings",curr:"2",tgt:"10"},{m:"Pipeline Value",curr:"Â£0",tgt:"Â£150k"},{m:"Partners Signed",curr:"0",tgt:"3"}],
+   targets:[{m:"Enterprise Meetings",curr:"2",tgt:"10"},{m:"Pipeline Value",curr:"GBP0",tgt:"GBP150k"},{m:"Partners Signed",curr:"0",tgt:"3"}],
    todos:["Reach out to 5 HR Directors","Prepare enterprise proposal template","Map out referral partner list","Review competitor pricing"]
   },
   {id:"calum",initials:"CD",name:"Calum Denham",role:"Head of Health",color:"#0FA878",
-   resp:["Programme Design","Physical Wellbeing","Nutrition & Sleep","Health Outcomes","Practitioner Network","Content â Physical Pillar"],
+   resp:["Programme Design","Physical Wellbeing","Nutrition & Sleep","Health Outcomes","Practitioner Network","Content -- Physical Pillar"],
    okrs:[
      {obj:"Design market-leading wellbeing programmes",kr:"3 modular programmes ready for enterprise delivery",pct:45,status:"on-track"},
      {obj:"Build practitioner network",kr:"5 vetted practitioners available across UK",pct:30,status:"on-track"},
@@ -1101,7 +930,171 @@ var TEAM=[
    todos:["Finalise nutrition programme module","Research sleep tracking integrations","Write physical wellbeing content series","Review programme pricing"]
   },
   {id:"phil",initials:"PH",name:"Phil Hurwood",role:"Mental Health Lead",color:"#7C3AED",
-   resp:["Mental Health Strategy","Psychological Safety","Resilience Programmes","Clinical Governance","Content â Mental Pillar","Regulatory Compliance"],
+   resp:["Mental Health Strategy","Psychological Safety","Resilience Programmes","Clinical Governance","Content -- Mental Pillar","Regulatory Compliance"],
+   okrs:[
+     {obj:"Develop clinical-grade mental health offer",kr:"Programme meets NICE guidelines, reviewed by clinical advisor",pct:35,status:"on-track"},
+     {obj:"Build mental health content library",kr:"20 evidence-based resources published",pct:25,status:"on-track"},
+     {obj:"Establish governance framework",kr:"Clinical governance document approved and adopted",pct:50,status:"on-track"}
+   ],
+   targets:[{m:"Resources Published",curr:"5",tgt:"20"},{m:"Governance Docs",curr:"1",tgt:"3"},{m:"Clinical Review",curr:"Pending",tgt:"Complete"}],
+   todos:["Finalise clinle">Add Investor</span><button class="modal-close" onclick="closeModal('investor-modal')">x</button></div>
+    <div class="form-row cols-2"><div class="form-group"><label>Investor / Fund</label><input id="im-name"></div><div class="form-group"><label>Contact</label><input id="im-contact"></div></div>
+    <div class="form-row cols-2"><div class="form-group"><label>Type</label><select id="im-type"><option>Angel</option><option>VC</option><option>Family Office</option><option>Grant Body</option><option>Corporate</option></select></div><div class="form-group"><label>Stage</label><select id="im-stage"><option value="cold">Cold</option><option value="intro">Intro Made</option><option value="meeting">Meeting Booked</option><option value="due-diligence">Due Diligence</option><option value="term-sheet">Term Sheet</option><option value="passed">Passed</option></select></div></div>
+    <div class="form-row cols-2"><div class="form-group"><label>Potential Amount</label><input id="im-amount" placeholder="GBP50,000"></div><div class="form-group"><label>Next Action</label><input id="im-next" placeholder="Send deck by..."></div></div>
+    <div class="form-group" style="margin-bottom:12px;"><label>Notes</label><textarea id="im-notes" rows="2"></textarea></div>
+    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('investor-modal')">Cancel</button><button class="btn btn-primary" onclick="saveInvestor()">Add Investor</button></div>
+  </div>
+</div>
+
+<!-- DECISION MODAL -->
+<div class="modal-overlay" id="decision-modal">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title">Log Decision</span><button class="modal-close" onclick="closeModal('decision-modal')">x</button></div>
+    <div class="form-group" style="margin-bottom:12px;"><label>Decision</label><input id="dm-title" placeholder="What was decided?"></div>
+    <div class="form-row cols-2"><div class="form-group"><label>Date</label><input type="date" id="dm-date"></div><div class="form-group"><label>Made By</label><input id="dm-by" placeholder="Lewis, Dean..."></div></div>
+    <div class="form-group" style="margin-bottom:12px;"><label>Context &amp; Rationale</label><textarea id="dm-context" rows="3" placeholder="Why this decision? What alternatives were considered?"></textarea></div>
+    <div class="form-group" style="margin-bottom:12px;"><label>Expected Outcome</label><textarea id="dm-outcome" rows="2" placeholder="What do we expect to happen as a result?"></textarea></div>
+    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('decision-modal')">Cancel</button><button class="btn btn-primary" onclick="saveDecision()">Log Decision</button></div>
+  </div>
+</div>
+
+<!-- COMPANY OKR MODAL -->
+<div class="modal-overlay" id="company-okr-modal">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title">Add Company OKR</span><button class="modal-close" onclick="closeModal('company-okr-modal')">x</button></div>
+    <div class="form-group" style="margin-bottom:12px;"><label>Objective</label><input id="okr-obj" placeholder="What are we trying to achieve?"></div>
+    <div class="form-group" style="margin-bottom:12px;"><label>Key Result</label><input id="okr-kr" placeholder="How will we measure success?"></div>
+    <div class="form-row cols-2"><div class="form-group"><label>Owner</label><select id="okr-owner"><option>Lewis</option><option>Dean</option><option>Alan</option><option>Calum</option><option>Phil</option><option>Team</option></select></div><div class="form-group"><label>Status</label><select id="okr-status"><option value="on-track">On Track</option><option value="at-risk">At Risk</option><option value="off-track">Off Track</option></select></div></div>
+    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('company-okr-modal')">Cancel</button><button class="btn btn-primary" onclick="saveCompanyOkr()">Add OKR</button></div>
+  </div>
+</div>
+
+<!-- IMPORT MODAL -->
+<div class="modal-overlay" id="import-modal">
+  <div class="modal" style="width:600px;">
+    <div class="modal-header"><span class="modal-title" id="import-modal-title">Import Agent Output</span><button class="modal-close" onclick="closeModal('import-modal')">x</button></div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6;">Paste the JSON output from your scheduled agent below. Each item should have: title, body/summary, date, and optionally: url, value, deadline, relevance, category.</p>
+    <div class="import-area"><textarea id="import-modal-json" rows="10" placeholder='{"items":[{"title":"...","body":"...","date":"2026-04-12","relevance":"High"}]}'></textarea></div>
+    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('import-modal')">Cancel</button><button class="btn btn-primary" onclick="doImportModal()">Import</button></div>
+  </div>
+</div>
+
+<!-- GRANT MODAL -->
+<div class="modal-overlay" id="grant-modal">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title">Track Grant Application</span><button class="modal-close" onclick="closeModal('grant-modal')">x</button></div>
+    <div class="form-group" style="margin-bottom:12px;"><label>Grant Name</label><input id="gm-name"></div>
+    <div class="form-row cols-2"><div class="form-group"><label>Funder</label><input id="gm-funder" placeholder="Innovate UK, NHSX..."></div><div class="form-group"><label>Amount</label><input id="gm-amount" placeholder="GBP50,000"></div></div>
+    <div class="form-row cols-2"><div class="form-group"><label>Deadline</label><input type="date" id="gm-deadline"></div><div class="form-group"><label>Status</label><select id="gm-status"><option value="identified">Identified</option><option value="applying">Applying</option><option value="submitted">Submitted</option><option value="awarded">Awarded</option><option value="rejected">Rejected</option></select></div></div>
+    <div class="form-group" style="margin-bottom:12px;"><label>Notes</label><textarea id="gm-notes" rows="2"></textarea></div>
+    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('grant-modal')">Cancel</button><button class="btn btn-primary" onclick="saveGrant()">Save</button></div>
+  </div>
+</div>
+
+<!-- KB MODAL -->
+<div class="modal-overlay" id="kb-modal">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title" id="kb-modal-title">Add SOP</span><button class="modal-close" onclick="closeModal('kb-modal')">x</button></div>
+    <input type="hidden" id="kb-type">
+    <div class="form-group" style="margin-bottom:12px;"><label>Title</label><input id="kb-title" placeholder="Process name"></div>
+    <div class="form-group" style="margin-bottom:12px;"><label>Description</label><textarea id="kb-body" rows="5" placeholder="Describe the process, steps, or template content..."></textarea></div>
+    <div class="form-row cols-2"><div class="form-group"><label>Owner</label><input id="kb-owner" placeholder="Lewis / Dean / Alan..."></div><div class="form-group"><label>Category</label><input id="kb-cat" placeholder="Sales / Ops / HR..."></div></div>
+    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('kb-modal')">Cancel</button><button class="btn btn-primary" onclick="saveKbItem()">Save</button></div>
+  </div>
+</div>
+
+<!-- DOC VIEW MODAL -->
+<div class="modal-overlay" id="doc-view-modal">
+  <div class="modal" style="width:700px;max-height:85vh;">
+    <div class="modal-header"><span class="modal-title" id="doc-view-title">Document</span><button class="modal-close" onclick="closeModal('doc-view-modal')">x</button></div>
+    <div id="doc-view-body" style="font-size:13px;line-height:1.8;color:var(--text);white-space:pre-wrap;overflow-y:auto;max-height:60vh;background:var(--surface);padding:14px;border-radius:8px;border:1px solid var(--border);"></div>
+    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('doc-view-modal')">Close</button></div>
+  </div>
+</div>
+
+<!-- FINANCE MODAL -->
+<div class="modal-overlay" id="finance-modal">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title">Update Finance Metrics</span><button class="modal-close" onclick="closeModal('finance-modal')">x</button></div>
+    <div class="form-row cols-2">
+      <div class="form-group"><label>Monthly Burn Rate (GBP)</label><input type="number" id="fm-burn" placeholder="5000"></div>
+      <div class="form-group"><label>Cash in Bank (GBP)</label><input type="number" id="fm-cash" placeholder="50000"></div>
+    </div>
+    <div class="form-row cols-2">
+      <div class="form-group"><label>Current MRR (GBP)</label><input type="number" id="fm-mrr" placeholder="0"></div>
+      <div class="form-group"><label>Q2 Target MRR (GBP)</label><input type="number" id="fm-target" placeholder="25000"></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('finance-modal')">Cancel</button><button class="btn btn-primary" onclick="saveFinance()">Update</button></div>
+  </div>
+</div>
+
+<!-- REVENUE MODAL -->
+<div class="modal-overlay" id="revenue-modal">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title">Add Revenue</span><button class="modal-close" onclick="closeModal('revenue-modal')">x</button></div>
+    <div class="form-row cols-2"><div class="form-group"><label>Client / Source</label><input id="rm-source"></div><div class="form-group"><label>Monthly Value (GBP)</label><input type="number" id="rm-amount"></div></div>
+    <div class="form-row cols-2"><div class="form-group"><label>Type</label><select id="rm-type"><option>Subscription</option><option>One-off</option><option>Grant</option></select></div><div class="form-group"><label>Start Date</label><input type="date" id="rm-date"></div></div>
+    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('revenue-modal')">Cancel</button><button class="btn btn-primary" onclick="saveRevenue()">Add</button></div>
+  </div>
+</div>
+
+<script>
+// -- DATA ----------------------------------------------------------------------
+var clientsData=[], crmData=[], investorsData=[], partnersData=[], invoicesData=[];
+var sessionsData=[], tasksData=[], complianceData=[], postsData=[], documentsData=[];
+var decisionsData=[], companyOkrs=[], revenueData=[], grantsData=[], kbData=[];
+var financeMetrics={burn:0,cash:0,mrr:0,target:25000};
+var swotData={s:[],w:[],o:[],t:[]};
+var currentImportType="grants";
+var chartInst={};
+
+// Agent output stores
+var AGENT_DATA={grants:[],legislation:[],research:[],competitors:[],market:[],daily:null};
+
+// TEAM
+var TEAM=[
+  {id:"lewis",initials:"LV",name:"Lewis Vines",role:"Chief Executive Officer",color:"#006D6F",
+   resp:["Company Strategy","Investor Relations","Sales & Partnerships","Brand & Marketing","Product Vision","Operations"],
+   okrs:[
+     {obj:"Scale revenue to GBP25k MRR",kr:"Secure 3 enterprise + 5 SME clients",pct:10,status:"at-risk"},
+     {obj:"Raise Pre-Seed funding round",kr:"Complete 20 investor meetings, secure GBP250k",pct:15,status:"on-track"},
+     {obj:"Build 5-star team culture",kr:"All team scoring 8+/10 satisfaction quarterly",pct:60,status:"on-track"}
+   ],
+   targets:[{m:"Q2 MRR",curr:"GBP0",tgt:"GBP25,000"},{m:"Investor Meetings",curr:"0",tgt:"20"},{m:"LinkedIn Followers",curr:"342",tgt:"1,000"}],
+   todos:["Finalise investor deck","Review Q2 OKR progress","Brief Alan on enterprise strategy","Book speaking slot -- wellbeing summit"]
+  },
+  {id:"dean",initials:"DB",name:"Dean Brown",role:"Chief Technology Officer",color:"#2563EB",
+   resp:["Product Architecture","Platform Development","Data & Security","AI Integration","Technical Roadmap","DevOps"],
+   okrs:[
+     {obj:"Ship enterprise-ready platform",kr:"Complete 12 priority builds on roadmap",pct:40,status:"on-track"},
+     {obj:"Achieve platform reliability 99.9% uptime",kr:"Zero critical incidents in Q2",pct:80,status:"on-track"},
+     {obj:"Build AI-powered features",kr:"Launch 3 AI features by end of Q2",pct:20,status:"at-risk"}
+   ],
+   targets:[{m:"Features Shipped",curr:"5",tgt:"12"},{m:"Bug Resolution Time",curr:"2d",tgt:"<24h"},{m:"Test Coverage",curr:"60%",tgt:"85%"}],
+   todos:["Complete SSO integration","Fix mobile responsiveness","Review GDPR data handling","Set up staging environment"]
+  },
+  {id:"alan",initials:"AB",name:"Alan Bird",role:"Chief Commercial Officer",color:"#D97706",
+   resp:["Revenue Growth","Enterprise Sales","Partnerships","Client Success","Pricing Strategy","Market Positioning"],
+   okrs:[
+     {obj:"Land first enterprise client",kr:"Sign contract worth GBP20k+ by end Q2",pct:20,status:"at-risk"},
+     {obj:"Build partnership ecosystem",kr:"Sign 3 strategic channel partners",pct:10,status:"at-risk"},
+     {obj:"Develop repeatable sales process",kr:"Document and test sales playbook with 10 prospects",pct:30,status:"on-track"}
+   ],
+   targets:[{m:"Enterprise Meetings",curr:"2",tgt:"10"},{m:"Pipeline Value",curr:"GBP0",tgt:"GBP150k"},{m:"Partners Signed",curr:"0",tgt:"3"}],
+   todos:["Reach out to 5 HR Directors","Prepare enterprise proposal template","Map out referral partner list","Review competitor pricing"]
+  },
+  {id:"calum",initials:"CD",name:"Calum Denham",role:"Head of Health",color:"#0FA878",
+   resp:["Programme Design","Physical Wellbeing","Nutrition & Sleep","Health Outcomes","Practitioner Network","Content -- Physical Pillar"],
+   okrs:[
+     {obj:"Design market-leading wellbeing programmes",kr:"3 modular programmes ready for enterprise delivery",pct:45,status:"on-track"},
+     {obj:"Build practitioner network",kr:"5 vetted practitioners available across UK",pct:30,status:"on-track"},
+     {obj:"Demonstrate measurable health outcomes",kr:"Pilot programme with 20+ participants showing 15% improvement",pct:0,status:"at-risk"}
+   ],
+   targets:[{m:"Programmes Ready",curr:"1",tgt:"3"},{m:"Practitioners",curr:"2",tgt:"5"},{m:"Pilot Participants",curr:"0",tgt:"20"}],
+   todos:["Finalise nutrition programme module","Research sleep tracking integrations","Write physical wellbeing content series","Review programme pricing"]
+  },
+  {id:"phil",initials:"PH",name:"Phil Hurwood",role:"Mental Health Lead",color:"#7C3AED",
+   resp:["Mental Health Strategy","Psychological Safety","Resilience Programmes","Clinical Governance","Content -- Mental Pillar","Regulatory Compliance"],
    okrs:[
      {obj:"Develop clinical-grade mental health offer",kr:"Programme meets NICE guidelines, reviewed by clinical advisor",pct:35,status:"on-track"},
      {obj:"Build mental health content library",kr:"20 evidence-based resources published",pct:25,status:"on-track"},
@@ -1128,9 +1121,9 @@ var EPS=[
   {ep:13,title:"Nutrition for Cognitive Performance",guest:"TBC",date:"2024-12-01",status:"planned"}
 ];
 
-// ââ UTILS ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-function fmt(n){return n===undefined||n===null?"â":n;}
-function fmtGBP(n){return typeof n==="number"?"Â£"+n.toLocaleString():"Â£0";}
+// -- UTILS ---------------------------------------------------------------------
+function fmt(n){return n===undefined||n===null?"--":n;}
+function fmtGBP(n){return typeof n==="number"?"GBP"+n.toLocaleString():"GBP0";}
 function fmtDate(d){if(!d)return"";try{return new Date(d).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});}catch(e){return d;}}
 function today(){return new Date().toISOString().split("T")[0];}
 function daysBetween(a,b){return Math.round((new Date(b)-new Date(a))/(1000*60*60*24));}
@@ -1157,7 +1150,7 @@ function switchTab(group,panelId,btn){
   document.getElementById(panelId).classList.add("active");
 }
 
-// ââ AUTH ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// -- AUTH ----------------------------------------------------------------------
 function doLogin(){
   var e=document.getElementById("loginEmail").value;
   var p=document.getElementById("loginPass").value;
@@ -1174,7 +1167,7 @@ function doLogout(){
   document.getElementById("loginScreen").style.display="flex";
 }
 
-// ââ INIT ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// -- INIT ----------------------------------------------------------------------
 function initApp(){
   loadPersistedData();
   setDate();
@@ -1206,7 +1199,7 @@ function setupNav(){
   });
 }
 
-// ââ NAVIGATE ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// -- NAVIGATE ------------------------------------------------------------------
 var PAGE_TITLES={brief:"Morning Brief",intel:"Research & Grants",competitors:"Competitor Watch",
   dashboard:"Dashboard",finance:"Finance & Funding",clients:"Clients",crm:"Sales Pipeline",
   investor:"Investor Relations",partners:"Partner Network",invoicing:"Invoicing",
@@ -1232,7 +1225,7 @@ function navigate(page){
   if(renders[page])setTimeout(renders[page],20);
 }
 
-// ââ MORNING BRIEF âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// -- MORNING BRIEF -------------------------------------------------------------
 function renderBrief(){
   var alerts=[];var today_d=new Date();
 
@@ -1265,7 +1258,7 @@ function renderBrief(){
     document.getElementById("alert-count").textContent=alerts.length;
     document.getElementById("alert-count").style.display="inline";
   } else {
-    ac.innerHTML='<div style="padding:12px 0;font-size:13px;color:var(--muted);">All clear â no actions required.</div>';
+    ac.innerHTML='<div style="padding:12px 0;font-size:13px;color:var(--muted);">All clear -- no actions required.</div>';
     document.getElementById("alert-count").style.display="none";
   }
 
@@ -1281,7 +1274,7 @@ function renderBrief(){
     okrEl.innerHTML='<p style="font-size:13px;color:var(--muted);">Add company OKRs in Strategy Room.</p>';
   }
 
-  // Priorities â from tasks
+  // Priorities -- from tasks
   var pri=document.getElementById("brief-priorities");
   var urgent=tasksData.filter(function(t){return t.stage!=="done"&&(t.priority==="Critical"||t.priority==="High");}).slice(0,5);
   if(urgent.length){
@@ -1290,10 +1283,10 @@ function renderBrief(){
       return'<div class="todo-item"><span class="badge '+badge+'">'+t.priority+'</span><span class="todo-text">'+t.title+'</span><span style="font-size:11px;color:var(--muted);">'+fmt(t.assignee)+'</span></div>';
     }).join("");
   } else {
-    pri.innerHTML='<p style="font-size:13px;color:var(--muted);padding:8px 0;">No urgent tasks â add tasks in the Tasks page.</p>';
+    pri.innerHTML='<p style="font-size:13px;color:var(--muted);padding:8px 0;">No urgent tasks -- add tasks in the Tasks page.</p>';
   }
 
-  // Intel feed â recent agent items
+  // Intel feed -- recent agent items
   var feed=document.getElementById("brief-intel-feed");
   var allIntel=[];
   ["grants","legislation","research","competitors","market"].forEach(function(k){
@@ -1319,7 +1312,7 @@ function renderBrief(){
     '<div class="stat-card"><div class="stat-value">'+investorsData.length+'</div><div class="stat-label">Investors Tracked</div></div>';
 }
 
-// ââ INTEL / AGENT OUTPUTS âââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// -- INTEL / AGENT OUTPUTS -----------------------------------------------------
 function renderIntel(){
   renderIntelSection("grants","grants-list","grants-count","grant opportunities");
   renderIntelSection("legislation","legislation-list","legis-count","updates tracked");
@@ -1344,7 +1337,7 @@ function renderIntelSection(key,listId,countId,label){
       '<div class="intel-footer"><span class="intel-date">'+fmtDate(item.date)+'</span>'+
       (item.value?'<span class="badge badge-green">'+item.value+'</span>':"")+
       (item.deadline?'<span class="badge badge-amber">Deadline: '+fmtDate(item.deadline)+'</span>':"")+
-      (item.url?'<a href="'+item.url+'" target="_blank" style="font-size:11px;color:var(--primary);">View'source</a>':"")+
+      (item.url?'<a href="'+item.url+'" target="_blank" style="font-size:11px;color:var(--primary);">View source</a>':"")+
       '<button class="topbar-btn" style="margin-left:auto;" onclick="removeIntelItem(\''+key+'\','+i+')">Remove</button></div></div>';
   }).join("");
 }
@@ -1404,7 +1397,7 @@ function updateAgentBadges(){
   if(bc2){bc2.textContent=cc;bc2.style.display=cc?"inline":"none";}
 }
 
-// ââ FINANCE âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// -- FINANCE -------------------------------------------------------------------
 function renderFinance(){
   var fm=financeMetrics;
   var mrr=fm.mrr||0,target=fm.target||25000,burn=fm.burn||0,cash=fm.cash||0;
@@ -1418,14 +1411,14 @@ function renderFinance(){
   el("fin-runway",runway?runway+" months":"Set burn & cash");
   var gTotal=grantsData.filter(function(g){return g.status==="awarded";}).reduce(function(s,g){return s+(parseInt(g.amount)||0);},0);
   el("fin-grants-total",fmtGBP(gTotal));
-  el("fin-burn",burn?"Â£"+burn.toLocaleString()+"/mo":"Not set");
-  el("fin-cash",cash?"Â£"+cash.toLocaleString():"Not set");
-  el("fin-outstanding","Â£"+invoicesData.filter(function(i){return i.status==="outstanding";}).reduce(function(s,i){return s+(parseFloat(i.amount)||0);},0).toLocaleString());
+  el("fin-burn",burn?"GBP"+burn.toLocaleString()+"/mo":"Not set");
+  el("fin-cash",cash?"GBP"+cash.toLocaleString():"Not set");
+  el("fin-outstanding","GBP"+invoicesData.filter(function(i){return i.status==="outstanding";}).reduce(function(s,i){return s+(parseFloat(i.amount)||0);},0).toLocaleString());
   el("fin-paying",clientsData.filter(function(c){return c.stage==="active";}).length);
   el("fin-q2-pct",pct+"%");
   var bar=document.getElementById("fin-q2-bar");if(bar)bar.style.width=pct+"%";
   el("fin-days-q2",daysLeft+" days");
-  el("fin-needed",needed?"Â£"+needed.toLocaleString()+"/mo":"On track");
+  el("fin-needed",needed?"GBP"+needed.toLocaleString()+"/mo":"On track");
 
   renderRevenueList();renderGrantsPipeline();renderForecastChart();
 }
@@ -1456,7 +1449,7 @@ function renderForecastChart(){
   chartInst["forecast"]=new Chart(fc,{type:"line",data:{labels:months,datasets:[{label:"Forecast MRR",data:data,borderColor:"#006D6F",backgroundColor:"rgba(0,109,111,.1)",fill:true,tension:0.4},{label:"Target",data:months.map(function(){return 25000;}),borderColor:"#D97706",borderDash:[5,5],fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"bottom"}}}});
 }
 
-// ââ KANBAN RENDERER âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// -- KANBAN RENDERER -----------------------------------------------------------
 function renderKanban(containerId,data,stageNames,stageKeys,cardFn){
   var container=document.getElementById(containerId);if(!container)return;
   container.innerHTML="";
@@ -1471,31 +1464,31 @@ function renderKanban(containerId,data,stageNames,stageKeys,cardFn){
   });
 }
 
-// ââ CLIENTS âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// -- CLIENTS -------------------------------------------------------------------
 function renderClients(){
   var el2=document.getElementById("clients-count");if(el2)el2.textContent=clientsData.filter(function(c){return c.stage==="active";}).length+" active clients";
   renderKanban("clients-kanban",clientsData,["Onboarding","Active","Under Review"],["onboarding","active","review"],function(c){
-    return'<div class="kanban-card"><div class="kanban-card-title">'+c.company+'</div><div class="kanban-card-meta">'+c.contact+" â "+c.value+'</div></div>';
+    return'<div class="kanban-card"><div class="kanban-card-title">'+c.company+'</div><div class="kanban-card-meta">'+c.contact+" -- "+c.value+'</div></div>';
   });
 }
 
-// ââ CRM âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// -- CRM -----------------------------------------------------------------------
 function renderCrm(){
   var el2=document.getElementById("crm-count");if(el2)el2.textContent=crmData.filter(function(c){return c.stage!=="won"&&c.stage!=="lost";}).length+" leads in pipeline";
   renderKanban("crm-kanban",crmData,["Prospect","Qualified","Proposal","Negotiation","Won","Lost"],["prospect","qualified","proposal","negotiation","won","lost"],function(l){
-    return'<div class="kanban-card"><div class="kanban-card-title">'+l.company+'</div><div class="kanban-card-meta">'+l.contact+(l.value?(" â "+l.value):"")+'</div></div>';
+    return'<div class="kanban-card"><div class="kanban-card-title">'+l.company+'</div><div class="kanban-card-meta">'+l.contact+(l.value?(" -- "+l.value):"")+'</div></div>';
   });
 }
 
-// ââ INVESTORS âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// -- INVESTORS -----------------------------------------------------------------
 function renderInvestor(){
   var el2=document.getElementById("inv-count");if(el2)el2.textContent=investorsData.length+" investors tracked";
   renderKanban("investor-kanban",investorsData,["Cold","Intro","Meeting","Due Diligence","Term Sheet","Passed"],["cold","intro","meeting","due-diligence","term-sheet","passed"],function(inv){
-    return'<div class="kanban-card"><div class="kanban-card-title">'+inv.name+'</div><div class="kanban-card-meta">'+inv.type+(inv.amount?" â "+inv.amount:"")+'</div><div class="kanban-card-meta" style="margin-top:4px;">'+fmt(inv.next)+'</div></div>';
+    return'<div class="kanban-card"><div class="kanban-card-title">'+inv.name+'</div><div class="kanban-card-meta">'+inv.type+(inv.amount?" -- "+inv.amount:"")+'</div><div class="kanban-card-meta" style="margin-top:4px;">'+fmt(inv.next)+'</div></div>';
   });
 }
 
-// ââ TASKS âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// -- TASKS ---------------------------------------------------------------------
 function renderTasks(){
   var el2=document.getElementById("tasks-count");if(el2)el2.textContent=tasksData.filter(function(t){return t.stage!=="done";}).length+" open tasks";
   renderKanban("tasks-kanban",tasksData,["To Do","In Progress","Blocked","Done"],["todo","in-progress","blocked","done"],function(t){
@@ -1504,16 +1497,16 @@ function renderTasks(){
   });
 }
 
-// ââ CONTENT âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// -- CONTENT -------------------------------------------------------------------
 function renderContent(){
   var el2=document.getElementById("content-count");if(el2)el2.textContent=postsData.length+" posts";
   renderKanban("content-kanban",postsData,["Draft","Needs Review","Approved","Posted"],["draft","review","approved","posted"],function(p){
     var pc={Physical:"badge-teal",Mental:"badge-purple",Social:"badge-green",Business:"badge-blue"}[p.pillar]||"badge-grey";
-    return'<div class="kanban-card"><div class="kanban-card-meta" style="margin-bottom:4px;">'+p.platform+" â "+fmtDate(p.date)+'</div><div class="kanban-card-title">'+((p.copy||"").substring(0,60))+(p.copy&&p.copy.length>60?"...":"")+'</div><div style="margin-top:6px;"><span class="badge '+pc+'">'+fmt(p.pillar)+'</span></div></div>';
+    return'<div class="kanban-card"><div class="kanban-card-meta" style="margin-bottom:4px;">'+p.platform+" -- "+fmtDate(p.date)+'</div><div class="kanban-card-title">'+((p.copy||"").substring(0,60))+(p.copy&&p.copy.length>60?"...":"")+'</div><div style="margin-top:6px;"><span class="badge '+pc+'">'+fmt(p.pillar)+'</span></div></div>';
   });
 }
 
-// ââ PERFORMANCE CHARTS ââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// -- PERFORMANCE CHARTS --------------------------------------------------------
 function renderPerfCharts(){
   destroyChart("eng");destroyChart("platforms");
   var ec=document.getElementById("chart-engagement");
@@ -1540,19 +1533,19 @@ function renderHeatmap(){
   hw.innerHTML=html+"</table>";
 }
 
-// ââ PODCAST âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// -- PODCAST -------------------------------------------------------------------
 function renderPodcast(){
   var el2=document.getElementById("podcast-count");if(el2)el2.textContent=EPS.length+" episodes";
   var el3=document.getElementById("podcast-list");if(!el3)return;
   el3.innerHTML=EPS.map(function(ep){
     var badge=ep.status==="published"?"badge-green":ep.status==="planned"?"badge-grey":"badge-amber";
     return'<div class="intel-card" style="display:flex;align-items:center;gap:14px;"><div style="min-width:36px;height:36px;background:var(--primary);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;">Ep'+ep.ep+'</div>'+
-      '<div style="flex:1;"><div class="intel-title">'+ep.title+'</div><div class="intel-body">Guest: '+ep.guest+" â "+fmtDate(ep.date)+'</div></div>'+
+      '<div style="flex:1;"><div class="intel-title">'+ep.title+'</div><div class="intel-body">Guest: '+ep.guest+" -- "+fmtDate(ep.date)+'</div></div>'+
       '<span class="badge '+badge+'">'+ep.status+'</span></div>';
   }).join("");
 }
 
-// ââ STRATEGY ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// -- STRATEGY ------------------------------------------------------------------
 function renderStrategy(){
   // Company OKRs
   var el2=document.getElementById("company-okrs-list");if(!el2)return;
@@ -1563,21 +1556,18 @@ function renderStrategy(){
     return'<div class="okr-item"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"><div class="okr-obj">'+o.obj+'</div><span class="badge '+sb+'">'+o.status.replace("-"," ")+'</span></div>'+
       '<div class="okr-kr">'+o.kr+'</div>'+
       '<div class="okr-progress"><div class="progress-bar-wrap"><div class="progress-bar '+bar+'" style="width:'+o.pct+'%"></div></div><span class="okr-pct">'+o.pct+'%</span>'+
-      '<input type="range" min="0" max="100" value="'+o.pct+'" style="width:80px;margin-left:8px;" oninput="updateOkrPct('+i+',this.value)"></div>'+
-      (o.owner?'<div style="font-size:11px;color:var(--muted);margin-top:6px;">Owner: '+o.owner+'</div>':"")+'</div>';
-  }).join("");
-  // SWOT
-  ["s","w","o","t"].forEach(function(k){
-    var el3=document.getElementById("swot-"+k);if(!el3)return;
-    var items=swotData[k]||[];
-    el3.innerHTML=items.map(function(item,i){
-      return'<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;"><span style="font-size:13px;flex:1;">'+item+'</span><button onclick="removeSwot(\''+k+'\','+i+')" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;">x</button></div>';
-    }).join("");
-  });
-  // Decisions
-  var dl=document.getElementById("decisions-list");
-  if(dl&&decisionsData.length)dl.innerHTML=decisionsData.map(function(d){
-    return'<div class="decision-item"><div class="decision-date">'+fmtDate(d.date)+" â "+d.by+'</div><div class="decision-title">'+d.title+'</div><div class="decision-body">'+d.context+'</div>'+
+      '<input type="range" min="0" max="100" value="'+o.pct+'" style="width:80px;margin-left:8px;" oninput="updateOkrPct('+i++his.value)"></div>'+
+      (o.owner?'<div style="font-size:11px;color:var(--m]Y
+NÛX\Ú[]ÜÈÝÛ\	ÊÛËÝÛ\ÉÏÙ]ÎJÉÏÙ]ÎÂJKÚ[NÂËÈÕÓÕÈÈÈÈKÜXXÚ
+[Ý[ÛÊ^Â\[ÏYØÝ[Y[Ù][[Y[RY
+ÝÛÝHÚÊNÚYY[Ê\]\Â\][\Ï\ÝÛÝ]VÚ×_×NÂ[Ë[\SZ][\ËX\
+[Ý[Û][KJ^Â]\Ï]Ý[OH\Ü^N^Ø[YÛZ][\ÎÙ[\ÙØ\ÛX\Ú[XÝÛNÈÜ[Ý[OHÛ\Ú^NLÜÙ^NÈÊÚ][JÉÏÜÜ[]ÛÛÛXÚÏH[[ÝTÝÛÝ
+	ÉÊÚÊÉ×	Ë	ÊÚJÉÊHÝ[OHXÚÙÜÝ[ÛNØÜ\ÛNØÝ\ÛÜÚ[\ØÛÛÜ\K[]]Y
+NÙÛ\Ú^NMÈØ]ÛÙ]ÎÂJKÚ[NÂJNÂËÈXÚ\Ú[ÛÂ\YØÝ[Y[Ù][[Y[RY
+XÚ\Ú[ÛË[\ÝNÂY	XÚ\Ú[ÛÑ]K[Ý
+Y[\SYXÚ\Ú[ÛÑ]KX\
+[Ý[Û
+^Â]\Ï]Û\ÜÏHXÚ\Úion-item"><div class="decision-date">'+fmtDate(d.date)+" -- "+d.by+'</div><div class="decision-title">'+d.title+'</div><div class="decision-body">'+d.context+'</div>'+
       (d.outcome?'<div style="font-size:12px;color:var(--green);margin-top:6px;font-weight:600;">Expected: '+d.outcome+'</div>':"")+'</div>';
   }).join("");
   // Learnings
@@ -1593,7 +1583,7 @@ function updateOkrPct(i,val){companyOkrs[i].pct=parseInt(val);persist("company_o
 function addSwot(q){var v=prompt("Add to "+q.toUpperCase()+":");if(!v)return;swotData[q].push(v);persist("swot",swotData);renderStrategy();}
 function removeSwot(q,i){swotData[q].splice(i,1);persist("swot",swotData);renderStrategy();}
 
-// ââ DOCUMENTS âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// -- DOCUMENTS -----------------------------------------------------------------
 function handleDocUpload(evt){Array.from(evt.target.files).forEach(processDocFile);}
 function handleDocDrop(evt){evt.preventDefault();document.getElementById("drop-zone").classList.remove("dragover");Array.from(evt.dataTransfer.files).forEach(processDocFile);}
 
@@ -1601,7 +1591,7 @@ function processDocFile(file){
   var reader=new FileReader();
   var ext=file.name.split(".").pop().toLowerCase();
   reader.onload=function(e){
-    var content=ext==="txt"||ext==="md"||ext==="csv"?e.target.result:"[Binary file â text extraction not available for ."+ext+". AI analysis via Claude API recommended.]";
+    var content=ext==="txt"||ext==="md"||ext==="csv"?e.target.result:"[Binary file -- text extraction not available for ."+ext+". AI analysis via Claude API recommended.]";
     var cat=prompt("Category for "+file.name+"?\n\nOptions: contract, strategy, financial, research, hr, compliance, pitch, other","other")||"other";
     var doc={id:Date.now(),name:file.name,size:Math.round(file.size/1024),ext:ext,cat:cat,date:today(),content:content};
     documentsData.unshift(doc);
@@ -1631,7 +1621,7 @@ function renderDocList(docs,q){
   el2.innerHTML=docs.map(function(doc){
     var ic={pdf:"PDF",docx:"DOC",doc:"DOC",xlsx:"XLS",xls:"XLS",pptx:"PPT",txt:"TXT",md:"MD",csv:"CSV"}[doc.ext]||doc.ext.toUpperCase();
     return'<div class="doc-item"><div class="doc-icon '+doc.ext+'">'+ic+'</div>'+
-      '<div class="doc-info"><div class="doc-name">'+doc.name+'</div><div class="doc-meta">'+doc.size+"KB â "+fmtDate(doc.date)+'</div>'+
+      '<div class="doc-info"><div class="doc-name">'+doc.name+'</div><div class="doc-meta">'+doc.size+"KB -- "+fmtDate(doc.date)+'</div>'+
       '<div class="doc-tags"><span class="badge '+catColors[doc.cat]+'">'+doc.cat+'</span></div></div>'+
       '<button class="topbar-btn" onclick="viewDoc('+doc.id+')">View</button>'+
       '<button class="topbar-btn" onclick="deleteDoc('+doc.id+')" style="color:var(--red);">Delete</button></div>';
@@ -1641,7 +1631,7 @@ function renderDocList(docs,q){
 function viewDoc(id){
   var doc=documentsData.find(function(d){return d.id===id;});if(!doc)return;
   document.getElementById("doc-view-title").textContent=doc.name;
-  document.getElementById("doc-view-body").textContent=doc.content||(doc.name+" â Binary file. Open in your local application.");
+  document.getElementById("doc-view-body").textContent=doc.content||(doc.name+" -- Binary file. Open in your local application.");
   document.getElementById("doc-view-modal").classList.add("open");
 }
 
@@ -1651,21 +1641,21 @@ function deleteDoc(id){
   persist("docs",documentsData);renderDocs();showToast("Deleted","");
 }
 
-// ââ KNOWLEDGE BASE ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// -- KNOWLEDGE BASE ------------------------------------------------------------
 function renderKb(){
   ["sop","playbook","template"].forEach(function(t){
     var el2=document.getElementById(t+"s-list");if(!el2)return;
     var items=kbData.filter(function(k){return k.type===t;});
     if(!items.length)return;
-    el2.innerHTML=items.map(function(k,i){
+  2 el2.innerHTML=items.map(function(k,i){
       return'<div class="decision-item"><div style="display:flex;align-items:center;justify-content:space-between;"><div class="decision-title">'+k.title+'</div><button onclick="removeKbItem('+i+')" style="background:none;border:none;cursor:pointer;color:var(--muted);">Remove</button></div>'+
-        (k.owner||k.cat?'<div class="decision-date">'+fmt(k.owner)+(k.cat?" â "+k.cat:"")+'</div>':"")+
+        (k.owner||k.cat?'<div class="decision-date">'+fmt(k.owner)+(k.cat?" -- "+k.cat:"")+'</div>':"")+
         '<div class="decision-body">'+k.body+'</div></div>';
     }).join("");
   });
 }
 
-// ââ TEAM ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// -- TEAM ----------------------------------------------------------------------
 function renderTeam(memberId){
   currentMember=memberId;
   var mg=document.getElementById("member-grid");
@@ -1679,7 +1669,7 @@ function renderTeam(memberId){
 
   md.innerHTML=
     '<div class="grid-2" style="margin-bottom:16px;">'+
-    '<div class="card"><div class="card-header"><span class="card-title">OKRs â Q2 2026</span></div>'+
+    '<div class="card"><div class="card-header"><span class="card-title">OKRs -- Q2 2026</span></div>'+
     member.okrs.map(function(o){
       var bar=o.pct>66?"green":o.pct>33?"":"red";
       var sb={"on-track":"badge-green","at-risk":"badge-amber","off-track":"badge-red"}[o.status]||"badge-grey";
@@ -1710,14 +1700,14 @@ function toggleMemberTodo(memberId,idx){
   showToast("Task removed","success");
 }
 
-// ââ SETTINGS ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// -- SETTINGS ------------------------------------------------------------------
 function renderSettings(){
   var summary=document.getElementById("agent-data-summary");if(!summary)return;
   var keys=["grants","legislation","research","competitors","market"];
   summary.innerHTML='<table class="tbl"><thead><tr><th>Agent</th><th>Items Stored</th><th>Last Import</th><th></th></tr></thead><tbody>'+
     keys.map(function(k){
       var items=AGENT_DATA[k]||[];
-      var last=items.length?(items[0].date||"â"):"Never";
+      var last=items.length?(items[0].date||"--"):"Never";
       return'<tr><td><strong>'+k.charAt(0).toUpperCase()+k.slice(1)+'</strong></td><td>'+items.length+'</td><td>'+fmtDate(last)+'</td><td><button class="topbar-btn" onclick="clearAgentData(\''+k+'\')">Clear</button></td></tr>';
     }).join("")+'</tbody></table>';
 }
@@ -1730,7 +1720,7 @@ function clearAgentData(k){
 function saveSettings(){persist("settings",{q2target:document.getElementById("s-q2target").value});showToast("Settings saved","success");}
 function saveApiKey(){var k=document.getElementById("s-claude-key").value;if(k){persist("claude_key",k);showToast("API key saved","success");}else showToast("Enter a key first","error");}
 
-// ââ SAVE HELPERS ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// -- SAVE HELPERS --------------------------------------------------------------
 function savePost(){
   var d={platform:v("pm-platform"),date:v("pm-date"),copy:v("pm-copy"),pillar:v("pm-pillar"),stage:v("pm-status")||"draft"};
   if(!d.copy)return showToast("Add some copy first","error");
@@ -1767,7 +1757,7 @@ function saveGrant(){
   grantsData.unshift(d);persist("grants_pipeline",grantsData);closeModal("grant-modal");renderFinance();showToast("Grant added","success");
 }
 function saveKbItem(){
-  var d={type:v("kb-type"),title:v("kb-title"),body:¾("kb-body"),owner:v("kb-owner"),cat:v("kb-cat"),date:today()};
+  var d={type:¾("kb-type"),title:v("kb-title"),body:v("kb-body"),owner:¾("kb-owner"),cat:¾("kb-cat"),date:today()};
   if(!d.title)return showToast("Title required","error");
   kbData.unshift(d);persist("kb",kbData);closeModal("kb-modal");renderKb();showToast("Saved","success");
 }
@@ -1785,7 +1775,7 @@ function saveRevenue(){
 }
 function v(id){var e=document.getElementById(id);return e?e.value:"";}
 
-// ââ MODAL OPENERS âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// -- MODAL OPENERS -------------------------------------------------------------
 function openPostModal(){document.getElementById("pm-date").value=today();document.getElementById("post-modal").classList.add("open");}
 function openClientModal(){document.getElementById("client-modal").classList.add("open");}
 function openLeadModal(){document.getElementById("lead-modal").classList.add("open");}
@@ -1807,7 +1797,7 @@ function openKbModal(type){
   document.getElementById("kb-modal-title").textContent="Add "+type.charAt(0).toUpperCase()+type.slice(1);
   document.getElementById("kb-modal").classList.add("open");
 }
-function openPartnerModal(){showToast("Partner management coming â add via Settings","");}
+function openPartnerModal(){showToast("Partner management coming -- add via Settings","");}
 function openInvoiceModal(){showToast("Invoice creation coming soon","");}
 function openSessionModal(){showToast("Session booking coming soon","");}
 function openTaskModal(){
@@ -1836,7 +1826,7 @@ function handleQuickAdd(){
   else openPostModal();
 }
 
-// ââ DARK MODE âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// -- DARK MODE -----------------------------------------------------------------
 function toggleDark(){
   document.body.classList.toggle("dark");
   var on=document.body.classList.contains("dark");
@@ -1844,10 +1834,10 @@ function toggleDark(){
   var btn=document.getElementById("dark-toggle-btn");if(btn)btn.classList.toggle("on",on);
 }
 
-// ââ DASHBOARD âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// -- DASHBOARD -----------------------------------------------------------------
 function renderDashboard(){}  // static content, no dynamic needed
 
-// ââ START âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// -- START ---------------------------------------------------------------------
 window.addEventListener("load",function(){
   // Allow pressing Enter on login
   document.getElementById("loginPass").addEventListener("keydown",function(e){if(e.key==="Enter")doLogin();});
