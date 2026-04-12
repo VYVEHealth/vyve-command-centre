@@ -1563,7 +1563,7 @@ function renderKb(){
     var el2=document.getElementById(t+"s-list");if(!el2)return;
     var items=kbData.filter(function(k){return k.type===t;});
     if(!items.length)return;
-  2 el2.innerHTML=items.map(function(k,i){
+  el2.innerHTML=items.map(function(k,i){
       return'<div class="decision-item"><div style="display:flex;align-items:center;justify-content:space-between;"><div class="decision-title">'+k.title+'</div><button onclick="removeKbItem('+i+')" style="background:none;border:none;cursor:pointer;color:var(--muted);">Remove</button></div>'+
         (k.owner||k.cat?'<div class="decision-date">'+fmt(k.owner)+(k.cat?" -- "+k.cat:"")+'</div>':"")+
         '<div class="decision-body">'+k.body+'</div></div>';
