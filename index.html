@@ -248,6 +248,17 @@ body.dark{--bg:#0f172a;--card:#1e293b;--text:#f1f5f9;--muted:#94a3b8;--border:#3
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.js"></script>
 <script>
+const CC_API='https://ixjfklpckgxrwjlfsaaz.supabase.co/functions/v1/cc-data';
+async function ccGetJWT(){var s=await _supa.auth.getSession();return s.data.session?.access_token||'';}
+async function ccFetch(table,opts){opts=opts||{};var jwt=await ccGetJWT();var url=CC_API+'/'+table;if(opts.id)url+='/'+opts.id;if(opts.action)url+='/'+opts.action;if(opts.params)url+='?'+new URLSearchParams(opts.params).toString();var res=await fetch(url,{method:opts.method||'GET',headers:{'Authorization':'Bearer '+jwt,'Content-Type':'application/json'},body:opts.body?JSON.stringify(opts.body):undefined});var d=await res.json();if(!res.ok){console.error('cc-data:',d);return null;}return d;}
+async function ccList(t,p){var r=await ccFetch(t,{params:p});return r?.data||[];}
+async function ccCreate(t,b){var r=await ccFetch(t,{method:'POST',body:b});return r?.data||null;}
+async function ccUpdate(t,id,b){var r=await ccFetch(t,{method:'PATCH',id:id,body:b});return r?.data||null;}
+async function ccDelete(t,id){return await ccFetch(t,{method:'DELETE',id:id});}
+async function ccUploadFile(file,cat){var jwt=await ccGetJWT();var form=new FormData();form.append('file',file);form.append('category',cat||'general');var res=await fetch(CC_API+'/upload',{method:'POST',headers:{'Authorization':'Bearer '+jwt},body:form});var d=await res.json();if(!res.ok){console.error('Upload:',d);return null;}return d.document;}
+async function ccSignedUrl(id){var jwt=await ccGetJWT();var res=await fetch(CC_API+'/signed-url/'+id,{headers:{'Authorization':'Bearer '+jwt}});var d=await res.json();return d.url||null;}
+</script>
+<script>
   const _supa = supabase.createClient('https://ixjfklpckgxrwjlfsaaz.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg');
 </script>
 </head>
@@ -1042,6 +1053,32 @@ function destroyChart(k){if(chartInst[k]){chartInst[k].destroy();delete chartIns
 function persist(key,val){try{localStorage.setItem("vyve_"+key,JSON.stringify(val));}catch(e){}}
 function load(key,def){try{var v=localStorage.getItem("vyve_"+key);return v?JSON.parse(v):def;}catch(e){return def;}}
 
+async function ccLoadAll(){
+  var tables=['cc_clients','cc_leads','cc_investors','cc_partners','cc_tasks','cc_decisions','cc_okrs','cc_finance','cc_revenue','cc_grants','cc_posts','cc_invoices','cc_sessions','cc_intel','cc_knowledge','cc_documents','cc_swot','cc_episodes'];
+  var results=await Promise.all(tables.map(function(t){return ccList(t);}));
+  var cache={};tables.forEach(function(t,i){cache[t]=results[i];});
+  clientsData=cache['cc_clients']||[];crmData=cache['cc_leads']||[];
+  investorsData=cache['cc_investors']||[];partnersData=cache['cc_partners']||[];
+  tasksData=cache['cc_tasks']||[];decisionsData=cache['cc_decisions']||[];
+  companyOkrs=cache['cc_okrs']||[];revenueData=cache['cc_revenue']||[];
+  grantsData=cache['cc_grants']||[];postsData=cache['cc_posts']||[];
+  invoicesData=cache['cc_invoices']||[];sessionsData=cache['cc_sessions']||[];
+  documentsData=cache['cc_documents']||[];kbData=cache['cc_knowledge']||[];
+  var epi=cache['cc_episodes']||[];if(epi.length)EPS=epi;
+  var sw=cache['cc_swot']||[];
+  swotData={
+    s:sw.filter(function(x){return x.quadrant==='s';}).map(function(x){return x;}),
+    w:sw.filter(function(x){return x.quadrant==='w';}).map(function(x){return x;}),
+    o:sw.filter(function(x){return x.quadrant==='o';}).map(function(x){return x;}),
+    t:sw.filter(function(x){return x.quadrant==='t';}).map(function(x){return x;})
+  };
+  var finRows=cache['cc_finance']||[];
+  if(finRows.length){finRows.sort(function(a,b){return new Date(b.created_at)-new Date(a.created_at);});var f=finRows[0];financeMetrics={id:f.id,burn:f.burn||0,cash:f.cash||0,mrr:f.mrr||0,target:f.target||25000};}
+  var intel=cache['cc_intel']||[];
+  AGENT_DATA={grants:[],legislation:[],research:[],competitors:[],market:[],daily:null};
+  intel.forEach(function(r){if(r.type==='daily'){AGENT_DATA.daily=r;}else if(AGENT_DATA[r.type]){AGENT_DATA[r.type].unshift(r);}});
+}
+
 function showToast(msg,type){
   var t=document.createElement("div");t.className="toast"+(type?" "+type:"");t.textContent=msg;
   document.body.appendChild(t);setTimeout(function(){t.remove();},3000);
@@ -1089,22 +1126,19 @@ async function doLogout(){
 }
 
 // -- INIT ----------------------------------------------------------------------
-function initApp(){
-  loadPersistedData();
+var currentPage="brief";
+async function initApp(){
   setDate();
   setupNav();
   if(load("dark",false))document.body.classList.add("dark");
+  TEAM.forEach(function(m){m.todos=load("todos_"+m.id,m.todos);});
   navigate("brief");
+  try{await ccLoadAll();}catch(e){console.warn("Supabase load failed:",e);}
+  navigate(currentPage);
   updateAgentBadges();
 }
 
 function loadPersistedData(){
-  clientsData=load("clients",[]);crmData=load("crm",[]);investorsData=load("investors",[]);
-  partnersData=load("partners",[]);invoicesData=load("invoices",[]);tasksData=load("tasks",[]);
-  postsData=load("posts",[]);documentsData=load("docs",[]);decisionsData=load("decisions",[]);
-  companyOkrs=load("company_okrs",[]);revenueData=load("revenue",[]);grantsData=load("grants_pipeline",[]);
-  kbData=load("kb",[]);financeMetrics=load("finance",{burn:0,cash:0,mrr:0,target:25000});
-  swotData=load("swot",{s:[],w:[],o:[],t:[]});AGENT_DATA=load("agent_data",{grants:[],legislation:[],research:[],competitors:[],market:[],daily:null});
   TEAM.forEach(function(m){m.todos=load("todos_"+m.id,m.todos);});
 }
 
@@ -1130,6 +1164,7 @@ var PAGE_TITLES={brief:"Morning Brief",intel:"Research & Grants",competitors:"Co
   team:"Team Hub",settings:"Settings"};
 
 function navigate(page){
+  currentPage=page;
   document.querySelectorAll(".page").forEach(function(p){p.classList.remove("active");});
   document.querySelectorAll(".nav-item").forEach(function(i){i.classList.remove("active");});
   var pg=document.getElementById(page);if(pg)pg.classList.add("active");
@@ -1267,10 +1302,7 @@ function renderCompetitors(){
   renderIntelSection("competitors","competitors-list","comp-count","updates");
 }
 
-function removeIntelItem(key,idx){
-  AGENT_DATA[key].splice(idx,1);persist("agent_data",AGENT_DATA);
-  renderIntel();renderCompetitors();updateAgentBadges();showToast("Removed","");
-}
+async function removeIntelItem(key,idx){var item=AGENT_DATA[key][idx];if(item&&item.id)await ccDelete("cc_intel",item.id);AGENT_DATA[key].splice(idx,1);renderIntel();renderCompetitors();updateAgentBadges();showToast("Removed","");}
 
 function openImportModal(type){
   currentImportType=type;
@@ -1279,7 +1311,7 @@ function openImportModal(type){
   document.getElementById("import-modal").classList.add("open");
 }
 
-function doImportModal(){
+async function doImportModal(){
   var raw=document.getElementById("import-modal-json").value.trim();
   if(!raw)return showToast("Paste JSON first","error");
   try{
@@ -1288,14 +1320,13 @@ function doImportModal(){
     if(!Array.isArray(items)){items=[parsed];}
     var key=currentImportType;
     if(!AGENT_DATA[key])AGENT_DATA[key]=[];
-    items.forEach(function(item){
-      if(!item.date)item.date=today();
-      AGENT_DATA[key].unshift(item);
-    });
-    persist("agent_data",AGENT_DATA);
-    closeModal("import-modal");
-    updateAgentBadges();
-    renderIntel();renderCompetitors();
+    for(var i=0;i<items.length;i++){
+      var item=items[i];if(!item.date)item.date=today();
+      var payload=Object.assign({},item,{type:key});
+      var r=await ccCreate("cc_intel",payload);
+      AGENT_DATA[key].unshift(r||payload);
+    }
+    closeModal("import-modal");updateAgentBadges();renderIntel();renderCompetitors();
     showToast(items.length+" item"+(items.length>1?"s":"")+" imported","success");
   }catch(e){showToast("Invalid JSON: "+e.message,"error");}
 }
@@ -1496,28 +1527,20 @@ function renderStrategy(){
   }
 }
 
-function updateOkrPct(i,val){companyOkrs[i].pct=parseInt(val);persist("company_okrs",companyOkrs);}
-function addSwot(q){var v=prompt("Add to "+q.toUpperCase()+":");if(!v)return;swotData[q].push(v);persist("swot",swotData);renderStrategy();}
-function removeSwot(q,i){swotData[q].splice(i,1);persist("swot",swotData);renderStrategy();}
+async function updateOkrPct(i,val){var pct=parseInt(val);companyOkrs[i].pct=pct;var okr=companyOkrs[i];if(okr&&okr.id)await ccUpdate("cc_okrs",okr.id,{pct:pct});}
+async function addSwot(q){var item=prompt("Add to "+q.toUpperCase()+":");if(!item)return;var r=await ccCreate("cc_swot",{quadrant:q,item:item});if(r){swotData[q].push(r);}renderStrategy();}
+async function removeSwot(q,i){var item=swotData[q][i];if(item&&item.id)await ccDelete("cc_swot",item.id);swotData[q].splice(i,1);renderStrategy();}
 
 // -- DOCUMENTS -----------------------------------------------------------------
 function handleDocUpload(evt){Array.from(evt.target.files).forEach(processDocFile);}
 function handleDocDrop(evt){evt.preventDefault();document.getElementById("drop-zone").classList.remove("dragover");Array.from(evt.dataTransfer.files).forEach(processDocFile);}
 
-function processDocFile(file){
-  var reader=new FileReader();
-  var ext=file.name.split(".").pop().toLowerCase();
-  reader.onload=function(e){
-    var content=ext==="txt"||ext==="md"||ext==="csv"?e.target.result:"[Binary file -- text extraction not available for ."+ext+". AI analysis via Claude API recommended.]";
-    var cat=prompt("Category for "+file.name+"?\n\nOptions: contract, strategy, financial, research, hr, compliance, pitch, other","other")||"other";
-    var doc={id:Date.now(),name:file.name,size:Math.round(file.size/1024),ext:ext,cat:cat,date:today(),content:content};
-    documentsData.unshift(doc);
-    persist("docs",documentsData);
-    renderDocs();
-    showToast(file.name+" uploaded","success");
-  };
-  if(["txt","md","csv"].includes(ext))reader.readAsText(file);
-  else reader.readAsArrayBuffer(file);
+async function processDocFile(file){
+  var cat=prompt("Category for "+file.name+"?\n\nOptions: contract, strategy, financial, research, hr, compliance, pitch, other","other")||"other";
+  showToast("Uploading "+file.name+"...","");
+  var doc=await ccUploadFile(file,cat);
+  if(doc){documentsData.unshift(doc);renderDocs();showToast(file.name+" uploaded","success");}
+  else{showToast("Upload failed","error");}
 }
 
 function searchDocs(){
@@ -1545,18 +1568,25 @@ function renderDocList(docs,q){
   }).join("");
 }
 
-function viewDoc(id){
+async function viewDoc(id){
   var doc=documentsData.find(function(d){return d.id===id;});if(!doc)return;
   document.getElementById("doc-view-title").textContent=doc.name;
-  document.getElementById("doc-view-body").textContent=doc.content||(doc.name+" -- Binary file. Open in your local application.");
+  document.getElementById("doc-view-body").textContent="Loading...";
   document.getElementById("doc-view-modal").classList.add("open");
+  var url=await ccSignedUrl(id);
+  if(url){
+    var ext=(doc.name||"").split(".").pop().toLowerCase();
+    var isText=["txt","md","csv"].includes(ext);
+    if(isText){
+      try{var res=await fetch(url);var text=await res.text();document.getElementById("doc-view-body").textContent=text;}
+      catch(e){document.getElementById("doc-view-body").innerHTML='<a href="'+url+'" target="_blank" style="color:#4DAAAA">Open file</a>';}
+    }else{
+      document.getElementById("doc-view-body").innerHTML='<a href="'+url+'" target="_blank" style="color:#4DAAAA;font-size:15px;text-decoration:none;">Open '+doc.name+'</a><br><br><span style="color:var(--muted);font-size:13px">Opens in new tab. Link expires in 1 hour.</span>';
+    }
+  }else{document.getElementById("doc-view-body").textContent="Unable to load file.";}
 }
 
-function deleteDoc(id){
-  if(!confirm("Delete this document?"))return;
-  documentsData=documentsData.filter(function(d){return d.id!==id;});
-  persist("docs",documentsData);renderDocs();showToast("Deleted","");
-}
+async function deleteDoc(id){if(!confirm("Delete this document?"))return;await ccDelete("cc_documents",id);documentsData=documentsData.filter(function(d){return d.id!==id;});renderDocs();showToast("Deleted","");}
 
 // -- KNOWLEDGE BASE ------------------------------------------------------------
 function renderKb(){
@@ -1629,67 +1659,23 @@ function renderSettings(){
     }).join("")+'</tbody></table>';
 }
 
-function clearAgentData(k){
-  if(!confirm("Clear all "+k+" data?"))return;
-  AGENT_DATA[k]=[];persist("agent_data",AGENT_DATA);renderSettings();updateAgentBadges();showToast("Cleared","");
-}
+async function clearAgentData(k){if(!confirm("Clear all "+k+" data?"))return;var rows=await ccList("cc_intel",{type:k});for(var i=0;i<rows.length;i++){await ccDelete("cc_intel",rows[i].id);}AGENT_DATA[k]=[];renderSettings();updateAgentBadges();showToast("Cleared","");}
 
 function saveSettings(){persist("settings",{q2target:document.getElementById("s-q2target").value});showToast("Settings saved","success");}
 function saveApiKey(){var k=document.getElementById("s-claude-key").value;if(k){persist("claude_key",k);showToast("API key saved","success");}else showToast("Enter a key first","error");}
 
 // -- SAVE HELPERS --------------------------------------------------------------
-function savePost(){
-  var d={platform:v("pm-platform"),date:v("pm-date"),copy:v("pm-copy"),pillar:v("pm-pillar"),stage:v("pm-status")||"draft"};
-  if(!d.copy)return showToast("Add some copy first","error");
-  postsData.unshift(d);persist("posts",postsData);closeModal("post-modal");renderContent();showToast("Post scheduled","success");
-}
-function saveClient(){
-  var d={company:v("cm-company"),contact:v("cm-contact"),email:v("cm-email"),value:v("cm-value"),stage:v("cm-stage")};
-  if(!d.company)return showToast("Company name required","error");
-  clientsData.unshift(d);persist("clients",clientsData);closeModal("client-modal");renderClients();showToast("Client added","success");
-}
-function saveLead(){
-  var d={company:v("lm-company"),contact:v("lm-contact"),value:v("lm-value"),stage:v("lm-stage"),notes:v("lm-notes"),lastContact:today()};
-  if(!d.company)return showToast("Company required","error");
-  crmData.unshift(d);persist("crm",crmData);closeModal("lead-modal");renderCrm();showToast("Lead added","success");
-}
-function saveInvestor(){
-  var d={name:v("im-name"),contact:v("im-contact"),type:v("im-type"),stage:v("im-stage"),amount:v("im-amount"),next:v("im-next"),notes:v("im-notes")};
-  if(!d.name)return showToast("Name required","error");
-  investorsData.unshift(d);persist("investors",investorsData);closeModal("investor-modal");renderInvestor();showToast("Investor added","success");
-}
-function saveDecision(){
-  var d={title:v("dm-title"),date:v("dm-date")||today(),by:v("dm-by"),context:v("dm-context"),outcome:v("dm-outcome")};
-  if(!d.title)return showToast("Decision required","error");
-  decisionsData.unshift(d);persist("decisions",decisionsData);closeModal("decision-modal");renderStrategy();showToast("Decision logged","success");
-}
-function saveCompanyOkr(){
-  var d={obj:v("okr-obj"),kr:v("okr-kr"),owner:v("okr-owner"),status:v("okr-status"),pct:0};
-  if(!d.obj)return showToast("Objective required","error");
-  companyOkrs.push(d);persist("company_okrs",companyOkrs);closeModal("company-okr-modal");renderStrategy();showToast("OKR added","success");
-}
-function saveGrant(){
-  var d={name:v("gm-name"),funder:v("gm-funder"),amount:v("gm-amount"),deadline:v("gm-deadline"),status:v("gm-status"),notes:v("gm-notes")};
-  if(!d.name)return showToast("Name required","error");
-  grantsData.unshift(d);persist("grants_pipeline",grantsData);closeModal("grant-modal");renderFinance();showToast("Grant added","success");
-}
-function saveKbItem(){
-  var d={type:v("kb-type"),title:v("kb-title"),body:v("kb-body"),owner:v("kb-owner"),cat:v("kb-cat"),date:today()};
-  if(!d.title)return showToast("Title required","error");
-  kbData.unshift(d);persist("kb",kbData);closeModal("kb-modal");renderKb();showToast("Saved","success");
-}
-function removeKbItem(i){kbData.splice(i,1);persist("kb",kbData);renderKb();}
-function saveFinance(){
-  financeMetrics.burn=parseInt(v("fm-burn"))||0;financeMetrics.cash=parseInt(v("fm-cash"))||0;
-  financeMetrics.mrr=parseInt(v("fm-mrr"))||0;financeMetrics.target=parseInt(v("fm-target"))||25000;
-  persist("finance",financeMetrics);closeModal("finance-modal");renderFinance();showToast("Finance updated","success");
-}
-function saveRevenue(){
-  var d={source:v("rm-source"),amount:parseInt(v("rm-amount"))||0,type:v("rm-type"),date:v("rm-date")||today()};
-  if(!d.source)return showToast("Source required","error");
-  revenueData.unshift(d);financeMetrics.mrr=revenueData.filter(function(r){return r.type==="Subscription";}).reduce(function(s,r){return s+r.amount;},0);
-  persist("revenue",revenueData);persist("finance",financeMetrics);closeModal("revenue-modal");renderFinance();showToast("Revenue added","success");
-}
+async function savePost(){var d={platform:v("pm-platform"),scheduled_date:v("pm-date")||null,copy:v("pm-copy"),pillar:v("pm-pillar"),status:v("pm-status")||"draft"};if(!d.copy)return showToast("Add some copy first","error");var r=await ccCreate("cc_posts",d);if(r)postsData.unshift(r);closeModal("post-modal");renderContent();showToast("Post scheduled","success");}
+async function saveClient(){var d={company:v("cm-company"),contact:v("cm-contact"),email:v("cm-email"),value:v("cm-value"),stage:v("cm-stage")};if(!d.company)return showToast("Company name required","error");var r=await ccCreate("cc_clients",d);if(r)clientsData.unshift(r);closeModal("client-modal");renderClients();showToast("Client added","success");}
+async function saveLead(){var d={company:v("lm-company"),contact:v("lm-contact"),value:v("lm-value"),stage:v("lm-stage"),notes:v("lm-notes"),last_contact:today()};if(!d.company)return showToast("Company required","error");var r=await ccCreate("cc_leads",d);if(r)crmData.unshift(r);closeModal("lead-modal");renderCrm();showToast("Lead added","success");}
+async function saveInvestor(){var d={name:v("im-name"),contact:v("im-contact"),type:v("im-type"),stage:v("im-stage"),amount:v("im-amount"),next_action:v("im-next"),notes:v("im-notes")};if(!d.name)return showToast("Name required","error");var r=await ccCreate("cc_investors",d);if(r)investorsData.unshift(r);closeModal("investor-modal");renderInvestor();showToast("Investor added","success");}
+async function saveDecision(){var d={title:v("dm-title"),decision_date:v("dm-date")||today(),made_by:v("dm-by"),context:v("dm-context"),outcome:v("dm-outcome")};if(!d.title)return showToast("Decision required","error");var r=await ccCreate("cc_decisions",d);if(r)decisionsData.unshift(r);closeModal("decision-modal");renderStrategy();showToast("Decision logged","success");}
+async function saveCompanyOkr(){var d={objective:v("okr-obj"),key_result:v("okr-kr"),owner:v("okr-owner"),status:v("okr-status")||"on-track",pct:0};if(!d.objective)return showToast("Objective required","error");var r=await ccCreate("cc_okrs",d);if(r)companyOkrs.push(r);closeModal("company-okr-modal");renderStrategy();showToast("OKR added","success");}
+async function saveGrant(){var d={name:v("gm-name"),funder:v("gm-funder"),amount:v("gm-amount"),deadline:v("gm-deadline")||null,status:v("gm-status")||"identified",notes:v("gm-notes")};if(!d.name)return showToast("Name required","error");var r=await ccCreate("cc_grants",d);if(r)grantsData.unshift(r);closeModal("grant-modal");renderFinance();showToast("Grant added","success");}
+async function saveKbItem(){var d={type:v("kb-type"),title:v("kb-title"),body:v("kb-body"),owner:v("kb-owner"),category:v("kb-cat")};if(!d.title)return showToast("Title required","error");var r=await ccCreate("cc_knowledge",d);if(r)kbData.unshift(r);closeModal("kb-modal");renderKb();showToast("Saved","success");}
+async function removeKbItem(i){var item=kbData[i];if(item&&item.id)await ccDelete("cc_knowledge",item.id);kbData.splice(i,1);renderKb();}
+async function saveFinance(){financeMetrics.burn=parseInt(v("fm-burn"))||0;financeMetrics.cash=parseInt(v("fm-cash"))||0;financeMetrics.mrr=parseInt(v("fm-mrr"))||0;financeMetrics.target=parseInt(v("fm-target"))||25000;if(financeMetrics.id){await ccUpdate("cc_finance",financeMetrics.id,financeMetrics);}else{var r=await ccCreate("cc_finance",financeMetrics);if(r)financeMetrics.id=r.id;}closeModal("finance-modal");renderFinance();showToast("Finance updated","success");}
+async function saveRevenue(){var d={source:v("rm-source"),amount:parseInt(v("rm-amount"))||0,type:v("rm-type"),start_date:v("rm-date")||today()};if(!d.source)return showToast("Source required","error");var r=await ccCreate("cc_revenue",d);if(r){revenueData.unshift(r);financeMetrics.mrr=revenueData.filter(function(x){return x.type==="Subscription";}).reduce(function(s,x){return s+(x.amount||0);},0);if(financeMetrics.id){await ccUpdate("cc_finance",financeMetrics.id,{mrr:financeMetrics.mrr});}else{var fr=await ccCreate("cc_finance",financeMetrics);if(fr)financeMetrics.id=fr.id;}}closeModal("revenue-modal");renderFinance();showToast("Revenue added","success");}
 function v(id){var e=document.getElementById(id);return e?e.value:"";}
 
 // -- MODAL OPENERS -------------------------------------------------------------
@@ -1717,13 +1703,14 @@ function openKbModal(type){
 function openPartnerModal(){showToast("Partner management coming -- add via Settings","");}
 function openInvoiceModal(){showToast("Invoice creation coming soon","");}
 function openSessionModal(){showToast("Session booking coming soon","");}
-function openTaskModal(){
+async function openTaskModal(){
   var assignee=prompt("Assignee (Lewis / Dean / Alan / Calum / Phil):");if(!assignee)return;
   var title=prompt("Task title:");if(!title)return;
   var priority=prompt("Priority (Critical / High / Medium / Low):")||"Medium";
-  var due=prompt("Due date (YYYY-MM-DD):") ||"";
-  tasksData.push({title:title,assignee:assignee,priority:priority,dueDate:due,stage:"todo"});
-  persist("tasks",tasksData);renderTasks();showToast("Task added","success");
+  var due=prompt("Due date (YYYY-MM-DD):")||"";
+  var d={title:title,assignee:assignee,priority:priority.toLowerCase(),due_date:due||null,stage:"todo"};
+  var r=await ccCreate("cc_tasks",d);if(r)tasksData.push(r);
+  renderTasks();showToast("Task added","success");
 }
 function openComplianceModal(){showToast("Use Documents page to upload compliance docs","");}
 function openEpisodeModal(){showToast("Episode creation coming soon","");}
