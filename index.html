@@ -62,7 +62,7 @@ body.dark{--bg:#0f172a;--card:#1e293b;--text:#f1f5f9;--muted:#94a3b8;--border:#3
 .page{display:none;} .page.active{display:block;}
 
 /* CARDS & LAYOUT */
-.page-header{margin-bottom:20px;}
+.page-header{margin-bottom:16px;}
 .page-header h1{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--text);}
 .page-header p{font-size:13px;color:var(--muted);margin-top:3px;}
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
@@ -453,7 +453,7 @@ body.dark{--bg:#0f172a;--card:#1e293b;--text:#f1f5f9;--muted:#94a3b8;--border:#3
 
 <!-- DASHBOARD -->
 <div class="page" id="dashboard">
-  <div class="page-header"><h1>Dashboard</h1><p>Business health at a glance</p></div>
+  <div class="page-header"><p>Business health at a glance</p></div>
   <div class="grid-4" style="margin-bottom:20px;" id="dash-stats">
     <div class="stat-card"><div class="stat-value">GBP0</div><div class="stat-label">Monthly Revenue</div><div class="stat-delta flat">Target: GBP25,000</div></div>
     <div class="stat-card"><div class="stat-value">0</div><div class="stat-label">Active Clients</div><div class="stat-delta flat">Pipeline: 0</div></div>
@@ -475,7 +475,7 @@ body.dark{--bg:#0f172a;--card:#1e293b;--text:#f1f5f9;--muted:#94a3b8;--border:#3
 
 <!-- CLIENTS -->
 <div class="page" id="clients">
-  <div class="page-header"><h1>Clients</h1><p>Active client accounts and onboarding pipeline</p></div>
+  <div class="page-header"><p>Active client accounts and onboarding pipeline</p></div>
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
     <span class="card-title" id="clients-count">0 active clients</span>
     <button class="topbar-btn primary" onclick="openClientModal()">+ Add Client</button>
@@ -486,7 +486,7 @@ body.dark{--bg:#0f172a;--card:#1e293b;--text:#f1f5f9;--muted:#94a3b8;--border:#3
 
 <!-- SALES PIPELINE -->
 <div class="page" id="crm">
-  <div class="page-header"><h1>Sales Pipeline</h1><p>Leads, deals and enterprise opportunities</p></div>
+  <div class="page-header"><p>Leads, deals and enterprise opportunities</p></div>
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
     <span class="card-title" id="crm-count">0 leads in pipeline</span>
     <button class="topbar-btn primary" onclick="openLeadModal()">+ Add Lead</button>
@@ -497,7 +497,7 @@ body.dark{--bg:#0f172a;--card:#1e293b;--text:#f1f5f9;--muted:#94a3b8;--border:#3
 
 <!-- INVESTOR RELATIONS -->
 <div class="page" id="investor">
-  <div class="page-header"><h1>Investor Relations</h1><p>Funding pipeline, investor CRM, round tracking</p></div>
+  <div class="page-header"><p>Funding pipeline, investor CRM, round tracking</p></div>
   <div class="tab-bar">
     <button class="tab-btn active" onclick="switchTab('inv','inv-pipeline',this)">Investor Pipeline</button>
     <button class="tab-btn" onclick="switchTab('inv','inv-round',this)">Round Tracker</button>
@@ -547,7 +547,7 @@ body.dark{--bg:#0f172a;--card:#1e293b;--text:#f1f5f9;--muted:#94a3b8;--border:#3
 
 <!-- PARTNER NETWORK -->
 <div class="page" id="partners">
-  <div class="page-header"><h1>Partner Network</h1><p>Strategic, channel and delivery partnerships</p></div>
+  <div class="page-header"><p>Strategic, channel and delivery partnerships</p></div>
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
     <span class="card-title">0 partners</span>
     <button class="topbar-btn primary" onclick="openPartnerModal()">+ Add Partner</button>
@@ -557,7 +557,7 @@ body.dark{--bg:#0f172a;--card:#1e293b;--text:#f1f5f9;--muted:#94a3b8;--border:#3
 
 <!-- INVOICING -->
 <div class="page" id="invoicing">
-  <div class="page-header"><h1>Invoicing</h1><p>Client invoices and payment tracking</p></div>
+  <div class="page-header"><p>Client invoices and payment tracking</p></div>
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
     <span class="card-title" id="inv-total">GBP0 outstanding</span>
     <button class="topbar-btn primary" onclick="openInvoiceModal()">+ Create Invoice</button>
@@ -567,7 +567,7 @@ body.dark{--bg:#0f172a;--card:#1e293b;--text:#f1f5f9;--muted:#94a3b8;--border:#3
 
 <!-- SESSIONS -->
 <div class="page" id="sessions">
-  <div class="page-header"><h1>Sessions</h1><p>Wellness sessions, workshops and programme delivery</p></div>
+  <div class="page-header"><p>Wellness sessions, workshops and programme delivery</p></div>
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
     <span class="card-title">0 sessions scheduled</span>
     <button class="topbar-btn primary" onclick="openSessionModal()">+ Book Session</button>
@@ -577,30 +577,17 @@ body.dark{--bg:#0f172a;--card:#1e293b;--text:#f1f5f9;--muted:#94a3b8;--border:#3
 
 <!-- TASKS -->
 <div class="page" id="tasks">
-  <div class="page-header"><h1>Tasks</h1><p>Company-wide task management</p></div>
-  <div style="display:flex;justify-content:space-between" class="swot-items"></div><button class="topbar-btn" style="margin-top:10px;" onclick="addSwot('o')">+ Add</button></div>
-      <div class="swot-cell t"><h3>Threats</h3><div id="swot-t" class="swot-items"></div><button class="topbar-btn" style="margin-top:10px;" onclick="addSwot('t')">+ Add</button></div>
-    </div>
+  <div class="page-header"><p>Company-wide task management</p></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+    <span class="card-title" id="tasks-count">0 tasks</span>
+    <button class="topbar-btn primary" onclick="openTaskModal()">+ Add Task</button>
   </div>
-  <div id="strat-decisions" class="tab-panel">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-      <span class="card-title">Decision Log</span>
-      <button class="topbar-btn primary" onclick="openDecisionModal()">+ Log Decision</button>
-    </div>
-    <div id="decisions-list"><div class="empty"><svg class="empty-icon" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><h3>No decisions logged</h3><p>Record key decisions with context and rationale. This becomes your institutional memory.</p></div></div>
-  </div>
-  <div id="strat-learnings" class="tab-panel">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-      <span class="card-title">Learnings Library</span>
-      <button class="topbar-btn primary" onclick="openLearningModal()">+ Add Learning</button>
-    </div>
-    <div id="learnings-list"><div class="empty"><svg class="empty-icon" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><h3>No learnings yet</h3><p>Capture what worked, what did not, and why. Linked to real outcomes.</p></div></div>
-  </div>
+  <div class="kanban-board" id="tasks-kanban"></div>
 </div>
 
 <!-- DOCUMENTS -->
 <div class="page" id="documents">
-  <div class="page-header"><h1>Document Library</h1><p>Upload, search and organise all VYVE documents. Full-text search across your entire library.</p></div>
+  <div class="page-header"><p>Upload, search and organise all VYVE documents. Full-text search across your entire library.</p></div>
   <div class="search-bar">
     <input type="text" id="doc-search" placeholder="Search documents..." oninput="searchDocs()">
     <select id="doc-cat-filter" onchange="searchDocs()" style="padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:var(--card);color:var(--text);font-family:inherit;">
@@ -627,7 +614,7 @@ body.dark{--bg:#0f172a;--card:#1e293b;--text:#f1f5f9;--muted:#94a3b8;--border:#3
 
 <!-- KNOWLEDGE BASE -->
 <div class="page" id="knowledge">
-  <div class="page-header"><h1>Knowledge Base</h1><p>SOPs, playbooks, templates and company reference documents</p></div>
+  <div class="page-header"><p>SOPs, playbooks, templates and company reference documents</p></div>
   <div class="tab-bar">
     <button class="tab-btn active" onclick="switchTab('kb','kb-sops',this)">SOPs</button>
     <button class="tab-btn" onclick="switchTab('kb','kb-playbooks',this)">Playbooks</button>
@@ -659,7 +646,7 @@ body.dark{--bg:#0f172a;--card:#1e293b;--text:#f1f5f9;--muted:#94a3b8;--border:#3
 
 <!-- TEAM HUB -->
 <div class="page" id="team">
-  <div class="page-header"><h1>Team Hub</h1><p>OKRs, targets, responsibilities and performance tracking</p></div>
+  <div class="page-header"><p>OKRs, targets, responsibilities and performance tracking</p></div>
   <div class="member-grid" id="member-grid"></div>
   <div id="member-detail"></div>
 </div>
@@ -667,7 +654,7 @@ body.dark{--bg:#0f172a;--card:#1e293b;--text:#f1f5f9;--muted:#94a3b8;--border:#3
 
 <!-- SETTINGS -->
 <div class="page" id="settings">
-  <div class="page-header"><h1>Settings</h1><p>System configuration and agent data management</p></div>
+  <div class="page-header"><p>System configuration and agent data management</p></div>
   <div class="tab-bar">
     <button class="tab-btn active" onclick="switchTab('set','set-general',this)">General</button>
     <button class="tab-btn" onclick="switchTab('set','set-agents',this)">Agent Sync</button>
