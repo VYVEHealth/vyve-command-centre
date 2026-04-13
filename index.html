@@ -942,88 +942,7 @@ var TEAM=[
 </script>
 
 
-<!-- DECISION MODAL -->
 
-<!-- COMPANY OKR MODAL -->
-
-<!-- IMPORT MODAL -->
-
-<!-- GRANT MODAL -->
-
-<!-- KB MODAL -->
-
-<!-- DOC VIEW MODAL -->
-
-<!-- FINANCE MODAL -->
-
-<!-- REVENUE MODAL -->
-
-<script>
-// -- DATA ----------------------------------------------------------------------
-var clientsData=[], crmData=[], investorsData=[], partnersData=[], invoicesData=[];
-var sessionsData=[], tasksData=[], complianceData=[], postsData=[], documentsData=[];
-var decisionsData=[], companyOkrs=[], revenueData=[], grantsData=[], kbData=[];
-var financeMetrics={burn:0,cash:0,mrr:0,target:25000};
-var swotData={s:[],w:[],o:[],t:[]};
-var currentImportType="grants";
-var chartInst={};
-
-// Agent output stores
-var AGENT_DATA={grants:[],legislation:[],research:[],competitors:[],market:[],daily:null};
-
-// TEAM
-var TEAM=[
-  {id:"lewis",initials:"LV",name:"Lewis Vines",role:"Chief Executive Officer",color:"#006D6F",
-   resp:["Company Strategy","Investor Relations","Sales & Partnerships","Brand & Marketing","Product Vision","Operations"],
-   okrs:[
-     {obj:"Scale revenue to GBP25k MRR",kr:"Secure 3 enterprise + 5 SME clients",pct:10,status:"at-risk"},
-     {obj:"Raise Pre-Seed funding round",kr:"Complete 20 investor meetings, secure GBP250k",pct:15,status:"on-track"},
-     {obj:"Build 5-star neam culture",kr:"All team scoring 8+/10 satisfaction quarterly",pct:60,status:"on-track"}
-   ],
-   targets:[{m:"Q2 MRR",curr:"GBP0",tgt:"GBP25,000"},{m:"Investor Meetings",curr:"0",tgt:"20"},{m:"LinkedIn Followers",curr:"342",tgt:"1,000"}],
-   todos:["Finalise investor deck","Review Q2 OKR progress","Brief Alan on enterprise strategy","Book speaking slot -- wellbeing summit"]
-  },
-  {id:"dean",initials:"DB",name:"Dean Brown",role:"Chief Technology Officer",color:"#2563EB",
-   resp:["Product Architecture","Platform Development","Data & Security","AI Integration","Technical Roadmap","DevOps"],
-   okrs:[
-     {obj:"Ship enterprise-ready platform",kr:"Complete 12 priority builds on roadmap",pct:40,status:"on-track"},
-     {obj:"Achieve platform reliability 99.9% uptime",kr:"Zero critical incidents in Q2",pct:80,status:"on-track"},
-     {obj:"Build AI-powered features",kr:"Launch 3 AI features by end of Q2",pct:20,status:"at-risk"}
-   ],
-   targets:[{m:"Features Shipped",curr:"5",tgt:"12"},{m:"Bug Resolution Time",curr:"2d",tgt:"<24h"},{m:"Test Coverage",curr:"60%",tgt:"85%"}],
-   todos:["Complete SSO integration","Fix mobile responsiveness","Review GDPR data handling","Set up staging environment"]
-  },
-  {id:"alan",initials:"AB",name:"Alan Bird",role:"Chief Commercial Officer",color:"#D97706",
-   resp:["Revenue Growth","Enterprise Sales","Partnerships","Client Success","Pricing Strategy","Market Positioning"],
-   okrs:[
-     {obj:"Land first enterprise client",kr:"Sign contract worth GBP20k+ by end Q2",pct:20,status:"at-risk"},
-     {obj:"Build partnership ecosystem",kr:"Sign 3 strategic channel partners",pct:10,status:"at-risk"},
-     {obj:"Develop repeatable sales process",kr:"Document and test sales playbook with 10 prospects",pct:30,status:"on-track"}
-   ],
-   targets:[{m:"Enterprise Meetings",curr:"2",tgt:"10"},{m:"Pipeline Value",curr:"GBP0",tgt:"GBP150k"},{m:"Partners Signed",curr:"0",tgt:"3"}],
-   todos:["Reach out to 5 HR Directors","Prepare enterprise proposal template","Map out referral partner list","Review competitor pricing"]
-  },
-  {id:"calum",initials:"CD",name:"Calum Denham",role:"Head of Health",color:"#0FA878",
-   resp:["Programme Design","Physical Wellbeing","Nutrition & Sleep","Health Outcomes","Practitioner Network","Content -- Physical Pillar"],
-   okrs:[
-     {obj:"Design market-leading wellbeing programmes",kr:"3 modular programmes ready for enterprise delivery",pct:45,status:"on-track"},
-     {obj:"Build practitioner network",kr:"5 vetted practitioners available across UK",pct:30,status:"on-track"},
-     {obj:"Demonstrate measurable health outcomes",kr:"Pilot programme with 20+ participants showing 15% improvement",pct:0,status:"at-risk"}
-   ],
-   targets:[{m:"Programmes Ready",curr:"1",tgt:"3"},{m:"Practitioners",curr:"2",tgt:"5"},{m:"Pilot Participants",curr:"0",tgt:"20"}],
-   todos:["Finalise nutrition programme module","Research sleep tracking integrations","Write physical wellbeing content series","Review programme pricing"]
-  },
-  {id:"phil",initials:"PH",name:"Phil Hurgood",role:"Mental Health Lead",color:"#7C3AED",
-   resp:["Mental Health Strategy","Psychological Safety","Resilience Programmes","Clinical Governance","Content -- Mental Pillar","Regulatory Compliance"],
-   okrs:[
-     {obj:"Develop clinical-grade mental health offer",kr:"Programme meets NICE guidelines, reviewed by clinical advisor",pct:35,status:"on-track"},
-     {obj:"Build mental health content library",kr:"20 evidence-based resources published",pct:25,status:"on-track"},
-     {obj:"Establish governance framework",kr:"Clinical governance document approved and adopted",pct:50,status:"on-track"}
-   ],
-   targets:[{m:"Resources Published",curr:"5",tgt:"20"},{m:"Governance Docs",curr:"1",tgt:"3"},{m:"Clinical Review",curr:"Pending",tgt:"Complete"}],
-   todos:["Finalise clinical governance doc","Write resilience programme outline","Research trauma-informed workplace practices","Set up EAP referral pathway"]
-  }
-];
 var teamTodos={};
 var currentMember="lewis";
 
@@ -1344,7 +1263,6 @@ function updateAgentBadges(){
   var gc=(AGENT_DATA.grants||[]).length;
   var bc=document.getElementById("badge-intel");
   if(bc){bc.textContent=gc;bc.style.display=gc?"inline":"none";}
-        loadAllLiveData();
   var cc=(AGENT_DATA.competitors||[]).length;
   var bc2=document.getElementById("badge-comp");
   if(bc2){bc2.textContent=cc;bc2.style.display=cc?"inline":"none";}
