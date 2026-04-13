@@ -246,6 +246,10 @@ body.dark{--bg:#0f172a;--card:#1e293b;--text:#f1f5f9;--muted:#94a3b8;--border:#3
   .member-grid{grid-template-columns:repeat(3,1fr);}
 }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.js"></script>
+<script>
+  const _supa = supabase.createClient('https://ixjfklpckgxrwjlfsaaz.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg');
+</script>
 </head>
 <body>
 
@@ -1072,20 +1076,32 @@ function switchTab(group,panelId,btn){
 }
 
 // -- AUTH ----------------------------------------------------------------------
-function doLogin(){
-  var e=document.getElementById("loginEmail").value;
+async function doLogin(){
+  var e=document.getElementById("loginEmail").value.trim();
   var p=document.getElementById("loginPass").value;
-  if(e==="admin@vyve.co.uk"&&p==="vyve2026"){
+  var btn=document.querySelector(".login-btn");
+  var err=document.getElementById("loginErr");
+  err.style.display="none";
+  btn.textContent="Signing in...";
+  btn.disabled=true;
+  var {data,error}=await _supa.auth.signInWithPassword({email:e,password:p});
+  btn.textContent="Sign In";
+  btn.disabled=false;
+  if(error){
+    err.textContent="Invalid email or password.";
+    err.style.display="block";
+  } else {
     document.getElementById("loginScreen").style.display="none";
     document.getElementById("appShell").style.display="flex";
     initApp();
-  } else {
-    document.getElementById("loginErr").style.display="block";
   }
 }
-function doLogout(){
+async function doLogout(){
+  await _supa.auth.signOut();
   document.getElementById("appShell").style.display="none";
   document.getElementById("loginScreen").style.display="flex";
+  document.getElementById("loginEmail").value="";
+  document.getElementById("loginPass").value="";
 }
 
 // -- INIT ----------------------------------------------------------------------
@@ -1754,7 +1770,20 @@ function toggleDark(){
 function renderDashboard(){}  // static content, no dynamic needed
 
 // -- START ---------------------------------------------------------------------
-window.addEventListener("load",function(){
+window.addEventListener("load",async function(){
+  // Check for existing Supabase session
+  var {data:{session}}=await _supa.auth.getSession();
+  if(session){
+    document.getElementById("loginScreen").style.display="none";
+    document.getElementById("appShell").style.display="flex";
+    initApp();
+    return;
+  }
+  // No session - show login
+  if(localStorage.getItem("vyve_dark")==="1")document.body.classList.add("dark");
+  // Original load continues below (dark mode etc)
+  void 0;});
+  window.addEventListener("load_unused_",function(){
   // Allow pressing Enter on login
   document.getElementById("loginPass").addEventListener("keydown",function(e){if(e.key==="Enter")doLogin();});
 });
