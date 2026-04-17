@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"/>
+<meta name="robots" content="noindex,nofollow"/>
+<title>VYVE Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+<style>
+  /* ---------- VYVE tokens (mirrors theme.css) ---------- */
+  :root{
+    --teal:#1B7878; --teal-lt:#4DAAAA; --teal-xl:#8FD4D4; --teal-dark:#0D2B2B;
+    --gold:#C9A84C; --success:#2D9E4A; --warning:#E09B3D; --danger:#E06060;
+    --font-head:'Playfair Display',serif; --font-body:'DM Sans','Inter',system-ui,sans-serif;
+  }
+  html[data-theme="dark"]{
+    --bg:#0A1F1F; --surface:#0F2A2A; --surface-2:#123333; --border:rgba(255,255,255,.08);
+    --text:#EAF2F2; --text-muted:#8FAAAA; --accent:#4DAAAA; --on-accent:#0A1F1F;
+  }
+  html[data-theme="light"]{
+    --bg:#F6F8F8; --surface:#FFFFFF; --surface-2:#EEF3F3; --border:rgba(0,0,0,.08);
+    --text:#0D2B2B; --text-muted:#5A7575; --accent:#1B7878; --on-accent:#FFFFFF;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:14px;line-height:1.5}
+  h1,h2,h3{font-family:var(--font-head);font-weight:600;margin:0}
+  a{color:var(--accent);text-decoration:none}
+  button{font-family:inherit;cursor:pointer}
+
+  /* ---------- Login screen ---------- */
+  #login{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg);z-index:100}
+  #login .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:32px;width:min(400px,90vw);box-shadow:0 20px 60px rgba(0,0,0,.2)}
+  #login h1{font-size:28px;margin-bottom:6px;color:var(--accent)}
+  #login p{color:var(--text-muted);margin:0 0 20px 0}
+  #login input{width:100%;padding:12px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:14px;margin-bottom:10px}
+  #login input:focus{outline:2px solid var(--accent);outline-offset:-1px}
+  #login button{width:100%;padding:12px;border-radius:8px;border:0;background:var(--accent);color:var(--on-accent);font-weight:600;font-size:14px}
+  #login button:disabled{opacity:.5;cursor:wait}
+  #login .err{color:var(--danger);font-size:13px;margin-top:10px;min-height:18px}
+  #login .hint{color:var(--text-muted);font-size:12px;margin-top:14px;text-align:center}
+
+  /* ---------- App shell ---------- */
+  #app{display:none;min-height:100vh}
+  #app.ready{display:grid;grid-template-columns:220px 1fr;grid-template-rows:auto 1fr}
+  header{grid-column:1/-1;padding:14px 24px;border-bottom:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:space-between}
+  header .brand{display:flex;align-items:center;gap:10px}
+  header .brand .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 14px var(--accent)}
+  header .brand h1{font-size:20px;color:var(--text);font-family:var(--font-head)}
+  header .meta{display:flex;align-items:center;gap:14px;color:var(--text-muted);font-size:13px}
+  header .meta .email{color:var(--text)}
+  header .meta button{padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:12px}
+  header .meta button:hover{background:var(--surface-2)}
+  nav.side{padding:16px 12px;background:var(--surface);border-right:1px solid var(--border);min-height:calc(100vh - 56px)}
+  nav.side .tab{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:var(--text-muted);cursor:pointer;margin-bottom:2px;font-weight:500;font-size:13px;border:0;background:transparent;width:100%;text-align:left}
+  nav.side .tab:hover{background:var(--surface-2);color:var(--text)}
+  nav.side .tab.active{background:var(--teal);color:#fff}
+  nav.side .sec{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);padding:14px 12px 6px 12px}
+  nav.side .theme-toggle{margin-top:auto;padding:8px 12px;color:var(--text-muted);font-size:12px;border:0;background:transparent;cursor:pointer;text-align:left;width:100%;border-radius:8px}
+  nav.side .theme-toggle:hover{background:var(--surface-2)}
+
+  main{padding:24px;overflow-x:hidden}
+  .panel{display:none}
+  .panel.active{display:block}
+
+  /* ---------- KPI tiles ---------- */
+  .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:24px}
+  .kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px}
+  .kpi .label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:8px}
+  .kpi .value{font-family:var(--font-head);font-size:32px;font-weight:600;line-height:1;color:var(--text)}
+  .kpi .sub{font-size:12px;color:var(--text-muted);margin-top:6px}
+  .kpi.risk .value{color:var(--danger)}
+  .kpi.support .value{color:var(--warning)}
+  .kpi.ok .value{color:var(--success)}
+
+  /* ---------- Tables ---------- */
+  .tbl-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+  .tbl-head{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .tbl-head h2{font-size:16px;color:var(--text)}
+  .tbl-head .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .tbl-head input,.tbl-head select{padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:13px}
+  .tbl-head input{min-width:220px}
+  .tbl-head .btn{padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:12px;cursor:pointer}
+  .tbl-head .btn:hover{background:var(--teal);color:#fff;border-color:var(--teal)}
+  table{width:100%;border-collapse:collapse}
+  th{text-align:left;padding:10px 16px;background:var(--surface-2);color:var(--text-muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.06em;position:sticky;top:0;cursor:pointer;user-select:none}
+  th:hover{color:var(--text)}
+  th.sorted{color:var(--accent)}
+  td{padding:12px 16px;border-top:1px solid var(--border);font-size:13px}
+  tr:hover td{background:var(--surface-2);cursor:pointer}
+  td.num{font-variant-numeric:tabular-nums;text-align:right}
+  .pill{display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.02em}
+  .pill.risk{background:rgba(224,96,96,.15);color:var(--danger)}
+  .pill.support{background:rgba(224,155,61,.15);color:var(--warning)}
+  .pill.active{background:rgba(45,158,74,.15);color:var(--success)}
+  .pill.persona{background:rgba(77,170,170,.15);color:var(--teal-lt)}
+  .pill.muted{background:var(--surface-2);color:var(--text-muted)}
+  .pagination{padding:10px 16px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);gap:8px;font-size:13px;color:var(--text-muted)}
+  .pagination button{padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:12px;cursor:pointer}
+  .pagination button:disabled{opacity:.4;cursor:not-allowed}
+  .pagination .pg{display:flex;gap:6px}
+
+  .score-bar{display:inline-block;width:50px;height:6px;background:var(--surface-2);border-radius:3px;overflow:hidden;vertical-align:middle;margin-right:8px}
+  .score-bar>div{height:100%;background:var(--accent)}
+  .score-bar.low>div{background:var(--danger)}
+  .score-bar.mid>div{background:var(--warning)}
+
+  /* ---------- Chart ---------- */
+  .chart-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px}
+  .chart-card h2{font-size:16px;margin-bottom:12px;color:var(--text)}
+  .chart-card canvas{max-height:280px}
+
+  /* ---------- Modal ---------- */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:200;padding:20px;overflow-y:auto}
+  .modal-overlay.open{display:flex}
+  .modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;width:min(960px,100%);max-height:92vh;display:flex;flex-direction:column;overflow:hidden}
+  .modal-head{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+  .modal-head h2{font-size:20px;color:var(--text);margin-bottom:4px}
+  .modal-head .sub{color:var(--text-muted);font-size:13px}
+  .modal-head .close{background:transparent;border:0;color:var(--text-muted);font-size:24px;cursor:pointer;padding:0;line-height:1}
+  .modal-tabs{display:flex;gap:2px;padding:0 22px;border-bottom:1px solid var(--border);overflow-x:auto}
+  .modal-tabs button{padding:10px 14px;border:0;background:transparent;color:var(--text-muted);font-size:13px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+  .modal-tabs button.active{color:var(--accent);border-bottom-color:var(--accent)}
+  .modal-body{padding:20px 22px;overflow-y:auto;flex:1}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:13px;margin-bottom:18px}
+  .kv dt{color:var(--text-muted);font-weight:500}
+  .kv dd{margin:0;color:var(--text);word-break:break-word}
+  .section-title{font-family:var(--font-head);font-size:15px;margin:18px 0 8px 0;color:var(--text)}
+  .timeline{border-left:2px solid var(--border);padding-left:14px;margin-left:8px}
+  .timeline .evt{position:relative;padding-bottom:12px;font-size:13px}
+  .timeline .evt::before{content:'';position:absolute;left:-19px;top:5px;width:8px;height:8px;border-radius:50%;background:var(--accent)}
+  .timeline .evt .t{color:var(--text-muted);font-size:11px}
+  .timeline .evt .l{color:var(--text);font-weight:500}
+
+  /* ---------- Activity feed ---------- */
+  .feed{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:4px 0}
+  .feed .row{padding:12px 16px;border-top:1px solid var(--border);display:flex;justify-content:space-between;gap:12px;font-size:13px}
+  .feed .row:first-child{border-top:0}
+  .feed .row:hover{background:var(--surface-2);cursor:pointer}
+  .feed .row .left{display:flex;gap:10px;align-items:center}
+  .feed .row .type{display:inline-block;width:80px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);font-weight:600}
+  .feed .row .label{color:var(--text)}
+  .feed .row .who{color:var(--text-muted);font-size:12px}
+  .feed .row .when{color:var(--text-muted);font-size:12px}
+
+  /* ---------- Misc ---------- */
+  .empty{padding:40px;text-align:center;color:var(--text-muted)}
+  .spinner{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;display:inline-block;vertical-align:middle}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loading-overlay{position:absolute;inset:0;background:rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;border-radius:12px;z-index:5}
+  .rel{position:relative}
+  .err-banner{background:rgba(224,96,96,.1);border:1px solid rgba(224,96,96,.3);color:var(--danger);padding:10px 14px;border-radius:8px;margin-bottom:16px;font-size:13px}
+
+  /* ---------- Responsive ---------- */
+  @media(max-width:900px){
+    #app.ready{grid-template-columns:1fr}
+    nav.side{position:fixed;bottom:0;left:0;right:0;display:flex;min-height:auto;padding:8px;z-index:10;overflow-x:auto;border-top:1px solid var(--border);border-right:0}
+    nav.side .tab{flex:0 0 auto;padding:8px 14px;font-size:12px;margin-bottom:0}
+    nav.side .sec,nav.side .theme-toggle{display:none}
+    main{padding:16px;padding-bottom:70px}
+    .tbl-head input{min-width:140px;flex:1}
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="card">
+    <h1>VYVE Admin</h1>
+    <p>Internal dashboard. Authorised emails only.</p>
+    <input id="log-email" type="email" placeholder="you@example.com" autocomplete="username"/>
+    <input id="log-pass"  type="password" placeholder="password" autocomplete="current-password"/>
+    <button id="log-btn" type="button">Sign in</button>
+    <div id="log-err" class="err"></div>
+    <div class="hint">Access controlled by <code>admin_users</code> allowlist + Supabase Auth. Service role keys never leave the Edge Function.</div>
+  </div>
+</div>
+
+<!-- APP SHELL -->
+<div id="app">
+  <header>
+    <div class="brand"><span class="dot"></span><h1>VYVE Admin</h1></div>
+    <div class="meta">
+      <span>Signed in as <span class="email" id="who">—</span></span>
+      <button id="refresh-btn" title="Refresh all views">Refresh</button>
+      <button id="signout-btn">Sign out</button>
+    </div>
+  </header>
+
+  <nav class="side">
+    <div class="sec">Platform</div>
+    <button class="tab active" data-panel="overview">Overview</button>
+    <button class="tab" data-panel="platform">Trends</button>
+    <button class="tab" data-panel="activity">Activity Feed</button>
+    <button class="tab" data-panel="alerts">Alerts</button>
+    <div class="sec">People</div>
+    <button class="tab" data-panel="members">Members</button>
+    <button class="tab" data-panel="companies">Companies</button>
+    <button class="theme-toggle" id="theme-toggle">Toggle theme</button>
+  </nav>
+
+  <main>
+    <!-- OVERVIEW -->
+    <section class="panel active" id="panel-overview">
+      <div class="kpi-grid" id="kpi-grid">
+        <div class="kpi"><div class="label">Total members</div><div class="value" id="kpi-members">—</div></div>
+        <div class="kpi"><div class="label">Active (7 days)</div><div class="value" id="kpi-active-7">—</div></div>
+        <div class="kpi"><div class="label">Active (30 days)</div><div class="value" id="kpi-active-30">—</div></div>
+        <div class="kpi risk"><div class="label">At risk</div><div class="value" id="kpi-risk">—</div><div class="sub">Inactive 14+ days or low wellbeing</div></div>
+        <div class="kpi support"><div class="label">Needs support</div><div class="value" id="kpi-support">—</div><div class="sub">HAVEN, sensitive context, or high stress</div></div>
+        <div class="kpi"><div class="label">Unresolved alerts</div><div class="value" id="kpi-alerts">—</div></div>
+      </div>
+
+      <div class="chart-card">
+        <h2>Activity — last 30 days</h2>
+        <canvas id="chart-overview"></canvas>
+      </div>
+
+      <div class="tbl-wrap">
+        <div class="tbl-head"><h2>Latest day snapshot</h2></div>
+        <div id="ov-latest" style="padding:16px 20px;color:var(--text-muted);font-size:13px">Loading…</div>
+      </div>
+    </section>
+
+    <!-- MEMBERS -->
+    <section class="panel" id="panel-members">
+      <div class="tbl-wrap rel">
+        <div class="tbl-head">
+          <h2>Members</h2>
+          <div class="controls">
+            <input id="m-search" type="search" placeholder="Search email, name, company…"/>
+            <select id="m-filter">
+              <option value="all">All</option>
+              <option value="at_risk">At risk</option>
+              <option value="needs_support">Needs support</option>
+              <option value="active_7d">Active (7d)</option>
+              <option value="inactive_30d">Inactive (30d+)</option>
+            </select>
+            <button class="btn" id="m-reload">Reload</button>
+          </div>
+        </div>
+        <table>
+          <thead><tr>
+            <th data-sort="last_activity_at" class="sorted">Last active</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Company</th>
+            <th>Persona</th>
+            <th data-sort="engagement_score" class="num">Engagement</th>
+            <th data-sort="activities_30d" class="num">30d</th>
+            <th data-sort="cert_count" class="num">Certs</th>
+            <th>Flags</th>
+          </tr></thead>
+          <tbody id="m-body"><tr><td colspan="9" class="empty"><span class="spinner"></span></td></tr></tbody>
+        </table>
+        <div class="pagination">
+          <span id="m-count">—</span>
+          <div class="pg">
+            <button id="m-prev">Previous</button>
+            <span id="m-page">1</span>
+            <button id="m-next">Next</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- COMPANIES -->
+    <section class="panel" id="panel-companies">
+      <div class="tbl-wrap">
+        <div class="tbl-head"><h2>Companies</h2></div>
+        <table>
+          <thead><tr>
+            <th>Company</th>
+            <th class="num">Members</th>
+            <th class="num">Active 7d</th>
+            <th class="num">Active 30d</th>
+            <th class="num">Avg engagement</th>
+            <th class="num">Activities (30d)</th>
+            <th class="num">At risk</th>
+            <th class="num">Needs support</th>
+          </tr></thead>
+          <tbody id="c-body"><tr><td colspan="8" class="empty"><span class="spinner"></span></td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- PLATFORM -->
+    <section class="panel" id="panel-platform">
+      <div class="kpi-grid" id="plt-kpi"></div>
+      <div class="chart-card"><h2>DAU / WAU / MAU — last 60 days</h2><canvas id="chart-users"></canvas></div>
+      <div class="chart-card"><h2>Activities by type — last 60 days</h2><canvas id="chart-activities"></canvas></div>
+      <div class="tbl-wrap">
+        <div class="tbl-head"><h2>Daily metrics</h2></div>
+        <table>
+          <thead><tr>
+            <th>Date</th>
+            <th class="num">Total mem</th>
+            <th class="num">New</th>
+            <th class="num">DAU</th>
+            <th class="num">WAU</th>
+            <th class="num">MAU</th>
+            <th class="num">Activities</th>
+            <th class="num">Habits</th>
+            <th class="num">Workouts</th>
+            <th class="num">Cardio</th>
+            <th class="num">Sessions</th>
+            <th class="num">Check-ins</th>
+            <th class="num">AI</th>
+            <th class="num">Emails</th>
+            <th class="num">Certs</th>
+            <th class="num">Alerts</th>
+          </tr></thead>
+          <tbody id="p-body"><tr><td colspan="16" class="empty"><span class="spinner"></span></td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ACTIVITY -->
+    <section class="panel" id="panel-activity">
+      <div class="tbl-wrap">
+        <div class="tbl-head"><h2>Recent activity</h2>
+          <div class="controls"><button class="btn" id="a-reload">Reload</button></div>
+        </div>
+        <div class="feed" id="a-body"><div class="empty"><span class="spinner"></span></div></div>
+      </div>
+    </section>
+
+    <!-- ALERTS -->
+    <section class="panel" id="panel-alerts">
+      <div class="tbl-wrap">
+        <div class="tbl-head"><h2>Platform alerts</h2>
+          <div class="controls">
+            <label style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:6px">
+              <input id="al-all" type="checkbox"/> Show resolved
+            </label>
+            <button class="btn" id="al-reload">Reload</button>
+          </div>
+        </div>
+        <table>
+          <thead><tr>
+            <th>Severity</th>
+            <th>Type</th>
+            <th>Source</th>
+            <th>Member</th>
+            <th>Page</th>
+            <th>Details</th>
+            <th>When</th>
+            <th>Status</th>
+          </tr></thead>
+          <tbody id="al-body"><tr><td colspan="8" class="empty"><span class="spinner"></span></td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- MEMBER MODAL -->
+<div class="modal-overlay" id="modal" role="dialog" aria-modal="true">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <div>
+        <h2 id="mm-name">—</h2>
+        <div class="sub" id="mm-sub">—</div>
+      </div>
+      <button class="close" id="mm-close" aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-tabs">
+      <button class="active" data-mtab="overview">Overview</button>
+      <button data-mtab="timeline">Timeline</button>
+      <button data-mtab="programme">Programme</button>
+      <button data-mtab="emails">Emails</button>
+      <button data-mtab="raw">Raw data</button>
+    </div>
+    <div class="modal-body" id="mm-body"><div class="empty"><span class="spinner"></span></div></div>
+  </div>
+</div>
+
+<script>
+// =====================================================================
+// VYVE Admin Dashboard — single-file client
+// All data access goes through the admin-dashboard Edge Function,
+// which validates the Supabase JWT against the admin_users allowlist.
+// The anon key below is the public key already embedded in every
+// member-facing page; by itself it grants no data access (RLS blocks it).
+// =====================================================================
+
+const SUPABASE_URL = 'https://ixjfklpckgxrwjlfsaaz.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg';
+const EF_URL = SUPABASE_URL + '/functions/v1/admin-dashboard';
+
+let sb, currentUser = null;
+let state = {
+  member: { page: 1, pageSize: 50, search: '', filter: 'all', sortBy: 'last_activity_at', sortDir: 'desc' },
+  alerts: { unresolved: true },
+  overview: null,
+  charts: { overview: null, users: null, activities: null }
+};
+
+// ---------- utils ----------
+const $  = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtN = n => n == null ? '—' : Number(n).toLocaleString();
+const fmtDate = s => { if (!s) return '—'; const d = new Date(s); return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short' }); };
+const fmtDT = s => { if (!s) return '—'; const d = new Date(s); return d.toLocaleString('en-GB', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }); };
+const relTime = s => {
+  if (!s) return 'never';
+  const mins = (Date.now() - new Date(s).getTime()) / 60000;
+  if (mins < 1) return 'just now';
+  if (mins < 60) return Math.round(mins) + 'm ago';
+  const h = mins / 60;
+  if (h < 24) return Math.round(h) + 'h ago';
+  const d = h / 24;
+  if (d < 30) return Math.round(d) + 'd ago';
+  return fmtDate(s);
+};
+
+async function ef(action, params = {}) {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { logout(); throw new Error('no_session'); }
+  const res = await fetch(EF_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': 'Bearer ' + session.access_token
+    },
+    body: JSON.stringify({ action, params })
+  });
+  if (res.status === 401) { alert('Not authorised. Your email is not on the admin allowlist.'); logout(); throw new Error('unauthorized'); }
+  if (!res.ok) { const t = await res.text().catch(() => res.statusText); throw new Error('EF ' + res.status + ': ' + t); }
+  const j = await res.json();
+  if (j.error) throw new Error(j.error + (j.message ? ': ' + j.message : ''));
+  return j.data;
+}
+
+// ---------- Auth ----------
+function initAuth() {
+  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
+  sb.auth.getSession().then(({ data: { session } }) => {
+    if (session?.user?.email) { currentUser = session.user; showApp(); loadAll(); }
+    else { showLogin(); }
+  });
+  $('#log-btn').addEventListener('click', doLogin);
+  $('#log-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  $('#signout-btn').addEventListener('click', logout);
+}
+
+async function doLogin() {
+  const btn = $('#log-btn'); const err = $('#log-err');
+  err.textContent = ''; btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    const email = $('#log-email').value.trim();
+    const pass  = $('#log-pass').value;
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+    if (error) throw error;
+    currentUser = data.user;
+    showApp(); loadAll();
+  } catch (e) {
+    err.textContent = e.message || 'Sign-in failed';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Sign in';
+  }
+}
+
+async function logout() {
+  try { await sb.auth.signOut(); } catch {}
+  currentUser = null;
+  showLogin();
+}
+
+function showApp() {
+  $('#login').style.display = 'none';
+  $('#app').classList.add('ready');
+  $('#who').textContent = currentUser?.email || '';
+}
+function showLogin() {
+  $('#app').classList.remove('ready');
+  $('#login').style.display = 'flex';
+}
+
+// ---------- Tabs ----------
+function initTabs() {
+  $$('.tab').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.panel)));
+  $('#refresh-btn').addEventListener('click', () => loadAll());
+  $('#theme-toggle').addEventListener('click', () => {
+    const h = document.documentElement;
+    const cur = h.getAttribute('data-theme');
+    h.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
+    try { localStorage.setItem('vyve_admin_theme', h.getAttribute('data-theme')); } catch {}
+    if (state.charts.overview)   state.charts.overview.update();
+    if (state.charts.users)      state.charts.users.update();
+    if (state.charts.activities) state.charts.activities.update();
+  });
+  const saved = (() => { try { return localStorage.getItem('vyve_admin_theme'); } catch { return null; } })();
+  if (saved) document.documentElement.setAttribute('data-theme', saved);
+}
+
+function switchTab(name) {
+  $$('.tab').forEach(b => b.classList.toggle('active', b.dataset.panel === name));
+  $$('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + name));
+  if (name === 'members' && !$('#m-body').dataset.loaded) loadMembers();
+  if (name === 'companies' && !$('#c-body').dataset.loaded) loadCompanies();
+  if (name === 'platform' && !$('#p-body').dataset.loaded) loadPlatform();
+  if (name === 'activity' && !$('#a-body').dataset.loaded) loadActivity();
+  if (name === 'alerts' && !$('#al-body').dataset.loaded) loadAlerts();
+}
+
+async function loadAll() {
+  await loadOverview();
+  // other panels lazy-load on switch
+  ['members','companies','platform','activity','alerts'].forEach(k => {
+    const el = $('#' + ({members:'m-body',companies:'c-body',platform:'p-body',activity:'a-body',alerts:'al-body'}[k]));
+    if (el) delete el.dataset.loaded;
+  });
+}
+
+// ---------- Overview ----------
+async function loadOverview() {
+  try {
+    const d = await ef('overview');
+    state.overview = d;
+    $('#kpi-members').textContent   = fmtN(d.total_members);
+    $('#kpi-active-7').textContent  = fmtN(d.latest_metrics?.active_users_7d);
+    $('#kpi-active-30').textContent = fmtN(d.latest_metrics?.active_users_30d);
+    $('#kpi-risk').textContent      = fmtN(d.at_risk_count);
+    $('#kpi-support').textContent   = fmtN(d.needs_support_count);
+    $('#kpi-alerts').textContent    = fmtN(d.unresolved_alerts);
+    drawOverviewChart(d.last_30_days || []);
+    const lm = d.latest_metrics;
+    $('#ov-latest').innerHTML = lm ? `
+      <strong>${esc(fmtDate(lm.metric_date))}</strong> —
+      ${lm.active_users} DAU, ${lm.new_members} new, ${lm.total_activities} activities
+      (${lm.habits_count} habits, ${lm.workouts_count} workouts, ${lm.cardio_count} cardio, ${lm.sessions_count} sessions, ${lm.checkins_count} check-ins) ·
+      ${lm.ai_interactions} AI interactions · ${lm.emails_sent} emails sent, ${lm.emails_opened} opened ·
+      ${lm.certificates_earned} certs earned · ${lm.unresolved_alerts} unresolved alerts
+    ` : 'No metrics yet';
+  } catch (e) { flashError('overview', e); }
+}
+
+function drawOverviewChart(rows) {
+  const ctx = $('#chart-overview').getContext('2d');
+  if (state.charts.overview) state.charts.overview.destroy();
+  const labels = rows.map(r => fmtDate(r.metric_date));
+  state.charts.overview = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Active users', data: rows.map(r => r.active_users),     borderColor: '#4DAAAA', backgroundColor: 'rgba(77,170,170,.15)', tension: .3, fill: true },
+        { label: 'Activities',   data: rows.map(r => r.total_activities), borderColor: '#C9A84C', backgroundColor: 'rgba(201,168,76,.1)', tension: .3, fill: false, yAxisID: 'y1' }
+      ]
+    },
+    options: chartOpts({ y1: true })
+  });
+}
+
+function chartOpts({ y1 = false } = {}) {
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  const grid  = isLight ? 'rgba(0,0,0,.06)' : 'rgba(255,255,255,.06)';
+  const text  = isLight ? '#0D2B2B' : '#EAF2F2';
+  const muted = isLight ? '#5A7575' : '#8FAAAA';
+  return {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { color: text, font: { family: 'DM Sans' } } } },
+    scales: {
+      x: { ticks: { color: muted }, grid: { color: grid } },
+      y: { ticks: { color: muted }, grid: { color: grid }, beginAtZero: true },
+      ...(y1 ? { y1: { position: 'right', ticks: { color: muted }, grid: { display: false }, beginAtZero: true } } : {})
+    }
+  };
+}
+
+// ---------- Members ----------
+function initMembers() {
+  $('#m-search').addEventListener('input', debounce(() => { state.member.page = 1; state.member.search = $('#m-search').value.trim(); loadMembers(); }, 300));
+  $('#m-filter').addEventListener('change', () => { state.member.page = 1; state.member.filter = $('#m-filter').value; loadMembers(); });
+  $('#m-reload').addEventListener('click', loadMembers);
+  $('#m-prev').addEventListener('click', () => { if (state.member.page > 1) { state.member.page--; loadMembers(); } });
+  $('#m-next').addEventListener('click', () => { state.member.page++; loadMembers(); });
+  $$('#panel-members th[data-sort]').forEach(th => th.addEventListener('click', () => {
+    const key = th.dataset.sort;
+    if (state.member.sortBy === key) state.member.sortDir = state.member.sortDir === 'asc' ? 'desc' : 'asc';
+    else { state.member.sortBy = key; state.member.sortDir = 'desc'; }
+    $$('#panel-members th').forEach(t => t.classList.remove('sorted'));
+    th.classList.add('sorted');
+    loadMembers();
+  }));
+}
+
+async function loadMembers() {
+  const tbody = $('#m-body'); tbody.innerHTML = '<tr><td colspan="9" class="empty"><span class="spinner"></span></td></tr>';
+  try {
+    const d = await ef('members', state.member);
+    tbody.dataset.loaded = '1';
+    $('#m-count').textContent = `${d.rows.length.toLocaleString()} shown of ${d.total.toLocaleString()}`;
+    $('#m-page').textContent = d.page;
+    $('#m-prev').disabled = d.page <= 1;
+    $('#m-next').disabled = d.page * d.pageSize >= d.total;
+    if (!d.rows.length) { tbody.innerHTML = '<tr><td colspan="9" class="empty">No members match</td></tr>'; return; }
+    tbody.innerHTML = d.rows.map(r => memberRow(r)).join('');
+    $$('#m-body tr[data-email]').forEach(tr => tr.addEventListener('click', () => openMember(tr.dataset.email)));
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="9" class="empty" style="color:var(--danger)">${esc(e.message)}</td></tr>`;
+  }
+}
+
+function memberRow(r) {
+  const m = r.members || {};
+  const name = [m.first_name, m.last_name].filter(Boolean).join(' ') || '—';
+  const eng = r.engagement_score ?? 50;
+  const barCls = eng >= 70 ? '' : eng >= 50 ? 'mid' : 'low';
+  const flags = [];
+  if (r.at_risk)       flags.push('<span class="pill risk">AT RISK</span>');
+  if (r.needs_support) flags.push('<span class="pill support">SUPPORT</span>');
+  if (m.subscription_status === 'active') flags.push('<span class="pill active">ACTIVE</span>');
+  return `<tr data-email="${esc(r.member_email)}">
+    <td>${esc(relTime(r.last_activity_at))}<div style="font-size:11px;color:var(--text-muted)">${r.last_activity_type ? esc(r.last_activity_type) : ''}</div></td>
+    <td>${esc(name)}</td>
+    <td>${esc(r.member_email)}</td>
+    <td>${esc(m.company || '—')}</td>
+    <td>${m.persona ? `<span class="pill persona">${esc(m.persona)}</span>` : '—'}</td>
+    <td class="num"><span class="score-bar ${barCls}"><div style="width:${eng}%"></div></span>${eng}</td>
+    <td class="num">${r.activities_30d ?? 0}</td>
+    <td class="num">${r.cert_count ?? 0}</td>
+    <td>${flags.join(' ') || '—'}</td>
+  </tr>`;
+}
+
+// ---------- Companies ----------
+async function loadCompanies() {
+  const tbody = $('#c-body'); tbody.innerHTML = '<tr><td colspan="8" class="empty"><span class="spinner"></span></td></tr>';
+  try {
+    const d = await ef('companies');
+    tbody.dataset.loaded = '1';
+    if (!d.rows.length) { tbody.innerHTML = '<tr><td colspan="8" class="empty">No companies yet</td></tr>'; return; }
+    tbody.innerHTML = d.rows.map(r => `<tr>
+      <td><strong>${esc(r.company)}</strong>${r.company_slug ? `<div style="font-size:11px;color:var(--text-muted)">${esc(r.company_slug)}</div>` : ''}</td>
+      <td class="num">${fmtN(r.member_count)}</td>
+      <td class="num">${fmtN(r.active_7d)}</td>
+      <td class="num">${fmtN(r.active_30d)}</td>
+      <td class="num">${fmtN(r.avg_engagement_score)}</td>
+      <td class="num">${fmtN(r.activities_30d)}</td>
+      <td class="num">${fmtN(r.at_risk_count)}</td>
+      <td class="num">${fmtN(r.needs_support_count)}</td>
+    </tr>`).join('');
+  } catch (e) { tbody.innerHTML = `<tr><td colspan="8" class="empty" style="color:var(--danger)">${esc(e.message)}</td></tr>`; }
+}
+
+// ---------- Platform ----------
+async function loadPlatform() {
+  const tbody = $('#p-body'); tbody.innerHTML = '<tr><td colspan="16" class="empty"><span class="spinner"></span></td></tr>';
+  try {
+    const d = await ef('platform', { days: 60 });
+    tbody.dataset.loaded = '1';
+    const rows = d.rows || [];
+    const latest = rows[rows.length - 1] || {};
+    $('#plt-kpi').innerHTML = `
+      <div class="kpi"><div class="label">Total members</div><div class="value">${fmtN(latest.total_members)}</div><div class="sub">as of ${fmtDate(latest.metric_date)}</div></div>
+      <div class="kpi"><div class="label">DAU latest</div><div class="value">${fmtN(latest.active_users)}</div></div>
+      <div class="kpi"><div class="label">WAU latest</div><div class="value">${fmtN(latest.active_users_7d)}</div></div>
+      <div class="kpi"><div class="label">MAU latest</div><div class="value">${fmtN(latest.active_users_30d)}</div></div>
+      <div class="kpi"><div class="label">Activities (60d sum)</div><div class="value">${fmtN(rows.reduce((a,r)=>a+(r.total_activities||0),0))}</div></div>
+      <div class="kpi"><div class="label">New members (60d)</div><div class="value">${fmtN(rows.reduce((a,r)=>a+(r.new_members||0),0))}</div></div>
+    `;
+    drawUsersChart(rows);
+    drawActivitiesChart(rows);
+    tbody.innerHTML = rows.slice().reverse().map(r => `<tr>
+      <td>${esc(fmtDate(r.metric_date))}</td>
+      <td class="num">${fmtN(r.total_members)}</td>
+      <td class="num">${fmtN(r.new_members)}</td>
+      <td class="num">${fmtN(r.active_users)}</td>
+      <td class="num">${fmtN(r.active_users_7d)}</td>
+      <td class="num">${fmtN(r.active_users_30d)}</td>
+      <td class="num">${fmtN(r.total_activities)}</td>
+      <td class="num">${fmtN(r.habits_count)}</td>
+      <td class="num">${fmtN(r.workouts_count)}</td>
+      <td class="num">${fmtN(r.cardio_count)}</td>
+      <td class="num">${fmtN(r.sessions_count)}</td>
+      <td class="num">${fmtN(r.checkins_count)}</td>
+      <td class="num">${fmtN(r.ai_interactions)}</td>
+      <td class="num">${fmtN(r.emails_sent)}</td>
+      <td class="num">${fmtN(r.certificates_earned)}</td>
+      <td class="num">${fmtN(r.unresolved_alerts)}</td>
+    </tr>`).join('');
+  } catch (e) { tbody.innerHTML = `<tr><td colspan="16" class="empty" style="color:var(--danger)">${esc(e.message)}</td></tr>`; }
+}
+
+function drawUsersChart(rows) {
+  const ctx = $('#chart-users').getContext('2d');
+  if (state.charts.users) state.charts.users.destroy();
+  state.charts.users = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: rows.map(r => fmtDate(r.metric_date)),
+      datasets: [
+        { label: 'DAU', data: rows.map(r => r.active_users),     borderColor: '#4DAAAA', tension: .3, fill: false },
+        { label: 'WAU', data: rows.map(r => r.active_users_7d),  borderColor: '#C9A84C', tension: .3, fill: false },
+        { label: 'MAU', data: rows.map(r => r.active_users_30d), borderColor: '#E879A3', tension: .3, fill: false }
+      ]
+    },
+    options: chartOpts()
+  });
+}
+
+function drawActivitiesChart(rows) {
+  const ctx = $('#chart-activities').getContext('2d');
+  if (state.charts.activities) state.charts.activities.destroy();
+  state.charts.activities = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: rows.map(r => fmtDate(r.metric_date)),
+      datasets: [
+        { label: 'Habits',    data: rows.map(r => r.habits_count),   backgroundColor: '#4DAAAA' },
+        { label: 'Workouts',  data: rows.map(r => r.workouts_count), backgroundColor: '#E09B3D' },
+        { label: 'Cardio',    data: rows.map(r => r.cardio_count),   backgroundColor: '#E06060' },
+        { label: 'Sessions',  data: rows.map(r => r.sessions_count), backgroundColor: '#9B7AE0' },
+        { label: 'Check-ins', data: rows.map(r => r.checkins_count), backgroundColor: '#2D9E4A' }
+      ]
+    },
+    options: { ...chartOpts(), scales: { ...chartOpts().scales, x: { ...chartOpts().scales.x, stacked: true }, y: { ...chartOpts().scales.y, stacked: true } } }
+  });
+}
+
+// ---------- Activity Feed ----------
+async function loadActivity() {
+  const root = $('#a-body'); root.innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  try {
+    const d = await ef('activity_feed', { limit: 150 });
+    root.dataset.loaded = '1';
+    if (!d.rows?.length) { root.innerHTML = '<div class="empty">No recent activity</div>'; return; }
+    root.innerHTML = d.rows.map(r => `<div class="row" data-email="${esc(r.member_email)}">
+      <div class="left">
+        <span class="type">${esc(r.activity_type)}</span>
+        <span class="label">${esc(r.activity_label || '')}</span>
+        <span class="who">${esc(r.member_email)}</span>
+      </div>
+      <span class="when">${esc(relTime(r.logged_at))}</span>
+    </div>`).join('');
+    $$('#a-body .row').forEach(row => row.addEventListener('click', () => openMember(row.dataset.email)));
+  } catch (e) { root.innerHTML = `<div class="empty" style="color:var(--danger)">${esc(e.message)}</div>`; }
+  $('#a-reload').onclick = loadActivity;
+}
+
+// ---------- Alerts ----------
+async function loadAlerts() {
+  const tbody = $('#al-body'); tbody.innerHTML = '<tr><td colspan="8" class="empty"><span class="spinner"></span></td></tr>';
+  try {
+    const d = await ef('alerts', { unresolved: !$('#al-all').checked, limit: 200 });
+    tbody.dataset.loaded = '1';
+    if (!d.rows?.length) { tbody.innerHTML = '<tr><td colspan="8" class="empty">No alerts</td></tr>'; return; }
+    tbody.innerHTML = d.rows.map(r => {
+      const sev = (r.severity || 'info').toLowerCase();
+      const pillCls = sev === 'high' || sev === 'critical' ? 'risk' : sev === 'medium' ? 'support' : 'muted';
+      return `<tr>
+        <td><span class="pill ${pillCls}">${esc(sev)}</span></td>
+        <td>${esc(r.type || '—')}</td>
+        <td>${esc(r.source || '—')}</td>
+        <td>${esc(r.member_email || '—')}</td>
+        <td>${esc(r.page || '—')}</td>
+        <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.details || '')}">${esc(r.details || '—')}</td>
+        <td>${esc(relTime(r.created_at))}</td>
+        <td>${r.resolved ? '<span class="pill active">RESOLVED</span>' : '<span class="pill risk">OPEN</span>'}</td>
+      </tr>`;
+    }).join('');
+  } catch (e) { tbody.innerHTML = `<tr><td colspan="8" class="empty" style="color:var(--danger)">${esc(e.message)}</td></tr>`; }
+  $('#al-all').onchange = loadAlerts;
+  $('#al-reload').onclick = loadAlerts;
+}
+
+// ---------- Member Modal ----------
+function initModal() {
+  $('#mm-close').addEventListener('click', closeMember);
+  $('#modal').addEventListener('click', e => { if (e.target.id === 'modal') closeMember(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#modal').classList.contains('open')) closeMember(); });
+  $$('.modal-tabs button').forEach(b => b.addEventListener('click', () => switchModalTab(b.dataset.mtab)));
+}
+
+let currentMemberEmail = null;
+let memberCache = {};
+
+async function openMember(email) {
+  currentMemberEmail = email;
+  memberCache = {};
+  $('#modal').classList.add('open');
+  $('#mm-name').textContent = email;
+  $('#mm-sub').textContent  = 'Loading…';
+  $$('.modal-tabs button').forEach(b => b.classList.toggle('active', b.dataset.mtab === 'overview'));
+  await renderMemberTab('overview');
+}
+function closeMember() { $('#modal').classList.remove('open'); currentMemberEmail = null; }
+function switchModalTab(name) {
+  $$('.modal-tabs button').forEach(b => b.classList.toggle('active', b.dataset.mtab === name));
+  renderMemberTab(name);
+}
+
+async function renderMemberTab(tab) {
+  const body = $('#mm-body');
+  body.innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  try {
+    if (tab === 'overview' || tab === 'programme' || tab === 'emails') {
+      if (!memberCache.detail) memberCache.detail = await ef('member_detail', { email: currentMemberEmail });
+      const d = memberCache.detail;
+      const m = d.member || {}, s = d.stats || {};
+      const name = [m.first_name, m.last_name].filter(Boolean).join(' ') || currentMemberEmail;
+      $('#mm-name').textContent = name;
+      $('#mm-sub').innerHTML = `${esc(currentMemberEmail)} · ${m.persona ? `<span class="pill persona">${esc(m.persona)}</span>` : ''} ${m.company ? ' · ' + esc(m.company) : ''}`;
+
+      if (tab === 'overview') body.innerHTML = renderOverviewTab(m, s, d);
+      else if (tab === 'programme') body.innerHTML = renderProgrammeTab(d);
+      else if (tab === 'emails') body.innerHTML = renderEmailsTab(d);
+    } else if (tab === 'timeline') {
+      if (!memberCache.timeline) memberCache.timeline = await ef('member_timeline', { email: currentMemberEmail, days: 30 });
+      body.innerHTML = renderTimelineTab(memberCache.timeline);
+    } else if (tab === 'raw') {
+      if (!memberCache.raw) memberCache.raw = await ef('member_raw', { email: currentMemberEmail, limit: 100 });
+      body.innerHTML = renderRawTab(memberCache.raw);
+    }
+  } catch (e) { body.innerHTML = `<div class="err-banner">${esc(e.message)}</div>`; }
+}
+
+function renderOverviewTab(m, s, d) {
+  const flags = [];
+  if (s.at_risk)       flags.push('<span class="pill risk">AT RISK</span>');
+  if (s.needs_support) flags.push('<span class="pill support">NEEDS SUPPORT</span>');
+  if (m.subscription_status === 'active') flags.push('<span class="pill active">ACTIVE SUB</span>');
+  return `
+    <div class="section-title">Engagement</div>
+    <div class="kpi-grid">
+      <div class="kpi"><div class="label">Score</div><div class="value">${s.engagement_score ?? '—'}</div></div>
+      <div class="kpi"><div class="label">Activities 7d</div><div class="value">${s.activities_7d ?? 0}</div></div>
+      <div class="kpi"><div class="label">Activities 30d</div><div class="value">${s.activities_30d ?? 0}</div></div>
+      <div class="kpi"><div class="label">Active days 30d</div><div class="value">${s.active_days_30d ?? 0}</div></div>
+    </div>
+    <div class="section-title">Score breakdown (base 50 + 4 × 12.5)</div>
+    <div class="kv">
+      <dt>Activity (recency)</dt><dd>${s.activity_score ?? 0} / 12.5</dd>
+      <dt>Consistency (days/30)</dt><dd>${s.consistency_score ?? 0} / 12.5</dd>
+      <dt>Variety (types/7d)</dt><dd>${s.variety_score ?? 0} / 12.5</dd>
+      <dt>Wellbeing</dt><dd>${s.wellbeing_score_component ?? 0} / 12.5</dd>
+    </div>
+    <div class="section-title">Health snapshot</div>
+    <div class="kv">
+      <dt>Latest weight</dt><dd>${s.latest_weight_kg ? s.latest_weight_kg + ' kg (' + fmtDate(s.latest_weight_at) + ')' : '—'}</dd>
+      <dt>Wellbeing (1-10)</dt><dd>${s.latest_wellbeing_score ?? '—'} ${s.latest_wellbeing_at ? '· ' + fmtDate(s.latest_wellbeing_at) : ''}</dd>
+      <dt>Stress (1 stressed → 10 calm)</dt><dd>${s.latest_stress_score ?? '—'}</dd>
+      <dt>Energy (1 low → 10 high)</dt><dd>${s.latest_energy_score ?? '—'}</dd>
+    </div>
+    <div class="section-title">Account</div>
+    <div class="kv">
+      <dt>Created</dt><dd>${fmtDT(m.created_at)}</dd>
+      <dt>Last active</dt><dd>${relTime(s.last_activity_at)} ${s.last_activity_type ? '· ' + esc(s.last_activity_type) : ''}</dd>
+      <dt>Subscription</dt><dd>${esc(m.subscription_status || '—')}</dd>
+      <dt>Onboarding</dt><dd>${m.onboarding_complete ? 'Complete' : 'Incomplete'} ${m.onboarding_completed_at ? '· ' + fmtDate(m.onboarding_completed_at) : ''}</dd>
+      <dt>Certificates</dt><dd>${s.cert_count ?? 0} earned · ${d.certificates.length} in table</dd>
+      <dt>Life context</dt><dd>${Array.isArray(m.life_context) ? esc(m.life_context.join(', ')) : '—'}${m.sensitive_context ? ' <span class="pill support">SENSITIVE</span>' : ''}</dd>
+      <dt>Flags</dt><dd>${flags.join(' ') || '—'}</dd>
+    </div>
+    ${d.notifications?.length ? `<div class="section-title">Recent notifications</div>
+      ${d.notifications.slice(0,5).map(n => `<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">
+        <div style="color:var(--text-muted);font-size:11px">${esc(fmtDT(n.created_at))} · ${esc(n.kind || '')}</div>
+        <div><strong>${esc(n.title || '')}</strong> ${n.body ? '— ' + esc(n.body) : ''}</div>
+      </div>`).join('')}` : ''}
+  `;
+}
+
+function renderProgrammeTab(d) {
+  const progs = d.programmes || [];
+  if (!progs.length) return '<div class="empty">No programme cache rows</div>';
+  return progs.map(p => {
+    const pj = p.programme_json || {};
+    return `<div style="margin-bottom:20px">
+      <div class="section-title">${esc(pj.programme_name || pj.name || 'Programme')}</div>
+      <div class="kv">
+        <dt>Source</dt><dd>${esc(p.source || '—')}</dd>
+        <dt>Week</dt><dd>${p.current_week ?? '—'}</dd>
+        <dt>Active</dt><dd>${p.is_active ? 'Yes' : 'No'}</dd>
+        <dt>Paused</dt><dd>${p.paused_at ? fmtDT(p.paused_at) : '—'}</dd>
+        <dt>Generated</dt><dd>${fmtDT(p.generated_at)}</dd>
+        <dt>Duration</dt><dd>${pj.duration_weeks ?? pj.weeks ?? '—'} weeks</dd>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderEmailsTab(d) {
+  if (!d.emails?.length) return '<div class="empty">No emails sent</div>';
+  return `<table style="width:100%">
+    <thead><tr><th>Sent</th><th>Stream</th><th>Key</th><th class="num">Opens</th><th class="num">Clicks</th></tr></thead>
+    <tbody>${d.emails.map(e => `<tr>
+      <td>${esc(fmtDT(e.sent_at))}</td>
+      <td>${esc(e.stream || '')}</td>
+      <td>${esc(e.email_key || '')}</td>
+      <td class="num">${e.open_count ?? 0}</td>
+      <td class="num">${e.click_count ?? 0}</td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+function renderTimelineTab(d) {
+  if (!d.rows?.length) return '<div class="empty">No activity in the selected window</div>';
+  const note = d.mode === 'raw'
+    ? '<div style="color:var(--text-muted);font-size:12px;margin-bottom:14px">Raw events (last 30 days, from <code>member_activity_log</code> view)</div>'
+    : '<div style="color:var(--text-muted);font-size:12px;margin-bottom:14px">Daily aggregate (past 30-90 days, from <code>member_activity_daily</code>)</div>';
+  if (d.mode === 'raw') {
+    return note + '<div class="timeline">' + d.rows.map(r => `<div class="evt">
+      <div class="t">${esc(fmtDT(r.logged_at))}</div>
+      <div class="l"><span class="pill muted">${esc(r.activity_type)}</span> ${esc(r.activity_label || '')}</div>
+      ${r.metadata ? `<div style="font-size:11px;color:var(--text-muted);margin-top:2px">${esc(JSON.stringify(r.metadata))}</div>` : ''}
+    </div>`).join('') + '</div>';
+  }
+  return note + `<table style="width:100%"><thead><tr>
+    <th>Date</th><th class="num">Habits</th><th class="num">Workouts</th><th class="num">Cardio</th>
+    <th class="num">Sessions</th><th class="num">Replays</th><th class="num">Check-ins</th><th class="num">Total</th>
+  </tr></thead><tbody>${d.rows.map(r => `<tr>
+    <td>${esc(fmtDate(r.activity_date))}</td>
+    <td class="num">${r.habits_count}</td>
+    <td class="num">${r.workouts_count}</td>
+    <td class="num">${r.cardio_count}</td>
+    <td class="num">${r.sessions_count}</td>
+    <td class="num">${r.replays_count ?? 0}</td>
+    <td class="num">${r.checkins_count}</td>
+    <td class="num">${r.total_activities}</td>
+  </tr>`).join('')}</tbody></table>`;
+}
+
+function renderRawTab(d) {
+  const sections = [
+    ['daily_habits',       'Habits'],
+    ['workouts',           'Workouts'],
+    ['cardio',             'Cardio'],
+    ['session_views',      'Sessions'],
+    ['replay_views',       'Replays'],
+    ['wellbeing_checkins', 'Weekly check-ins'],
+    ['monthly_checkins',   'Monthly check-ins'],
+    ['weight_logs',        'Weight logs'],
+    ['ai_interactions',    'AI interactions']
+  ];
+  return sections.map(([key, label]) => {
+    const rows = d[key] || [];
+    if (!rows.length) return `<div class="section-title">${label} <span style="color:var(--text-muted);font-size:12px;font-weight:normal">(empty)</span></div>`;
+    const keys = Object.keys(rows[0]).filter(k => k !== 'id' && k !== 'member_email').slice(0, 8);
+    return `<div class="section-title">${label} <span style="color:var(--text-muted);font-size:12px;font-weight:normal">(${rows.length})</span></div>
+      <div style="overflow-x:auto;margin-bottom:18px"><table style="width:100%;font-size:12px">
+        <thead><tr>${keys.map(k => `<th style="position:static">${esc(k)}</th>`).join('')}</tr></thead>
+        <tbody>${rows.slice(0, 20).map(r => `<tr>${keys.map(k => `<td style="padding:6px 10px">${esc(r[k] == null ? '' : typeof r[k] === 'object' ? JSON.stringify(r[k]) : String(r[k]).slice(0, 80))}</td>`).join('')}</tr>`).join('')}</tbody>
+      </table></div>`;
+  }).join('');
+}
+
+// ---------- Utils ----------
+function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+function flashError(label, e) { console.error(label, e); }
+
+// ---------- Boot ----------
+window.addEventListener('DOMContentLoaded', () => {
+  // Wait for Supabase UMD to finish (scripts have defer, so DOMContentLoaded is after their exec)
+  if (!window.supabase) {
+    // Fallback: keep polling briefly
+    const start = Date.now();
+    const wait = setInterval(() => {
+      if (window.supabase) { clearInterval(wait); boot(); }
+      else if (Date.now() - start > 10000) { clearInterval(wait); $('#log-err').textContent = 'Failed to load Supabase SDK'; }
+    }, 50);
+  } else boot();
+});
+
+function boot() {
+  initAuth();
+  initTabs();
+  initMembers();
+  initModal();
+}
+</script>
+</body>
+</html>
