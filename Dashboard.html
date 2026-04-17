@@ -862,7 +862,7 @@ function renderOverviewTab(m, s, d) {
     </div>
     ${d.notifications?.length ? `<div class="section-title">Recent notifications</div>
       ${d.notifications.slice(0,5).map(n => `<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">
-        <div style="color:var(--text-muted);font-size:11px">${esc(fmtDT(n.created_at))} · ${esc(n.kind || '')}</div>
+        <div style="color:var(--text-muted);font-size:11px">${esc(fmtDT(n.created_at))} · ${esc(n.type || '')}</div>
         <div><strong>${esc(n.title || '')}</strong> ${n.body ? '— ' + esc(n.body) : ''}</div>
       </div>`).join('')}` : ''}
   `;
