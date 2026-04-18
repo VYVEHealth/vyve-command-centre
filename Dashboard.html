@@ -871,21 +871,33 @@ function renderOverviewTab(m, s, d) {
 function renderProgrammeTab(d) {
   const progs = d.programmes || [];
   if (!progs.length) return '<div class="empty">No programme cache rows</div>';
-  return progs.map(p => {
-    const pj = p.programme_json || {};
-    return `<div style="margin-bottom:20px">
-      <div class="section-title">${esc(pj.programme_name || pj.name || 'Programme')}</div>
+  return progs.map(p => `<div style="margin-bottom:20px">
+      <div class="section-title">${esc(p.programme_name || 'Programme')}</div>
       <div class="kv">
         <dt>Source</dt><dd>${esc(p.source || '—')}</dd>
         <dt>Week</dt><dd>${p.current_week ?? '—'}</dd>
         <dt>Active</dt><dd>${p.is_active ? 'Yes' : 'No'}</dd>
         <dt>Paused</dt><dd>${p.paused_at ? fmtDT(p.paused_at) : '—'}</dd>
         <dt>Generated</dt><dd>${fmtDT(p.generated_at)}</dd>
-        <dt>Duration</dt><dd>${pj.duration_weeks ?? pj.weeks ?? '—'} weeks</dd>
+        <dt>Duration</dt><dd>${p.plan_duration_weeks ?? '—'} weeks</dd>
       </div>
-    </div>`;
-  }).join('');
+      <button class="btn" data-prog-id="${esc(p.id)}" onclick="window.__vyveLoadFullProgramme('${esc(p.id)}', this)">View full JSON</button>
+      <pre class="prog-json" id="pj-${esc(p.id)}" style="display:none;max-height:320px;overflow:auto;background:var(--surface-2);padding:10px;border-radius:8px;font-size:11px;margin-top:8px"></pre>
+    </div>`).join('');
 }
+
+window.__vyveLoadFullProgramme = async function(id, btn) {
+  const pre = document.getElementById('pj-' + id);
+  if (pre.style.display !== 'none') { pre.style.display = 'none'; btn.textContent = 'View full JSON'; return; }
+  btn.disabled = true; btn.textContent = 'Loading…';
+  try {
+    const d = await ef('member_programme', { id });
+    pre.textContent = JSON.stringify(d.programme?.programme_json || d.programme, null, 2);
+    pre.style.display = 'block';
+    btn.textContent = 'Hide';
+  } catch (e) { pre.textContent = e.message; pre.style.display = 'block'; }
+  btn.disabled = false;
+};
 
 function renderEmailsTab(d) {
   if (!d.emails?.length) return '<div class="empty">No emails sent</div>';
