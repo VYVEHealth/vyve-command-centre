@@ -291,6 +291,69 @@ table.members tr:last-child td{border-bottom:0}
 }
 .menu-btn{display:none;width:34px;height:34px;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:18px;line-height:1}
 .menu-btn:hover{background:var(--surface-2)}
+
+/* =====================================================================
+   Shell 2 — Inline edits, modal, toast, audit log
+===================================================================== */
+.edit-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:16px}
+.edit-section h3{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin:0 0 14px;font-family:var(--font-body);font-weight:600}
+.edit-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px 16px}
+.edit-row{display:flex;flex-direction:column;gap:3px;padding:8px 0;border-bottom:1px solid var(--border)}
+.edit-row:last-child{border-bottom:0}
+.edit-label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);font-weight:500}
+.edit-value-row{display:flex;align-items:center;gap:8px;min-height:28px}
+.edit-value{flex:1;font-size:13.5px;color:var(--text);word-break:break-word}
+.edit-value em{color:var(--text-dim);font-style:italic}
+.edit-btn{background:transparent;border:1px solid var(--border);border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);flex-shrink:0;transition:all .15s}
+.edit-btn:hover{color:var(--accent);border-color:var(--accent)}
+.edit-btn.scary:hover{color:var(--warning);border-color:var(--warning)}
+.edit-input{flex:1;padding:6px 10px;border:1px solid var(--accent);border-radius:6px;background:var(--surface-2);color:var(--text);font-size:13.5px;font-family:inherit;outline:none;min-width:0}
+.edit-input:focus{box-shadow:0 0 0 2px rgba(77,170,170,.2)}
+.edit-select{flex:1;padding:6px 8px;border:1px solid var(--accent);border-radius:6px;background:var(--surface-2);color:var(--text);font-size:13px;font-family:inherit;outline:none}
+.edit-save,.edit-cancel{padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:0;font-family:inherit}
+.edit-save{background:var(--accent);color:var(--on-accent)}
+.edit-save:hover{background:var(--accent-hover)}
+.edit-save:disabled{opacity:.5;cursor:not-allowed}
+.edit-cancel{background:transparent;color:var(--text-muted);border:1px solid var(--border)}
+.edit-cancel:hover{color:var(--text);border-color:var(--border-strong)}
+.scary-badge{display:inline-block;padding:1px 6px;border-radius:4px;background:rgba(224,155,61,.15);color:var(--warning);font-size:10px;font-weight:600;letter-spacing:.05em;margin-left:6px;text-transform:uppercase}
+
+/* Modal for SCARY field edits */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-backdrop.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border-strong);border-radius:14px;max-width:500px;width:100%;padding:24px;box-shadow:0 24px 60px rgba(0,0,0,.5);max-height:90vh;overflow-y:auto}
+.modal h2{font-size:18px;margin:0 0 6px;color:var(--text);font-family:var(--font-head)}
+.modal .warn{background:rgba(224,155,61,.1);border:1px solid rgba(224,155,61,.3);border-radius:8px;padding:10px 12px;margin:10px 0;font-size:12.5px;color:var(--warning);line-height:1.5}
+.modal .field{margin:14px 0}
+.modal .field label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);font-weight:500;margin-bottom:6px}
+.modal .field .current{font-size:13px;color:var(--text-muted);padding:8px 10px;background:var(--surface-2);border-radius:6px;margin-bottom:6px}
+.modal input,.modal select,.modal textarea{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:14px;font-family:inherit;outline:none;resize:vertical}
+.modal input:focus,.modal select:focus,.modal textarea:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(77,170,170,.2)}
+.modal textarea{min-height:72px}
+.modal .hint{font-size:11.5px;color:var(--text-dim);margin-top:4px}
+.modal .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+.modal .btn-primary{padding:9px 18px;background:var(--warning);color:#fff;border:0;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+.modal .btn-primary:hover{filter:brightness(1.1)}
+.modal .btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.modal .btn-cancel{padding:9px 18px;background:transparent;color:var(--text-muted);border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+.modal .btn-cancel:hover{color:var(--text);border-color:var(--border-strong)}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border-strong);border-left:3px solid var(--accent);border-radius:10px;padding:12px 16px;min-width:260px;max-width:420px;box-shadow:0 10px 30px rgba(0,0,0,.3);z-index:120;font-size:13px;color:var(--text);animation:toast-in .22s ease;line-height:1.45}
+.toast.error{border-left-color:var(--danger)}
+.toast.warning{border-left-color:var(--warning)}
+@keyframes toast-in{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+/* Audit log */
+.audit-list{list-style:none;margin:0;padding:0}
+.audit-list li{padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;line-height:1.5}
+.audit-list li:last-child{border-bottom:0}
+.audit-meta{font-size:11px;color:var(--text-muted);margin-top:2px}
+.audit-diff{font-family:'DM Sans',monospace;font-size:12px;margin-top:4px}
+.audit-diff .old{color:var(--danger);text-decoration:line-through;margin-right:6px}
+.audit-diff .new{color:var(--success)}
+.audit-reason{font-size:12px;color:var(--text-muted);font-style:italic;margin-top:4px}
+
 </style>
 </head>
 <body>
@@ -613,6 +676,382 @@ async function apiCall(action, params = {}) {
     return { error: error.message };
   }
 }
+
+
+// =======================================================================
+//   Shell 2 — Edit API, SAFE inline, SCARY modal, toast, audit log
+// =======================================================================
+
+const EDIT_EF_URL = `${SUPABASE_URL}/functions/v1/admin-member-edit`;
+
+// Field metadata (mirrors admin-member-edit v4 EF)
+const SAFE_FIELDS = [
+  'first_name','last_name','company','goal_focus','tone_preference',
+  'reminder_frequency','contact_preference','theme_preference',
+  'exercise_stream','display_name_preference','notifications_milestones',
+  'notifications_weekly_summary','privacy_employer_reporting','re_engagement_stream'
+];
+const SCARY_FIELDS = [
+  'persona','sensitive_context','health_data_consent','subscription_status',
+  'training_days_per_week','tdee_target','deficit_percentage'
+];
+const FIELD_LABELS = {
+  first_name:'First name', last_name:'Last name', company:'Company',
+  goal_focus:'Goal focus', tone_preference:'Tone preference',
+  reminder_frequency:'Reminder frequency', contact_preference:'Contact preference',
+  theme_preference:'Theme preference', exercise_stream:'Exercise stream',
+  display_name_preference:'Display name preference',
+  notifications_milestones:'Milestone notifications',
+  notifications_weekly_summary:'Weekly summary emails',
+  privacy_employer_reporting:'Employer reporting opt-in',
+  re_engagement_stream:'Re-engagement stream',
+  persona:'AI persona', sensitive_context:'Sensitive context flag',
+  health_data_consent:'Health data consent', subscription_status:'Subscription status',
+  training_days_per_week:'Training days / week', tdee_target:'TDEE target (kcal)',
+  deficit_percentage:'Deficit %'
+};
+const FIELD_ENUMS = {
+  persona: ['NOVA','RIVER','SPARK','SAGE','HAVEN'],
+  re_engagement_stream: ['A','B','C1','C2','C3','paused','none'],
+  exercise_stream: ['movement','workouts','cardio','classes','mixed'],
+  theme_preference: ['light','dark','system'],
+  display_name_preference: ['first_name','full_name','initials','anonymous'],
+  tone_preference: ['gentle','direct','motivational','analytical'],
+  reminder_frequency: ['daily','weekly','off'],
+  contact_preference: ['email','push','both','none'],
+  goal_focus: ['habits','workouts','cardio','wellbeing','nutrition','balanced'],
+  subscription_status: ['active','trialing','past_due','canceled','paused','none']
+};
+const BOOL_FIELDS = new Set([
+  'notifications_milestones','notifications_weekly_summary',
+  'privacy_employer_reporting','sensitive_context','health_data_consent'
+]);
+const INT_FIELDS = {
+  training_days_per_week: { min: 0, max: 7 },
+  tdee_target:            { min: 1000, max: 6000 },
+  deficit_percentage:     { min: 0, max: 30 }
+};
+
+async function apiEdit(action, params = {}) {
+  try {
+    const { data: { session } } = await supa.auth.getSession();
+    const token = session?.access_token;
+    if (!token) return { success: false, error: 'Not signed in' };
+
+    const response = await fetch(EDIT_EF_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({ action, ...params })
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      return { success: false, error: data.error || `HTTP ${response.status}`, status: response.status };
+    }
+    return data;
+  } catch (e) {
+    console.error('apiEdit failed:', e);
+    return { success: false, error: e.message || 'Network error' };
+  }
+}
+
+// Toast --------------------------------------------------------------------
+
+function showToast(msg, kind = 'info', timeoutMs = 3200) {
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  const t = document.createElement('div');
+  t.className = 'toast' + (kind === 'error' ? ' error' : kind === 'warning' ? ' warning' : '');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .25s'; setTimeout(() => t.remove(), 260); }, timeoutMs);
+}
+
+// Inline SAFE field edit ---------------------------------------------------
+
+function formatEditValue(field, value) {
+  if (value === null || value === undefined || value === '') return '<em>not set</em>';
+  if (BOOL_FIELDS.has(field)) return value === true ? 'Yes' : value === false ? 'No' : '<em>not set</em>';
+  return escapeHtml(String(value));
+}
+
+function renderEditRow(field, value, isScary) {
+  const label = FIELD_LABELS[field] || field;
+  const displayed = formatEditValue(field, value);
+  const badge = isScary ? '<span class="scary-badge">Scary</span>' : '';
+  const btnClass = isScary ? 'edit-btn scary' : 'edit-btn';
+  const onclick = isScary
+    ? `openScaryModal('${field}')`
+    : `startInlineEdit('${field}')`;
+  const title = isScary ? 'Edit (modal + reason required)' : 'Edit';
+  return `
+    <div class="edit-row" data-field="${field}">
+      <div class="edit-label">${escapeHtml(label)}${badge}</div>
+      <div class="edit-value-row" id="edit-view-${field}">
+        <div class="edit-value">${displayed}</div>
+        <button class="${btnClass}" type="button" onclick="${onclick}" title="${title}" aria-label="Edit ${escapeHtml(label)}">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        </button>
+      </div>
+      <div class="edit-value-row" id="edit-form-${field}" style="display:none"></div>
+    </div>`;
+}
+
+function renderEditControl(field, currentValue) {
+  const inputId = `edit-input-${field}`;
+  if (FIELD_ENUMS[field]) {
+    const opts = FIELD_ENUMS[field].map(v =>
+      `<option value="${escapeHtml(v)}"${v === currentValue ? ' selected' : ''}>${escapeHtml(v)}</option>`
+    ).join('');
+    return `<select class="edit-select" id="${inputId}"><option value=""${currentValue == null ? ' selected' : ''}>(clear)</option>${opts}</select>`;
+  }
+  if (BOOL_FIELDS.has(field)) {
+    return `<select class="edit-select" id="${inputId}">
+      <option value=""${currentValue == null ? ' selected' : ''}>(not set)</option>
+      <option value="true"${currentValue === true ? ' selected' : ''}>Yes</option>
+      <option value="false"${currentValue === false ? ' selected' : ''}>No</option>
+    </select>`;
+  }
+  if (INT_FIELDS[field]) {
+    const { min, max } = INT_FIELDS[field];
+    return `<input class="edit-input" id="${inputId}" type="number" min="${min}" max="${max}" value="${currentValue == null ? '' : escapeHtml(String(currentValue))}" />`;
+  }
+  const maxLen = field === 'company' ? 200 : 80;
+  return `<input class="edit-input" id="${inputId}" type="text" maxlength="${maxLen}" value="${currentValue == null ? '' : escapeHtml(String(currentValue))}" />`;
+}
+
+let inlineEditState = {}; // field -> { originalValue }
+
+function startInlineEdit(field) {
+  const row = document.querySelector(`.edit-row[data-field="${field}"]`);
+  if (!row) return;
+  const current = row.dataset.currentValue;
+  let parsed = current === '' ? null : current;
+  if (BOOL_FIELDS.has(field)) parsed = current === 'true' ? true : current === 'false' ? false : null;
+  if (INT_FIELDS[field])      parsed = current === '' ? null : parseInt(current, 10);
+
+  inlineEditState[field] = { originalValue: parsed };
+
+  document.getElementById(`edit-view-${field}`).style.display = 'none';
+  const formRow = document.getElementById(`edit-form-${field}`);
+  formRow.style.display = 'flex';
+  formRow.innerHTML = `
+    ${renderEditControl(field, parsed)}
+    <button class="edit-save" type="button" onclick="saveInlineEdit('${field}')">Save</button>
+    <button class="edit-cancel" type="button" onclick="cancelInlineEdit('${field}')">Cancel</button>
+  `;
+  const el = document.getElementById(`edit-input-${field}`);
+  if (el) { el.focus(); if (el.select) el.select(); }
+}
+
+function cancelInlineEdit(field) {
+  const formRow = document.getElementById(`edit-form-${field}`);
+  if (formRow) { formRow.style.display = 'none'; formRow.innerHTML = ''; }
+  const viewRow = document.getElementById(`edit-view-${field}`);
+  if (viewRow) viewRow.style.display = 'flex';
+  delete inlineEditState[field];
+}
+
+function parseInputValue(field) {
+  const el = document.getElementById(`edit-input-${field}`);
+  if (!el) return null;
+  const raw = el.value;
+  if (raw === '' || raw == null) return null;
+  if (BOOL_FIELDS.has(field)) return raw === 'true' ? true : raw === 'false' ? false : null;
+  if (INT_FIELDS[field])      return parseInt(raw, 10);
+  return raw;
+}
+
+async function saveInlineEdit(field) {
+  const formRow = document.getElementById(`edit-form-${field}`);
+  const saveBtn = formRow?.querySelector('.edit-save');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving…'; }
+
+  const newValue = parseInputValue(field);
+  const result = await apiEdit('member_edit', {
+    member_email: currentMember,
+    field_name: field,
+    new_value: newValue
+  });
+
+  if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save'; }
+
+  if (!result.success) {
+    showToast(result.error || 'Save failed', 'error');
+    return;
+  }
+  if (result.no_op) {
+    showToast('No change (value matches current)', 'info');
+    cancelInlineEdit(field);
+    return;
+  }
+
+  showToast(`Saved: ${FIELD_LABELS[field] || field}`, 'info');
+  cancelInlineEdit(field);
+  // Update in-place display without full reload
+  const row = document.querySelector(`.edit-row[data-field="${field}"]`);
+  if (row) {
+    row.dataset.currentValue = newValue == null ? '' : String(newValue);
+    const valueDiv = row.querySelector('#edit-view-' + field + ' .edit-value');
+    if (valueDiv) valueDiv.innerHTML = formatEditValue(field, newValue);
+  }
+  // Refresh audit log if open
+  const auditBody = document.getElementById('audit-content');
+  if (auditBody && auditBody.innerHTML && !auditBody.textContent.includes('Click to load')) {
+    loadAuditLog();
+  }
+}
+
+// SCARY modal --------------------------------------------------------------
+
+let scaryModalState = { field: null, currentValue: null };
+
+function openScaryModal(field) {
+  const row = document.querySelector(`.edit-row[data-field="${field}"]`);
+  if (!row) return;
+  const current = row.dataset.currentValue;
+  let parsed = current === '' ? null : current;
+  if (BOOL_FIELDS.has(field)) parsed = current === 'true' ? true : current === 'false' ? false : null;
+  if (INT_FIELDS[field])      parsed = current === '' ? null : parseInt(current, 10);
+
+  scaryModalState = { field, currentValue: parsed };
+
+  document.getElementById('scary-modal-field-name').textContent = FIELD_LABELS[field] || field;
+  document.getElementById('scary-modal-current').innerHTML = formatEditValue(field, parsed);
+  const wrap = document.getElementById('scary-modal-new-wrap');
+  wrap.innerHTML = renderEditControl(field, parsed)
+    .replace(`id="edit-input-${field}"`, `id="scary-modal-new" name="scary-modal-new"`);
+  document.getElementById('scary-modal-reason').value = '';
+  document.getElementById('scary-modal').classList.add('open');
+  setTimeout(() => {
+    const el = document.getElementById('scary-modal-new');
+    if (el && el.focus) el.focus();
+  }, 60);
+}
+
+function closeScaryModal() {
+  document.getElementById('scary-modal').classList.remove('open');
+  scaryModalState = { field: null, currentValue: null };
+}
+
+async function submitScaryEdit() {
+  const field = scaryModalState.field;
+  if (!field) return;
+  const el = document.getElementById('scary-modal-new');
+  const reason = (document.getElementById('scary-modal-reason').value || '').trim();
+
+  if (reason.length < 5) {
+    showToast('Reason must be at least 5 characters', 'warning');
+    return;
+  }
+
+  let newValue = el ? el.value : null;
+  if (newValue === '') newValue = null;
+  if (BOOL_FIELDS.has(field)) newValue = newValue === 'true' ? true : newValue === 'false' ? false : null;
+  if (INT_FIELDS[field] && newValue != null) newValue = parseInt(newValue, 10);
+
+  const btn = document.getElementById('scary-modal-save');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+
+  const result = await apiEdit('member_edit', {
+    member_email: currentMember,
+    field_name: field,
+    new_value: newValue,
+    reason
+  });
+
+  if (btn) { btn.disabled = false; btn.textContent = 'Save change'; }
+
+  if (!result.success) {
+    showToast(result.error || 'Save failed', 'error');
+    return;
+  }
+  if (result.no_op) {
+    showToast('No change (value matches current)', 'info');
+    closeScaryModal();
+    return;
+  }
+
+  showToast(`Saved: ${FIELD_LABELS[field] || field}`, 'info');
+  // Update in-place display
+  const row = document.querySelector(`.edit-row[data-field="${field}"]`);
+  if (row) {
+    row.dataset.currentValue = newValue == null ? '' : String(newValue);
+    const valueDiv = row.querySelector('#edit-view-' + field + ' .edit-value');
+    if (valueDiv) valueDiv.innerHTML = formatEditValue(field, newValue);
+  }
+  closeScaryModal();
+
+  // Refresh audit log if open
+  const auditBody = document.getElementById('audit-content');
+  if (auditBody && auditBody.innerHTML && !auditBody.textContent.includes('Click to load')) {
+    loadAuditLog();
+  }
+}
+
+// Quick Edit section renderer ---------------------------------------------
+
+function renderQuickEdit(member) {
+  const build = (fields) => fields.map(f => {
+    const raw = member[f];
+    const dataVal = raw == null ? '' : String(raw);
+    const isScary = SCARY_FIELDS.includes(f);
+    return renderEditRow(f, raw, isScary).replace(
+      `data-field="${f}"`,
+      `data-field="${f}" data-current-value="${escapeHtml(dataVal)}"`
+    );
+  }).join('');
+
+  return `
+    <div class="edit-section">
+      <h3>Quick edit — Safe fields</h3>
+      <div class="edit-grid">${build(SAFE_FIELDS)}</div>
+    </div>
+    <div class="edit-section">
+      <h3>Quick edit — Sensitive fields</h3>
+      <div class="edit-grid">${build(SCARY_FIELDS)}</div>
+    </div>`;
+}
+
+// Audit log ----------------------------------------------------------------
+
+async function loadAuditLog() {
+  const box = document.getElementById('audit-content');
+  if (!box) return;
+  box.innerHTML = '<div class="spinner"></div> Loading audit log…';
+
+  const result = await apiEdit('member_audit_log', { member_email: currentMember, limit: 30 });
+  if (!result.success) {
+    box.innerHTML = `<div class="error-banner">Failed to load audit log: ${escapeHtml(result.error || '')}</div>`;
+    return;
+  }
+  const entries = result.audit_log || [];
+  if (entries.length === 0) {
+    box.innerHTML = '<div class="empty"><h3>No audit entries</h3><p>No admin edits have been logged for this member.</p></div>';
+    return;
+  }
+  box.innerHTML = '<ul class="audit-list">' + entries.map(e => {
+    const col = e.column_name || e.action;
+    const old_ = e.old_value === null || e.old_value === undefined ? '∅' : JSON.stringify(e.old_value);
+    const new_ = e.new_value === null || e.new_value === undefined ? '∅' : JSON.stringify(e.new_value);
+    const when = e.created_at ? formatDate(e.created_at) : '';
+    return `
+      <li>
+        <div><strong>${escapeHtml(col)}</strong> changed by ${escapeHtml(e.admin_email || 'unknown')} <span style="color:var(--text-dim)">(${escapeHtml(e.admin_role || '?')})</span></div>
+        <div class="audit-diff"><span class="old">${escapeHtml(old_)}</span><span class="new">${escapeHtml(new_)}</span></div>
+        ${e.reason ? `<div class="audit-reason">Reason: ${escapeHtml(e.reason)}</div>` : ''}
+        <div class="audit-meta">${when}${e.ip_address ? ' · ' + escapeHtml(e.ip_address) : ''}</div>
+      </li>`;
+  }).join('') + '</ul>';
+}
+
+// =======================================================================
+//   End Shell 2 edit layer
+// =======================================================================
 
 // Home overview
 async function loadHomeOverview() {
@@ -974,6 +1413,8 @@ function renderMemberDetail(member) {
       </div>
     </div>
 
+    ${renderQuickEdit(member)}
+
     <div class="section" onclick="toggleSection(this)">
       <div class="section-head">
         <div class="section-title">Profile <span class="badge">103 fields</span></div>
@@ -1057,6 +1498,16 @@ function renderMemberDetail(member) {
       </div>
       <div class="section-body">
         <div id="emails-content">Click to load email history...</div>
+      </div>
+    </div>
+
+    <div class="section" onclick="toggleSection(this)">
+      <div class="section-head">
+        <div class="section-title">Audit Log <span class="badge">Admin edits</span></div>
+        <div class="section-chev">›</div>
+      </div>
+      <div class="section-body">
+        <div id="audit-content">Click to load audit log...</div>
       </div>
     </div>
 
@@ -1423,7 +1874,50 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Handle routing
   window.addEventListener('hashchange', handleRoute);
+
+  // Shell 2: modal close on backdrop click or Escape
+  const scaryModal = document.getElementById('scary-modal');
+  if (scaryModal) {
+    scaryModal.addEventListener('click', (e) => {
+      if (e.target === scaryModal) closeScaryModal();
+    });
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && document.getElementById('scary-modal')?.classList.contains('open')) {
+      closeScaryModal();
+    }
+  });
 });
 </script>
+
+<!-- Shell 2: SCARY field edit modal -->
+<div id="scary-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="scary-modal-title">
+  <div class="modal">
+    <h2 id="scary-modal-title">Edit sensitive field</h2>
+    <div class="warn" id="scary-modal-warn">This change affects downstream AI and member-facing behaviour. A reason is required and will be stored in the audit log.</div>
+    <div class="field">
+      <label>Field</label>
+      <div class="current" id="scary-modal-field-name">&mdash;</div>
+    </div>
+    <div class="field">
+      <label>Current value</label>
+      <div class="current" id="scary-modal-current">&mdash;</div>
+    </div>
+    <div class="field">
+      <label for="scary-modal-new">New value</label>
+      <div id="scary-modal-new-wrap"></div>
+    </div>
+    <div class="field">
+      <label for="scary-modal-reason">Reason for change</label>
+      <textarea id="scary-modal-reason" placeholder="Why is this edit being made? e.g. 'Member requested persona switch after check-in call on 22 April'"></textarea>
+      <div class="hint">Minimum 5 characters. Stored permanently in <code>admin_audit_log</code>.</div>
+    </div>
+    <div class="actions">
+      <button class="btn-cancel" type="button" onclick="closeScaryModal()">Cancel</button>
+      <button class="btn-primary" type="button" id="scary-modal-save" onclick="submitScaryEdit()">Save change</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
