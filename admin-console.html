@@ -552,6 +552,9 @@ const supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let currentUser = null;
 let currentPage = 'home';
 let currentMember = null;
+let currentMemberDetail = null;
+// Cache of the raw-tables payload so we don't refetch when user switches tabs
+let rawCache = { email: null, data: null };
 let membersData = [];
 let filteredMembers = [];
 let currentSort = { col: 'last_active', dir: 'desc' };
@@ -663,14 +666,24 @@ async function apiCall(action, params = {}) {
         'Content-Type': 'application/json',
         'apikey': SUPABASE_ANON_KEY
       },
-      body: JSON.stringify({ action, ...params })
+      // EF v9 contract: { action, params: {...} }
+      body: JSON.stringify({ action, params })
     });
 
+    const body = await response.json().catch(() => ({}));
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+      return { error: body.error || `HTTP ${response.status}` };
     }
-
-    return await response.json();
+    // EF v9 envelope: { ok, admin, action, data: {...} } — return unwrapped payload
+    if (body && body.ok && 'data' in body) {
+      const payload = body.data;
+      if (payload && typeof payload === 'object' && 'error' in payload) {
+        return { error: payload.error };
+      }
+      return payload ?? {};
+    }
+    if (body && body.error) return { error: body.error };
+    return body;
   } catch (error) {
     console.error('API call failed:', error);
     return { error: error.message };
@@ -1061,29 +1074,43 @@ async function loadHomeOverview() {
     return;
   }
 
-  document.getElementById('stat-total').textContent = overview.total_members || 0;
-  document.getElementById('stat-active').textContent = overview.active_7d || 0;
-  document.getElementById('stat-risk').textContent = overview.at_risk || 0;
-  document.getElementById('stat-support').textContent = overview.needs_support || 0;
+  // EF `overview` returns:
+  //   { today, latest_metrics, total_members, at_risk_count, needs_support_count,
+  //     unresolved_alerts, last_30_days: [{metric_date, active_users, new_members,
+  //     total_activities, certificates_earned}, ...] }
+  const last30 = Array.isArray(overview.last_30_days) ? overview.last_30_days : [];
+  const last7 = last30.slice(-7);
+  const active7dPeak = last7.reduce((max, d) => Math.max(max, Number(d.active_users) || 0), 0);
 
-  // Platform summary
-  const summary = await apiCall('platform');
-  if (summary.error) {
+  document.getElementById('stat-total').textContent = overview.total_members || 0;
+  document.getElementById('stat-active').textContent = active7dPeak;
+  document.getElementById('stat-risk').textContent = overview.at_risk_count || 0;
+  document.getElementById('stat-support').textContent = overview.needs_support_count || 0;
+
+  // Platform summary: EF `platform` returns { rows: [{metric_date, active_users,
+  // new_members, total_activities, certificates_earned, ...}, ...] }
+  // Roll up to 30-day totals client-side.
+  const platform = await apiCall('platform', { days: 30 });
+  if (platform.error) {
     document.getElementById('platform-summary').innerHTML = '<div class="error-banner">Failed to load platform data</div>';
   } else {
+    const rows = Array.isArray(platform.rows) ? platform.rows : [];
+    const totalActivities = rows.reduce((s, r) => s + (Number(r.total_activities) || 0), 0);
+    const totalNewMembers = rows.reduce((s, r) => s + (Number(r.new_members) || 0), 0);
+    const totalCerts = rows.reduce((s, r) => s + (Number(r.certificates_earned) || 0), 0);
     document.getElementById('platform-summary').innerHTML = `
       <div class="grid-3">
         <div class="stat">
-          <div class="stat-label">Total Activities</div>
-          <div class="stat-value">${summary.total_activities || 0}</div>
+          <div class="stat-label">Total Activities (30d)</div>
+          <div class="stat-value">${totalActivities}</div>
         </div>
         <div class="stat">
-          <div class="stat-label">Avg Score</div>
-          <div class="stat-value">${(summary.avg_engagement_score || 0).toFixed(1)}</div>
+          <div class="stat-label">New Members (30d)</div>
+          <div class="stat-value">${totalNewMembers}</div>
         </div>
         <div class="stat">
-          <div class="stat-label">Check-ins</div>
-          <div class="stat-value">${summary.total_checkins || 0}</div>
+          <div class="stat-label">Certificates Earned (30d)</div>
+          <div class="stat-value">${totalCerts}</div>
         </div>
       </div>
     `;
@@ -1120,8 +1147,8 @@ async function runJumpSearch(query) {
   const results = document.getElementById('jump-results');
 
   if (!membersData.length) {
-    const response = await apiCall('members', { limit: 1000 });
-    if (!response.error) membersData = response.members || [];
+    const response = await apiCall('members', { pageSize: 200, page: 1 });
+    if (!response.error) membersData = (response.rows || []).map(flattenMemberRow);
   }
 
   const matches = membersData.filter(m => 
@@ -1148,16 +1175,49 @@ async function runJumpSearch(query) {
 
 // Members list
 async function loadMembersList() {
-  const response = await apiCall('members', { limit: 1000 });
+  // EF `members` contract: { page, pageSize, total, rows: [{member_email, last_activity_at,
+  //   activities_7d, activities_30d, engagement_score, at_risk, needs_support, cert_count,
+  //   members: {email, first_name, last_name, persona, company, subscription_status, ...}}, ...] }
+  // Request a large page via pageSize; server caps at 200.
+  const response = await apiCall('members', { pageSize: 200, page: 1 });
   if (response.error) {
     document.getElementById('members-tbody').innerHTML = 
       '<tr><td colspan="5"><div class="error-banner">Failed to load members</div></td></tr>';
     return;
   }
-
-  membersData = response.members || [];
+  membersData = (response.rows || []).map(flattenMemberRow);
   applyFiltersAndSort();
   setupMembersControls();
+}
+
+// Flatten a member_stats row (with joined members) into the shape the UI expects
+function flattenMemberRow(row) {
+  const m = row.members || {};
+  const first = (m.first_name || '').trim();
+  const last = (m.last_name || '').trim();
+  const display = (first || last) ? `${first} ${last}`.trim() : '';
+  const lastActive = row.last_activity_at || null;
+  // active_7d derived flag — used by filters + display
+  const active_7d = (Number(row.activities_7d) || 0) > 0;
+  return {
+    email: row.member_email || m.email,
+    display_name: display || null,
+    first_name: m.first_name || null,
+    last_name: m.last_name || null,
+    company: m.company || null,
+    persona: m.persona || null,
+    subscription_status: m.subscription_status || null,
+    last_active_at: lastActive,
+    activities_7d: row.activities_7d || 0,
+    activities_30d: row.activities_30d || 0,
+    total_activities: row.total_activities || 0,
+    engagement_score: row.engagement_score || 0,
+    at_risk: !!row.at_risk,
+    needs_support: !!row.needs_support,
+    active_7d,
+    cert_count: row.cert_count || 0,
+    joined_at: row.joined_at || m.created_at || null
+  };
 }
 
 function setupMembersControls() {
@@ -1340,13 +1400,34 @@ async function loadMemberDetail(email) {
   document.getElementById('member-detail').innerHTML = '<div style="padding:60px;text-align:center"><div class="spinner"></div> Loading member details...</div>';
 
   const response = await apiCall('member_detail', { email });
-  if (response.error) {
+  if (response.error || !response.member) {
     document.getElementById('member-detail').innerHTML = 
       '<div class="error-banner">Failed to load member details</div>';
     return;
   }
 
-  renderMemberDetail(response.member);
+  // EF `member_detail` returns:
+  //   { member, stats, certificates, push_subs, emails, programmes, notifications }
+  // Stash the whole envelope so accordions can read without another call
+  currentMemberDetail = response;
+  rawCache = { email: null, data: null };
+
+  // Compute a display-friendly view of `member` with augmentations from stats
+  const m = response.member;
+  const s = response.stats || {};
+  const augmented = {
+    ...m,
+    display_name: ((m.first_name || '') + ' ' + (m.last_name || '')).trim() || null,
+    engagement_score: s.engagement_score || 0,
+    total_activities: s.total_activities || 0,
+    current_streak: s.current_streak || 0,
+    total_checkins: s.total_checkins || 0,
+    last_active_at: s.last_activity_at || m.last_active_at || null,
+    total_workouts: s.total_workouts || 0,
+    total_habits: s.total_habits || 0,
+    total_certificates: (response.certificates || []).length
+  };
+  renderMemberDetail(augmented);
 }
 
 function renderMemberDetail(member) {
@@ -1544,55 +1625,66 @@ function toggleSection(section) {
 
 // Section content loaders
 async function renderProfile() {
-  const response = await apiCall('member_raw', { 
-    email: currentMember,
-    table: 'members',
-    limit: 1
-  });
-
-  if (response.error || !response.data || response.data.length === 0) {
+  // Profile data is already in the stashed member_detail response - no extra call needed
+  if (!currentMemberDetail || !currentMemberDetail.member) {
     document.getElementById('profile-content').innerHTML = 
-      '<div class="error-banner">Failed to load profile data</div>';
+      '<div class="error-banner">No profile data loaded</div>';
     return;
   }
-
-  const member = response.data[0];
+  const member = currentMemberDetail.member;
   const fields = Object.entries(member).filter(([key]) => key !== 'id');
-
   const html = `
     <dl class="kv">
       ${fields.map(([key, value]) => `
-        <dt>${escapeHtml(key.replace(/_/g, ' ').replace(/\w/g, l => l.toUpperCase()))}</dt>
+        <dt>${escapeHtml(key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()))}</dt>
         <dd class="${key.includes('email') || key.includes('id') || key.includes('at') ? 'mono' : ''}">${
-          value == null ? '<em>null</em>' : escapeHtml(String(value))
+          value == null ? '<em>null</em>' : escapeHtml(typeof value === 'object' ? JSON.stringify(value) : String(value))
         }</dd>
       `).join('')}
     </dl>
   `;
-
   document.getElementById('profile-content').innerHTML = html;
 }
 
 async function renderProgrammes() {
-  document.getElementById('programme-content').innerHTML = '<div class="spinner"></div> Loading programmes...';
-  // Implementation would call member_programme endpoint
-  setTimeout(() => {
+  const programmes = (currentMemberDetail && currentMemberDetail.programmes) || [];
+  if (programmes.length === 0) {
     document.getElementById('programme-content').innerHTML = 
-      '<div class="empty"><h3>No programme data</h3><p>Programme endpoint not implemented</p></div>';
-  }, 500);
+      '<div class="empty"><h3>No programme</h3><p>No workout programme found for this member</p></div>';
+    return;
+  }
+  const html = programmes.map(p => `
+    <div style="padding:14px;background:var(--surface-2);border-radius:8px;margin-bottom:10px">
+      <div style="font-weight:600;margin-bottom:4px">${escapeHtml(p.programme_name || 'Custom programme')}</div>
+      <div style="font-size:12px;color:var(--text-muted)">
+        Week ${p.current_week || 1} of ${p.plan_duration_weeks || '?'}
+        ${p.is_active ? ' · <span style="color:var(--success)">Active</span>' : ' · <span style="color:var(--text-dim)">Inactive</span>'}
+        ${p.paused_at ? ' · Paused' : ''}
+        ${p.source ? ' · Source: ' + escapeHtml(p.source) : ''}
+      </div>
+      <div style="font-size:11px;color:var(--text-dim);margin-top:4px">Generated ${formatDate(p.generated_at)}</div>
+    </div>
+  `).join('');
+  document.getElementById('programme-content').innerHTML = html;
 }
 
 async function loadTimelineSection(range) {
-  document.querySelectorAll('.sub-tab').forEach(tab => {
-    tab.classList.remove('active');
-  });
-  event.target.classList.add('active');
+  // range options from UI: '30d', '30-90d', '1y' — map to days
+  const daysMap = { '30d': 30, '30-90d': 90, '1y': 365 };
+  const days = daysMap[range] || 30;
+
+  // Update active sub-tab (scoped to the timeline section)
+  const sectionBody = document.getElementById('timeline-content').closest('.section-body');
+  if (sectionBody) {
+    sectionBody.querySelectorAll('.sub-tab').forEach(tab => tab.classList.remove('active'));
+    if (window.event && event.target) event.target.classList.add('active');
+  }
 
   document.getElementById('timeline-content').innerHTML = '<div class="spinner"></div> Loading timeline...';
 
   const response = await apiCall('member_timeline', {
     email: currentMember,
-    range
+    days
   });
 
   if (response.error) {
@@ -1601,7 +1693,9 @@ async function loadTimelineSection(range) {
     return;
   }
 
-  const activities = response.timeline || [];
+  // EF returns { mode: 'raw'|'daily', rows: [...] }
+  const mode = response.mode || 'raw';
+  const activities = Array.isArray(response.rows) ? response.rows : [];
 
   if (activities.length === 0) {
     document.getElementById('timeline-content').innerHTML = 
@@ -1609,43 +1703,56 @@ async function loadTimelineSection(range) {
     return;
   }
 
-  const html = `
-    <ul class="timeline-list">
-      ${activities.map(activity => `
-        <li>
-          <div class="tt">${formatDate(activity.created_at)}</div>
-          <div class="tp tp-${activity.activity_type}">${escapeHtml(activity.activity_type)}</div>
-          <div class="tm">${escapeHtml(activity.description || 'Activity logged')}</div>
-        </li>
-      `).join('')}
-    </ul>
-  `;
+  const html = mode === 'daily'
+    ? `<div style="overflow-x:auto"><table class="raw-table"><thead><tr>${
+        Object.keys(activities[0]).map(c => `<th>${escapeHtml(c)}</th>`).join('')
+      }</tr></thead><tbody>${
+        activities.map(r => `<tr>${Object.entries(r).map(([k,v]) => `<td class="${k.endsWith('_at') || k.endsWith('_date') ? 'mono' : ''}">${v == null ? '<em>null</em>' : escapeHtml(String(v))}</td>`).join('')}</tr>`).join('')
+      }</tbody></table></div>`
+    : `<ul class="timeline-list">${
+        activities.map(a => `
+          <li>
+            <div class="tt">${formatDate(a.logged_at || a.activity_date)}</div>
+            <div class="tp tp-${escapeHtml(a.activity_type || 'activity')}">${escapeHtml(a.activity_type || 'activity')}</div>
+            <div class="tm">${escapeHtml(a.activity_label || 'Activity logged')}</div>
+          </li>
+        `).join('')
+      }</ul>`;
 
   document.getElementById('timeline-content').innerHTML = html;
 }
 
 async function loadRawSection(table) {
-  document.querySelectorAll('#raw-content').length && 
-  document.querySelectorAll('.sub-tab').forEach(tab => {
-    tab.classList.remove('active');
-  });
-  event.target.classList.add('active');
+  const sectionBody = document.getElementById('raw-content').closest('.section-body');
+  if (sectionBody) {
+    sectionBody.querySelectorAll('.sub-tab').forEach(tab => tab.classList.remove('active'));
+    if (window.event && event.target) event.target.classList.add('active');
+  }
 
   document.getElementById('raw-content').innerHTML = '<div class="spinner"></div> Loading data...';
 
-  const response = await apiCall('member_raw', {
-    email: currentMember,
-    table,
-    limit: 100
-  });
-
-  if (response.error) {
-    document.getElementById('raw-content').innerHTML = 
-      '<div class="error-banner">Failed to load raw data</div>';
-    return;
+  // EF returns ALL 9 tables in one call: { daily_habits, workouts, cardio, session_views,
+  //   replay_views, wellbeing_checkins, weight_logs, monthly_checkins, ai_interactions }
+  let payload;
+  if (rawCache.email === currentMember && rawCache.data) {
+    payload = rawCache.data;
+  } else {
+    const response = await apiCall('member_raw', { email: currentMember, limit: 100 });
+    if (response.error) {
+      document.getElementById('raw-content').innerHTML = 
+        '<div class="error-banner">Failed to load raw data</div>';
+      return;
+    }
+    payload = response;
+    rawCache = { email: currentMember, data: response };
   }
 
-  const data = response.data || [];
+  // The UI has a 'certificates' tab but certs come from member_detail, not member_raw
+  let data = payload[table];
+  if (!Array.isArray(data) && table === 'certificates' && currentMemberDetail) {
+    data = currentMemberDetail.certificates || [];
+  }
+  data = Array.isArray(data) ? data : [];
 
   if (data.length === 0) {
     document.getElementById('raw-content').innerHTML = 
@@ -1654,23 +1761,18 @@ async function loadRawSection(table) {
   }
 
   const columns = Object.keys(data[0]);
-
   const html = `
     <div style="overflow-x:auto">
       <table class="raw-table">
-        <thead>
-          <tr>
-            ${columns.map(col => `<th>${escapeHtml(col)}</th>`).join('')}
-          </tr>
-        </thead>
+        <thead><tr>${columns.map(col => `<th>${escapeHtml(col)}</th>`).join('')}</tr></thead>
         <tbody>
           ${data.map(row => `
             <tr>
               ${columns.map(col => {
                 const value = row[col];
-                const className = col.includes('email') || col.includes('id') || col.includes('at') ? 'mono' : '';
+                const className = col.includes('email') || col.includes('id') || col.endsWith('_at') ? 'mono' : '';
                 return `<td class="${className}">${
-                  value == null ? '<em>null</em>' : escapeHtml(String(value))
+                  value == null ? '<em>null</em>' : escapeHtml(typeof value === 'object' ? JSON.stringify(value) : String(value))
                 }</td>`;
               }).join('')}
             </tr>
@@ -1679,44 +1781,90 @@ async function loadRawSection(table) {
       </table>
     </div>
   `;
-
   document.getElementById('raw-content').innerHTML = html;
 }
 
 async function renderCertificates() {
-  document.getElementById('certificates-content').innerHTML = '<div class="spinner"></div> Loading certificates...';
-  // Implementation would call certificates endpoint
-  setTimeout(() => {
+  const certs = (currentMemberDetail && currentMemberDetail.certificates) || [];
+  if (certs.length === 0) {
     document.getElementById('certificates-content').innerHTML = 
       '<div class="empty"><h3>No certificates</h3><p>Member has not earned any certificates yet</p></div>';
-  }, 500);
+    return;
+  }
+  const html = `
+    <ul class="audit-list">
+      ${certs.map(c => `
+        <li>
+          <div><strong>${escapeHtml(c.certificate_type || c.type || 'Certificate')}</strong>${c.global_cert_number ? ` · No. ${String(c.global_cert_number).padStart(4, '0')}` : ''}</div>
+          <div class="audit-meta">Earned ${formatDate(c.earned_at || c.created_at)}${c.milestone_count ? ` · Milestone: ${c.milestone_count}` : ''}</div>
+        </li>
+      `).join('')}
+    </ul>
+  `;
+  document.getElementById('certificates-content').innerHTML = html;
 }
 
 async function renderNotifications() {
-  document.getElementById('notifications-content').innerHTML = '<div class="spinner"></div> Loading notifications...';
-  // Implementation would call notifications endpoint
-  setTimeout(() => {
+  const notes = (currentMemberDetail && currentMemberDetail.notifications) || [];
+  if (notes.length === 0) {
     document.getElementById('notifications-content').innerHTML = 
       '<div class="empty"><h3>No notifications</h3><p>No notification history found</p></div>';
-  }, 500);
+    return;
+  }
+  const html = `
+    <ul class="audit-list">
+      ${notes.map(n => `
+        <li>
+          <div><strong>${escapeHtml(n.title || n.type || 'Notification')}</strong>${n.read ? '' : ' <span class="scary-badge" style="background:rgba(77,170,170,.15);color:var(--accent)">Unread</span>'}</div>
+          ${n.body ? `<div style="font-size:12.5px;color:var(--text-muted);margin-top:2px">${escapeHtml(n.body)}</div>` : ''}
+          <div class="audit-meta">${formatDate(n.created_at)}${n.type ? ' · ' + escapeHtml(n.type) : ''}</div>
+        </li>
+      `).join('')}
+    </ul>
+  `;
+  document.getElementById('notifications-content').innerHTML = html;
 }
 
 async function renderEmails() {
-  document.getElementById('emails-content').innerHTML = '<div class="spinner"></div> Loading emails...';
-  // Implementation would call engagement_emails endpoint
-  setTimeout(() => {
+  const emails = (currentMemberDetail && currentMemberDetail.emails) || [];
+  if (emails.length === 0) {
     document.getElementById('emails-content').innerHTML = 
       '<div class="empty"><h3>No emails</h3><p>No engagement email history found</p></div>';
-  }, 500);
+    return;
+  }
+  const html = `
+    <ul class="audit-list">
+      ${emails.map(e => `
+        <li>
+          <div><strong>${escapeHtml(e.email_key || 'email')}</strong> · Stream ${escapeHtml(e.stream || '?')}</div>
+          <div class="audit-meta">
+            Sent ${formatDate(e.sent_at)}${(e.open_count || 0) > 0 ? ' · Opened' : ''}${(e.click_count || 0) > 0 ? ' · Clicked' : ''}
+          </div>
+        </li>
+      `).join('')}
+    </ul>
+  `;
+  document.getElementById('emails-content').innerHTML = html;
 }
 
 async function renderPushSubscriptions() {
-  document.getElementById('push-content').innerHTML = '<div class="spinner"></div> Loading push data...';
-  // Implementation would call push subscriptions endpoint
-  setTimeout(() => {
+  const subs = (currentMemberDetail && currentMemberDetail.push_subs) || [];
+  if (subs.length === 0) {
     document.getElementById('push-content').innerHTML = 
       '<div class="empty"><h3>No push subscriptions</h3><p>Member has not enabled push notifications</p></div>';
-  }, 500);
+    return;
+  }
+  const html = `
+    <ul class="audit-list">
+      ${subs.map(s => `
+        <li>
+          <div style="font-family:'DM Sans',monospace;font-size:11.5px;color:var(--text-muted);word-break:break-all">${escapeHtml(s.endpoint || '')}</div>
+          <div class="audit-meta">Registered ${formatDate(s.created_at)}</div>
+        </li>
+      `).join('')}
+    </ul>
+  `;
+  document.getElementById('push-content').innerHTML = html;
 }
 
 // Utility functions
