@@ -1516,6 +1516,39 @@ function renderMemberDetail(member) {
       </div>
     </div>
 
+    <!-- Shell 3 Sub-scope A: Programme admin controls -->
+    <div class="section" onclick="toggleSection(this)">
+      <div class="section-head">
+        <div class="section-title">Programme controls <span class="badge">Admin</span></div>
+        <div class="section-chev">›</div>
+      </div>
+      <div class="section-body">
+        <div id="programme-admin-content">Click to load programme controls...</div>
+      </div>
+    </div>
+
+    <!-- Shell 3 Sub-scope A: Habits admin -->
+    <div class="section" onclick="toggleSection(this)">
+      <div class="section-head">
+        <div class="section-title">Habits <span class="badge">Admin</span></div>
+        <div class="section-chev">›</div>
+      </div>
+      <div class="section-body">
+        <div id="habits-admin-content">Click to load habits...</div>
+      </div>
+    </div>
+
+    <!-- Shell 3 Sub-scope A: Weekly goals admin -->
+    <div class="section" onclick="toggleSection(this)">
+      <div class="section-head">
+        <div class="section-title">Weekly goals <span class="badge">Admin</span></div>
+        <div class="section-chev">›</div>
+      </div>
+      <div class="section-body">
+        <div id="weekly-goals-admin-content">Click to load weekly goals...</div>
+      </div>
+    </div>
+
     <div class="section" onclick="toggleSection(this)">
       <div class="section-head">
         <div class="section-title">Activity Timeline <span class="badge">30 days</span></div>
@@ -1614,12 +1647,18 @@ function toggleSection(section) {
     const sectionBody = section.querySelector('.section-body');
     const title = section.querySelector('.section-title').textContent.toLowerCase();
 
-    if (title.includes('profile')) renderProfile();
+    // Shell 3 admin panels take precedence over their read-only counterparts
+    // because their titles start with the panel noun (e.g. "habits" vs "programme").
+    if (title.startsWith('programme controls')) renderProgrammeAdminPanel();
+    else if (title.startsWith('habits')) renderHabitsAdminPanel();
+    else if (title.startsWith('weekly goals')) renderWeeklyGoalsAdminPanel();
+    else if (title.includes('profile')) renderProfile();
     else if (title.includes('programme')) renderProgrammes();
     else if (title.includes('certificates')) renderCertificates();
     else if (title.includes('notifications')) renderNotifications();
     else if (title.includes('emails')) renderEmails();
     else if (title.includes('push')) renderPushSubscriptions();
+    else if (title.includes('audit log')) loadAuditLog();
   }
 }
 
@@ -1993,6 +2032,437 @@ supa.auth.onAuthStateChange((event, session) => {
   }
 });
 
+// =======================================================================
+//   Shell 3 Sub-scope A — Cross-table admin endpoints
+//   - admin-member-habits v1       (habits: list, assign, deactivate, reactivate)
+//   - admin-member-programme v1    (programme: pause, resume, advance_week, swap_plan)
+//   - admin-member-weekly-goals v1 (weekly goals: get, upsert)
+//   Each EF requires a JWT (verify_jwt:true) + admin_users.active=true.
+//   Mutating actions require a reason (min 5 chars); audit written server-side.
+// =======================================================================
+
+const HABITS_EF_URL        = `${SUPABASE_URL}/functions/v1/admin-member-habits`;
+const PROGRAMME_EF_URL     = `${SUPABASE_URL}/functions/v1/admin-member-programme`;
+const WEEKLY_GOALS_EF_URL  = `${SUPABASE_URL}/functions/v1/admin-member-weekly-goals`;
+
+// Generic Shell 3 EF client — mirrors apiEdit shape
+async function apiShell3(efUrl, action, params = {}) {
+  try {
+    const { data: { session } } = await supa.auth.getSession();
+    const token = session?.access_token;
+    if (!token) return { success: false, error: 'Not signed in' };
+
+    const response = await fetch(efUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({ action, ...params })
+    });
+
+    // Gateway 401s (verify_jwt rejections) come back as bare platform errors,
+    // not our {success,error} shape. Normalise.
+    let data;
+    try { data = await response.json(); }
+    catch { data = {}; }
+
+    if (!response.ok) {
+      const err = data.error || data.message || `HTTP ${response.status}`;
+      return { success: false, error: err, status: response.status };
+    }
+    return data;
+  } catch (e) {
+    console.error('apiShell3 failed:', e);
+    return { success: false, error: e.message || 'Network error' };
+  }
+}
+const apiHabits       = (action, params) => apiShell3(HABITS_EF_URL, action, params);
+const apiProgramme    = (action, params) => apiShell3(PROGRAMME_EF_URL, action, params);
+const apiWeeklyGoals  = (action, params) => apiShell3(WEEKLY_GOALS_EF_URL, action, params);
+
+// ----- Generic reason-required action modal -----
+let reasonModalState = { onConfirm: null };
+
+function openReasonModal({ title, bodyHtml, confirmLabel = 'Confirm', onConfirm }) {
+  reasonModalState = { onConfirm };
+  document.getElementById('reason-modal-title').textContent = title;
+  document.getElementById('reason-modal-body').innerHTML = bodyHtml || '';
+  document.getElementById('reason-modal-reason').value = '';
+  document.getElementById('reason-modal-confirm').textContent = confirmLabel;
+  document.getElementById('reason-modal').classList.add('open');
+  setTimeout(() => {
+    const el = document.getElementById('reason-modal-reason');
+    if (el && el.focus) el.focus();
+  }, 60);
+}
+
+function closeReasonModal() {
+  document.getElementById('reason-modal').classList.remove('open');
+  reasonModalState = { onConfirm: null };
+}
+
+async function submitReasonModal() {
+  const reason = (document.getElementById('reason-modal-reason').value || '').trim();
+  if (reason.length < 5) {
+    showToast('Reason must be at least 5 characters', 'warning');
+    return;
+  }
+  const cb = reasonModalState.onConfirm;
+  if (!cb) return;
+  const btn = document.getElementById('reason-modal-confirm');
+  const origLabel = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Working…';
+  try {
+    await cb(reason);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = origLabel;
+  }
+}
+
+// ============================================================
+// Panel 1 — Programme admin controls
+// ============================================================
+let programmeAdminState = { loaded: false, programme: null, library: null };
+
+async function renderProgrammeAdminPanel() {
+  const target = document.getElementById('programme-admin-content');
+  if (!target || !currentMember) return;
+  target.innerHTML = '<div style="padding:20px;color:var(--text-muted);font-size:13px">Loading programme…</div>';
+
+  const result = await apiProgramme('get_programme', { member_email: currentMember });
+  if (!result.success) {
+    target.innerHTML = `<div class="error-banner">${escapeHtml(result.error || 'Failed to load programme')}</div>`;
+    return;
+  }
+  const p = result.programme;
+  programmeAdminState.programme = p;
+
+  if (!p) {
+    target.innerHTML = '<div class="empty"><h3>No programme</h3><p>This member has no entry in workout_plan_cache yet.</p></div>';
+    return;
+  }
+
+  const statusBits = [
+    p.is_active ? '<span style="color:var(--success)">Active</span>' : '<span style="color:var(--text-dim)">Paused</span>',
+    `Week ${p.current_week}/${p.plan_duration_weeks}`,
+    `Session ${p.current_session}`,
+    p.source ? `Source: ${escapeHtml(p.source)}` : ''
+  ].filter(Boolean).join(' · ');
+
+  target.innerHTML = `
+    <div class="edit-section">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:200px">
+          <div style="font-weight:600;font-size:15px;margin-bottom:4px">${escapeHtml(p.programme_name || 'Untitled programme')}</div>
+          <div style="font-size:12.5px;color:var(--text-muted);line-height:1.55">${statusBits}</div>
+          ${p.paused_at ? `<div style="font-size:11.5px;color:var(--warning);margin-top:4px">Paused at ${formatDate(p.paused_at)}</div>` : ''}
+          <div style="font-size:11.5px;color:var(--text-dim);margin-top:4px">Generated ${formatDate(p.generated_at)}</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          ${p.is_active
+            ? '<button class="edit-cancel" type="button" onclick="programmeAction(\'pause\')">Pause</button>'
+            : '<button class="edit-save"   type="button" onclick="programmeAction(\'resume\')">Resume</button>'}
+          <button class="edit-cancel" type="button" onclick="programmeAction('advance')">Advance week…</button>
+          <button class="edit-cancel" type="button" onclick="programmeAction('swap')">Swap plan…</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+async function programmeAction(kind) {
+  if (!currentMember) return;
+  const p = programmeAdminState.programme;
+  if (!p) { showToast('Programme state not loaded', 'warning'); return; }
+
+  if (kind === 'pause' || kind === 'resume') {
+    openReasonModal({
+      title: kind === 'pause' ? 'Pause programme' : 'Resume programme',
+      bodyHtml: `<div class="field"><label>Member</label><div class="current">${escapeHtml(currentMember)}</div></div>
+                 <div class="field"><label>Programme</label><div class="current">${escapeHtml(p.programme_name || 'Untitled')}</div></div>`,
+      confirmLabel: kind === 'pause' ? 'Pause' : 'Resume',
+      onConfirm: async (reason) => {
+        const action = kind === 'pause' ? 'pause_programme' : 'resume_programme';
+        const res = await apiProgramme(action, { member_email: currentMember, reason });
+        if (!res.success) { showToast(res.error || 'Action failed', 'error'); return; }
+        if (res.no_op)    { showToast(res.message || 'No change', 'info'); }
+        else              { showToast(kind === 'pause' ? 'Programme paused' : 'Programme resumed', 'info'); }
+        closeReasonModal();
+        renderProgrammeAdminPanel();
+      }
+    });
+  } else if (kind === 'advance') {
+    const maxWeek = p.plan_duration_weeks || 8;
+    openReasonModal({
+      title: 'Advance to week',
+      bodyHtml: `<div class="field"><label>Current</label><div class="current">Week ${p.current_week}/${maxWeek}, session ${p.current_session}</div></div>
+                 <div class="field"><label for="prog-advance-target">Target week</label>
+                   <input id="prog-advance-target" type="number" min="1" max="${maxWeek}" value="${Math.min(p.current_week + 1, maxWeek)}" />
+                   <div class="hint">Session resets to 1.</div>
+                 </div>`,
+      confirmLabel: 'Advance',
+      onConfirm: async (reason) => {
+        const v = parseInt(document.getElementById('prog-advance-target').value, 10);
+        if (!Number.isInteger(v) || v < 1 || v > maxWeek) {
+          showToast(`Week must be between 1 and ${maxWeek}`, 'warning'); return;
+        }
+        const res = await apiProgramme('advance_week', { member_email: currentMember, to_week: v, reason });
+        if (!res.success) { showToast(res.error || 'Advance failed', 'error'); return; }
+        if (res.no_op)    { showToast(res.message || 'No change', 'info'); }
+        else              { showToast(`Advanced to week ${res.current_week}`, 'info'); }
+        closeReasonModal();
+        renderProgrammeAdminPanel();
+      }
+    });
+  } else if (kind === 'swap') {
+    openReasonModal({
+      title: 'Swap to library plan',
+      bodyHtml: `<div class="warn">This replaces the member's entire programme JSON with a library plan. Current week resets to 1.</div>
+                 <div class="field"><label>Current</label><div class="current">${escapeHtml(p.programme_name || 'Untitled')}</div></div>
+                 <div class="field"><label for="prog-swap-id">Library programme UUID</label>
+                   <input id="prog-swap-id" type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+                   <div class="hint">Look up in Supabase: SELECT id, programme_name FROM programme_library WHERE is_active=true;</div>
+                 </div>`,
+      confirmLabel: 'Swap',
+      onConfirm: async (reason) => {
+        const id = (document.getElementById('prog-swap-id').value || '').trim();
+        if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+          showToast('library_programme_id must be a valid UUID', 'warning'); return;
+        }
+        const res = await apiProgramme('swap_plan', { member_email: currentMember, library_programme_id: id, reason });
+        if (!res.success) { showToast(res.error || 'Swap failed', 'error'); return; }
+        showToast(`Swapped to "${res.programme_name}"`, 'info');
+        closeReasonModal();
+        renderProgrammeAdminPanel();
+      }
+    });
+  }
+}
+
+// ============================================================
+// Panel 2 — Habits admin
+// ============================================================
+let habitsAdminState = { habits: null, library: null };
+
+async function renderHabitsAdminPanel() {
+  const target = document.getElementById('habits-admin-content');
+  if (!target || !currentMember) return;
+  target.innerHTML = '<div style="padding:20px;color:var(--text-muted);font-size:13px">Loading habits…</div>';
+
+  const res = await apiHabits('list_habits', { member_email: currentMember, include_inactive: true });
+  if (!res.success) {
+    target.innerHTML = `<div class="error-banner">${escapeHtml(res.error || 'Failed to load habits')}</div>`;
+    return;
+  }
+  habitsAdminState.habits = res.habits || [];
+
+  const activeCount = habitsAdminState.habits.filter(h => h.active).length;
+  const inactiveCount = habitsAdminState.habits.length - activeCount;
+
+  const rowHtml = habitsAdminState.habits.map(h => {
+    const lib = h.habit_library || {};
+    const pot = lib.habit_pot || '—';
+    const title = lib.habit_title || '(unknown habit)';
+    const diff = lib.difficulty || '—';
+    const activeBadge = h.active
+      ? '<span style="color:var(--success);font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:600">Active</span>'
+      : '<span style="color:var(--text-dim);font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:600">Inactive</span>';
+    const actionBtn = h.active
+      ? `<button class="edit-cancel" type="button" onclick="habitAction('deactivate','${h.habit_id}')">Deactivate…</button>`
+      : `<button class="edit-save"   type="button" onclick="habitAction('reactivate','${h.habit_id}')">Reactivate…</button>`;
+    return `
+      <div class="edit-row" style="flex-direction:row;align-items:center;justify-content:space-between;gap:12px;padding:10px 0">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13.5px;color:var(--text);font-weight:500">${escapeHtml(title)}</div>
+          <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px">
+            ${escapeHtml(pot)} · ${escapeHtml(diff)} · assigned_by ${escapeHtml(h.assigned_by || '—')} · ${activeBadge}
+          </div>
+        </div>
+        ${actionBtn}
+      </div>
+    `;
+  }).join('');
+
+  target.innerHTML = `
+    <div class="edit-section">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:12px;flex-wrap:wrap">
+        <div style="font-size:12px;color:var(--text-muted)">
+          ${activeCount} active · ${inactiveCount} inactive
+        </div>
+        <button class="edit-save" type="button" onclick="habitAction('assign')">Assign new habit…</button>
+      </div>
+      ${habitsAdminState.habits.length
+        ? rowHtml
+        : '<div class="empty"><h3>No habits</h3><p>This member has no habit assignments yet.</p></div>'}
+    </div>
+  `;
+}
+
+async function habitAction(kind, habitId) {
+  if (!currentMember) return;
+
+  if (kind === 'deactivate' || kind === 'reactivate') {
+    const hab = (habitsAdminState.habits || []).find(h => h.habit_id === habitId);
+    const title = hab?.habit_library?.habit_title || '(unknown)';
+    openReasonModal({
+      title: kind === 'deactivate' ? 'Deactivate habit' : 'Reactivate habit',
+      bodyHtml: `<div class="field"><label>Member</label><div class="current">${escapeHtml(currentMember)}</div></div>
+                 <div class="field"><label>Habit</label><div class="current">${escapeHtml(title)}</div></div>`,
+      confirmLabel: kind === 'deactivate' ? 'Deactivate' : 'Reactivate',
+      onConfirm: async (reason) => {
+        const action = kind === 'deactivate' ? 'deactivate_habit' : 'reactivate_habit';
+        const res = await apiHabits(action, { member_email: currentMember, habit_id: habitId, reason });
+        if (!res.success) { showToast(res.error || 'Action failed', 'error'); return; }
+        if (res.no_op)    { showToast(res.message || 'No change', 'info'); }
+        else              { showToast(kind === 'deactivate' ? 'Habit deactivated' : 'Habit reactivated', 'info'); }
+        closeReasonModal();
+        renderHabitsAdminPanel();
+      }
+    });
+  } else if (kind === 'assign') {
+    if (!habitsAdminState.library) {
+      const libRes = await apiHabits('list_library', {});
+      if (!libRes.success) { showToast(libRes.error || 'Failed to load library', 'error'); return; }
+      habitsAdminState.library = libRes.library || [];
+    }
+    const grouped = {};
+    for (const h of habitsAdminState.library) {
+      if (!grouped[h.habit_pot]) grouped[h.habit_pot] = [];
+      grouped[h.habit_pot].push(h);
+    }
+    const options = Object.keys(grouped).sort().map(pot => `
+      <optgroup label="${escapeHtml(pot)}">
+        ${grouped[pot].map(h => `<option value="${h.id}">${escapeHtml(h.habit_title)} (${escapeHtml(h.difficulty)})</option>`).join('')}
+      </optgroup>
+    `).join('');
+
+    openReasonModal({
+      title: 'Assign habit to member',
+      bodyHtml: `<div class="field"><label>Member</label><div class="current">${escapeHtml(currentMember)}</div></div>
+                 <div class="field"><label for="hab-assign-id">Habit (from library)</label>
+                   <select id="hab-assign-id">${options}</select>
+                 </div>`,
+      confirmLabel: 'Assign',
+      onConfirm: async (reason) => {
+        const id = document.getElementById('hab-assign-id').value;
+        if (!id) { showToast('Pick a habit', 'warning'); return; }
+        const res = await apiHabits('assign_habit', { member_email: currentMember, habit_id: id, reason });
+        if (!res.success) { showToast(res.error || 'Assign failed', 'error'); return; }
+        if (res.no_op)    { showToast(res.message || 'Already assigned', 'info'); }
+        else              { showToast(`Assigned "${res.habit?.title || 'habit'}"`, 'info'); }
+        closeReasonModal();
+        renderHabitsAdminPanel();
+      }
+    });
+  }
+}
+
+// ============================================================
+// Panel 3 — Weekly goals admin
+// ============================================================
+let weeklyGoalsAdminState = { week_start: null, goals: null };
+
+async function renderWeeklyGoalsAdminPanel() {
+  const target = document.getElementById('weekly-goals-admin-content');
+  if (!target || !currentMember) return;
+  target.innerHTML = '<div style="padding:20px;color:var(--text-muted);font-size:13px">Loading weekly goals…</div>';
+
+  const res = await apiWeeklyGoals('get_weekly_goals', { member_email: currentMember });
+  if (!res.success) {
+    target.innerHTML = `<div class="error-banner">${escapeHtml(res.error || 'Failed to load weekly goals')}</div>`;
+    return;
+  }
+  weeklyGoalsAdminState.week_start = res.week_start;
+  weeklyGoalsAdminState.goals = res.goals;
+
+  const g = res.goals || { habits_target: 3, workouts_target: 2, cardio_target: 1, sessions_target: 1, checkin_target: 1 };
+  const fieldRow = (key, label) => `
+    <div class="field">
+      <label for="wg-${key}">${label}</label>
+      <input id="wg-${key}" type="number" min="0" max="14" value="${g[key] ?? 0}" style="max-width:120px" />
+    </div>
+  `;
+
+  target.innerHTML = `
+    <div class="edit-section">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+        <div>
+          <div style="font-weight:600;font-size:14px">Current UK week — <code>${escapeHtml(res.week_start)}</code></div>
+          <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px">
+            ${res.goals ? 'Row exists — save will update in place.' : 'No row yet — save will create it.'}
+          </div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;max-width:640px">
+        ${fieldRow('habits_target',   'Habits target')}
+        ${fieldRow('workouts_target', 'Workouts target')}
+        ${fieldRow('cardio_target',   'Cardio target')}
+        ${fieldRow('sessions_target', 'Sessions target')}
+        ${fieldRow('checkin_target',  'Check-in target')}
+      </div>
+      <div style="margin-top:16px;display:flex;gap:8px">
+        <button class="edit-save"   type="button" onclick="weeklyGoalsAction('save')">Save…</button>
+        <button class="edit-cancel" type="button" onclick="renderWeeklyGoalsAdminPanel()">Reset form</button>
+      </div>
+      <div style="font-size:11.5px;color:var(--text-dim);margin-top:10px">
+        Each target: whole number 0–14. Past weeks are immutable at the EF level.
+      </div>
+    </div>
+  `;
+}
+
+async function weeklyGoalsAction(kind) {
+  if (!currentMember) return;
+  if (kind !== 'save') return;
+
+  const read = (k) => {
+    const v = parseInt(document.getElementById('wg-' + k).value, 10);
+    return Number.isFinite(v) ? v : NaN;
+  };
+  const payload = {
+    habits_target:   read('habits_target'),
+    workouts_target: read('workouts_target'),
+    cardio_target:   read('cardio_target'),
+    sessions_target: read('sessions_target'),
+    checkin_target:  read('checkin_target')
+  };
+  for (const [k, v] of Object.entries(payload)) {
+    if (!Number.isInteger(v) || v < 0 || v > 14) {
+      showToast(`${k} must be 0..14`, 'warning'); return;
+    }
+  }
+
+  const ws = weeklyGoalsAdminState.week_start;
+  openReasonModal({
+    title: 'Save weekly goals',
+    bodyHtml: `<div class="field"><label>Member</label><div class="current">${escapeHtml(currentMember)}</div></div>
+               <div class="field"><label>Week</label><div class="current">${escapeHtml(ws)}</div></div>
+               <div class="field"><label>Targets</label>
+                 <div class="current">
+                   habits ${payload.habits_target} · workouts ${payload.workouts_target} · cardio ${payload.cardio_target} · sessions ${payload.sessions_target} · check-in ${payload.checkin_target}
+                 </div>
+               </div>`,
+    confirmLabel: 'Save',
+    onConfirm: async (reason) => {
+      const res = await apiWeeklyGoals('upsert_weekly_goals', {
+        member_email: currentMember,
+        week_start: ws,
+        ...payload,
+        reason
+      });
+      if (!res.success) { showToast(res.error || 'Save failed', 'error'); return; }
+      if (res.no_op)    { showToast(res.message || 'No change', 'info'); }
+      else              { showToast(res.created_new ? 'Weekly goals created' : 'Weekly goals updated', 'info'); }
+      closeReasonModal();
+      renderWeeklyGoalsAdminPanel();
+    }
+  });
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
   // Check existing session
@@ -2030,9 +2500,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (e.target === scaryModal) closeScaryModal();
     });
   }
+  // Shell 3: same pattern for the generic reason modal
+  const reasonModal = document.getElementById('reason-modal');
+  if (reasonModal) {
+    reasonModal.addEventListener('click', (e) => {
+      if (e.target === reasonModal) closeReasonModal();
+    });
+  }
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && document.getElementById('scary-modal')?.classList.contains('open')) {
-      closeScaryModal();
+    if (e.key === 'Escape') {
+      if (document.getElementById('scary-modal')?.classList.contains('open')) {
+        closeScaryModal();
+      } else if (document.getElementById('reason-modal')?.classList.contains('open')) {
+        closeReasonModal();
+      }
     }
   });
 });
@@ -2063,6 +2544,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     <div class="actions">
       <button class="btn-cancel" type="button" onclick="closeScaryModal()">Cancel</button>
       <button class="btn-primary" type="button" id="scary-modal-save" onclick="submitScaryEdit()">Save change</button>
+    </div>
+  </div>
+</div>
+
+<!-- Shell 3: generic reason-required action modal -->
+<div id="reason-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="reason-modal-title">
+  <div class="modal">
+    <h2 id="reason-modal-title">Confirm action</h2>
+    <div id="reason-modal-body"></div>
+    <div class="field">
+      <label for="reason-modal-reason">Reason</label>
+      <textarea id="reason-modal-reason" placeholder="Why is this change being made? e.g. 'Member requested via support ticket #1234'"></textarea>
+      <div class="hint">Minimum 5 characters. Stored permanently in <code>admin_audit_log</code>.</div>
+    </div>
+    <div class="actions">
+      <button class="btn-cancel"  type="button" onclick="closeReasonModal()">Cancel</button>
+      <button class="btn-primary" type="button" id="reason-modal-confirm" onclick="submitReasonModal()">Confirm</button>
     </div>
   </div>
 </div>
