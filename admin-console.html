@@ -398,6 +398,14 @@ table.members tr:last-child td{border-bottom:0}
     </div>
 
     <div class="nav-section">
+      <div class="nav-section-label">Content</div>
+      <div class="nav-item" onclick="navigate('#/content/programmes')">
+        <svg><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M8 7h8M8 11h8M8 15h5"/></svg>
+        Programmes
+      </div>
+    </div>
+
+    <div class="nav-section">
       <div class="nav-section-label">Reports</div>
       <div class="nav-item" onclick="navigate('#/platform')">
         <svg><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -534,6 +542,38 @@ table.members tr:last-child td{border-bottom:0}
           <!-- Dynamic member detail content -->
         </div>
       </div>
+
+      <!-- Content: Programmes library page -->
+      <div id="page-content-programmes" class="page">
+        <div class="page-header">
+          <div>
+            <h1>Programmes library</h1>
+            <p>All workout programmes available for member assignment. Click any row to preview. Duplicate to start a new one.</p>
+          </div>
+        </div>
+        <div id="content-programmes-body" style="padding:0 4px">
+          <div style="padding:40px;color:var(--text-muted);font-size:13px;text-align:center">Loading programmes…</div>
+        </div>
+      </div>
+
+      <!-- Programme preview modal (shared between member page swap + content library) -->
+      <div id="programme-preview-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="prog-preview-title">
+        <div class="modal" style="max-width:880px;width:94vw;max-height:90vh;overflow:hidden;display:flex;flex-direction:column">
+          <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+            <div>
+              <h2 id="prog-preview-title" style="margin:0;font-size:18px">Programme preview</h2>
+              <div id="prog-preview-subtitle" style="font-size:12.5px;color:var(--text-muted);margin-top:2px"></div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button id="prog-preview-duplicate" class="edit-save" type="button" onclick="duplicateProgrammeFromPreview()">Duplicate</button>
+              <button class="edit-cancel" type="button" onclick="closeProgrammePreview()">Close</button>
+            </div>
+          </div>
+          <div id="prog-preview-body" style="overflow:auto;padding:16px 20px;flex:1">
+            <div style="padding:40px;color:var(--text-muted);text-align:center">Loading…</div>
+          </div>
+        </div>
+      </div>
     </div>
   </main>
 </div>
@@ -604,7 +644,7 @@ function navigate(hash) {
 
 function handleRoute() {
   const hash = window.location.hash || '#/';
-  const [, page, param] = hash.split('/');
+  const [, page, param, subparam] = hash.split('/');
 
   // Hide all pages
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -621,6 +661,11 @@ function handleRoute() {
     currentMember = decodeURIComponent(param);
     loadMemberDetail(currentMember);
     updateBreadcrumbs('Home', 'Members', currentMember);
+  } else if (page === 'content' && param === 'programmes') {
+    showPage('content-programmes');
+    currentPage = 'content-programmes';
+    updateBreadcrumbs('Home', 'Content', 'Programmes');
+    renderContentProgrammes();
   } else {
     showPage('home');
     currentPage = 'home';
@@ -629,7 +674,8 @@ function handleRoute() {
   }
 
   // Update active nav
-  const activeNav = document.querySelector(`[onclick="navigate('#/${page || ''}')"]`);
+  const navHash = (page === 'content' && param) ? `#/${page}/${param}` : `#/${page || ''}`;
+  const activeNav = document.querySelector(`[onclick="navigate('${navHash}')"]`);
   if (activeNav) activeNav.classList.add('active');
 }
 
@@ -956,11 +1002,7 @@ async function submitScaryEdit() {
   if (!field) return;
   const el = document.getElementById('scary-modal-new');
   const reason = (document.getElementById('scary-modal-reason').value || '').trim();
-
-  if (reason.length < 5) {
-    showToast('Reason must be at least 5 characters', 'warning');
-    return;
-  }
+  // Reason optional across all admin EFs — server stores whatever we send.
 
   let newValue = el ? el.value : null;
   if (newValue === '') newValue = null;
@@ -2034,16 +2076,19 @@ supa.auth.onAuthStateChange((event, session) => {
 
 // =======================================================================
 //   Shell 3 Sub-scope A — Cross-table admin endpoints
-//   - admin-member-habits v1       (habits: list, assign, deactivate, reactivate)
-//   - admin-member-programme v1    (programme: pause, resume, advance_week, swap_plan)
-//   - admin-member-weekly-goals v1 (weekly goals: get, upsert)
-//   Each EF requires a JWT (verify_jwt:true) + admin_users.active=true.
-//   Mutating actions require a reason (min 5 chars); audit written server-side.
+//   - admin-member-habits v3       (habits: list, assign, deactivate, reactivate)
+//   - admin-member-programme v3    (programme: pause, resume, advance_week, swap_plan)
+//   - admin-member-weekly-goals v3 (weekly goals: get, upsert)
+//   - admin-programme-library v1   (library: list, get, duplicate) — Phase 1 content mgmt
+//   Gateway: verify_jwt:false. In-code JWT verification via anon.auth.getUser()
+//   handles ES256 asymmetric keys. admin_users.active=true still enforced.
+//   Reason field optional on mutations (captured in audit log when provided).
 // =======================================================================
 
-const HABITS_EF_URL        = `${SUPABASE_URL}/functions/v1/admin-member-habits`;
-const PROGRAMME_EF_URL     = `${SUPABASE_URL}/functions/v1/admin-member-programme`;
-const WEEKLY_GOALS_EF_URL  = `${SUPABASE_URL}/functions/v1/admin-member-weekly-goals`;
+const HABITS_EF_URL            = `${SUPABASE_URL}/functions/v1/admin-member-habits`;
+const PROGRAMME_EF_URL         = `${SUPABASE_URL}/functions/v1/admin-member-programme`;
+const WEEKLY_GOALS_EF_URL      = `${SUPABASE_URL}/functions/v1/admin-member-weekly-goals`;
+const PROGRAMME_LIB_EF_URL     = `${SUPABASE_URL}/functions/v1/admin-programme-library`;
 
 // Generic Shell 3 EF client — mirrors apiEdit shape
 async function apiShell3(efUrl, action, params = {}) {
@@ -2078,9 +2123,10 @@ async function apiShell3(efUrl, action, params = {}) {
     return { success: false, error: e.message || 'Network error' };
   }
 }
-const apiHabits       = (action, params) => apiShell3(HABITS_EF_URL, action, params);
-const apiProgramme    = (action, params) => apiShell3(PROGRAMME_EF_URL, action, params);
-const apiWeeklyGoals  = (action, params) => apiShell3(WEEKLY_GOALS_EF_URL, action, params);
+const apiHabits          = (action, params) => apiShell3(HABITS_EF_URL, action, params);
+const apiProgramme       = (action, params) => apiShell3(PROGRAMME_EF_URL, action, params);
+const apiWeeklyGoals     = (action, params) => apiShell3(WEEKLY_GOALS_EF_URL, action, params);
+const apiProgrammeLib    = (action, params) => apiShell3(PROGRAMME_LIB_EF_URL, action, params);
 
 // ----- Generic reason-required action modal -----
 let reasonModalState = { onConfirm: null };
@@ -2105,10 +2151,7 @@ function closeReasonModal() {
 
 async function submitReasonModal() {
   const reason = (document.getElementById('reason-modal-reason').value || '').trim();
-  if (reason.length < 5) {
-    showToast('Reason must be at least 5 characters', 'warning');
-    return;
-  }
+  // Reason is optional across all Shell 3 mutations — server accepts blank.
   const cb = reasonModalState.onConfirm;
   if (!cb) return;
   const btn = document.getElementById('reason-modal-confirm');
@@ -2133,13 +2176,18 @@ async function renderProgrammeAdminPanel() {
   if (!target || !currentMember) return;
   target.innerHTML = '<div style="padding:20px;color:var(--text-muted);font-size:13px">Loading programme…</div>';
 
-  const result = await apiProgramme('get_programme', { member_email: currentMember });
+  // Parallel: member's current programme + full library (for the swap dropdown)
+  const [result, libRes] = await Promise.all([
+    apiProgramme('get_programme', { member_email: currentMember }),
+    apiProgrammeLib('list_programmes', { include_inactive: true })
+  ]);
   if (!result.success) {
     target.innerHTML = `<div class="error-banner">${escapeHtml(result.error || 'Failed to load programme')}</div>`;
     return;
   }
   const p = result.programme;
   programmeAdminState.programme = p;
+  programmeAdminState.library = libRes.success ? (libRes.programmes || []) : [];
 
   if (!p) {
     target.innerHTML = '<div class="empty"><h3>No programme</h3><p>This member has no entry in workout_plan_cache yet.</p></div>';
@@ -2219,19 +2267,37 @@ async function programmeAction(kind) {
       }
     });
   } else if (kind === 'swap') {
+    const library = programmeAdminState.library || [];
+    if (!library.length) {
+      showToast('No library programmes available', 'warning'); return;
+    }
+    // Build dropdown options. Inactive programmes are shown but marked so Dean
+    // can see everything per product decision, but won't accidentally assign a draft.
+    const options = library.map(l => {
+      const bits = [l.difficulty, l.equipment, `${l.duration_weeks}w/${l.days_per_week}dpw`].filter(Boolean).join(' · ');
+      const suffix = l.is_active ? '' : ' [INACTIVE]';
+      return `<option value="${escapeHtml(l.id)}">${escapeHtml(l.programme_name)}${suffix} — ${escapeHtml(bits)}</option>`;
+    }).join('');
+
     openReasonModal({
       title: 'Swap to library plan',
       bodyHtml: `<div class="warn">This replaces the member's entire programme JSON with a library plan. Current week resets to 1.</div>
                  <div class="field"><label>Current</label><div class="current">${escapeHtml(p.programme_name || 'Untitled')}</div></div>
-                 <div class="field"><label for="prog-swap-id">Library programme UUID</label>
-                   <input id="prog-swap-id" type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
-                   <div class="hint">Look up in Supabase: SELECT id, programme_name FROM programme_library WHERE is_active=true;</div>
+                 <div class="field"><label for="prog-swap-select">Library programme</label>
+                   <select id="prog-swap-select">
+                     <option value="">— select a programme —</option>
+                     ${options}
+                   </select>
+                   <div style="margin-top:8px;display:flex;gap:8px">
+                     <button type="button" class="edit-cancel" onclick="previewSelectedSwapProgramme()">Preview selected</button>
+                   </div>
+                   <div class="hint">Inactive programmes (drafts/duplicates) are shown but generally shouldn't be assigned.</div>
                  </div>`,
       confirmLabel: 'Swap',
       onConfirm: async (reason) => {
-        const id = (document.getElementById('prog-swap-id').value || '').trim();
+        const id = (document.getElementById('prog-swap-select').value || '').trim();
         if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
-          showToast('library_programme_id must be a valid UUID', 'warning'); return;
+          showToast('Please select a programme', 'warning'); return;
         }
         const res = await apiProgramme('swap_plan', { member_email: currentMember, library_programme_id: id, reason });
         if (!res.success) { showToast(res.error || 'Swap failed', 'error'); return; }
@@ -2240,6 +2306,206 @@ async function programmeAction(kind) {
         renderProgrammeAdminPanel();
       }
     });
+  }
+}
+
+// Preview the programme currently selected in the swap modal dropdown
+function previewSelectedSwapProgramme() {
+  const sel = document.getElementById('prog-swap-select');
+  if (!sel) return;
+  const id = (sel.value || '').trim();
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+    showToast('Please select a programme first', 'warning'); return;
+  }
+  openProgrammePreview(id);
+}
+
+// ============================================================
+// Content · Programmes library
+// ============================================================
+let contentProgrammesState = { loaded: false, rows: [], previewingId: null };
+
+async function renderContentProgrammes() {
+  const body = document.getElementById('content-programmes-body');
+  if (!body) return;
+  body.innerHTML = '<div style="padding:40px;color:var(--text-muted);font-size:13px;text-align:center">Loading programmes…</div>';
+
+  const res = await apiProgrammeLib('list_programmes', { include_inactive: true });
+  if (!res.success) {
+    body.innerHTML = `<div class="error-banner">${escapeHtml(res.error || 'Failed to load programmes')}</div>`;
+    return;
+  }
+  const rows = res.programmes || [];
+  contentProgrammesState.loaded = true;
+  contentProgrammesState.rows = rows;
+
+  if (!rows.length) {
+    body.innerHTML = '<div class="empty"><h3>No programmes</h3><p>The programme_library is empty.</p></div>';
+    return;
+  }
+
+  // Summary strip + table. Inactive rows visually dimmed.
+  const activeCount   = rows.filter(r => r.is_active).length;
+  const inactiveCount = rows.length - activeCount;
+  const summary = `<div style="font-size:12.5px;color:var(--text-muted);margin:8px 4px 16px">
+    ${rows.length} programmes · ${activeCount} active · ${inactiveCount} inactive / draft
+  </div>`;
+
+  const rowsHtml = rows.map(r => {
+    const bits = [r.difficulty, r.equipment, `${r.duration_weeks}w`, `${r.days_per_week} days/wk`].filter(Boolean).join(' · ');
+    const tagsHtml = (r.tags || []).map(t => `<span style="font-size:10.5px;background:var(--surface-2);padding:2px 7px;border-radius:10px;margin-right:4px">${escapeHtml(t)}</span>`).join('');
+    const statusPill = r.is_active
+      ? '<span style="color:var(--success);font-size:11px;font-weight:600">ACTIVE</span>'
+      : '<span style="color:var(--text-dim);font-size:11px;font-weight:600">DRAFT</span>';
+    const rowStyle = r.is_active ? '' : 'opacity:.65';
+    return `<tr style="cursor:pointer;${rowStyle}" onclick="openProgrammePreview('${escapeHtml(r.id)}')">
+      <td>${statusPill}</td>
+      <td>
+        <div style="font-weight:600">${escapeHtml(r.programme_name)}</div>
+        <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px">${escapeHtml(bits)}</div>
+      </td>
+      <td>${escapeHtml(r.category || '')}</td>
+      <td>${tagsHtml}</td>
+      <td style="text-align:right;font-size:11.5px;color:var(--text-muted)">${formatDate(r.created_at) || ''}</td>
+    </tr>`;
+  }).join('');
+
+  body.innerHTML = `${summary}
+    <div class="edit-section" style="padding:0;overflow:hidden">
+      <table style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr style="background:var(--surface-2);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)">
+            <th style="padding:10px 14px;text-align:left;width:90px">Status</th>
+            <th style="padding:10px 14px;text-align:left">Programme</th>
+            <th style="padding:10px 14px;text-align:left;width:130px">Category</th>
+            <th style="padding:10px 14px;text-align:left;width:160px">Tags</th>
+            <th style="padding:10px 14px;text-align:right;width:110px">Created</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>`;
+
+  // Hover style via a one-off injection (idempotent)
+  if (!document.getElementById('content-prog-hover-style')) {
+    const st = document.createElement('style');
+    st.id = 'content-prog-hover-style';
+    st.textContent = '#content-programmes-body tbody tr:hover{background:var(--surface-2)} #content-programmes-body td{padding:10px 14px;border-top:1px solid var(--border)}';
+    document.head.appendChild(st);
+  }
+}
+
+// ============================================================
+// Programme preview modal — shared between swap flow + content library
+// ============================================================
+async function openProgrammePreview(programmeId) {
+  const modal = document.getElementById('programme-preview-modal');
+  if (!modal) return;
+  contentProgrammesState.previewingId = programmeId;
+
+  // Reset + show
+  document.getElementById('prog-preview-title').textContent = 'Loading…';
+  document.getElementById('prog-preview-subtitle').textContent = '';
+  document.getElementById('prog-preview-body').innerHTML = '<div style="padding:40px;color:var(--text-muted);text-align:center">Loading…</div>';
+  modal.classList.add('open');
+
+  const res = await apiProgrammeLib('get_programme', { programme_id: programmeId });
+  if (!res.success || !res.programme) {
+    document.getElementById('prog-preview-body').innerHTML = `<div class="error-banner">${escapeHtml(res.error || 'Failed to load programme')}</div>`;
+    return;
+  }
+  const p = res.programme;
+  const shape = res.shape || {};
+  const pj = p.programme_json || {};
+
+  document.getElementById('prog-preview-title').textContent = p.programme_name || 'Untitled programme';
+  const subtitleBits = [
+    p.is_active ? 'Active' : 'Draft',
+    p.category,
+    p.difficulty,
+    p.equipment,
+    `${p.duration_weeks}w`,
+    `${p.days_per_week} days/wk`,
+    `${shape.total_exercise_slots || 0} exercise slots`
+  ].filter(Boolean).join(' · ');
+  document.getElementById('prog-preview-subtitle').textContent = subtitleBits;
+
+  const weeks = Array.isArray(pj.weeks) ? pj.weeks : [];
+  let weeksHtml = '';
+  if (!weeks.length) {
+    weeksHtml = '<div class="empty"><h3>No weeks</h3><p>programme_json has no weeks array.</p></div>';
+  } else {
+    weeksHtml = weeks.map((wk, wIdx) => {
+      const sessions = Array.isArray(wk.sessions) ? wk.sessions : [];
+      const sessionsHtml = sessions.map(s => {
+        const exercises = Array.isArray(s.exercises) ? s.exercises : [];
+        const rows = exercises.map(ex => {
+          const rest = ex.rest_seconds != null ? `${ex.rest_seconds}s rest` : '';
+          return `<tr>
+            <td style="width:32px;color:var(--text-muted);font-weight:600">${escapeHtml(ex.letter_badge || '')}</td>
+            <td>${escapeHtml(ex.exercise_name || '')}</td>
+            <td style="width:90px;text-align:right">${escapeHtml(String(ex.sets ?? ''))} × ${escapeHtml(String(ex.reps ?? ''))}</td>
+            <td style="width:90px;text-align:right;color:var(--text-muted);font-size:11.5px">${escapeHtml(rest)}</td>
+          </tr>${ex.notes ? `<tr><td></td><td colspan="3" style="font-size:11.5px;color:var(--text-muted);padding-top:0">${escapeHtml(ex.notes)}</td></tr>` : ''}`;
+        }).join('');
+        const warm = s.warm_up ? `<div style="font-size:11.5px;color:var(--text-muted);margin:6px 0"><strong>Warm-up:</strong> ${escapeHtml(s.warm_up)}</div>` : '';
+        const cool = s.cool_down ? `<div style="font-size:11.5px;color:var(--text-muted);margin:6px 0"><strong>Cool-down:</strong> ${escapeHtml(s.cool_down)}</div>` : '';
+        const dur  = s.estimated_duration_mins ? `<span style="font-size:11.5px;color:var(--text-muted);font-weight:normal">· ~${escapeHtml(String(s.estimated_duration_mins))} min</span>` : '';
+        return `<details style="border:1px solid var(--border);border-radius:8px;margin:8px 0;padding:10px 14px">
+          <summary style="cursor:pointer;font-weight:600;font-size:13.5px">Session ${escapeHtml(String(s.session_number ?? ''))} · ${escapeHtml(s.session_name || 'Untitled')} ${dur}</summary>
+          ${warm}
+          <table style="width:100%;border-collapse:collapse;margin-top:6px;font-size:13px">
+            <tbody>${rows}</tbody>
+          </table>
+          ${cool}
+        </details>`;
+      }).join('');
+      // First 2 weeks open by default, rest collapsed (readable but not overwhelming)
+      const openAttr = wIdx < 2 ? ' open' : '';
+      return `<details${openAttr} style="border:1px solid var(--border);border-radius:10px;margin:10px 0;padding:10px 14px;background:var(--surface-2)">
+        <summary style="cursor:pointer;font-weight:600;font-size:14px">Week ${escapeHtml(String(wk.week ?? wIdx + 1))} — ${sessions.length} session${sessions.length === 1 ? '' : 's'}</summary>
+        ${sessionsHtml}
+      </details>`;
+    }).join('');
+  }
+
+  const rationale = pj.programme_rationale
+    ? `<div class="edit-section" style="margin-bottom:12px"><div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:6px">Rationale</div><div style="font-size:13px;line-height:1.55">${escapeHtml(pj.programme_rationale)}</div></div>`
+    : '';
+  const description = p.description
+    ? `<div class="edit-section" style="margin-bottom:12px"><div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:6px">Description</div><div style="font-size:13px;line-height:1.55">${escapeHtml(p.description)}</div></div>`
+    : '';
+
+  document.getElementById('prog-preview-body').innerHTML = description + rationale + weeksHtml;
+}
+
+function closeProgrammePreview() {
+  const modal = document.getElementById('programme-preview-modal');
+  if (modal) modal.classList.remove('open');
+  contentProgrammesState.previewingId = null;
+}
+
+async function duplicateProgrammeFromPreview() {
+  const id = contentProgrammesState.previewingId;
+  if (!id) { showToast('No programme selected', 'warning'); return; }
+
+  // Optional reason via prompt — keeps parity with our "reason optional" server-side rule
+  const reason = prompt('Optional note for the audit log (press OK to skip):', '') || '';
+  const btn = document.getElementById('prog-preview-duplicate');
+  if (btn) { btn.disabled = true; btn.textContent = 'Duplicating…'; }
+
+  const res = await apiProgrammeLib('duplicate_programme', { programme_id: id, reason });
+
+  if (btn) { btn.disabled = false; btn.textContent = 'Duplicate'; }
+  if (!res.success) {
+    showToast(res.error || 'Duplicate failed', 'error');
+    return;
+  }
+  showToast(`Duplicated as "${res.programme?.programme_name || 'copy'}" (inactive)`, 'info');
+  closeProgrammePreview();
+  // Refresh the list view if we're on it
+  if (currentPage === 'content-programmes') {
+    renderContentProgrammes();
   }
 }
 
@@ -2523,7 +2789,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 <div id="scary-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="scary-modal-title">
   <div class="modal">
     <h2 id="scary-modal-title">Edit sensitive field</h2>
-    <div class="warn" id="scary-modal-warn">This change affects downstream AI and member-facing behaviour. A reason is required and will be stored in the audit log.</div>
+    <div class="warn" id="scary-modal-warn">This change affects downstream AI and member-facing behaviour. Any reason you add will be stored in the audit log.</div>
     <div class="field">
       <label>Field</label>
       <div class="current" id="scary-modal-field-name">&mdash;</div>
@@ -2537,9 +2803,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       <div id="scary-modal-new-wrap"></div>
     </div>
     <div class="field">
-      <label for="scary-modal-reason">Reason for change</label>
-      <textarea id="scary-modal-reason" placeholder="Why is this edit being made? e.g. 'Member requested persona switch after check-in call on 22 April'"></textarea>
-      <div class="hint">Minimum 5 characters. Stored permanently in <code>admin_audit_log</code>.</div>
+      <label for="scary-modal-reason">Reason for change <span style="color:var(--text-dim);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+      <textarea id="scary-modal-reason" placeholder="Optional — why is this edit being made? e.g. 'Member requested persona switch after check-in call on 22 April'"></textarea>
+      <div class="hint">Optional. Anything you type is stored in <code>admin_audit_log</code>.</div>
     </div>
     <div class="actions">
       <button class="btn-cancel" type="button" onclick="closeScaryModal()">Cancel</button>
@@ -2554,9 +2820,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     <h2 id="reason-modal-title">Confirm action</h2>
     <div id="reason-modal-body"></div>
     <div class="field">
-      <label for="reason-modal-reason">Reason</label>
-      <textarea id="reason-modal-reason" placeholder="Why is this change being made? e.g. 'Member requested via support ticket #1234'"></textarea>
-      <div class="hint">Minimum 5 characters. Stored permanently in <code>admin_audit_log</code>.</div>
+      <label for="reason-modal-reason">Reason <span style="color:var(--text-dim);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+      <textarea id="reason-modal-reason" placeholder="Optional — why is this change being made? e.g. 'Member requested via support ticket #1234'"></textarea>
+      <div class="hint">Leave blank or add context. Any value you type is stored in <code>admin_audit_log</code>.</div>
     </div>
     <div class="actions">
       <button class="btn-cancel"  type="button" onclick="closeReasonModal()">Cancel</button>
