@@ -1,0 +1,35 @@
+<div class="page active" id="page-dashboard">
+  <div class="page-header">
+    <h1>Dashboard</h1>
+    <p>Business health at a glance</p>
+  </div>
+
+  <div class="grid-4">
+    <div class="stat"><div class="stat-label">MRR</div><div class="stat-value" id="dash-mrr">—</div><div class="stat-sub" id="dash-mrr-sub">awaiting data</div></div>
+    <div class="stat"><div class="stat-label">Active members</div><div class="stat-value" id="dash-members">—</div><div class="stat-sub">across all clients</div></div>
+    <div class="stat"><div class="stat-label">Pipeline value</div><div class="stat-value" id="dash-pipeline">—</div><div class="stat-sub">open deals</div></div>
+    <div class="stat"><div class="stat-label">Runway</div><div class="stat-value" id="dash-runway">—</div><div class="stat-sub">months</div></div>
+  </div>
+
+  <div class="grid-2" style="margin-top:16px">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Revenue trend</span><span class="card-sub">last 6 months</span></div>
+      <div class="empty"><span class="icon">·</span><h3>Chart placeholder</h3><p>Wire up to finance data-store to enable.</p></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Recent activity</span></div>
+      <div class="empty"><span class="icon">·</span><h3>No activity yet</h3><p>Recent system events will appear here.</p></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(async function(){
+  if (!window.VYVE_MAKE) return;
+  try {
+    var deals = await VYVE_MAKE.list('deals', { limit: 100 });
+    var total = deals.reduce(function(s,d){ return s + (Number(d.value)||0); }, 0);
+    document.getElementById('dash-pipeline').textContent = VYVE_UI.fmtMoney(total);
+  } catch(e){}
+})();
+</script>

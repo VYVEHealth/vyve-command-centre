@@ -1,0 +1,41 @@
+<div class="page active" id="page-investor">
+  <div class="page-header">
+    <div class="hdr-row">
+      <div>
+        <h1>Investors</h1>
+        <p>Funding pipeline, investor CRM, round tracking</p>
+      </div>
+      <button class="btn btn-primary" id="inv-add">Add investor</button>
+    </div>
+  </div>
+
+  <div class="kanban" id="inv-kanban">
+    <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">To approach</span><span class="kanban-count" data-stage="approach">0</span></div><div class="kanban-body" data-stage="approach"></div></div>
+    <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">First meeting</span><span class="kanban-count" data-stage="meeting">0</span></div><div class="kanban-body" data-stage="meeting"></div></div>
+    <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">Due diligence</span><span class="kanban-count" data-stage="dd">0</span></div><div class="kanban-body" data-stage="dd"></div></div>
+    <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">Term sheet</span><span class="kanban-count" data-stage="termsheet">0</span></div><div class="kanban-body" data-stage="termsheet"></div></div>
+    <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">Closed</span><span class="kanban-count" data-stage="closed">0</span></div><div class="kanban-body" data-stage="closed"></div></div>
+  </div>
+</div>
+
+<script>
+(async function(){
+  if (!window.VYVE_MAKE) return;
+  var items = await VYVE_MAKE.list('investors', { limit: 100 });
+  var stages = { approach:[], meeting:[], dd:[], termsheet:[], closed:[] };
+  items.forEach(function(i){
+    var s = (i.stage||'approach').toLowerCase();
+    if (!stages[s]) s = 'approach';
+    stages[s].push(i);
+  });
+  Object.keys(stages).forEach(function(stage){
+    var body = document.querySelector('.kanban-body[data-stage="'+stage+'"]');
+    var count = document.querySelector('.kanban-count[data-stage="'+stage+'"]');
+    if (count) count.textContent = stages[stage].length;
+    if (!body) return;
+    body.innerHTML = stages[stage].map(function(i){
+      return '<div class="kanban-card"><div class="kc-title">'+VYVE_UI.escape(i.name||i.firm||'(unknown)')+'</div><div class="kc-meta">'+VYVE_UI.escape(i.firm||'')+(i.value?' · '+VYVE_UI.fmtMoney(i.value):'')+'</div></div>';
+    }).join('') || '<div class="empty" style="padding:20px 10px"><p style="font-size:11px">Empty</p></div>';
+  });
+})();
+</script>

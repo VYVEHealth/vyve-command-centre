@@ -1,0 +1,97 @@
+<div class="page active" id="page-intel">
+  <div class="page-header">
+    <div class="hdr-row">
+      <div>
+        <h1>Research &amp; Grants</h1>
+        <p>Outputs from scheduled intelligence agents — grants, legislation, research findings</p>
+      </div>
+      <button class="btn btn-primary" id="intel-import">Import item</button>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="intel-grants">Grants</button>
+    <button class="tab-btn" data-tab="intel-legis">Legislation</button>
+    <button class="tab-btn" data-tab="intel-research">Research</button>
+  </div>
+
+  <div id="intel-grants" class="tab-panel active">
+    <div class="card"><div id="intel-grants-list"><div class="empty"><span class="icon">·</span><h3>Loading</h3></div></div></div>
+  </div>
+  <div id="intel-legis" class="tab-panel">
+    <div class="card"><div id="intel-legis-list"><div class="empty"><span class="icon">·</span><h3>Loading</h3></div></div></div>
+  </div>
+  <div id="intel-research" class="tab-panel">
+    <div class="card"><div id="intel-research-list"><div class="empty"><span class="icon">·</span><h3>Loading</h3></div></div></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  // Tab switching
+  document.querySelectorAll('#page-intel .tab-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('#page-intel .tab-btn').forEach(function(b){ b.classList.remove('active'); });
+      document.querySelectorAll('#page-intel .tab-panel').forEach(function(p){ p.classList.remove('active'); });
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  function render(items, mountId, kind) {
+    var mount = document.getElementById(mountId);
+    if (!mount) return;
+    if (!items || !items.length) {
+      mount.innerHTML = '<div class="empty"><span class="icon">·</span><h3>No '+kind+' yet</h3><p>Items from your agents will appear here.</p></div>';
+      return;
+    }
+    mount.innerHTML = items.map(function(it){
+      return '<div style="padding:14px 0;border-bottom:1px solid var(--border)">'+
+        '<div style="font-weight:600;color:var(--text);margin-bottom:4px">'+VYVE_UI.escape(it.title||'(no title)')+'</div>'+
+        '<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">'+VYVE_UI.escape(it.source||'')+' · '+VYVE_UI.fmtRelative(it.created_at||it.date)+'</div>'+
+        (it.summary ? '<div style="font-size:13px;color:var(--text);line-height:1.6">'+VYVE_UI.escape(it.summary)+'</div>' : '')+
+      '</div>';
+    }).join('');
+  }
+
+  (async function(){
+    if (!window.VYVE_MAKE) return;
+    var grants  = await VYVE_MAKE.list('grants',     { limit: 50 });
+    var legis   = await VYVE_MAKE.list('legislation',{ limit: 50 });
+    var research= await VYVE_MAKE.list('research',   { limit: 50 });
+    render(grants,  'intel-grants-list',  'grants');
+    render(legis,   'intel-legis-list',   'legislation updates');
+    render(research,'intel-research-list','research findings');
+  })();
+
+  document.getElementById('intel-import').addEventListener('click', function(){
+    VYVE_UI.modal({
+      title: 'Import intel item',
+      body: '<p style="font-size:13px;color:var(--text-muted);margin-bottom:14px">Manual import — will write to the connected Make data-store.</p>'+
+            '<div class="form-row"><div class="form-group"><label>Type</label><select id="imp-type"><option value="grants">Grant</option><option value="legislation">Legislation</option><option value="research">Research</option></select></div></div>'+
+            '<div class="form-row"><div class="form-group"><label>Title</label><input id="imp-title" placeholder="Headline"/></div></div>'+
+            '<div class="form-row"><div class="form-group"><label>Source</label><input id="imp-source" placeholder="e.g. Innovate UK"/></div></div>'+
+            '<div class="form-row"><div class="form-group"><label>Summary</label><textarea id="imp-summary" rows="4"></textarea></div></div>'+
+            '<div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-primary" id="imp-save">Save</button></div>'
+    });
+    setTimeout(function(){
+      var b = document.getElementById('imp-save');
+      if (!b) return;
+      b.addEventListener('click', async function(){
+        var key = document.getElementById('imp-type').value;
+        var item = {
+          title: document.getElementById('imp-title').value.trim(),
+          source: document.getElementById('imp-source').value.trim(),
+          summary: document.getElementById('imp-summary').value.trim(),
+          created_at: new Date().toISOString()
+        };
+        if (!item.title) { VYVE_UI.toast('Title required', 'error'); return; }
+        var id = 'manual_' + Date.now();
+        var res = await VYVE_MAKE.upsert(key, id, item);
+        if (res) { VYVE_UI.toast('Saved', 'success'); VYVE_ROUTER.reload(); }
+        else { VYVE_UI.toast('Save failed — check Make config in Settings', 'error'); }
+      });
+    }, 50);
+  });
+})();
+</script>

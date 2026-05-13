@@ -1,0 +1,189 @@
+<div class="page active" id="page-settings">
+  <div class="page-header">
+    <h1>Settings</h1>
+    <p>System configuration, integrations and agent data management</p>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="set-general">General</button>
+    <button class="tab-btn" data-tab="set-integrations">Integrations</button>
+    <button class="tab-btn" data-tab="set-stores">Data Stores</button>
+  </div>
+
+  <div id="set-general" class="tab-panel active">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Company Information</span></div>
+      <div class="form-row cols-2">
+        <div class="form-group"><label>Company name</label><input id="s-name" value="VYVE Health CIC"/></div>
+        <div class="form-group"><label>Business email</label><input id="s-email" value="team@vyvehealth.co.uk"/></div>
+      </div>
+      <div class="form-row cols-2">
+        <div class="form-group"><label>Member portal</label><input value="online.vyvehealth.co.uk" disabled/></div>
+        <div class="form-group"><label>Marketing site</label><input value="www.vyvehealth.co.uk" disabled/></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-title">Social Platforms</span></div>
+      <div class="form-row cols-2">
+        <div class="form-group"><label>LinkedIn Page URL</label><input id="s-li" placeholder="https://linkedin.com/company/vyvehealth"/></div>
+        <div class="form-group"><label>Facebook Page</label><input id="s-fb" placeholder="https://facebook.com/vyvehealth"/></div>
+      </div>
+      <div class="form-row cols-2">
+        <div class="form-group"><label>Instagram</label><input id="s-ig" placeholder="@vyvehealth"/></div>
+        <div class="form-group"><label>Podcast RSS</label><input id="s-rss" placeholder="https://..."/></div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn btn-primary" id="save-general">Save</button></div>
+    </div>
+  </div>
+
+  <div id="set-integrations" class="tab-panel">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Supabase</span>
+        <span class="badge" id="sb-status">checking…</span>
+      </div>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">Shared project with portal — confirmed by Dean. Paste the anon publishable key to activate auth and data calls.</p>
+      <div class="form-row">
+        <div class="form-group"><label>Project URL</label><input id="s-sb-url" value="https://ixjfklpckgxrwjlfsaaz.supabase.co"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Anon publishable key</label><input id="s-sb-key" placeholder="eyJ..." type="password"/></div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn btn-primary" id="save-sb">Save Supabase config</button></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Make.com</span>
+        <span class="badge" id="mk-status">checking…</span>
+      </div>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">API token for accessing Make data-stores. Used by Brief, Intel, Competitors, Dashboard, Investors.</p>
+      <div class="form-row cols-2">
+        <div class="form-group"><label>API base</label><input id="s-mk-base" value="https://eu1.make.com/api/v2"/></div>
+        <div class="form-group"><label>API token</label><input id="s-mk-token" placeholder="…" type="password"/></div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn btn-primary" id="save-mk">Save Make config</button></div>
+    </div>
+  </div>
+
+  <div id="set-stores" class="tab-panel">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Make data-store mapping</span></div>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">Map each logical key (used by pages) to its Make.com data-store id.</p>
+      <div class="form-row cols-2">
+        <div class="form-group"><label>intel</label><input data-store-key="intel"/></div>
+        <div class="form-group"><label>grants</label><input data-store-key="grants"/></div>
+      </div>
+      <div class="form-row cols-2">
+        <div class="form-group"><label>legislation</label><input data-store-key="legislation"/></div>
+        <div class="form-group"><label>research</label><input data-store-key="research"/></div>
+      </div>
+      <div class="form-row cols-2">
+        <div class="form-group"><label>competitors</label><input data-store-key="competitors"/></div>
+        <div class="form-group"><label>tasks</label><input data-store-key="tasks"/></div>
+      </div>
+      <div class="form-row cols-2">
+        <div class="form-group"><label>deals</label><input data-store-key="deals"/></div>
+        <div class="form-group"><label>investors</label><input data-store-key="investors"/></div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn btn-primary" id="save-stores">Save store mapping</button></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var LS = 'vyve_cc_config_v1';
+
+  function load() {
+    try {
+      var s = localStorage.getItem(LS);
+      if (s) {
+        var parsed = JSON.parse(s);
+        window.VYVE_CONFIG = Object.assign({}, window.VYVE_CONFIG, parsed);
+      }
+    } catch(e){}
+  }
+  function persist() {
+    try { localStorage.setItem(LS, JSON.stringify(window.VYVE_CONFIG)); } catch(e){}
+  }
+
+  load();
+  // Hydrate inputs from current config
+  function $(id){ return document.getElementById(id); }
+  if (window.VYVE_CONFIG.supabase) {
+    $('s-sb-url').value = window.VYVE_CONFIG.supabase.url || '';
+    $('s-sb-key').value = window.VYVE_CONFIG.supabase.anonKey || '';
+  }
+  if (window.VYVE_CONFIG.make) {
+    $('s-mk-base').value = window.VYVE_CONFIG.make.base || '';
+    $('s-mk-token').value = window.VYVE_CONFIG.make.token || '';
+    var stores = window.VYVE_CONFIG.make.stores || {};
+    document.querySelectorAll('[data-store-key]').forEach(function(inp){
+      inp.value = stores[inp.dataset.storeKey] || '';
+    });
+  }
+
+  // Status badges
+  function setStatus(id, ok, label){
+    var el = $(id); if (!el) return;
+    el.textContent = label;
+    el.className = 'badge ' + (ok ? 'badge-green' : 'badge-amber');
+  }
+  setStatus('sb-status', !!(window.VYVE_CONFIG.supabase && window.VYVE_CONFIG.supabase.anonKey), window.VYVE_CONFIG.supabase && window.VYVE_CONFIG.supabase.anonKey ? 'configured' : 'awaiting key');
+  setStatus('mk-status', !!(window.VYVE_CONFIG.make && window.VYVE_CONFIG.make.token), window.VYVE_CONFIG.make && window.VYVE_CONFIG.make.token ? 'configured' : 'awaiting token');
+
+  // Tabs
+  document.querySelectorAll('#page-settings .tab-btn').forEach(function(b){
+    b.addEventListener('click', function(){
+      document.querySelectorAll('#page-settings .tab-btn').forEach(function(x){x.classList.remove('active');});
+      document.querySelectorAll('#page-settings .tab-panel').forEach(function(x){x.classList.remove('active');});
+      b.classList.add('active');
+      document.getElementById(b.dataset.tab).classList.add('active');
+    });
+  });
+
+  $('save-general').addEventListener('click', function(){
+    window.VYVE_CONFIG.company = {
+      name:  $('s-name').value.trim(),
+      email: $('s-email').value.trim(),
+      linkedin: $('s-li').value.trim(),
+      facebook: $('s-fb').value.trim(),
+      instagram: $('s-ig').value.trim(),
+      podcast_rss: $('s-rss').value.trim()
+    };
+    persist();
+    VYVE_UI.toast('Saved', 'success');
+  });
+
+  $('save-sb').addEventListener('click', function(){
+    window.VYVE_CONFIG.supabase = {
+      url: $('s-sb-url').value.trim(),
+      anonKey: $('s-sb-key').value.trim()
+    };
+    persist();
+    setStatus('sb-status', !!window.VYVE_CONFIG.supabase.anonKey, window.VYVE_CONFIG.supabase.anonKey ? 'configured' : 'awaiting key');
+    VYVE_UI.toast('Supabase config saved — reload to activate', 'success');
+  });
+
+  $('save-mk').addEventListener('click', function(){
+    window.VYVE_CONFIG.make = window.VYVE_CONFIG.make || {};
+    window.VYVE_CONFIG.make.base = $('s-mk-base').value.trim();
+    window.VYVE_CONFIG.make.token = $('s-mk-token').value.trim();
+    persist();
+    setStatus('mk-status', !!window.VYVE_CONFIG.make.token, window.VYVE_CONFIG.make.token ? 'configured' : 'awaiting token');
+    VYVE_UI.toast('Make config saved', 'success');
+  });
+
+  $('save-stores').addEventListener('click', function(){
+    window.VYVE_CONFIG.make = window.VYVE_CONFIG.make || {};
+    window.VYVE_CONFIG.make.stores = window.VYVE_CONFIG.make.stores || {};
+    document.querySelectorAll('[data-store-key]').forEach(function(inp){
+      window.VYVE_CONFIG.make.stores[inp.dataset.storeKey] = inp.value.trim();
+    });
+    persist();
+    VYVE_UI.toast('Store mapping saved', 'success');
+  });
+})();
+</script>

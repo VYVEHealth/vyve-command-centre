@@ -1,0 +1,38 @@
+<div class="page active" id="page-competitors">
+  <div class="page-header">
+    <div class="hdr-row">
+      <div>
+        <h1>Competitor Watch</h1>
+        <p>Daily competitor scan — pricing moves, product launches, positioning shifts</p>
+      </div>
+      <button class="btn btn-primary" id="comp-import">Add competitor signal</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div id="comp-list"><div class="empty"><span class="icon">·</span><h3>Loading</h3></div></div>
+  </div>
+</div>
+
+<script>
+(async function(){
+  if (!window.VYVE_MAKE) return;
+  var items = await VYVE_MAKE.list('competitors', { limit: 50 });
+  var mount = document.getElementById('comp-list');
+  if (!items.length) {
+    mount.innerHTML = '<div class="empty"><span class="icon">·</span><h3>No competitor signals yet</h3><p>Items from the daily competitor scan agent will appear here.</p></div>';
+    return;
+  }
+  mount.innerHTML = items.map(function(c){
+    var typeColor = { 'pricing':'badge-amber', 'product':'badge-blue', 'content':'badge-teal', 'positioning':'badge-gold' }[(c.type||'').toLowerCase()] || 'badge-grey';
+    return '<div style="padding:14px 0;border-bottom:1px solid var(--border)">'+
+      '<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:6px">'+
+        '<span class="badge '+typeColor+'">'+VYVE_UI.escape(c.type||'signal')+'</span>'+
+        '<div style="flex:1"><div style="font-weight:600;color:var(--text)">'+VYVE_UI.escape(c.competitor||c.title||'(unknown)')+'</div>'+
+        '<div style="font-size:12px;color:var(--text-muted)">'+VYVE_UI.fmtRelative(c.created_at||c.date)+'</div></div>'+
+      '</div>'+
+      (c.summary ? '<div style="font-size:13px;color:var(--text);line-height:1.6;margin-left:0">'+VYVE_UI.escape(c.summary)+'</div>' : '')+
+    '</div>';
+  }).join('');
+})();
+</script>

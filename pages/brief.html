@@ -1,0 +1,51 @@
+<div class="page active" id="page-brief">
+  <div class="page-header">
+    <h1>Morning Brief</h1>
+    <p id="brief-subtitle">Your proactive business intelligence — updated daily</p>
+  </div>
+
+  <div class="grid-4" id="brief-stats">
+    <div class="stat"><div class="stat-label">New intel today</div><div class="stat-value" id="kpi-intel">—</div><div class="stat-sub">items to review</div></div>
+    <div class="stat"><div class="stat-label">Open tasks</div><div class="stat-value" id="kpi-tasks">—</div><div class="stat-sub">across team</div></div>
+    <div class="stat"><div class="stat-label">Active deals</div><div class="stat-value" id="kpi-deals">—</div><div class="stat-sub">in pipeline</div></div>
+    <div class="stat"><div class="stat-label">Investor follow-ups</div><div class="stat-value" id="kpi-investor">—</div><div class="stat-sub">awaiting response</div></div>
+  </div>
+
+  <div class="grid-2" style="margin-top:16px">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Today's priorities</span></div>
+      <div id="brief-priorities">
+        <div class="empty"><span class="icon">·</span><h3>No priorities loaded yet</h3><p>Connect Make.com data-store in Settings to enable.</p></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Fresh intel</span></div>
+      <div id="brief-intel">
+        <div class="empty"><span class="icon">·</span><h3>No intel items yet</h3><p>Outputs from your scheduled agents will appear here.</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(async function(){
+  if (!window.VYVE_MAKE) return;
+  // Best-effort fetches; all silently no-op when Make not configured.
+  try {
+    var intel = await VYVE_MAKE.list('intel', { limit: 5 });
+    var tasks = await VYVE_MAKE.list('tasks', { limit: 100 });
+    var deals = await VYVE_MAKE.list('deals', { limit: 100 });
+    var inv   = await VYVE_MAKE.list('investors', { limit: 100 });
+    document.getElementById('kpi-intel').textContent = intel.length || '0';
+    document.getElementById('kpi-tasks').textContent = tasks.filter(function(t){return t.status!=='done';}).length || '0';
+    document.getElementById('kpi-deals').textContent = deals.length || '0';
+    document.getElementById('kpi-investor').textContent = inv.filter(function(i){return (i.status||'').toLowerCase().indexOf('follow')>-1;}).length || '0';
+
+    if (intel.length) {
+      document.getElementById('brief-intel').innerHTML = intel.slice(0,5).map(function(i){
+        return '<div style="padding:12px 0;border-bottom:1px solid var(--border)"><div style="font-weight:600;font-size:13px;color:var(--text);margin-bottom:3px">'+VYVE_UI.escape(i.title||'(no title)')+'</div><div style="font-size:11.5px;color:var(--text-muted)">'+VYVE_UI.escape(i.source||'')+' · '+VYVE_UI.fmtRelative(i.created_at||i.date)+'</div></div>';
+      }).join('');
+    }
+  } catch(e) { /* silent */ }
+})();
+</script>
