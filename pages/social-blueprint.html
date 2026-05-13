@@ -1,0 +1,436 @@
+<div class="page active" id="page-social-blueprint" style="max-width:1200px">
+
+  <!-- Hero -->
+  <div style="background:linear-gradient(135deg,var(--surface-2) 0%,var(--surface) 100%);border:1px solid var(--border);border-radius:var(--r-lg);padding:32px;margin-bottom:24px">
+    <div style="font-family:var(--font-head);font-size:32px;font-weight:700;color:var(--text);line-height:1.2;margin-bottom:10px">VYVE Social Content Machine</div>
+    <div style="font-size:14px;color:var(--text-muted);line-height:1.6;max-width:780px;margin-bottom:24px">The blueprint for VYVE's always-on social content automation. Generate 10–14 posts per week across LinkedIn, Instagram, and Facebook with zero manual intervention &mdash; from intelligence gathering through to publishing.</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
+      <div class="stat-card"><div class="stat-num" style="color:var(--vyve-teal-light)">10–14</div><div class="stat-label">Posts/week</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--vyve-teal-light)">3</div><div class="stat-label">Platforms</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--vyve-teal-light)">0</div><div class="stat-label">Manual steps</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--vyve-teal-light)">4</div><div class="stat-label">Layers</div></div>
+    </div>
+  </div>
+
+  <!-- Section nav -->
+  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px">
+    <a href="#sb-audit" class="btn btn-ghost" style="font-size:12px">Audit</a>
+    <a href="#sb-architecture" class="btn btn-ghost" style="font-size:12px">Architecture</a>
+    <a href="#sb-rhythm" class="btn btn-ghost" style="font-size:12px">Weekly Rhythm</a>
+    <a href="#sb-categories" class="btn btn-ghost" style="font-size:12px">Categories</a>
+    <a href="#sb-platforms" class="btn btn-ghost" style="font-size:12px">Platforms</a>
+    <a href="#sb-fixplan" class="btn btn-ghost" style="font-size:12px">Fix Plan</a>
+    <a href="#sb-tasks" class="btn btn-ghost" style="font-size:12px">Activation</a>
+    <a href="#sb-quality" class="btn btn-ghost" style="font-size:12px">Quality</a>
+    <a href="#sb-kpis" class="btn btn-ghost" style="font-size:12px">KPIs</a>
+  </div>
+
+  <!-- AUDIT -->
+  <div id="sb-audit" style="margin-bottom:32px">
+    <div style="font-family:var(--font-head);font-size:22px;font-weight:600;color:var(--text);margin-bottom:6px">Current State Audit</div>
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:16px">What works, what's broken, what's unused</div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-bottom:14px">
+      <div style="background:var(--surface);border:1px solid rgba(57,165,118,.3);border-left:4px solid #39a576;border-radius:var(--r);padding:18px">
+        <div style="font-size:12px;font-weight:600;color:#39a576;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">✓ Working — Intelligence Layer</div>
+        <ul style="list-style:none;padding:0;margin:0;font-size:13px;color:var(--text-muted);line-height:1.9">
+          <li>Daily Morning Brief <span class="badge" style="background:rgba(57,165,118,.15);color:#39a576;margin-left:6px;font-size:10px">Mon–Fri 8am</span></li>
+          <li>Research Radar <span class="badge" style="background:rgba(57,165,118,.15);color:#39a576;margin-left:6px;font-size:10px">Wed 10am</span></li>
+          <li>Competitor Deep Dive <span class="badge" style="background:rgba(57,165,118,.15);color:#39a576;margin-left:6px;font-size:10px">Wed 8am</span></li>
+          <li>Monthly Content Calendar <span class="badge" style="background:rgba(57,165,118,.15);color:#39a576;margin-left:6px;font-size:10px">28th</span></li>
+          <li>Weekly Strategic Digest <span class="badge" style="background:rgba(57,165,118,.15);color:#39a576;margin-left:6px;font-size:10px">Fri 9am</span></li>
+        </ul>
+      </div>
+      <div style="background:var(--surface);border:1px solid rgba(57,165,118,.3);border-left:4px solid #39a576;border-radius:var(--r);padding:18px">
+        <div style="font-size:12px;font-weight:600;color:#39a576;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">✓ Working — Connections Ready</div>
+        <ul style="list-style:none;padding:0;margin:0;font-size:13px;color:var(--text-muted);line-height:1.9">
+          <li>LinkedIn <span class="badge" style="background:rgba(57,165,118,.15);color:#39a576;margin-left:6px;font-size:10px">Connected</span></li>
+          <li>Facebook <span class="badge" style="background:rgba(57,165,118,.15);color:#39a576;margin-left:6px;font-size:10px">Connected</span></li>
+          <li>Instagram <span class="badge" style="background:rgba(57,165,118,.15);color:#39a576;margin-left:6px;font-size:10px">Connected</span></li>
+          <li>Canva <span class="badge" style="background:rgba(57,165,118,.15);color:#39a576;margin-left:6px;font-size:10px">Connected</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-bottom:14px">
+      <div style="background:var(--surface);border:1px solid rgba(224,96,96,.3);border-left:4px solid #e06060;border-radius:var(--r);padding:18px">
+        <div style="font-size:12px;font-weight:600;color:#e06060;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">✗ Broken — Generation Layer</div>
+        <ul style="list-style:none;padding:0;margin:0;font-size:13px;color:var(--text-muted);line-height:1.9">
+          <li>Daily Social Content <span class="badge" style="background:rgba(224,96,96,.15);color:#e06060;margin-left:6px;font-size:10px">DISABLED</span></li>
+          <li>Should generate daily posts</li>
+          <li>No content queue exists</li>
+        </ul>
+      </div>
+      <div style="background:var(--surface);border:1px solid rgba(224,96,96,.3);border-left:4px solid #e06060;border-radius:var(--r);padding:18px">
+        <div style="font-size:12px;font-weight:600;color:#e06060;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">✗ Broken — Publishing Layer</div>
+        <ul style="list-style:none;padding:0;margin:0;font-size:13px;color:var(--text-muted);line-height:1.9">
+          <li>Make.com Publisher <span class="badge" style="background:rgba(224,96,96,.15);color:#e06060;margin-left:6px;font-size:10px">72% errors</span></li>
+          <li>21 errors in 29 executions</li>
+          <li>Post Log data store empty</li>
+        </ul>
+      </div>
+      <div style="background:var(--surface);border:1px solid rgba(224,96,96,.3);border-left:4px solid #e06060;border-radius:var(--r);padding:18px">
+        <div style="font-size:12px;font-weight:600;color:#e06060;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">✗ Broken — Feedback Loop</div>
+        <ul style="list-style:none;padding:0;margin:0;font-size:13px;color:var(--text-muted);line-height:1.9">
+          <li>Performance Review <span class="badge" style="background:rgba(224,96,96,.15);color:#e06060;margin-left:6px;font-size:10px">DISABLED</span></li>
+          <li>No optimization cycle</li>
+          <li>No engagement tracking</li>
+        </ul>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-bottom:14px">
+      <div style="background:var(--surface);border:1px solid rgba(201,168,76,.4);border-left:4px solid var(--vyve-gold);border-radius:var(--r);padding:18px">
+        <div style="font-size:12px;font-weight:600;color:var(--vyve-gold);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">⚠ Unused — Orphaned Assets</div>
+        <ul style="list-style:none;padding:0;margin:0;font-size:13px;color:var(--text-muted);line-height:1.9">
+          <li>Canva connection unused</li>
+          <li>Monthly PR Pitch task disabled</li>
+          <li>Employee Advocacy Pack disabled</li>
+        </ul>
+      </div>
+      <div style="background:var(--surface);border:1px solid rgba(201,168,76,.4);border-left:4px solid var(--vyve-gold);border-radius:var(--r);padding:18px">
+        <div style="font-size:12px;font-weight:600;color:var(--vyve-gold);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">⚠ Unused — Redundant Tasks</div>
+        <ul style="list-style:none;padding:0;margin:0;font-size:13px;color:var(--text-muted);line-height:1.9">
+          <li>SEO Blog Post disabled</li>
+          <li>Weekly Podcast Brief disabled</li>
+          <li>Daily Trend Flash disabled</li>
+        </ul>
+      </div>
+    </div>
+
+    <div style="background:rgba(224,96,96,.08);border-left:4px solid #e06060;border-radius:var(--r);padding:18px">
+      <div style="font-size:14px;font-weight:600;color:#e06060;margin-bottom:8px">The Core Problem</div>
+      <div style="font-size:13px;color:var(--text-muted);line-height:1.7">Intelligence flows IN but content doesn't flow OUT. The generation layer transforms intelligence into platform-specific posts, while the publishing layer distributes them. Both are currently broken, creating a gap between rich data sources and actual social presence.</div>
+    </div>
+  </div>
+
+  <!-- ARCHITECTURE -->
+  <div id="sb-architecture" style="margin-bottom:32px">
+    <div style="font-family:var(--font-head);font-size:22px;font-weight:600;color:var(--text);margin-bottom:6px">Architecture Diagram</div>
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Four-layer system that transforms raw intelligence into published social content</div>
+
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--vyve-teal-light);border-radius:var(--r);padding:18px">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px">
+          <span class="badge" style="background:var(--vyve-teal-dark);color:var(--text)">Layer 1</span>
+          <span style="font-family:var(--font-head);font-weight:600;color:var(--text);font-size:15px">Intelligence</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <span class="badge" style="background:var(--surface-2);color:var(--text-muted)">Market News & Trends</span>
+          <span class="badge" style="background:var(--surface-2);color:var(--text-muted)">New Studies & Statistics</span>
+          <span class="badge" style="background:var(--surface-2);color:var(--text-muted)">Competitor Moves</span>
+          <span class="badge" style="background:var(--surface-2);color:var(--text-muted)">Strategic Themes</span>
+        </div>
+      </div>
+      <div style="text-align:center;color:var(--vyve-teal-light);font-size:20px;line-height:1">↓</div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--vyve-teal-light);border-radius:var(--r);padding:18px">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px">
+          <span class="badge" style="background:var(--vyve-teal-dark);color:var(--text)">Layer 2</span>
+          <span style="font-family:var(--font-head);font-weight:600;color:var(--text);font-size:15px">Generation</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <span class="badge" style="background:var(--surface-2);color:var(--text-muted)">Social Autopilot Skill</span>
+          <span class="badge" style="background:var(--surface-2);color:var(--text-muted)">Platform-Specific Formatting</span>
+          <span class="badge" style="background:var(--surface-2);color:var(--text-muted)">Anti-Repetition Engine</span>
+        </div>
+      </div>
+      <div style="text-align:center;color:var(--vyve-teal-light);font-size:20px;line-height:1">↓</div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--vyve-teal-light);border-radius:var(--r);padding:18px">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px">
+          <span class="badge" style="background:var(--vyve-teal-dark);color:var(--text)">Layer 3</span>
+          <span style="font-family:var(--font-head);font-weight:600;color:var(--text);font-size:15px">Publishing</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <span class="badge" style="background:var(--surface-2);color:var(--text-muted)">Make.com Webhook</span>
+          <span class="badge" style="background:var(--surface-2);color:var(--text-muted)">Platform Router</span>
+          <span class="badge" style="background:var(--surface-2);color:var(--text-muted)">VYVE Post Log</span>
+        </div>
+      </div>
+      <div style="text-align:center;color:var(--vyve-teal-light);font-size:20px;line-height:1">↓</div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--vyve-teal-light);border-radius:var(--r);padding:18px">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px">
+          <span class="badge" style="background:var(--vyve-teal-dark);color:var(--text)">Layer 4</span>
+          <span style="font-family:var(--font-head);font-weight:600;color:var(--text);font-size:15px">Optimization</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <span class="badge" style="background:var(--surface-2);color:var(--text-muted)">Performance Tracking</span>
+          <span class="badge" style="background:var(--surface-2);color:var(--text-muted)">Engagement Patterns</span>
+          <span class="badge" style="background:var(--surface-2);color:var(--text-muted)">Strategy Refinement</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RHYTHM -->
+  <div id="sb-rhythm" style="margin-bottom:32px">
+    <div style="font-family:var(--font-head);font-size:22px;font-weight:600;color:var(--text);margin-bottom:6px">Weekly Content Rhythm</div>
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:16px">11 posts/week baseline across LinkedIn (5), Instagram (3), Facebook (3)</div>
+
+    <table style="width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden">
+      <thead>
+        <tr style="background:var(--surface-2)">
+          <th style="text-align:left;padding:12px 14px;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)">Day</th>
+          <th style="text-align:left;padding:12px 14px;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)">LinkedIn</th>
+          <th style="text-align:left;padding:12px 14px;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)">Instagram</th>
+          <th style="text-align:left;padding:12px 14px;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)">Facebook</th>
+          <th style="text-align:left;padding:12px 14px;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)">Theme</th>
+        </tr>
+      </thead>
+      <tbody style="font-size:13px;color:var(--text)">
+        <tr><td style="padding:12px 14px;font-weight:600;border-bottom:1px solid var(--border)">Monday</td><td style="padding:12px 14px;border-bottom:1px solid var(--border)"><span class="badge" style="background:rgba(10,102,194,.15);color:#4dabf7">Thought Leadership</span></td><td style="padding:12px 14px;border-bottom:1px solid var(--border);color:var(--text-muted)">—</td><td style="padding:12px 14px;border-bottom:1px solid var(--border)"><span class="badge" style="background:rgba(24,119,242,.15);color:#74c0fc">Community</span></td><td style="padding:12px 14px;border-bottom:1px solid var(--border);color:var(--vyve-teal-light)">Week opener</td></tr>
+        <tr><td style="padding:12px 14px;font-weight:600;border-bottom:1px solid var(--border)">Tuesday</td><td style="padding:12px 14px;border-bottom:1px solid var(--border)"><span class="badge" style="background:rgba(10,102,194,.15);color:#4dabf7">Research Spotlight</span></td><td style="padding:12px 14px;border-bottom:1px solid var(--border)"><span class="badge" style="background:rgba(225,48,108,.15);color:#ff8fab">Behind Scenes</span></td><td style="padding:12px 14px;border-bottom:1px solid var(--border);color:var(--text-muted)">—</td><td style="padding:12px 14px;border-bottom:1px solid var(--border);color:var(--vyve-teal-light)">Data day</td></tr>
+        <tr><td style="padding:12px 14px;font-weight:600;border-bottom:1px solid var(--border)">Wednesday</td><td style="padding:12px 14px;border-bottom:1px solid var(--border)"><span class="badge" style="background:rgba(10,102,194,.15);color:#4dabf7">Industry Commentary</span></td><td style="padding:12px 14px;border-bottom:1px solid var(--border)"><span class="badge" style="background:rgba(225,48,108,.15);color:#ff8fab">Carousel/Visual</span></td><td style="padding:12px 14px;border-bottom:1px solid var(--border)"><span class="badge" style="background:rgba(24,119,242,.15);color:#74c0fc">Industry Commentary</span></td><td style="padding:12px 14px;border-bottom:1px solid var(--border);color:var(--vyve-teal-light)">Mid-week insight</td></tr>
+        <tr><td style="padding:12px 14px;font-weight:600;border-bottom:1px solid var(--border)">Thursday</td><td style="padding:12px 14px;border-bottom:1px solid var(--border)"><span class="badge" style="background:rgba(10,102,194,.15);color:#4dabf7">Personal Story</span></td><td style="padding:12px 14px;border-bottom:1px solid var(--border);color:var(--text-muted)">—</td><td style="padding:12px 14px;border-bottom:1px solid var(--border)"><span class="badge" style="background:rgba(24,119,242,.15);color:#74c0fc">Tips/Wellness</span></td><td style="padding:12px 14px;border-bottom:1px solid var(--border);color:var(--vyve-teal-light)">Human day</td></tr>
+        <tr><td style="padding:12px 14px;font-weight:600;border-bottom:1px solid var(--border)">Friday</td><td style="padding:12px 14px;border-bottom:1px solid var(--border)"><span class="badge" style="background:rgba(10,102,194,.15);color:#4dabf7">Client Impact/Roundup</span></td><td style="padding:12px 14px;border-bottom:1px solid var(--border)"><span class="badge" style="background:rgba(225,48,108,.15);color:#ff8fab">Engagement Q</span></td><td style="padding:12px 14px;border-bottom:1px solid var(--border)"><span class="badge" style="background:rgba(24,119,242,.15);color:#74c0fc">Engagement Q</span></td><td style="padding:12px 14px;border-bottom:1px solid var(--border);color:var(--vyve-teal-light)">Close strong</td></tr>
+        <tr style="background:var(--surface-2)"><td style="padding:12px 14px;font-weight:700;text-align:right;color:var(--text-muted);text-transform:uppercase;font-size:11px;letter-spacing:.5px">Weekly total</td><td style="padding:12px 14px;font-weight:700">5 posts</td><td style="padding:12px 14px;font-weight:700">3 posts</td><td style="padding:12px 14px;font-weight:700">3 posts</td><td style="padding:12px 14px;font-weight:700;color:var(--vyve-teal-light)">11 baseline</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- CATEGORIES -->
+  <div id="sb-categories" style="margin-bottom:32px">
+    <div style="font-family:var(--font-head);font-size:22px;font-weight:600;color:var(--text);margin-bottom:6px">Content Categories</div>
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:16px">7 core content types mapped to VYVE's three pillars (mental, physical, social)</div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
+      <div style="background:var(--surface);border:1px solid rgba(155,109,180,.3);border-top:3px solid #9b6db4;border-radius:var(--r);padding:16px"><div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px"><span class="badge" style="background:rgba(155,109,180,.15);color:#c19fda">Mental</span><span style="font-family:var(--font-head);font-size:24px;font-weight:700;color:#c19fda;line-height:1">1</span></div><div style="font-family:var(--font-head);font-weight:600;color:var(--text);font-size:14px;margin-bottom:6px">Thought Leadership</div><div style="font-size:12px;color:var(--text-muted);line-height:1.5">Original ideas, frameworks, and perspectives on wellness, mental resilience, and lifestyle. Lewis's unique voice.</div></div>
+      <div style="background:var(--surface);border:1px solid rgba(57,165,118,.3);border-top:3px solid #39a576;border-radius:var(--r);padding:16px"><div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px"><span class="badge" style="background:rgba(57,165,118,.15);color:#5ec98c">Physical</span><span style="font-family:var(--font-head);font-size:24px;font-weight:700;color:#5ec98c;line-height:1">2</span></div><div style="font-family:var(--font-head);font-weight:600;color:var(--text);font-size:14px;margin-bottom:6px">Research Spotlight</div><div style="font-size:12px;color:var(--text-muted);line-height:1.5">New studies, statistics, and data-driven insights. Backed by concrete research from daily briefs.</div></div>
+      <div style="background:var(--surface);border:1px solid rgba(74,158,186,.3);border-top:3px solid #4a9eba;border-radius:var(--r);padding:16px"><div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px"><span class="badge" style="background:rgba(74,158,186,.15);color:#7dc2dc">Social</span><span style="font-family:var(--font-head);font-size:24px;font-weight:700;color:#7dc2dc;line-height:1">3</span></div><div style="font-family:var(--font-head);font-weight:600;color:var(--text);font-size:14px;margin-bottom:6px">Personal Story</div><div style="font-size:12px;color:var(--text-muted);line-height:1.5">Real experiences, lessons learned, behind-the-scenes moments. Builds connection and relatability.</div></div>
+      <div style="background:var(--surface);border:1px solid rgba(57,165,118,.3);border-top:3px solid #39a576;border-radius:var(--r);padding:16px"><div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px"><span class="badge" style="background:rgba(57,165,118,.15);color:#5ec98c">Physical</span><span style="font-family:var(--font-head);font-size:24px;font-weight:700;color:#5ec98c;line-height:1">4</span></div><div style="font-family:var(--font-head);font-weight:600;color:var(--text);font-size:14px;margin-bottom:6px">Client Impact</div><div style="font-size:12px;color:var(--text-muted);line-height:1.5">Success stories, case studies, and tangible results. Proof that VYVE's approach works.</div></div>
+      <div style="background:var(--surface);border:1px solid rgba(155,109,180,.3);border-top:3px solid #9b6db4;border-radius:var(--r);padding:16px"><div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px"><span class="badge" style="background:rgba(155,109,180,.15);color:#c19fda">Mental</span><span style="font-family:var(--font-head);font-size:24px;font-weight:700;color:#c19fda;line-height:1">5</span></div><div style="font-family:var(--font-head);font-weight:600;color:var(--text);font-size:14px;margin-bottom:6px">Industry Commentary</div><div style="font-size:12px;color:var(--text-muted);line-height:1.5">Hot takes on wellness trends, competitor moves, and industry shifts. Timely and provocative.</div></div>
+      <div style="background:var(--surface);border:1px solid rgba(74,158,186,.3);border-top:3px solid #4a9eba;border-radius:var(--r);padding:16px"><div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px"><span class="badge" style="background:rgba(74,158,186,.15);color:#7dc2dc">Social</span><span style="font-family:var(--font-head);font-size:24px;font-weight:700;color:#7dc2dc;line-height:1">6</span></div><div style="font-family:var(--font-head);font-weight:600;color:var(--text);font-size:14px;margin-bottom:6px">Community & Engagement</div><div style="font-size:12px;color:var(--text-muted);line-height:1.5">Questions, polls, and audience participation. Builds conversation and loyalty.</div></div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--vyve-gold);border-radius:var(--r);padding:16px"><div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px"><span class="badge" style="background:rgba(201,168,76,.15);color:var(--vyve-gold)">All pillars</span><span style="font-family:var(--font-head);font-size:24px;font-weight:700;color:var(--vyve-gold);line-height:1">7</span></div><div style="font-family:var(--font-head);font-weight:600;color:var(--text);font-size:14px;margin-bottom:6px">Behind the Scenes</div><div style="font-size:12px;color:var(--text-muted);line-height:1.5">Process, team culture, and VYVE's operation. Humanizes the brand across all three pillars.</div></div>
+    </div>
+  </div>
+
+  <!-- PLATFORMS -->
+  <div id="sb-platforms" style="margin-bottom:32px">
+    <div style="font-family:var(--font-head);font-size:22px;font-weight:600;color:var(--text);margin-bottom:6px">Platform Specifications</div>
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Per-platform guidelines for tone, format, frequency, and timing</div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px">
+        <div style="font-family:var(--font-head);font-weight:600;color:var(--text);font-size:16px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)">LinkedIn</div>
+        <ul style="list-style:none;padding:0;margin:0;font-size:12px;color:var(--text-muted);line-height:1.9">
+          <li><span style="color:var(--text-muted);font-weight:500;display:inline-block;min-width:90px">Length:</span><span style="color:var(--text)">150–300 words typical</span></li>
+          <li><span style="color:var(--text-muted);font-weight:500;display:inline-block;min-width:90px">Frequency:</span><span style="color:var(--text)">5 posts/week</span></li>
+          <li><span style="color:var(--text-muted);font-weight:500;display:inline-block;min-width:90px">Best time:</span><span style="color:var(--text)">Tue–Thu, 8–10am</span></li>
+          <li><span style="color:var(--text-muted);font-weight:500;display:inline-block;min-width:90px">Tone:</span><span style="color:var(--text)">Professional, authoritative, thoughtful</span></li>
+          <li><span style="color:var(--text-muted);font-weight:500;display:inline-block;min-width:90px">Format:</span><span style="color:var(--text)">Text, carousel, document, video</span></li>
+          <li><span style="color:var(--text-muted);font-weight:500;display:inline-block;min-width:90px">Hashtags:</span><span style="color:var(--text)">3–5, industry-focused</span></li>
+        </ul>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px">
+        <div style="font-family:var(--font-head);font-weight:600;color:var(--text);font-size:16px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)">Instagram</div>
+        <ul style="list-style:none;padding:0;margin:0;font-size:12px;color:var(--text-muted);line-height:1.9">
+          <li><span style="color:var(--text-muted);font-weight:500;display:inline-block;min-width:90px">Length:</span><span style="color:var(--text)">100–150 char caption</span></li>
+          <li><span style="color:var(--text-muted);font-weight:500;display:inline-block;min-width:90px">Frequency:</span><span style="color:var(--text)">3 posts/week</span></li>
+          <li><span style="color:var(--text-muted);font-weight:500;display:inline-block;min-width:90px">Best time:</span><span style="color:var(--text)">Tue–Thu, 6–9pm</span></li>
+          <li><span style="color:var(--text-muted);font-weight:500;display:inline-block;min-width:90px">Tone:</span><span style="color:var(--text)">Visual, inspirational, casual</span></li>
+          <li><span style="color:var(--text-muted);font-weight:500;display:inline-block;min-width:90px">Format:</span><span style="color:var(--text)">Carousel, story, reel, aesthetic</span></li>
+          <li><span style="color:var(--text-muted);font-weight:500;display:inline-block;min-width:90px">Hashtags:</span><span style="color:var(--text)">10–20, trending + branded</span></li>
+        </ul>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px">
+        <div style="font-family:var(--font-head);font-weight:600;color:var(--text);font-size:16px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)">Facebook</div>
+        <ul style="list-style:none;padding:0;margin:0;font-size:12px;color:var(--text-muted);line-height:1.9">
+          <li><span style="color:var(--text-muted);font-weight:500;display:inline-block;min-width:90px">Length:</span><span style="color:var(--text)">200–400 words</span></li>
+          <li><span style="color:var(--text-muted);font-weight:500;display:inline-block;min-width:90px">Frequency:</span><span style="color:var(--text)">3 posts/week</span></li>
+          <li><span style="color:var(--text-muted);font-weight:500;display:inline-block;min-width:90px">Best time:</span><span style="color:var(--text)">Wed–Fri, 1–3pm</span></li>
+          <li><span style="color:var(--text-muted);font-weight:500;display:inline-block;min-width:90px">Tone:</span><span style="color:var(--text)">Community-focused, accessible</span></li>
+          <li><span style="color:var(--text-muted);font-weight:500;display:inline-block;min-width:90px">Format:</span><span style="color:var(--text)">Text, image, link, video</span></li>
+          <li><span style="color:var(--text-muted);font-weight:500;display:inline-block;min-width:90px">Hashtags:</span><span style="color:var(--text)">5–10, community-oriented</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- FIX PLAN -->
+  <div id="sb-fixplan" style="margin-bottom:32px">
+    <div style="font-family:var(--font-head);font-size:22px;font-weight:600;color:var(--text);margin-bottom:6px">Make.com Fix Plan</div>
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Step-by-step instructions to restore the publishing pipeline. Click any step to mark it done.</div>
+
+    <div id="sb-fix-steps" style="display:flex;flex-direction:column;gap:12px"></div>
+  </div>
+
+  <!-- TASKS -->
+  <div id="sb-tasks" style="margin-bottom:32px">
+    <div style="font-family:var(--font-head);font-size:22px;font-weight:600;color:var(--text);margin-bottom:6px">Scheduled Tasks Activation Plan</div>
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Which Make scenarios to enable now, next, or keep disabled. Click any task to track progress.</div>
+
+    <div id="sb-tasks-list" style="display:flex;flex-direction:column;gap:18px"></div>
+
+    <div style="background:rgba(27,120,120,.1);border-left:4px solid var(--vyve-teal);border-radius:var(--r);padding:16px;margin-top:18px">
+      <div style="font-weight:600;color:var(--vyve-teal-light);font-size:13px;margin-bottom:6px">Activation Priority</div>
+      <div style="font-size:12px;color:var(--text-muted);line-height:1.6">Start with the "Enable Now" tasks — these create the generation → publishing loop. Enable the "Next" batch once the pipeline is stable and the Make error rate drops below 5%.</div>
+    </div>
+  </div>
+
+  <!-- QUALITY -->
+  <div id="sb-quality" style="margin-bottom:32px">
+    <div style="font-family:var(--font-head);font-size:22px;font-weight:600;color:var(--text);margin-bottom:6px">Content Quality Standards</div>
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Lewis's voice, tone guidelines, and anti-repetition rules to maintain quality as the machine scales</div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-bottom:14px">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px">
+        <div style="font-family:var(--font-head);font-weight:600;color:var(--vyve-teal-light);font-size:14px;margin-bottom:12px">Lewis's Voice Checklist</div>
+        <ul style="list-style:none;padding:0;margin:0;font-size:12px;color:var(--text-muted);line-height:1.8">
+          <li>• Authentic and personal (use "I" / "we")</li>
+          <li>• Data-driven but not jargon-heavy</li>
+          <li>• Provocative without being controversial</li>
+          <li>• Action-oriented with clear takeaways</li>
+          <li>• Humble about what we don't know</li>
+          <li>• Curious and willing to learn publicly</li>
+          <li>• Generous with credit to sources and ideas</li>
+        </ul>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px">
+        <div style="font-family:var(--font-head);font-weight:600;color:var(--vyve-teal-light);font-size:14px;margin-bottom:12px">Tone by Platform</div>
+        <ul style="list-style:none;padding:0;margin:0;font-size:12px;color:var(--text-muted);line-height:1.8">
+          <li>• <strong style="color:var(--text)">LinkedIn:</strong> Professional authority, substantive</li>
+          <li>• <strong style="color:var(--text)">Instagram:</strong> Visual inspiration, casual, relatable</li>
+          <li>• <strong style="color:var(--text)">Facebook:</strong> Community focus, accessible, inclusive</li>
+          <li>• Never: Salesy, overly promotional, clickbait</li>
+          <li>• Always: Clear, honest, valuable, on-brand</li>
+        </ul>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px">
+        <div style="font-family:var(--font-head);font-weight:600;color:var(--vyve-teal-light);font-size:14px;margin-bottom:12px">Anti-Repetition Rules</div>
+        <ul style="list-style:none;padding:0;margin:0;font-size:12px;color:var(--text-muted);line-height:1.8">
+          <li>• No topic appears 2× in same week</li>
+          <li>• Categories rotate (no 2 thought leadership in a row)</li>
+          <li>• Different angle/insight each topic instance</li>
+          <li>• Track previous 4 weeks for repetition patterns</li>
+          <li>• Vary data sources week to week</li>
+          <li>• 3-pillar balance: 40% mental / 40% physical / 20% social</li>
+        </ul>
+      </div>
+    </div>
+
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px">
+      <div style="font-family:var(--font-head);font-weight:600;color:var(--vyve-teal-light);font-size:14px;margin-bottom:12px">Editorial Standards</div>
+      <ul style="list-style:none;padding:0;margin:0;font-size:12px;color:var(--text-muted);line-height:1.8">
+        <li>• Every post cites source or provides attribution</li>
+        <li>• Proofread for tone consistency before publishing</li>
+        <li>• Images match brand aesthetic (colours, quality, style)</li>
+        <li>• Hashtags are branded and platform-appropriate</li>
+        <li>• Links work and point to relevant destination</li>
+        <li>• Engagement questions ask something interesting (not just "thoughts?")</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div id="sb-kpis" style="margin-bottom:32px">
+    <div style="font-family:var(--font-head);font-size:22px;font-weight:600;color:var(--text);margin-bottom:6px">KPIs & Success Metrics</div>
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Track these monthly to measure machine performance and ROI</div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:18px">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Output Volume</div><div style="font-family:var(--font-head);font-size:18px;font-weight:600;color:var(--text)">10–14 posts/week</div></div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">LinkedIn Performance</div><div style="font-family:var(--font-head);font-size:14px;font-weight:600;color:var(--text);line-height:1.4">Impressions, engagement rate, followers</div></div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Instagram Performance</div><div style="font-family:var(--font-head);font-size:14px;font-weight:600;color:var(--text);line-height:1.4">Reach, saves, follower growth</div></div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Facebook Community</div><div style="font-family:var(--font-head);font-size:14px;font-weight:600;color:var(--text);line-height:1.4">Reach, engagement, group growth</div></div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Content Mix</div><div style="font-family:var(--font-head);font-size:14px;font-weight:600;color:var(--text);line-height:1.4">Pillar distribution, category rotation</div></div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">System Reliability</div><div style="font-family:var(--font-head);font-size:18px;font-weight:600;color:var(--vyve-teal-light)">Error rate &lt;5%</div></div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Time Saved</div><div style="font-family:var(--font-head);font-size:14px;font-weight:600;color:var(--text);line-height:1.4">8+ hours/week saved vs manual</div></div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Trend Tracking</div><div style="font-family:var(--font-head);font-size:14px;font-weight:600;color:var(--text);line-height:1.4">Top content types, topics, formats</div></div>
+    </div>
+
+    <div style="background:linear-gradient(135deg,rgba(27,120,120,.15) 0%,rgba(77,170,170,.05) 100%);border:1px solid var(--border);border-radius:var(--r);padding:20px">
+      <div style="font-family:var(--font-head);font-weight:600;color:var(--vyve-teal-light);font-size:15px;margin-bottom:10px">Success Criteria — the machine is working when</div>
+      <ul style="list-style:none;padding:0;margin:0;font-size:13px;color:var(--text-muted);line-height:1.9">
+        <li>• 10–14 posts publish per week with zero manual intervention</li>
+        <li>• Make.com error rate drops below 5%</li>
+        <li>• Post Log data store accumulates complete publication records</li>
+        <li>• Weekly Performance Review identifies content patterns and winners</li>
+        <li>• Engagement metrics show consistent growth across all platforms</li>
+        <li>• Lewis saves 8+ hours per week vs manual content creation</li>
+      </ul>
+    </div>
+  </div>
+
+  <div style="text-align:center;font-size:11px;color:var(--text-muted);padding:20px 0 40px">
+    VYVE Social Content Machine Blueprint &middot; v1.0 &middot; Native render of Lewis's master operational doc
+  </div>
+
+</div>
+
+<script>
+(function(){
+  // Fix steps data + activation tasks data, rendered with localStorage-backed progress tracking
+  var FIX_STEPS = [
+    {n:1,title:"Webhook Integration",body:"Configure the Make.com webhook to receive post payloads from your content generation system. <div style='background:var(--surface-2);font-family:monospace;font-size:11px;padding:8px 10px;border-radius:6px;margin:8px 0;color:var(--vyve-teal-light);word-break:break-all'>https://hook.eu1.make.com/idsbhf5ntgin6dgkhc44dgj5wef8kl7i</div> Webhook accepts JSON payloads with post content, platform destination, and metadata."},
+    {n:2,title:"JSON Payload Schema",body:"Content generation system must send payloads matching this structure:<pre style='background:var(--surface-2);font-family:monospace;font-size:11px;padding:10px;border-radius:6px;margin:8px 0;color:var(--vyve-teal-light);overflow-x:auto'>{\n  "platform": "linkedin|instagram|facebook",\n  "content": "Post text content",\n  "image_url": "optional image URL",\n  "campaign": "content_category",\n  "pillar": "mental|physical|social",\n  "posting_time": "ISO 8601 timestamp",\n  "hashtags": ["tag1", "tag2"]\n}</pre>"},
+    {n:3,title:"Error Handling Routes",body:"Add error handling to reduce the 72% error rate:<ul style='margin:8px 0 0 14px;color:var(--text-muted);line-height:1.7;font-size:13px'><li>Verify connection auth before publishing (LI/IG/FB)</li><li>Retry logic for rate limits (exponential backoff)</li><li>Validate payload structure and content length</li><li>Log all errors to VYVE Post Log data store</li><li>Alert on critical failures (connection issues, auth errors)</li></ul>"},
+    {n:4,title:"Data Store Logging",body:"Connect Make.com to your VYVE Post Log data store to track all publications:<ul style='margin:8px 0 0 14px;color:var(--text-muted);line-height:1.7;font-size:13px'><li>Create record on successful publish</li><li>Include: platform, content, timestamp, metrics</li><li>Track error details for failed posts</li><li>Enable weekly review to read from this log</li></ul>"},
+    {n:5,title:"Canva Integration",body:"Leverage existing Canva connection for auto-generated visuals:<ul style='margin:8px 0 0 14px;color:var(--text-muted);line-height:1.7;font-size:13px'><li>When payload includes design_template, call Canva API</li><li>Auto-generate image with brand colours and post content</li><li>Store image URL in payload before platform submission</li><li>IG posts should include Canva-generated carousel covers</li></ul>"},
+    {n:6,title:"Test & Validate",body:"Before going live, test the complete flow:<ul style='margin:8px 0 0 14px;color:var(--text-muted);line-height:1.7;font-size:13px'><li>Send 5 test payloads (one per platform mix)</li><li>Verify posts appear on LinkedIn, Instagram, Facebook</li><li>Check error handling with malformed payloads</li><li>Confirm data store records create successfully</li><li>Target error rate: &lt;5% (from current 72%)</li></ul>"}
+  ];
+
+  var TASKS = [
+    {group:"Enable Now — Critical Path",groupColor:"#39a576",items:[
+      {id:"vyve-daily-social-content",icon:"\u2713",detail:"Schedule: Mon–Fri 8:30am | Generates platform-specific posts from morning intelligence briefing"},
+      {id:"vyve-weekly-performance-review",icon:"\u2713",detail:"Schedule: Fri 6pm | Analyses engagement data, identifies winning patterns, refines strategy"}
+    ]},
+    {group:"Enable Next — Authority Building",groupColor:"#C9A84C",items:[
+      {id:"vyve-weekly-linkedin-article",icon:"\ud83d\udccb",detail:"Schedule: Sun 8am | Long-form thought leadership. Drives LI algorithm, establishes authority"},
+      {id:"vyve-linkedin-newsletter",icon:"\ud83d\udceC",detail:"Schedule: Sun 7am | Subscriber growth, direct audience relationship, evergreen asset"}
+    ]},
+    {group:"Keep Disabled — Consolidate Into Autopilot",groupColor:"#888",items:[
+      {id:"vyve-daily-trend-flash",icon:"\u2717",detail:"Redundant with daily morning brief. Consolidate source data into single task output."},
+      {id:"vyve-weekly-intelligence-briefing",icon:"\u2717",detail:"Redundant with morning brief. Use morning brief output as single intelligence source."},
+      {id:"vyve-competitor-scan",icon:"\u2717",detail:"Redundant with competitor deep dive. Feed from existing deep dive data instead."}
+    ]}
+  ];
+
+  function getDone(prefix, id){
+    try { return localStorage.getItem('vyve_sb_' + prefix + '_' + id) === '1'; } catch(e){ return false; }
+  }
+  function setDone(prefix, id, val){
+    try { localStorage.setItem('vyve_sb_' + prefix + '_' + id, val ? '1' : '0'); } catch(e){}
+  }
+
+  function renderFix(){
+    var c = document.getElementById('sb-fix-steps');
+    if (!c) return;
+    c.innerHTML = '';
+    FIX_STEPS.forEach(function(s){
+      var done = getDone('fix', 'step' + s.n);
+      var div = document.createElement('div');
+      div.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-left:4px solid ' + (done ? '#39a576' : 'var(--vyve-teal)') + ';border-radius:var(--r);padding:18px;cursor:pointer;transition:.15s;opacity:' + (done ? '.55' : '1');
+      div.innerHTML = '<div style="display:flex;align-items:center;gap:14px;margin-bottom:8px"><span style="background:' + (done ? '#39a576' : 'var(--vyve-teal-dark)') + ';color:var(--text);min-width:32px;height:32px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-head);font-weight:700;font-size:14px">' + (done ? '✓' : s.n) + '</span><div style="font-family:var(--font-head);font-weight:600;color:var(--text);font-size:15px;' + (done ? 'text-decoration:line-through' : '') + '">' + s.title + '</div></div><div style="font-size:13px;color:var(--text-muted);line-height:1.6">' + s.body + '</div>';
+      div.onclick = function(e){ if(e.target.tagName === 'A' || e.target.tagName === 'CODE') return; setDone('fix', 'step' + s.n, !done); renderFix(); };
+      c.appendChild(div);
+    });
+  }
+
+  function renderTasks(){
+    var c = document.getElementById('sb-tasks-list');
+    if (!c) return;
+    c.innerHTML = '';
+    TASKS.forEach(function(group){
+      var wrap = document.createElement('div');
+      var head = '<div style="font-size:12px;font-weight:600;color:' + group.groupColor + ';text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">' + group.group + '</div>';
+      var list = '<div style="display:flex;flex-direction:column;gap:8px">';
+      group.items.forEach(function(it){
+        var done = getDone('task', it.id);
+        list += '<div data-task="' + it.id + '" style="background:var(--surface);border:1px solid var(--border);border-left:4px solid ' + group.groupColor + ';border-radius:var(--r);padding:14px 16px;cursor:pointer;transition:.15s;display:flex;gap:12px;align-items:start;opacity:' + (done ? '.55' : '1') + '"><span style="font-size:16px;flex-shrink:0;min-width:24px;text-align:center">' + (done ? '✅' : it.icon) + '</span><div style="flex:1"><div style="font-family:monospace;font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px;' + (done ? 'text-decoration:line-through' : '') + '">' + it.id + '</div><div style="font-size:12px;color:var(--text-muted);line-height:1.5">' + it.detail + '</div></div></div>';
+      });
+      list += '</div>';
+      wrap.innerHTML = head + list;
+      c.appendChild(wrap);
+    });
+    // Wire click handlers
+    c.querySelectorAll('[data-task]').forEach(function(el){
+      el.onclick = function(){
+        var id = el.getAttribute('data-task');
+        setDone('task', id, !getDone('task', id));
+        renderTasks();
+      };
+    });
+  }
+
+  renderFix();
+  renderTasks();
+})();
+</script>
