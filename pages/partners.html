@@ -1,19 +1,100 @@
 <div class="page active" id="page-partners">
   <div class="page-header">
     <div class="hdr-row">
-      <div>
-        <h1>Partners</h1>
-        <p>Strategic, channel and delivery partnerships</p>
-      </div>
-      <div></div>
+      <div><h1>Partners</h1><p>Strategic, channel, delivery and research partnerships</p></div>
+      <button class="btn btn-primary" id="pt-add">Add partner</button>
     </div>
   </div>
 
-  <div class="card">
-    <div class="empty">
-      <span class="icon">·</span>
-      <h3>No partners yet</h3>
-      <p>Track strategic, channel, delivery and research partners with mutual value props.</p>
+  <div class="tbl-wrap">
+    <div class="tbl-filters">
+      <div class="search"><input id="pt-search" placeholder="Search partners..."/></div>
+      <select id="pt-type" style="padding:9px 12px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface-2);color:var(--text);font-size:13px">
+        <option value="">All types</option>
+        <option value="strategic">Strategic</option>
+        <option value="channel">Channel</option>
+        <option value="delivery">Delivery</option>
+        <option value="research">Research</option>
+        <option value="tech">Tech</option>
+        <option value="media">Media</option>
+      </select>
     </div>
+    <table class="tbl">
+      <thead><tr><th>Partner</th><th>Type</th><th>Status</th><th>Value to VYVE</th><th>Value to them</th><th>Last contact</th></tr></thead>
+      <tbody id="pt-tbody"><tr><td colspan="6"><div class="empty"><span class="icon">·</span><h3>No partners yet</h3><p>Add strategic, channel, delivery or research partners with mutual value props.</p></div></td></tr></tbody>
+    </table>
   </div>
 </div>
+
+<script>
+(function(){
+
+  var LS='vyve_partners';
+  function lsGet(){ try { var v=localStorage.getItem(LS); return v?JSON.parse(v):[]; } catch(e){ return []; } }
+  function lsSet(v){ try { localStorage.setItem(LS,JSON.stringify(v)); } catch(e){} }
+  async function load(){
+    if (window.VYVE_MAKE){ var fm = await VYVE_MAKE.list('partners',{limit:500}); if (fm&&fm.length) return fm; }
+    return lsGet();
+  }
+  async function save(id, item){
+    if (window.VYVE_MAKE){ var r = await VYVE_MAKE.upsert('partners', id, item); if (r) return; }
+    var a = lsGet(); var i = a.findIndex(function(x){return x._id===id;}); var e = Object.assign({_id:id}, item);
+    if (i>=0) a[i]=e; else a.unshift(e); lsSet(a);
+  }
+  async function remove(id){ if (window.VYVE_MAKE) await VYVE_MAKE.remove('partners', id); lsSet(lsGet().filter(function(x){return x._id!==id;})); }
+
+  function render(items){
+    var q = (document.getElementById('pt-search').value||'').toLowerCase();
+    var t = document.getElementById('pt-type').value;
+    if (q) items = items.filter(function(p){ return (p.name||'').toLowerCase().includes(q) || (p.value_to_vyve||'').toLowerCase().includes(q); });
+    if (t) items = items.filter(function(p){ return (p.type||'').toLowerCase() === t; });
+    var tbody = document.getElementById('pt-tbody');
+    if (!items.length){ tbody.innerHTML = '<tr><td colspan="6"><div class="empty"><span class="icon">·</span><h3>No partners match</h3></div></td></tr>'; return; }
+
+    tbody.innerHTML = items.map(function(p){
+      var statusColor = { 'active':'badge-green', 'exploring':'badge-amber', 'paused':'badge-grey', 'ended':'badge-red' }[(p.status||'').toLowerCase()] || 'badge-blue';
+      return '<tr style="cursor:pointer" data-id="'+p._id+'"><td style="font-weight:600">'+VYVE_UI.escape(p.name||'')+'</td><td><span class="badge badge-teal">'+VYVE_UI.escape(p.type||'')+'</span></td><td><span class="badge '+statusColor+'">'+VYVE_UI.escape(p.status||'exploring')+'</span></td><td style="font-size:12px;color:var(--text-muted)">'+VYVE_UI.escape((p.value_to_vyve||'').slice(0,80))+'</td><td style="font-size:12px;color:var(--text-muted)">'+VYVE_UI.escape((p.value_to_them||'').slice(0,80))+'</td><td>'+(p.last_contact?VYVE_UI.fmtRelative(p.last_contact):'—')+'</td></tr>';
+    }).join('');
+    tbody.querySelectorAll('[data-id]').forEach(function(row){
+      row.addEventListener('click', function(){ edit(row.dataset.id, items); });
+    });
+  }
+
+  function edit(id, items){
+    var p = items.find(function(x){return x._id===id;}); if(!p) return;
+    openModal('Edit partner', p, async function(u){ await save(id, u); render(await load()); }, async function(){ await remove(id); render(await load()); });
+  }
+
+  function openModal(title, init, onSave, onDel){
+    init = init || {};
+    VYVE_UI.modal({ title: title, body:
+      '<div class="form-row cols-2"><div class="form-group"><label>Partner name</label><input id="p-name" value="'+VYVE_UI.escape(init.name||'')+'"/></div><div class="form-group"><label>Type</label><select id="p-type"><option value="strategic">Strategic</option><option value="channel">Channel</option><option value="delivery">Delivery</option><option value="research">Research</option><option value="tech">Tech</option><option value="media">Media</option></select></div></div>'+
+      '<div class="form-row cols-2"><div class="form-group"><label>Status</label><select id="p-status"><option value="exploring">Exploring</option><option value="active">Active</option><option value="paused">Paused</option><option value="ended">Ended</option></select></div><div class="form-group"><label>Last contact</label><input id="p-lc" type="date" value="'+VYVE_UI.escape((init.last_contact||'').slice(0,10))+'"/></div></div>'+
+      '<div class="form-row"><div class="form-group"><label>Value to VYVE</label><textarea id="p-vv" rows="2" placeholder="What do we get out of this?">'+VYVE_UI.escape(init.value_to_vyve||'')+'</textarea></div></div>'+
+      '<div class="form-row"><div class="form-group"><label>Value to them</label><textarea id="p-vt" rows="2" placeholder="What do they get out of this?">'+VYVE_UI.escape(init.value_to_them||'')+'</textarea></div></div>'+
+      '<div class="form-row"><div class="form-group"><label>Primary contact + notes</label><textarea id="p-notes" rows="2">'+VYVE_UI.escape(init.notes||'')+'</textarea></div></div>'+
+      '<div style="display:flex;justify-content:space-between;gap:8px">'+(onDel?'<button class="btn" id="p-del" style="color:var(--danger);border-color:rgba(224,96,96,.3)">Delete</button>':'<span></span>')+'<button class="btn btn-primary" id="p-save">Save</button></div>'
+    });
+    setTimeout(function(){
+      if (init.type) document.getElementById('p-type').value = init.type;
+      if (init.status) document.getElementById('p-status').value = init.status;
+      document.getElementById('p-save').addEventListener('click', function(){
+        var n = document.getElementById('p-name').value.trim();
+        if (!n){ VYVE_UI.toast('Name required','error'); return; }
+        var lc = document.getElementById('p-lc').value;
+        var u = { name:n, type:document.getElementById('p-type').value, status:document.getElementById('p-status').value, last_contact: lc?(lc+'T00:00:00.000Z'):'', value_to_vyve:document.getElementById('p-vv').value.trim(), value_to_them:document.getElementById('p-vt').value.trim(), notes:document.getElementById('p-notes').value.trim(), updated_at:new Date().toISOString(), created_at: init.created_at||new Date().toISOString() };
+        onSave(u);
+        document.querySelector('.modal-overlay').classList.remove('open');
+      });
+      if (onDel) document.getElementById('p-del').addEventListener('click', function(){ if (confirm('Delete?')){ onDel(); document.querySelector('.modal-overlay').classList.remove('open'); }});
+    }, 50);
+  }
+
+  document.getElementById('pt-add').addEventListener('click', function(){
+    openModal('Add partner', {}, async function(u){ await save('pt_'+Date.now(), u); render(await load()); VYVE_UI.toast('Added','success'); });
+  });
+  document.getElementById('pt-search').addEventListener('input', async function(){ render(await load()); });
+  document.getElementById('pt-type').addEventListener('change', async function(){ render(await load()); });
+  (async function(){ render(await load()); })();
+})();
+</script>

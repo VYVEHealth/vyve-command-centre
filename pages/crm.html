@@ -1,19 +1,111 @@
 <div class="page active" id="page-crm">
   <div class="page-header">
     <div class="hdr-row">
-      <div>
-        <h1>Sales Pipeline</h1>
-        <p>Leads, deals and enterprise opportunities</p>
-      </div>
-      <div></div>
+      <div><h1>Sales Pipeline</h1><p>Leads, deals and enterprise opportunities</p></div>
+      <button class="btn btn-primary" id="crm-add">Add deal</button>
     </div>
   </div>
 
-  <div class="card">
-    <div class="empty">
-      <span class="icon">·</span>
-      <h3>Pipeline empty</h3>
-      <p>Deals and leads will appear here. Wire to your sales source in Settings.</p>
-    </div>
+  <div class="grid-4" style="margin-bottom:18px">
+    <div class="stat"><div class="stat-label">Pipeline value</div><div class="stat-value" id="crm-value">£0</div><div class="stat-sub">weighted by stage</div></div>
+    <div class="stat"><div class="stat-label">Active deals</div><div class="stat-value" id="crm-active">0</div></div>
+    <div class="stat"><div class="stat-label">This quarter closes</div><div class="stat-value" id="crm-closes">0</div></div>
+    <div class="stat"><div class="stat-label">Win rate (90d)</div><div class="stat-value" id="crm-win">—</div></div>
+  </div>
+
+  <div class="kanban">
+    <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">Lead</span><span class="kanban-count" data-crm="lead">0</span></div><div class="kanban-body" data-crm="lead"></div></div>
+    <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">Discovery</span><span class="kanban-count" data-crm="discovery">0</span></div><div class="kanban-body" data-crm="discovery"></div></div>
+    <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">Proposal</span><span class="kanban-count" data-crm="proposal">0</span></div><div class="kanban-body" data-crm="proposal"></div></div>
+    <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">Negotiation</span><span class="kanban-count" data-crm="negotiation">0</span></div><div class="kanban-body" data-crm="negotiation"></div></div>
+    <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">Won</span><span class="kanban-count" data-crm="won">0</span></div><div class="kanban-body" data-crm="won"></div></div>
   </div>
 </div>
+
+<script>
+(function(){
+
+  var LS='vyve_deals';
+  function lsGet(){ try { var v=localStorage.getItem(LS); return v?JSON.parse(v):[]; } catch(e){ return []; } }
+  function lsSet(v){ try { localStorage.setItem(LS,JSON.stringify(v)); } catch(e){} }
+  async function load(){
+    if (window.VYVE_MAKE){ var fm = await VYVE_MAKE.list('deals',{limit:500}); if (fm&&fm.length) return fm; }
+    return lsGet();
+  }
+  async function save(id, item){
+    if (window.VYVE_MAKE){ var r = await VYVE_MAKE.upsert('deals', id, item); if (r) return; }
+    var a = lsGet(); var i = a.findIndex(function(x){return x._id===id;}); var e = Object.assign({_id:id}, item);
+    if (i>=0) a[i]=e; else a.unshift(e); lsSet(a);
+  }
+  async function remove(id){ if (window.VYVE_MAKE) await VYVE_MAKE.remove('deals', id); lsSet(lsGet().filter(function(x){return x._id!==id;})); }
+
+  var WEIGHTS = { lead:0.1, discovery:0.25, proposal:0.5, negotiation:0.75, won:1.0, lost:0.0 };
+
+  function render(items){
+    var stages = { lead:[], discovery:[], proposal:[], negotiation:[], won:[] };
+    var active = items.filter(function(d){ return (d.stage||'lead') !== 'lost' && (d.stage||'lead') !== 'won' || (d.stage==='won' && new Date(d.close_date||d.updated_at||0).getTime() > Date.now()-90*86400000); });
+    items.forEach(function(d){ var s=(d.stage||'lead').toLowerCase(); if (stages[s]) stages[s].push(d); });
+
+    var weighted = items.reduce(function(s,d){ if ((d.stage||'')==='lost') return s; return s + ((Number(d.value)||0) * (WEIGHTS[d.stage||'lead']||0.1)); }, 0);
+    document.getElementById('crm-value').textContent = VYVE_UI.fmtMoney(weighted);
+    document.getElementById('crm-active').textContent = items.filter(function(d){ return (d.stage||'')!=='won' && (d.stage||'')!=='lost'; }).length;
+
+    var d = new Date();
+    var qEnd = new Date(d.getFullYear(), Math.floor(d.getMonth()/3)*3+3, 0).getTime();
+    document.getElementById('crm-closes').textContent = items.filter(function(x){ return x.close_date && new Date(x.close_date).getTime() <= qEnd && (x.stage||'')!=='won' && (x.stage||'')!=='lost'; }).length;
+
+    var ninety = Date.now() - 90*86400000;
+    var recent = items.filter(function(x){ return new Date(x.close_date||x.updated_at||0).getTime() > ninety && ((x.stage||'')==='won' || (x.stage||'')==='lost'); });
+    if (recent.length){
+      var won = recent.filter(function(x){ return x.stage==='won'; }).length;
+      document.getElementById('crm-win').textContent = Math.round(won / recent.length * 100) + '%';
+    }
+
+    Object.keys(stages).forEach(function(stage){
+      var body = document.querySelector('.kanban-body[data-crm="'+stage+'"]');
+      var count = document.querySelector('.kanban-count[data-crm="'+stage+'"]');
+      if (count) count.textContent = stages[stage].length;
+      if (!body) return;
+      if (!stages[stage].length){ body.innerHTML = '<div style="padding:16px 10px;text-align:center;font-size:11px;color:var(--text-muted)">Empty</div>'; return; }
+      body.innerHTML = stages[stage].map(function(x){
+        return '<div class="kanban-card" data-id="'+x._id+'"><div class="kc-title">'+VYVE_UI.escape(x.name||'(unnamed)')+'</div><div class="kc-meta">'+(x.value?VYVE_UI.fmtMoney(x.value):'')+(x.close_date?' &middot; '+VYVE_UI.fmtDate(x.close_date):'')+'</div></div>';
+      }).join('');
+      body.querySelectorAll('.kanban-card').forEach(function(card){
+        card.addEventListener('click', function(){ edit(card.dataset.id, items); });
+      });
+    });
+  }
+
+  function edit(id, items){
+    var d = items.find(function(x){return x._id===id;}); if(!d) return;
+    openModal('Edit deal', d, async function(u){ await save(id, u); render(await load()); }, async function(){ await remove(id); render(await load()); });
+  }
+
+  function openModal(title, init, onSave, onDel){
+    init = init || {};
+    VYVE_UI.modal({ title: title, body:
+      '<div class="form-row cols-2"><div class="form-group"><label>Account / company</label><input id="d-name" value="'+VYVE_UI.escape(init.name||'')+'"/></div><div class="form-group"><label>Stage</label><select id="d-stage"><option value="lead">Lead</option><option value="discovery">Discovery</option><option value="proposal">Proposal</option><option value="negotiation">Negotiation</option><option value="won">Won</option><option value="lost">Lost</option></select></div></div>'+
+      '<div class="form-row cols-2"><div class="form-group"><label>Deal value (£)</label><input id="d-val" type="number" min="0" value="'+(init.value||'')+'"/></div><div class="form-group"><label>Expected close</label><input id="d-close" type="date" value="'+VYVE_UI.escape((init.close_date||'').slice(0,10))+'"/></div></div>'+
+      '<div class="form-row cols-2"><div class="form-group"><label>Primary contact</label><input id="d-contact" value="'+VYVE_UI.escape(init.contact||'')+'"/></div><div class="form-group"><label>Source</label><input id="d-source" placeholder="e.g. LinkedIn, referral, podcast" value="'+VYVE_UI.escape(init.source||'')+'"/></div></div>'+
+      '<div class="form-row"><div class="form-group"><label>Notes / next step</label><textarea id="d-notes" rows="3">'+VYVE_UI.escape(init.notes||'')+'</textarea></div></div>'+
+      '<div style="display:flex;justify-content:space-between;gap:8px">'+(onDel?'<button class="btn" id="d-del" style="color:var(--danger);border-color:rgba(224,96,96,.3)">Delete</button>':'<span></span>')+'<button class="btn btn-primary" id="d-save">Save</button></div>'
+    });
+    setTimeout(function(){
+      if (init.stage) document.getElementById('d-stage').value = init.stage;
+      document.getElementById('d-save').addEventListener('click', function(){
+        var n = document.getElementById('d-name').value.trim();
+        if (!n){ VYVE_UI.toast('Account required','error'); return; }
+        var u = { name:n, stage:document.getElementById('d-stage').value, value:Number(document.getElementById('d-val').value)||0, close_date:document.getElementById('d-close').value, contact:document.getElementById('d-contact').value.trim(), source:document.getElementById('d-source').value.trim(), notes:document.getElementById('d-notes').value.trim(), updated_at:new Date().toISOString(), created_at: init.created_at||new Date().toISOString() };
+        onSave(u);
+        document.querySelector('.modal-overlay').classList.remove('open');
+      });
+      if (onDel) document.getElementById('d-del').addEventListener('click', function(){ if (confirm('Delete?')){ onDel(); document.querySelector('.modal-overlay').classList.remove('open'); }});
+    }, 50);
+  }
+
+  document.getElementById('crm-add').addEventListener('click', function(){
+    openModal('Add deal', {}, async function(u){ await save('deal_'+Date.now(), u); render(await load()); VYVE_UI.toast('Added','success'); });
+  });
+  (async function(){ render(await load()); })();
+})();
+</script>

@@ -1,19 +1,150 @@
 <div class="page active" id="page-knowledge">
   <div class="page-header">
     <div class="hdr-row">
-      <div>
-        <h1>Knowledge Base</h1>
-        <p>SOPs, playbooks, templates and company reference</p>
-      </div>
-      <div></div>
+      <div><h1>Knowledge Base</h1><p>SOPs, playbooks, templates and company reference</p></div>
+      <button class="btn btn-primary" id="kb-add">Add entry</button>
     </div>
   </div>
 
+  <div class="grid-4" style="margin-bottom:18px">
+    <div class="stat"><div class="stat-label">SOPs</div><div class="stat-value" id="kb-sop">0</div></div>
+    <div class="stat"><div class="stat-label">Playbooks</div><div class="stat-value" id="kb-play">0</div></div>
+    <div class="stat"><div class="stat-label">Templates</div><div class="stat-value" id="kb-tmpl">0</div></div>
+    <div class="stat"><div class="stat-label">Reference</div><div class="stat-value" id="kb-ref">0</div></div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="kb-all">All</button>
+    <button class="tab-btn" data-tab="kb-sops">SOPs</button>
+    <button class="tab-btn" data-tab="kb-plays">Playbooks</button>
+    <button class="tab-btn" data-tab="kb-tmpls">Templates</button>
+    <button class="tab-btn" data-tab="kb-refs">Reference</button>
+  </div>
+
   <div class="card">
-    <div class="empty">
-      <span class="icon">·</span>
-      <h3>Empty knowledge base</h3>
-      <p>Internal SOPs, playbooks and reference docs that every team member can search.</p>
+    <div class="card-header">
+      <div class="search" style="max-width:360px"><input id="kb-search" placeholder="Search knowledge base..."/></div>
     </div>
+    <div id="kb-list"><div class="empty"><span class="icon">·</span><h3>Knowledge base is empty</h3><p>Add SOPs, playbooks, templates and reference docs that every team member can search.</p></div></div>
   </div>
 </div>
+
+<script>
+(function(){
+
+  var LS='vyve_knowledge';
+  function lsGet(){ try { var v=localStorage.getItem(LS); return v?JSON.parse(v):[]; } catch(e){ return []; } }
+  function lsSet(v){ try { localStorage.setItem(LS,JSON.stringify(v)); } catch(e){} }
+  async function load(){
+    if (window.VYVE_MAKE){ var fm = await VYVE_MAKE.list('knowledge',{limit:500}); if (fm&&fm.length) return fm; }
+    return lsGet();
+  }
+  async function save(id, item){
+    if (window.VYVE_MAKE){ var r = await VYVE_MAKE.upsert('knowledge', id, item); if (r) return; }
+    var a = lsGet(); var i = a.findIndex(function(x){return x._id===id;}); var e = Object.assign({_id:id}, item);
+    if (i>=0) a[i]=e; else a.unshift(e); lsSet(a);
+  }
+  async function remove(id){ if (window.VYVE_MAKE) await VYVE_MAKE.remove('knowledge', id); lsSet(lsGet().filter(function(x){return x._id!==id;})); }
+
+  var activeType = 'all';
+
+  document.querySelectorAll('#page-knowledge .tab-btn').forEach(function(b){
+    b.addEventListener('click', async function(){
+      document.querySelectorAll('#page-knowledge .tab-btn').forEach(function(x){x.classList.remove('active');});
+      b.classList.add('active');
+      var map = { 'kb-all':'all','kb-sops':'sop','kb-plays':'playbook','kb-tmpls':'template','kb-refs':'reference' };
+      activeType = map[b.dataset.tab] || 'all';
+      render(await load());
+    });
+  });
+
+  function typeColor(t){ return { 'sop':'badge-teal','playbook':'badge-gold','template':'badge-blue','reference':'badge-grey' }[t] || 'badge-grey'; }
+  function typeLabel(t){ return { 'sop':'SOP','playbook':'Playbook','template':'Template','reference':'Reference' }[t] || t; }
+
+  function render(items){
+    document.getElementById('kb-sop').textContent = items.filter(function(i){return i.type==='sop';}).length;
+    document.getElementById('kb-play').textContent = items.filter(function(i){return i.type==='playbook';}).length;
+    document.getElementById('kb-tmpl').textContent = items.filter(function(i){return i.type==='template';}).length;
+    document.getElementById('kb-ref').textContent = items.filter(function(i){return i.type==='reference';}).length;
+
+    var q = (document.getElementById('kb-search').value||'').toLowerCase();
+    var view = items.slice();
+    if (activeType !== 'all') view = view.filter(function(i){ return i.type === activeType; });
+    if (q) view = view.filter(function(i){
+      return (i.title||'').toLowerCase().includes(q) ||
+             (i.summary||'').toLowerCase().includes(q) ||
+             (i.body||'').toLowerCase().includes(q);
+    });
+
+    var mount = document.getElementById('kb-list');
+    if (!view.length){
+      mount.innerHTML = '<div class="empty"><span class="icon">·</span><h3>Nothing matching</h3></div>';
+      return;
+    }
+    view.sort(function(a,b){ return new Date(b.updated_at||b.created_at||0) - new Date(a.updated_at||a.created_at||0); });
+    mount.innerHTML = view.map(function(i){
+      return '<div style="padding:16px 0;border-bottom:1px solid var(--border);cursor:pointer" data-id="'+i._id+'">'+
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'+
+          '<span class="badge '+typeColor(i.type||'reference')+'">'+typeLabel(i.type||'reference')+'</span>'+
+          '<div style="font-weight:600;color:var(--text);font-size:14px">'+VYVE_UI.escape(i.title||'')+'</div>'+
+        '</div>'+
+        (i.summary ? '<div style="font-size:13px;color:var(--text-muted);line-height:1.6;margin-left:0">'+VYVE_UI.escape(i.summary)+'</div>' : '')+
+        '<div style="font-size:11.5px;color:var(--text-muted);margin-top:8px">'+VYVE_UI.escape(i.owner||'')+' &middot; updated '+VYVE_UI.fmtRelative(i.updated_at||i.created_at)+'</div>'+
+      '</div>';
+    }).join('');
+    mount.querySelectorAll('[data-id]').forEach(function(row){
+      row.addEventListener('click', function(){ openView(row.dataset.id, view); });
+    });
+  }
+
+  function openView(id, items){
+    var i = items.find(function(x){return x._id===id;}); if(!i) return;
+    VYVE_UI.modal({ title: i.title, body:
+      '<div style="margin-bottom:12px"><span class="badge '+typeColor(i.type||'reference')+'">'+typeLabel(i.type||'reference')+'</span> <span style="margin-left:8px;font-size:11.5px;color:var(--text-muted)">'+VYVE_UI.escape(i.owner||'')+' &middot; updated '+VYVE_UI.fmtRelative(i.updated_at||i.created_at)+'</span></div>'+
+      (i.summary ? '<div style="font-size:13px;color:var(--text);line-height:1.7;margin-bottom:14px;font-style:italic">'+VYVE_UI.escape(i.summary)+'</div>' : '')+
+      (i.body ? '<div style="font-size:13px;color:var(--text);line-height:1.7;white-space:pre-wrap">'+VYVE_UI.escape(i.body)+'</div>' : '<div style="font-size:13px;color:var(--text-muted)">No body content.</div>')+
+      (i.link ? '<div style="margin-top:14px"><a href="'+VYVE_UI.escape(i.link)+'" target="_blank" rel="noopener" style="color:var(--vyve-teal-light);font-size:13px">Open external link &rarr;</a></div>' : '')+
+      '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:18px;padding-top:14px;border-top:1px solid var(--border)"><button class="btn" id="kb-edit-this">Edit</button></div>'
+    });
+    setTimeout(function(){
+      document.getElementById('kb-edit-this').addEventListener('click', function(){
+        document.querySelector('.modal-overlay').classList.remove('open');
+        openEdit(id, items);
+      });
+    }, 50);
+  }
+
+  function openEdit(id, items){
+    var i = items.find(function(x){return x._id===id;}); if(!i) return;
+    openModal('Edit entry', i, async function(u){ await save(id, u); render(await load()); }, async function(){ await remove(id); render(await load()); });
+  }
+
+  function openModal(title, init, onSave, onDel){
+    init = init || {};
+    VYVE_UI.modal({ title: title, body:
+      '<div class="form-row cols-2"><div class="form-group"><label>Title</label><input id="k-title" value="'+VYVE_UI.escape(init.title||'')+'"/></div><div class="form-group"><label>Type</label><select id="k-type"><option value="sop">SOP</option><option value="playbook">Playbook</option><option value="template">Template</option><option value="reference">Reference</option></select></div></div>'+
+      '<div class="form-row cols-2"><div class="form-group"><label>Owner</label><input id="k-owner" value="'+VYVE_UI.escape(init.owner||'')+'"/></div><div class="form-group"><label>External link (optional)</label><input id="k-link" placeholder="https://" value="'+VYVE_UI.escape(init.link||'')+'"/></div></div>'+
+      '<div class="form-row"><div class="form-group"><label>Summary (one line)</label><input id="k-summary" value="'+VYVE_UI.escape(init.summary||'')+'"/></div></div>'+
+      '<div class="form-row"><div class="form-group"><label>Body (markdown-style, plain text)</label><textarea id="k-body" rows="8" style="font-family:monospace;font-size:12.5px">'+VYVE_UI.escape(init.body||'')+'</textarea></div></div>'+
+      '<div style="display:flex;justify-content:space-between;gap:8px">'+(onDel?'<button class="btn" id="k-del" style="color:var(--danger);border-color:rgba(224,96,96,.3)">Delete</button>':'<span></span>')+'<button class="btn btn-primary" id="k-save">Save</button></div>'
+    });
+    setTimeout(function(){
+      if (init.type) document.getElementById('k-type').value = init.type;
+      document.getElementById('k-save').addEventListener('click', function(){
+        var t = document.getElementById('k-title').value.trim();
+        if (!t){ VYVE_UI.toast('Title required','error'); return; }
+        var u = { title:t, type:document.getElementById('k-type').value, owner:document.getElementById('k-owner').value.trim(), link:document.getElementById('k-link').value.trim(), summary:document.getElementById('k-summary').value.trim(), body:document.getElementById('k-body').value, updated_at:new Date().toISOString(), created_at: init.created_at||new Date().toISOString() };
+        onSave(u);
+        document.querySelector('.modal-overlay').classList.remove('open');
+      });
+      if (onDel) document.getElementById('k-del').addEventListener('click', function(){ if (confirm('Delete?')){ onDel(); document.querySelector('.modal-overlay').classList.remove('open'); }});
+    }, 50);
+  }
+
+  document.getElementById('kb-add').addEventListener('click', function(){
+    openModal('Add entry', {}, async function(u){ await save('kb_'+Date.now(), u); render(await load()); VYVE_UI.toast('Added','success'); });
+  });
+  document.getElementById('kb-search').addEventListener('input', async function(){ render(await load()); });
+  (async function(){ render(await load()); })();
+})();
+</script>

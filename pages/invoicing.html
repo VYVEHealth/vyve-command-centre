@@ -1,19 +1,120 @@
 <div class="page active" id="page-invoicing">
   <div class="page-header">
     <div class="hdr-row">
-      <div>
-        <h1>Invoicing</h1>
-        <p>Client invoices and payment tracking</p>
-      </div>
-      <div></div>
+      <div><h1>Invoicing</h1><p>Client invoices, payment tracking, aged debt</p></div>
+      <button class="btn btn-primary" id="inv-add">New invoice</button>
     </div>
   </div>
 
-  <div class="card">
-    <div class="empty">
-      <span class="icon">·</span>
-      <h3>No invoices yet</h3>
-      <p>Issued, paid and overdue invoices. Wire to your invoicing system.</p>
+  <div class="grid-4" style="margin-bottom:18px">
+    <div class="stat"><div class="stat-label">Issued (30d)</div><div class="stat-value" id="inv-issued">£0</div></div>
+    <div class="stat"><div class="stat-label">Paid (30d)</div><div class="stat-value" id="inv-paid" style="color:var(--success)">£0</div></div>
+    <div class="stat"><div class="stat-label">Outstanding</div><div class="stat-value" id="inv-out" style="color:var(--warning)">£0</div></div>
+    <div class="stat"><div class="stat-label">Overdue</div><div class="stat-value" id="inv-over" style="color:var(--danger)">£0</div></div>
+  </div>
+
+  <div class="tbl-wrap">
+    <div class="tbl-filters">
+      <div class="search"><input id="inv-search" placeholder="Search invoices..."/></div>
+      <select id="inv-filter" style="padding:9px 12px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface-2);color:var(--text);font-size:13px">
+        <option value="">All</option>
+        <option value="outstanding">Outstanding</option>
+        <option value="paid">Paid</option>
+        <option value="overdue">Overdue</option>
+      </select>
     </div>
+    <table class="tbl">
+      <thead><tr><th>Invoice #</th><th>Client</th><th>Issued</th><th>Due</th><th>Amount</th><th>Status</th></tr></thead>
+      <tbody id="inv-tbody"><tr><td colspan="6"><div class="empty"><span class="icon">·</span><h3>No invoices yet</h3></div></td></tr></tbody>
+    </table>
   </div>
 </div>
+
+<script>
+(function(){
+
+  var LS='vyve_invoices';
+  function lsGet(){ try { var v=localStorage.getItem(LS); return v?JSON.parse(v):[]; } catch(e){ return []; } }
+  function lsSet(v){ try { localStorage.setItem(LS,JSON.stringify(v)); } catch(e){} }
+  async function load(){
+    if (window.VYVE_MAKE){ var fm = await VYVE_MAKE.list('invoices',{limit:500}); if (fm&&fm.length) return fm; }
+    return lsGet();
+  }
+  async function save(id, item){
+    if (window.VYVE_MAKE){ var r = await VYVE_MAKE.upsert('invoices', id, item); if (r) return; }
+    var a = lsGet(); var i = a.findIndex(function(x){return x._id===id;}); var e = Object.assign({_id:id}, item);
+    if (i>=0) a[i]=e; else a.unshift(e); lsSet(a);
+  }
+  async function remove(id){ if (window.VYVE_MAKE) await VYVE_MAKE.remove('invoices', id); lsSet(lsGet().filter(function(x){return x._id!==id;})); }
+
+  function statusOf(inv){
+    if (inv.paid_at) return 'paid';
+    if (inv.due && new Date(inv.due).getTime() < Date.now()) return 'overdue';
+    return 'outstanding';
+  }
+
+  function render(items){
+    var q = (document.getElementById('inv-search').value||'').toLowerCase();
+    var filter = document.getElementById('inv-filter').value;
+
+    items.forEach(function(i){ i._status = statusOf(i); });
+    var view = items.slice();
+    if (q) view = view.filter(function(i){ return (i.number||'').toLowerCase().includes(q) || (i.client||'').toLowerCase().includes(q); });
+    if (filter) view = view.filter(function(i){ return i._status === filter; });
+
+    var thirty = Date.now() - 30*86400000;
+    var issued30 = items.filter(function(i){ return i.issued && new Date(i.issued).getTime() > thirty; }).reduce(function(s,i){ return s + (Number(i.amount)||0); }, 0);
+    var paid30 = items.filter(function(i){ return i.paid_at && new Date(i.paid_at).getTime() > thirty; }).reduce(function(s,i){ return s + (Number(i.amount)||0); }, 0);
+    var out = items.filter(function(i){ return i._status === 'outstanding'; }).reduce(function(s,i){ return s + (Number(i.amount)||0); }, 0);
+    var over = items.filter(function(i){ return i._status === 'overdue'; }).reduce(function(s,i){ return s + (Number(i.amount)||0); }, 0);
+    document.getElementById('inv-issued').textContent = VYVE_UI.fmtMoney(issued30);
+    document.getElementById('inv-paid').textContent = VYVE_UI.fmtMoney(paid30);
+    document.getElementById('inv-out').textContent = VYVE_UI.fmtMoney(out);
+    document.getElementById('inv-over').textContent = VYVE_UI.fmtMoney(over);
+
+    var tbody = document.getElementById('inv-tbody');
+    if (!view.length){ tbody.innerHTML = '<tr><td colspan="6"><div class="empty"><span class="icon">·</span><h3>No invoices match</h3></div></td></tr>'; return; }
+    view.sort(function(a,b){ return new Date(b.issued||0) - new Date(a.issued||0); });
+    tbody.innerHTML = view.map(function(i){
+      var statusColor = i._status==='paid' ? 'badge-green' : i._status==='overdue' ? 'badge-red' : 'badge-amber';
+      return '<tr style="cursor:pointer" data-id="'+i._id+'"><td style="font-family:monospace;font-size:12px">'+VYVE_UI.escape(i.number||'—')+'</td><td>'+VYVE_UI.escape(i.client||'')+'</td><td>'+VYVE_UI.fmtDate(i.issued)+'</td><td>'+VYVE_UI.fmtDate(i.due)+'</td><td style="font-weight:600">'+VYVE_UI.fmtMoney(i.amount)+'</td><td><span class="badge '+statusColor+'">'+i._status+'</span></td></tr>';
+    }).join('');
+    tbody.querySelectorAll('[data-id]').forEach(function(row){ row.addEventListener('click', function(){ edit(row.dataset.id, items); }); });
+  }
+
+  function edit(id, items){
+    var i = items.find(function(x){return x._id===id;}); if(!i) return;
+    openModal('Edit invoice', i, async function(u){ await save(id, u); render(await load()); }, async function(){ await remove(id); render(await load()); });
+  }
+
+  function openModal(title, init, onSave, onDel){
+    init = init || {};
+    VYVE_UI.modal({ title: title, body:
+      '<div class="form-row cols-2"><div class="form-group"><label>Invoice number</label><input id="i-num" value="'+VYVE_UI.escape(init.number||'')+'"/></div><div class="form-group"><label>Client</label><input id="i-client" value="'+VYVE_UI.escape(init.client||'')+'"/></div></div>'+
+      '<div class="form-row cols-3"><div class="form-group"><label>Amount (£)</label><input id="i-amt" type="number" min="0" value="'+(init.amount||'')+'"/></div><div class="form-group"><label>Issued</label><input id="i-issued" type="date" value="'+VYVE_UI.escape((init.issued||'').slice(0,10))+'"/></div><div class="form-group"><label>Due</label><input id="i-due" type="date" value="'+VYVE_UI.escape((init.due||'').slice(0,10))+'"/></div></div>'+
+      '<div class="form-row cols-2"><div class="form-group"><label>Paid on (leave blank if unpaid)</label><input id="i-paid" type="date" value="'+VYVE_UI.escape((init.paid_at||'').slice(0,10))+'"/></div><div class="form-group"><label>Reference</label><input id="i-ref" value="'+VYVE_UI.escape(init.reference||'')+'"/></div></div>'+
+      '<div class="form-row"><div class="form-group"><label>Notes</label><textarea id="i-notes" rows="2">'+VYVE_UI.escape(init.notes||'')+'</textarea></div></div>'+
+      '<div style="display:flex;justify-content:space-between;gap:8px">'+(onDel?'<button class="btn" id="i-del" style="color:var(--danger);border-color:rgba(224,96,96,.3)">Delete</button>':'<span></span>')+'<button class="btn btn-primary" id="i-save">Save</button></div>'
+    });
+    setTimeout(function(){
+      document.getElementById('i-save').addEventListener('click', function(){
+        var num = document.getElementById('i-num').value.trim();
+        var client = document.getElementById('i-client').value.trim();
+        if (!num || !client){ VYVE_UI.toast('Number and client required','error'); return; }
+        var paid = document.getElementById('i-paid').value;
+        var u = { number:num, client:client, amount:Number(document.getElementById('i-amt').value)||0, issued:document.getElementById('i-issued').value, due:document.getElementById('i-due').value, paid_at: paid?(paid+'T00:00:00.000Z'):'', reference:document.getElementById('i-ref').value.trim(), notes:document.getElementById('i-notes').value.trim(), updated_at:new Date().toISOString(), created_at: init.created_at||new Date().toISOString() };
+        onSave(u);
+        document.querySelector('.modal-overlay').classList.remove('open');
+      });
+      if (onDel) document.getElementById('i-del').addEventListener('click', function(){ if (confirm('Delete?')){ onDel(); document.querySelector('.modal-overlay').classList.remove('open'); }});
+    }, 50);
+  }
+
+  document.getElementById('inv-add').addEventListener('click', function(){
+    openModal('New invoice', { issued: new Date().toISOString().slice(0,10) }, async function(u){ await save('inv_'+Date.now(), u); render(await load()); VYVE_UI.toast('Saved','success'); });
+  });
+  document.getElementById('inv-search').addEventListener('input', async function(){ render(await load()); });
+  document.getElementById('inv-filter').addEventListener('change', async function(){ render(await load()); });
+  (async function(){ render(await load()); })();
+})();
+</script>

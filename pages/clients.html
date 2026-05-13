@@ -1,19 +1,100 @@
 <div class="page active" id="page-clients">
   <div class="page-header">
     <div class="hdr-row">
-      <div>
-        <h1>Clients</h1>
-        <p>Active client accounts and onboarding pipeline</p>
-      </div>
-      <div></div>
+      <div><h1>Clients</h1><p>Active accounts, onboarding, and renewals</p></div>
+      <button class="btn btn-primary" id="cl-add">Add client</button>
     </div>
   </div>
 
-  <div class="card">
-    <div class="empty">
-      <span class="icon">·</span>
-      <h3>No clients yet</h3>
-      <p>Add your first client account to start tracking onboarding, programmes, and renewals.</p>
-    </div>
+  <div class="grid-4" style="margin-bottom:18px">
+    <div class="stat"><div class="stat-label">Active clients</div><div class="stat-value" id="cl-active">0</div></div>
+    <div class="stat"><div class="stat-label">Onboarding</div><div class="stat-value" id="cl-onboard">0</div></div>
+    <div class="stat"><div class="stat-label">Total members</div><div class="stat-value" id="cl-members">0</div></div>
+    <div class="stat"><div class="stat-label">Renewals due (60d)</div><div class="stat-value" id="cl-renewal" style="color:var(--warning)">0</div></div>
+  </div>
+
+  <div class="kanban">
+    <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">Lead</span><span class="kanban-count" data-stage="lead">0</span></div><div class="kanban-body" data-stage="lead"></div></div>
+    <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">Signed</span><span class="kanban-count" data-stage="signed">0</span></div><div class="kanban-body" data-stage="signed"></div></div>
+    <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">Onboarding</span><span class="kanban-count" data-stage="onboarding">0</span></div><div class="kanban-body" data-stage="onboarding"></div></div>
+    <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">Live</span><span class="kanban-count" data-stage="live">0</span></div><div class="kanban-body" data-stage="live"></div></div>
+    <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">Renewal due</span><span class="kanban-count" data-stage="renewal">0</span></div><div class="kanban-body" data-stage="renewal"></div></div>
   </div>
 </div>
+
+<script>
+(function(){
+
+  var LS='vyve_clients';
+  function lsGet(){ try { var v=localStorage.getItem(LS); return v?JSON.parse(v):[]; } catch(e){ return []; } }
+  function lsSet(v){ try { localStorage.setItem(LS,JSON.stringify(v)); } catch(e){} }
+  async function load(){
+    if (window.VYVE_MAKE){ var fm = await VYVE_MAKE.list('clients',{limit:500}); if (fm&&fm.length) return fm; }
+    return lsGet();
+  }
+  async function save(id, item){
+    if (window.VYVE_MAKE){ var r = await VYVE_MAKE.upsert('clients', id, item); if (r) return; }
+    var a = lsGet(); var i = a.findIndex(function(x){return x._id===id;}); var e = Object.assign({_id:id}, item);
+    if (i>=0) a[i]=e; else a.unshift(e); lsSet(a);
+  }
+  async function remove(id){ if (window.VYVE_MAKE) await VYVE_MAKE.remove('clients', id); lsSet(lsGet().filter(function(x){return x._id!==id;})); }
+
+  function render(items){
+    var stages = { lead:[], signed:[], onboarding:[], live:[], renewal:[] };
+    items.forEach(function(c){ var s = (c.stage||'lead').toLowerCase(); if (!stages[s]) s='lead'; stages[s].push(c); });
+
+    document.getElementById('cl-active').textContent = stages.live.length + stages.onboarding.length + stages.signed.length;
+    document.getElementById('cl-onboard').textContent = stages.onboarding.length;
+    document.getElementById('cl-members').textContent = items.reduce(function(s,c){ return s + (Number(c.members)||0); }, 0).toLocaleString('en-GB');
+    document.getElementById('cl-renewal').textContent = stages.renewal.length;
+
+    Object.keys(stages).forEach(function(stage){
+      var body = document.querySelector('.kanban-body[data-stage="'+stage+'"]');
+      var count = document.querySelector('.kanban-count[data-stage="'+stage+'"]');
+      if (count) count.textContent = stages[stage].length;
+      if (!body) return;
+      if (!stages[stage].length){ body.innerHTML = '<div style="padding:16px 10px;text-align:center;font-size:11px;color:var(--text-muted)">Empty</div>'; return; }
+      body.innerHTML = stages[stage].map(function(c){
+        return '<div class="kanban-card" data-id="'+c._id+'"><div class="kc-title">'+VYVE_UI.escape(c.name||'(unnamed)')+'</div><div class="kc-meta">'+(c.members?Number(c.members).toLocaleString('en-GB')+' members':'')+(c.value?' &middot; '+VYVE_UI.fmtMoney(c.value)+'/yr':'')+'</div></div>';
+      }).join('');
+      body.querySelectorAll('.kanban-card').forEach(function(card){
+        card.addEventListener('click', function(){ edit(card.dataset.id, items); });
+      });
+    });
+  }
+
+  function edit(id, items){
+    var c = items.find(function(x){return x._id===id;}); if(!c) return;
+    openModal('Edit client', c, async function(u){ await save(id, u); render(await load()); }, async function(){ await remove(id); render(await load()); });
+  }
+
+  function openModal(title, init, onSave, onDel){
+    init = init || {};
+    VYVE_UI.modal({ title: title, body:
+      '<div class="form-row cols-2"><div class="form-group"><label>Client name</label><input id="cl-name" value="'+VYVE_UI.escape(init.name||'')+'"/></div><div class="form-group"><label>Stage</label><select id="cl-stage"><option value="lead">Lead</option><option value="signed">Signed</option><option value="onboarding">Onboarding</option><option value="live">Live</option><option value="renewal">Renewal due</option></select></div></div>'+
+      '<div class="form-row cols-2"><div class="form-group"><label>Members</label><input id="cl-mem" type="number" min="0" value="'+(init.members||'')+'"/></div><div class="form-group"><label>Annual value (£)</label><input id="cl-val" type="number" min="0" value="'+(init.value||'')+'"/></div></div>'+
+      '<div class="form-row cols-2"><div class="form-group"><label>Primary contact</label><input id="cl-contact" value="'+VYVE_UI.escape(init.contact||'')+'"/></div><div class="form-group"><label>Contact email</label><input id="cl-email" type="email" value="'+VYVE_UI.escape(init.email||'')+'"/></div></div>'+
+      '<div class="form-row cols-2"><div class="form-group"><label>Start date</label><input id="cl-start" type="date" value="'+VYVE_UI.escape((init.start_date||'').slice(0,10))+'"/></div><div class="form-group"><label>Renewal date</label><input id="cl-renew" type="date" value="'+VYVE_UI.escape((init.renewal_date||'').slice(0,10))+'"/></div></div>'+
+      '<div class="form-row"><div class="form-group"><label>Notes</label><textarea id="cl-notes" rows="3">'+VYVE_UI.escape(init.notes||'')+'</textarea></div></div>'+
+      '<div style="display:flex;justify-content:space-between;gap:8px">'+(onDel?'<button class="btn" id="cl-del" style="color:var(--danger);border-color:rgba(224,96,96,.3)">Delete</button>':'<span></span>')+'<button class="btn btn-primary" id="cl-save">Save</button></div>'
+    });
+    setTimeout(function(){
+      if (init.stage) document.getElementById('cl-stage').value = init.stage;
+      document.getElementById('cl-save').addEventListener('click', function(){
+        var n = document.getElementById('cl-name').value.trim();
+        if (!n){ VYVE_UI.toast('Name required','error'); return; }
+        var u = { name:n, stage:document.getElementById('cl-stage').value, members:Number(document.getElementById('cl-mem').value)||0, value:Number(document.getElementById('cl-val').value)||0, contact:document.getElementById('cl-contact').value.trim(), email:document.getElementById('cl-email').value.trim(), start_date:document.getElementById('cl-start').value, renewal_date:document.getElementById('cl-renew').value, notes:document.getElementById('cl-notes').value.trim(), updated_at:new Date().toISOString(), created_at: init.created_at||new Date().toISOString() };
+        onSave(u);
+        document.querySelector('.modal-overlay').classList.remove('open');
+      });
+      if (onDel) document.getElementById('cl-del').addEventListener('click', function(){ if (confirm('Delete?')){ onDel(); document.querySelector('.modal-overlay').classList.remove('open'); }});
+    }, 50);
+  }
+
+  document.getElementById('cl-add').addEventListener('click', function(){
+    openModal('Add client', {}, async function(u){ await save('cl_'+Date.now(), u); render(await load()); VYVE_UI.toast('Added','success'); });
+  });
+
+  (async function(){ render(await load()); })();
+})();
+</script>

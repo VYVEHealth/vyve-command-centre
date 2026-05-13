@@ -1,19 +1,148 @@
 <div class="page active" id="page-documents">
   <div class="page-header">
     <div class="hdr-row">
-      <div>
-        <h1>Documents</h1>
-        <p>Upload, search and organise all VYVE documents</p>
-      </div>
-      <div></div>
+      <div><h1>Documents</h1><p>Upload, search and organise all VYVE documents in one place</p></div>
+      <button class="btn btn-primary" id="dc-add">Add document</button>
     </div>
   </div>
 
-  <div class="card">
-    <div class="empty">
-      <span class="icon">·</span>
-      <h3>No documents yet</h3>
-      <p>Drop files to upload. Full-text search across the entire library.</p>
+  <div class="grid-4" style="margin-bottom:18px">
+    <div class="stat"><div class="stat-label">Total documents</div><div class="stat-value" id="dc-total">0</div></div>
+    <div class="stat"><div class="stat-label">Added this month</div><div class="stat-value" id="dc-month">0</div></div>
+    <div class="stat"><div class="stat-label">Categories</div><div class="stat-value" id="dc-cats">0</div></div>
+    <div class="stat"><div class="stat-label">Pending review</div><div class="stat-value" id="dc-review" style="color:var(--warning)">0</div></div>
+  </div>
+
+  <div class="tbl-wrap">
+    <div class="tbl-filters">
+      <div class="search"><input id="dc-search" placeholder="Search by title, tag or description..."/></div>
+      <select id="dc-cat-filter" style="padding:9px 12px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface-2);color:var(--text);font-size:13px"><option value="">All categories</option></select>
     </div>
+    <table class="tbl">
+      <thead><tr><th>Title</th><th>Category</th><th>Owner</th><th>Tags</th><th>Updated</th><th>Status</th></tr></thead>
+      <tbody id="dc-tbody"><tr><td colspan="6"><div class="empty"><span class="icon">·</span><h3>No documents yet</h3><p>Click &ldquo;Add document&rdquo; to start your library. You can link to anywhere &mdash; Drive, Notion, internal URLs.</p></div></td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <div class="card-header"><span class="card-title">About this library</span></div>
+    <p style="font-size:12px;color:var(--text-muted);line-height:1.7">
+      This is your central index of documents &mdash; not file storage. Each entry holds a title, category, tags, description and a link to where the file actually lives (Google Drive, Notion, OneDrive, etc).
+      Native file uploads need Supabase Storage which is pending Dean's config.
+      When that lands, an Upload button replaces the &ldquo;Link to&rdquo; field.
+    </p>
   </div>
 </div>
+
+<script>
+(function(){
+
+  var LS='vyve_documents';
+  function lsGet(){ try { var v=localStorage.getItem(LS); return v?JSON.parse(v):[]; } catch(e){ return []; } }
+  function lsSet(v){ try { localStorage.setItem(LS,JSON.stringify(v)); } catch(e){} }
+  async function load(){
+    if (window.VYVE_MAKE){ var fm = await VYVE_MAKE.list('documents',{limit:500}); if (fm&&fm.length) return fm; }
+    return lsGet();
+  }
+  async function save(id, item){
+    if (window.VYVE_MAKE){ var r = await VYVE_MAKE.upsert('documents', id, item); if (r) return; }
+    var a = lsGet(); var i = a.findIndex(function(x){return x._id===id;}); var e = Object.assign({_id:id}, item);
+    if (i>=0) a[i]=e; else a.unshift(e); lsSet(a);
+  }
+  async function remove(id){ if (window.VYVE_MAKE) await VYVE_MAKE.remove('documents', id); lsSet(lsGet().filter(function(x){return x._id!==id;})); }
+
+  var DEFAULT_CATS = ['Contracts','Policies','SOPs','Templates','Brand','Marketing','Sales','Finance','Compliance','Research','Other'];
+
+  function render(items){
+    var q = (document.getElementById('dc-search').value||'').toLowerCase();
+    var cat = document.getElementById('dc-cat-filter').value;
+    var view = items.slice();
+    if (q) view = view.filter(function(d){
+      return (d.title||'').toLowerCase().includes(q) ||
+             (d.description||'').toLowerCase().includes(q) ||
+             (d.tags||[]).some(function(t){ return t.toLowerCase().includes(q); });
+    });
+    if (cat) view = view.filter(function(d){ return (d.category||'') === cat; });
+
+    // Build category dropdown
+    var cats = Array.from(new Set(DEFAULT_CATS.concat(items.map(function(d){return d.category;}).filter(Boolean)))).sort();
+    var sel = document.getElementById('dc-cat-filter');
+    var cur = sel.value;
+    sel.innerHTML = '<option value="">All categories</option>' + cats.map(function(c){ return '<option value="'+VYVE_UI.escape(c)+'">'+VYVE_UI.escape(c)+'</option>'; }).join('');
+    sel.value = cur;
+
+    // KPIs
+    document.getElementById('dc-total').textContent = items.length;
+    var monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0,0,0,0);
+    document.getElementById('dc-month').textContent = items.filter(function(d){ return new Date(d.created_at||0).getTime() >= monthStart.getTime(); }).length;
+    document.getElementById('dc-cats').textContent = Array.from(new Set(items.map(function(d){return d.category;}).filter(Boolean))).length;
+    document.getElementById('dc-review').textContent = items.filter(function(d){ return (d.status||'')==='review'; }).length;
+
+    var tbody = document.getElementById('dc-tbody');
+    if (!view.length){
+      tbody.innerHTML = '<tr><td colspan="6"><div class="empty"><span class="icon">·</span><h3>No documents match</h3></div></td></tr>';
+      return;
+    }
+    view.sort(function(a,b){ return new Date(b.updated_at||b.created_at||0) - new Date(a.updated_at||a.created_at||0); });
+    tbody.innerHTML = view.map(function(d){
+      var statusColor = d.status==='review' ? 'badge-amber' : d.status==='archived' ? 'badge-grey' : 'badge-green';
+      var tags = (d.tags||[]).slice(0,3).map(function(t){ return '<span style="display:inline-block;padding:1px 6px;background:var(--surface-2);border-radius:3px;font-size:10px;margin-right:3px;color:var(--text-muted)">'+VYVE_UI.escape(t)+'</span>'; }).join('');
+      return '<tr style="cursor:pointer" data-id="'+d._id+'">'+
+        '<td><div style="font-weight:600">'+VYVE_UI.escape(d.title||'')+'</div>'+(d.description?'<div style="font-size:11.5px;color:var(--text-muted);margin-top:2px">'+VYVE_UI.escape((d.description||'').slice(0,80))+'</div>':'')+'</td>'+
+        '<td>'+(d.category?'<span class="badge badge-teal">'+VYVE_UI.escape(d.category)+'</span>':'')+'</td>'+
+        '<td style="font-size:12px">'+VYVE_UI.escape(d.owner||'')+'</td>'+
+        '<td>'+tags+'</td>'+
+        '<td style="font-size:12px;color:var(--text-muted)">'+VYVE_UI.fmtRelative(d.updated_at||d.created_at)+'</td>'+
+        '<td><span class="badge '+statusColor+'">'+VYVE_UI.escape(d.status||'active')+'</span></td>'+
+      '</tr>';
+    }).join('');
+    tbody.querySelectorAll('[data-id]').forEach(function(row){
+      row.addEventListener('click', function(){ edit(row.dataset.id, items); });
+    });
+  }
+
+  function edit(id, items){
+    var d = items.find(function(x){return x._id===id;}); if(!d) return;
+    openModal('Edit document', d, async function(u){ await save(id, u); render(await load()); }, async function(){ await remove(id); render(await load()); });
+  }
+
+  function openModal(title, init, onSave, onDel){
+    init = init || {};
+    var catOptions = DEFAULT_CATS.map(function(c){ return '<option value="'+VYVE_UI.escape(c)+'">'+VYVE_UI.escape(c)+'</option>'; }).join('');
+    VYVE_UI.modal({ title: title, body:
+      '<div class="form-row"><div class="form-group"><label>Title</label><input id="d-title" value="'+VYVE_UI.escape(init.title||'')+'"/></div></div>'+
+      '<div class="form-row cols-2">'+
+        '<div class="form-group"><label>Category</label><select id="d-cat">'+catOptions+'</select></div>'+
+        '<div class="form-group"><label>Status</label><select id="d-status"><option value="active">Active</option><option value="review">Pending review</option><option value="archived">Archived</option></select></div>'+
+      '</div>'+
+      '<div class="form-row cols-2">'+
+        '<div class="form-group"><label>Owner</label><input id="d-owner" value="'+VYVE_UI.escape(init.owner||'')+'"/></div>'+
+        '<div class="form-group"><label>Tags (comma-separated)</label><input id="d-tags" value="'+VYVE_UI.escape((init.tags||[]).join(', '))+'"/></div>'+
+      '</div>'+
+      '<div class="form-row"><div class="form-group"><label>Link (Drive, Notion, internal URL...)</label><input id="d-link" placeholder="https://" value="'+VYVE_UI.escape(init.link||'')+'"/></div></div>'+
+      '<div class="form-row"><div class="form-group"><label>Description</label><textarea id="d-desc" rows="3">'+VYVE_UI.escape(init.description||'')+'</textarea></div></div>'+
+      '<div style="display:flex;justify-content:space-between;gap:8px">'+(onDel?'<button class="btn" id="d-del" style="color:var(--danger);border-color:rgba(224,96,96,.3)">Delete</button>':'<span></span>')+'<button class="btn btn-primary" id="d-save">Save</button></div>'
+    });
+    setTimeout(function(){
+      if (init.category) document.getElementById('d-cat').value = init.category;
+      if (init.status) document.getElementById('d-status').value = init.status;
+      document.getElementById('d-save').addEventListener('click', function(){
+        var t = document.getElementById('d-title').value.trim();
+        if (!t){ VYVE_UI.toast('Title required','error'); return; }
+        var tags = document.getElementById('d-tags').value.split(',').map(function(x){return x.trim();}).filter(Boolean);
+        var u = { title:t, category:document.getElementById('d-cat').value, status:document.getElementById('d-status').value, owner:document.getElementById('d-owner').value.trim(), tags:tags, link:document.getElementById('d-link').value.trim(), description:document.getElementById('d-desc').value.trim(), updated_at:new Date().toISOString(), created_at: init.created_at||new Date().toISOString() };
+        onSave(u);
+        document.querySelector('.modal-overlay').classList.remove('open');
+      });
+      if (onDel) document.getElementById('d-del').addEventListener('click', function(){ if (confirm('Delete?')){ onDel(); document.querySelector('.modal-overlay').classList.remove('open'); }});
+    }, 50);
+  }
+
+  document.getElementById('dc-add').addEventListener('click', function(){
+    openModal('Add document', {}, async function(u){ await save('doc_'+Date.now(), u); render(await load()); VYVE_UI.toast('Added','success'); });
+  });
+  document.getElementById('dc-search').addEventListener('input', async function(){ render(await load()); });
+  document.getElementById('dc-cat-filter').addEventListener('change', async function(){ render(await load()); });
+  (async function(){ render(await load()); })();
+})();
+</script>

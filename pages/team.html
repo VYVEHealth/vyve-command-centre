@@ -1,19 +1,110 @@
 <div class="page active" id="page-team">
   <div class="page-header">
     <div class="hdr-row">
-      <div>
-        <h1>Team</h1>
-        <p>OKRs, targets, responsibilities and performance</p>
-      </div>
-      <div></div>
+      <div><h1>Team</h1><p>Roles, responsibilities, OKRs and contacts &mdash; the 11-person VYVE team</p></div>
+      <button class="btn btn-primary" id="tm-add">Add member</button>
     </div>
   </div>
 
-  <div class="card">
-    <div class="empty">
-      <span class="icon">·</span>
-      <h3>No team data yet</h3>
-      <p>Each team member's role, OKRs, responsibilities and performance metrics.</p>
-    </div>
+  <div class="grid-4" style="margin-bottom:18px">
+    <div class="stat"><div class="stat-label">Team size</div><div class="stat-value" id="tm-size">0</div></div>
+    <div class="stat"><div class="stat-label">With OKRs set</div><div class="stat-value" id="tm-okrs">0</div></div>
+    <div class="stat"><div class="stat-label">Departments</div><div class="stat-value" id="tm-depts">0</div></div>
+    <div class="stat"><div class="stat-label">New (90d)</div><div class="stat-value" id="tm-new" style="color:var(--vyve-teal-light)">0</div></div>
   </div>
+
+  <div id="tm-grid" class="grid-3"></div>
 </div>
+
+<script>
+(function(){
+
+  var LS='vyve_team';
+  function lsGet(){ try { var v=localStorage.getItem(LS); return v?JSON.parse(v):[]; } catch(e){ return []; } }
+  function lsSet(v){ try { localStorage.setItem(LS,JSON.stringify(v)); } catch(e){} }
+  async function load(){
+    if (window.VYVE_MAKE){ var fm = await VYVE_MAKE.list('team',{limit:500}); if (fm&&fm.length) return fm; }
+    return lsGet();
+  }
+  async function save(id, item){
+    if (window.VYVE_MAKE){ var r = await VYVE_MAKE.upsert('team', id, item); if (r) return; }
+    var a = lsGet(); var i = a.findIndex(function(x){return x._id===id;}); var e = Object.assign({_id:id}, item);
+    if (i>=0) a[i]=e; else a.unshift(e); lsSet(a);
+  }
+  async function remove(id){ if (window.VYVE_MAKE) await VYVE_MAKE.remove('team', id); lsSet(lsGet().filter(function(x){return x._id!==id;})); }
+
+  function initials(name){
+    return (name||'?').split(/\s+/).filter(Boolean).slice(0,2).map(function(p){return p.charAt(0).toUpperCase();}).join('') || '?';
+  }
+  function avatarBg(name){
+    var palette = ['#1B7878','#4DAAAA','#C9A84C','#0D2B2B','#3a8b8b','#a8893d'];
+    var hash = 0;
+    for (var i=0; i<(name||'').length; i++) hash = ((hash << 5) - hash + name.charCodeAt(i)) | 0;
+    return palette[Math.abs(hash) % palette.length];
+  }
+
+  function render(items){
+    document.getElementById('tm-size').textContent = items.length;
+    document.getElementById('tm-okrs').textContent = items.filter(function(m){ return (m.okrs||'').trim(); }).length;
+    document.getElementById('tm-depts').textContent = Array.from(new Set(items.map(function(m){return m.department;}).filter(Boolean))).length;
+    var ninety = Date.now() - 90*86400000;
+    document.getElementById('tm-new').textContent = items.filter(function(m){ return m.start_date && new Date(m.start_date).getTime() > ninety; }).length;
+
+    var grid = document.getElementById('tm-grid');
+    if (!items.length){
+      grid.innerHTML = '<div class="card" style="grid-column:1/-1"><div class="empty"><span class="icon">·</span><h3>No team members added</h3><p>Add yourself, Dean and the rest of the team to give every member a public profile inside the hub.</p></div></div>';
+      return;
+    }
+    items.sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); });
+    grid.innerHTML = items.map(function(m){
+      return '<div class="card" style="cursor:pointer" data-id="'+m._id+'">'+
+        '<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">'+
+          '<div style="width:48px;height:48px;border-radius:50%;background:'+avatarBg(m.name||'')+';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;font-family:var(--font-head);flex-shrink:0">'+VYVE_UI.escape(initials(m.name))+'</div>'+
+          '<div style="flex:1;min-width:0">'+
+            '<div style="font-weight:700;color:var(--text);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+VYVE_UI.escape(m.name||'')+'</div>'+
+            '<div style="font-size:12px;color:var(--vyve-teal-light)">'+VYVE_UI.escape(m.role||'')+'</div>'+
+          '</div>'+
+        '</div>'+
+        (m.department ? '<div style="font-size:11px;color:var(--text-muted);font-weight:600;letter-spacing:.3px;text-transform:uppercase;margin-bottom:8px">'+VYVE_UI.escape(m.department)+'</div>' : '')+
+        (m.responsibilities ? '<div style="font-size:12.5px;color:var(--text);line-height:1.6;margin-bottom:10px"><strong style="color:var(--text-muted);font-size:11px;text-transform:uppercase;letter-spacing:.3px;display:block;margin-bottom:3px">Responsibilities</strong>'+VYVE_UI.escape((m.responsibilities||'').slice(0,140))+'</div>' : '')+
+        (m.okrs ? '<div style="font-size:12.5px;color:var(--text);line-height:1.6"><strong style="color:var(--text-muted);font-size:11px;text-transform:uppercase;letter-spacing:.3px;display:block;margin-bottom:3px">OKRs</strong>'+VYVE_UI.escape((m.okrs||'').slice(0,120))+'</div>' : '')+
+      '</div>';
+    }).join('');
+    grid.querySelectorAll('[data-id]').forEach(function(row){
+      row.addEventListener('click', function(){ edit(row.dataset.id, items); });
+    });
+  }
+
+  function edit(id, items){
+    var m = items.find(function(x){return x._id===id;}); if(!m) return;
+    openModal('Edit member', m, async function(u){ await save(id, u); render(await load()); }, async function(){ await remove(id); render(await load()); });
+  }
+
+  function openModal(title, init, onSave, onDel){
+    init = init || {};
+    VYVE_UI.modal({ title: title, body:
+      '<div class="form-row cols-2"><div class="form-group"><label>Name</label><input id="m-name" value="'+VYVE_UI.escape(init.name||'')+'"/></div><div class="form-group"><label>Role / title</label><input id="m-role" value="'+VYVE_UI.escape(init.role||'')+'"/></div></div>'+
+      '<div class="form-row cols-2"><div class="form-group"><label>Department</label><input id="m-dept" placeholder="e.g. Product, Sales, Ops" value="'+VYVE_UI.escape(init.department||'')+'"/></div><div class="form-group"><label>Reports to</label><input id="m-reports" value="'+VYVE_UI.escape(init.reports_to||'')+'"/></div></div>'+
+      '<div class="form-row cols-2"><div class="form-group"><label>Email</label><input id="m-email" type="email" value="'+VYVE_UI.escape(init.email||'')+'"/></div><div class="form-group"><label>Start date</label><input id="m-start" type="date" value="'+VYVE_UI.escape((init.start_date||'').slice(0,10))+'"/></div></div>'+
+      '<div class="form-row"><div class="form-group"><label>Responsibilities (one per line)</label><textarea id="m-resp" rows="4">'+VYVE_UI.escape(init.responsibilities||'')+'</textarea></div></div>'+
+      '<div class="form-row"><div class="form-group"><label>OKRs / current focus</label><textarea id="m-okrs" rows="3">'+VYVE_UI.escape(init.okrs||'')+'</textarea></div></div>'+
+      '<div style="display:flex;justify-content:space-between;gap:8px">'+(onDel?'<button class="btn" id="m-del" style="color:var(--danger);border-color:rgba(224,96,96,.3)">Delete</button>':'<span></span>')+'<button class="btn btn-primary" id="m-save">Save</button></div>'
+    });
+    setTimeout(function(){
+      document.getElementById('m-save').addEventListener('click', function(){
+        var n = document.getElementById('m-name').value.trim();
+        if (!n){ VYVE_UI.toast('Name required','error'); return; }
+        var u = { name:n, role:document.getElementById('m-role').value.trim(), department:document.getElementById('m-dept').value.trim(), reports_to:document.getElementById('m-reports').value.trim(), email:document.getElementById('m-email').value.trim(), start_date:document.getElementById('m-start').value, responsibilities:document.getElementById('m-resp').value, okrs:document.getElementById('m-okrs').value, updated_at:new Date().toISOString(), created_at: init.created_at||new Date().toISOString() };
+        onSave(u);
+        document.querySelector('.modal-overlay').classList.remove('open');
+      });
+      if (onDel) document.getElementById('m-del').addEventListener('click', function(){ if (confirm('Delete?')){ onDel(); document.querySelector('.modal-overlay').classList.remove('open'); }});
+    }, 50);
+  }
+
+  document.getElementById('tm-add').addEventListener('click', function(){
+    openModal('Add team member', {}, async function(u){ await save('tm_'+Date.now(), u); render(await load()); VYVE_UI.toast('Added','success'); });
+  });
+  (async function(){ render(await load()); })();
+})();
+</script>
