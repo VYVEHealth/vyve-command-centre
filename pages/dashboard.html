@@ -1,35 +1,234 @@
 <div class="page active" id="page-dashboard">
   <div class="page-header">
-    <h1>Dashboard</h1>
-    <p>Business health at a glance</p>
+    <div>
+      <div class="page-title">Dashboard</div>
+      <div class="page-sub">Live performance across the business</div>
+    </div>
+    <button class="btn btn-ghost" id="dash-refresh" type="button">Refresh</button>
   </div>
 
-  <div class="grid-4">
-    <div class="stat"><div class="stat-label">MRR</div><div class="stat-value" id="dash-mrr">—</div><div class="stat-sub" id="dash-mrr-sub">awaiting data</div></div>
-    <div class="stat"><div class="stat-label">Active members</div><div class="stat-value" id="dash-members">—</div><div class="stat-sub">across all clients</div></div>
-    <div class="stat"><div class="stat-label">Pipeline value</div><div class="stat-value" id="dash-pipeline">—</div><div class="stat-sub">open deals</div></div>
-    <div class="stat"><div class="stat-label">Runway</div><div class="stat-value" id="dash-runway">—</div><div class="stat-sub">months</div></div>
+  <!-- Top KPI row -->
+  <div class="grid-4 stats-row" id="dash-top"></div>
+
+  <!-- Section: Commercial -->
+  <div style="margin-top:24px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <span style="width:4px;height:18px;background:var(--vyve-teal-light);border-radius:2px"></span>
+      <div style="font-family:var(--font-head);font-size:16px;font-weight:600;color:var(--text)">Commercial</div>
+    </div>
+    <div class="grid-4 stats-row" id="dash-commercial"></div>
   </div>
 
-  <div class="grid-2" style="margin-top:16px">
-    <div class="card">
-      <div class="card-header"><span class="card-title">Revenue trend</span><span class="card-sub">last 6 months</span></div>
-      <div class="empty"><span class="icon">·</span><h3>Chart placeholder</h3><p>Wire up to finance data-store to enable.</p></div>
+  <!-- Section: Marketing -->
+  <div style="margin-top:24px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <span style="width:4px;height:18px;background:var(--vyve-teal-light);border-radius:2px"></span>
+      <div style="font-family:var(--font-head);font-size:16px;font-weight:600;color:var(--text)">Marketing</div>
     </div>
-    <div class="card">
-      <div class="card-header"><span class="card-title">Recent activity</span></div>
-      <div class="empty"><span class="icon">·</span><h3>No activity yet</h3><p>Recent system events will appear here.</p></div>
+    <div class="grid-4 stats-row" id="dash-marketing"></div>
+  </div>
+
+  <!-- Section: Delivery & Ops -->
+  <div style="margin-top:24px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <span style="width:4px;height:18px;background:var(--vyve-teal-light);border-radius:2px"></span>
+      <div style="font-family:var(--font-head);font-size:16px;font-weight:600;color:var(--text)">Delivery & Ops</div>
     </div>
+    <div class="grid-4 stats-row" id="dash-delivery"></div>
+  </div>
+
+  <!-- LinkedIn reach chart -->
+  <div class="card" style="margin-top:24px">
+    <div class="card-header">
+      <div class="card-title">LinkedIn reach — last 31 days</div>
+      <div class="card-sub" id="dash-chart-sub"></div>
+    </div>
+    <div class="card-body">
+      <svg id="dash-chart" viewBox="0 0 720 240" style="width:100%;height:240px;display:block"></svg>
+    </div>
+  </div>
+
+  <!-- Channel breakdown -->
+  <div class="card" style="margin-top:18px">
+    <div class="card-header"><div class="card-title">Channel breakdown — all-time totals</div></div>
+    <div class="card-body" id="dash-channels"></div>
+  </div>
+
+  <!-- Recent activity -->
+  <div class="card" style="margin-top:18px">
+    <div class="card-header"><div class="card-title">Recent activity</div></div>
+    <div class="card-body" id="dash-activity"></div>
   </div>
 </div>
 
 <script>
-(async function(){
-  if (!window.VYVE_MAKE) return;
-  try {
-    var deals = await VYVE_MAKE.list('deals', { limit: 100 });
-    var total = deals.reduce(function(s,d){ return s + (Number(d.value)||0); }, 0);
-    document.getElementById('dash-pipeline').textContent = VYVE_UI.fmtMoney(total);
-  } catch(e){}
+(function(){
+  if (!window.VYVE_DATA) { console.error('[Dashboard] VYVE_DATA not loaded'); return; }
+  var D = window.VYVE_DATA;
+  function el(id){ return document.getElementById(id); }
+  function kpiCard(label, value, sub, route){
+    return '<div class="stat"' + (route ? ' data-route="' + route + '" style="cursor:pointer"' : '') + '>' +
+      '<div class="stat-num">' + value + '</div>' +
+      '<div class="stat-label">' + label + '</div>' +
+      '<div class="stat-sub">' + (sub || '') + '</div>' +
+    '</div>';
+  }
+
+  function renderTop(){
+    var mrr = D.finance.mrr();
+    var pipeline = D.deals.pipelineValue();
+    var perf30 = D.performance.totalReach(30);
+    var content30 = D.content.publishedLast30().length;
+    el('dash-top').innerHTML =
+      kpiCard('MRR', D.fmtGBP(mrr), mrr ? 'latest snapshot' : 'add in Finance', '#/finance') +
+      kpiCard('Pipeline', D.fmtGBP(pipeline), pipeline ? 'open deals' : 'no deals yet', '#/crm') +
+      kpiCard('30-day reach', D.fmt(perf30), 'social channels', '#/performance') +
+      kpiCard('30-day posts', content30, 'published', '#/content');
+  }
+
+  function renderCommercial(){
+    var runway = D.finance.runwayMonths();
+    var cash = D.finance.cash();
+    var burn = D.finance.burn();
+    var winRate = D.deals.winRate();
+    var clients = D.clients.live().length;
+    var clientsTotal = D.clients.all().length;
+    el('dash-commercial').innerHTML =
+      kpiCard('Cash on hand', cash ? D.fmtGBP(cash) : '—', cash ? 'most recent' : '', '#/finance') +
+      kpiCard('Monthly burn', burn ? D.fmtGBP(burn) : '—', burn ? 'current' : '', '#/finance') +
+      kpiCard('Runway', runway != null ? runway + ' months' : '—', runway != null ? '' : 'add finance entries', '#/finance') +
+      kpiCard('Win rate', winRate != null ? winRate + '%' : '—', winRate != null ? '' : 'no closed deals yet', '#/crm') +
+      kpiCard('Live clients', clients, clientsTotal ? 'of ' + clientsTotal + ' total' : 'add in Clients', '#/clients');
+  }
+
+  function renderMarketing(){
+    var pubEps = D.podcast.published().length;
+    var inProd = D.podcast.inProduction().length;
+    var contentInFlight = D.content.inFlight().length;
+    var liReach = D.performance.latestReachByChannel();
+    var liLatest = liReach.linkedin ? Number(liReach.linkedin.reach) : 0;
+    var liGrowth = D.performance.reachGrowth30d('linkedin');
+    el('dash-marketing').innerHTML =
+      kpiCard('Podcast eps published', pubEps, inProd ? inProd + ' in production' : '', '#/podcast') +
+      kpiCard('Content in flight', contentInFlight, contentInFlight ? 'across channels' : 'plan in Content', '#/content') +
+      kpiCard('LinkedIn impressions', D.fmt(liLatest), liGrowth != null ? (liGrowth >= 0 ? '+' : '') + liGrowth + '% over 31d' : 'latest day', '#/performance') +
+      kpiCard('IG engagement (31d)', D.fmt(D.performance.last30().filter(function(r){return r.channel==='instagram';}).reduce(function(s,r){return s+(Number(r.engagements)||0);}, 0)), 'likes + comments', '#/performance');
+  }
+
+  function renderDelivery(){
+    var tasksActive = D.tasks.activeCount();
+    var tasksOverdue = D.tasks.overdue().length;
+    var sessThisWeek = D.sessions.thisWeek().length;
+    var compDueSoon = D.compliance.dueSoon(30).length;
+    el('dash-delivery').innerHTML =
+      kpiCard('Active tasks', tasksActive, tasksOverdue ? tasksOverdue + ' overdue' : 'on track', '#/tasks') +
+      kpiCard('Sessions this week', sessThisWeek, sessThisWeek ? 'scheduled' : 'add in Sessions', '#/sessions') +
+      kpiCard('Compliance due', compDueSoon, compDueSoon ? 'next 30 days' : 'all clear', '#/compliance');
+  }
+
+  function renderChart(){
+    var rows = D.performance.all().filter(function(r){ return r.channel === 'linkedin'; })
+      .sort(function(a,b){ return (a.date||'').localeCompare(b.date||''); });
+    var svg = el('dash-chart');
+    if (rows.length < 2) {
+      svg.innerHTML = '<text x="360" y="120" text-anchor="middle" fill="#999" font-size="14" font-family="Inter">No LinkedIn data yet</text>';
+      el('dash-chart-sub').textContent = '';
+      return;
+    }
+    var W = 720, H = 240, padL = 40, padR = 20, padT = 20, padB = 40;
+    var values = rows.map(function(r){ return Number(r.reach)||0; });
+    var min = Math.min.apply(null, values);
+    var max = Math.max.apply(null, values);
+    var range = max - min || 1;
+    var stepX = (W - padL - padR) / (rows.length - 1);
+    var points = rows.map(function(r,i){
+      var x = padL + i * stepX;
+      var y = padT + (H - padT - padB) - ((Number(r.reach)||0) - min) / range * (H - padT - padB);
+      return [x, y, r];
+    });
+    var pathD = 'M ' + points.map(function(p){ return p[0] + ',' + p[1]; }).join(' L ');
+    var areaD = pathD + ' L ' + points[points.length-1][0] + ',' + (H - padB) + ' L ' + padL + ',' + (H - padB) + ' Z';
+    var ticks = '';
+    [min, min + range * 0.5, max].forEach(function(v, i){
+      var y = padT + (H - padT - padB) - (v - min) / range * (H - padT - padB);
+      ticks += '<line x1="' + padL + '" x2="' + (W - padR) + '" y1="' + y + '" y2="' + y + '" stroke="#2a3a3a" stroke-dasharray="2 4" stroke-width="1"/>';
+      ticks += '<text x="' + (padL - 6) + '" y="' + (y + 4) + '" text-anchor="end" fill="#888" font-size="10" font-family="Inter">' + Math.round(v) + '</text>';
+    });
+    // X labels: first, middle, last
+    var labelIdx = [0, Math.floor(rows.length/2), rows.length - 1];
+    var xLabels = labelIdx.map(function(i){
+      var d = rows[i].date || '';
+      return '<text x="' + points[i][0] + '" y="' + (H - 16) + '" text-anchor="middle" fill="#888" font-size="10" font-family="Inter">' + d.slice(5) + '</text>';
+    }).join('');
+
+    svg.innerHTML =
+      ticks +
+      '<path d="' + areaD + '" fill="url(#dashGrad)" opacity="0.4"/>' +
+      '<path d="' + pathD + '" fill="none" stroke="#4DAAAA" stroke-width="2"/>' +
+      points.map(function(p){ return '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="3" fill="#4DAAAA"/>'; }).join('') +
+      xLabels +
+      '<defs><linearGradient id="dashGrad" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#4DAAAA" stop-opacity="0.6"/><stop offset="100%" stop-color="#4DAAAA" stop-opacity="0"/></linearGradient></defs>';
+
+    var growth = D.performance.reachGrowth30d('linkedin');
+    el('dash-chart-sub').textContent = (growth != null ? (growth >= 0 ? '+' : '') + growth + '% growth · ' : '') + min + ' → ' + max;
+  }
+
+  function renderChannels(){
+    var byChannel = {};
+    D.performance.all().forEach(function(r){
+      var c = r.channel || 'unknown';
+      if (!byChannel[c]) byChannel[c] = { reach: 0, eng: 0, count: 0 };
+      byChannel[c].reach += Number(r.reach)||0;
+      byChannel[c].eng += Number(r.engagements)||0;
+      byChannel[c].count++;
+    });
+    var rows = Object.keys(byChannel).sort();
+    if (!rows.length) { el('dash-channels').innerHTML = '<div class="empty" style="padding:12px 0">No performance data yet.</div>'; return; }
+    el('dash-channels').innerHTML = rows.map(function(c){
+      var d = byChannel[c];
+      return '<div class="list-row">' +
+        '<div class="list-row-main"><div class="list-row-title" style="text-transform:capitalize">' + c + '</div>' +
+        '<div class="list-row-sub">' + d.count + ' records</div></div>' +
+        '<div style="display:flex;gap:18px;align-items:center">' +
+          '<div style="text-align:right"><div style="font-size:11px;color:var(--text-muted)">Reach</div><div style="font-family:var(--font-head);font-weight:600;color:var(--text)">' + D.fmt(d.reach) + '</div></div>' +
+          '<div style="text-align:right"><div style="font-size:11px;color:var(--text-muted)">Engagement</div><div style="font-family:var(--font-head);font-weight:600;color:var(--text)">' + D.fmt(d.eng) + '</div></div>' +
+        '</div></div>';
+    }).join('');
+  }
+
+  function renderActivity(){
+    var items = D.activity(8);
+    if (!items.length) { el('dash-activity').innerHTML = '<div class="empty" style="padding:12px 0">No activity yet — start adding entries across the hub.</div>'; return; }
+    var iconFor = { task:'✓', deal:'£', session:'📅', content:'✎', podcast:'🎙', client:'◐', compliance:'⚖' };
+    el('dash-activity').innerHTML = items.map(function(i){
+      return '<div class="list-row">' +
+        '<div class="list-row-main"><div class="list-row-title">' + (iconFor[i.type]||'•') + ' ' + i.title + '</div>' +
+        '<div class="list-row-sub">' + i.type + ' · ' + D.relTime(i.date) + '</div></div>' +
+      '</div>';
+    }).join('');
+  }
+
+  function wireRowClicks(){
+    document.querySelectorAll('#page-dashboard [data-route]').forEach(function(c){
+      c.addEventListener('click', function(){
+        var route = c.getAttribute('data-route');
+        if (route) window.location.hash = route;
+      });
+    });
+  }
+
+  function renderAll(){
+    renderTop();
+    renderCommercial();
+    renderMarketing();
+    renderDelivery();
+    renderChart();
+    renderChannels();
+    renderActivity();
+    wireRowClicks();
+  }
+
+  el('dash-refresh').addEventListener('click', renderAll);
+  renderAll();
 })();
 </script>
