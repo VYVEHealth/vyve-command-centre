@@ -16,8 +16,8 @@
 </head>
 <body>
 
-  <!-- Login overlay (UI only in commit 1 - auth wiring deferred pending Dean) -->
-  <div id="login">
+  <!-- Login overlay (UI only; auth wiring deferred until Dean provides anon key) -->
+  <div id="login" style="display:none">
     <div class="card">
       <div class="brand-block">
         <h1>VYVE</h1>
@@ -30,16 +30,16 @@
     </div>
   </div>
 
-  <!-- App shell (hidden until auth resolves; revealed by lib/auth.js or lib/router.js bootstrap) -->
+  <!-- App shell -->
   <div id="app">
     <aside class="sidebar" id="sidebar">
       <div class="brand">
         <div class="brand-title">VYVE</div>
         <div class="brand-sub">Command Centre</div>
       </div>
-      <nav id="sidebar-nav"><!-- populated by sidebar-config.js + router.js --></nav>
+      <nav id="sidebar-nav"><!-- populated by lib/router.js --></nav>
       <div class="sidebar-footer">
-        <div class="email" id="user-email">&mdash;</div>
+        <div class="email" id="user-email">—</div>
         <button id="signout">Sign out</button>
       </div>
     </aside>
@@ -49,57 +49,40 @@
         <div class="crumbs">
           <span class="crumb">VYVE</span>
           <span>/</span>
-          <span class="crumb current" id="crumb-page">&mdash;</span>
+          <span class="crumb current" id="crumb-page">—</span>
         </div>
         <div class="topbar-date" id="topbar-date"></div>
       </div>
       <div class="content" id="page-slot">
-        <!-- pages/*.html partials injected here by lib/router.js (commit 2) -->
-        <div class="empty">
-          <span class="icon">&middot;&middot;&middot;</span>
-          <h3>Loading shell</h3>
-          <p>Router not yet loaded. Commit 2 wires this up.</p>
-        </div>
+        <div class="empty"><span class="spinner"></span><h3>Loading</h3></div>
       </div>
     </main>
   </div>
 
-  <!-- Sidebar config is plain data, safe to load in commit 1.
-       Other lib/*.js files arrive in commit 2. -->
-  <script src="assets/sidebar-config.js"></script>
-
-  <!-- Minimal bootstrap so the shell paints during commit-1-only state.
-       This is fully replaced by lib/router.js in commit 2. -->
+  <!-- Runtime configuration. Settings page can override these at runtime. -->
   <script>
-    (function bootstrapCommit1(){
-      // Render sidebar from VYVE_NAV so people can at least see structure.
-      var nav = document.getElementById('sidebar-nav');
-      if (!nav || !window.VYVE_NAV) return;
-      var html = '';
-      window.VYVE_NAV.forEach(function(section){
-        html += '<div class="nav-section">';
-        html += '<div class="nav-section-label">' + section.section + '</div>';
-        section.items.forEach(function(item){
-          var icon = (window.VYVE_ICONS && window.VYVE_ICONS[item.icon]) || '';
-          html += '<div class="nav-item" data-page="' + item.slug + '">' + icon + '<span>' + item.label + '</span></div>';
-        });
-        html += '</div>';
-      });
-      nav.innerHTML = html;
-
-      // Date in topbar.
-      var d = new Date();
-      var fmt = d.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long' });
-      var el = document.getElementById('topbar-date');
-      if (el) el.textContent = fmt;
-
-      // Reveal app without auth (login overlay covers it until commit 2 router takes over).
-      // For commit-1-only state we hide login so the shell is inspectable.
-      var login = document.getElementById('login');
-      var app = document.getElementById('app');
-      if (login) login.style.display = 'none';
-      if (app) app.classList.add('ready');
-    })();
+    window.VYVE_CONFIG = {
+      supabase: {
+        url: 'https://ixjfklpckgxrwjlfsaaz.supabase.co',
+        anonKey: '' // pending from Dean — paste here or set via settings page
+      },
+      make: {
+        base: 'https://eu1.make.com/api/v2',
+        token: '',
+        stores: {} // mapping of logical key -> Make data-store id
+      }
+    };
   </script>
+
+  <!-- Supabase JS (for when auth is wired; harmless to load early) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.js"></script>
+
+  <!-- Config + libs (order matters: config -> deps -> router) -->
+  <script src="assets/sidebar-config.js"></script>
+  <script src="lib/ui.js"></script>
+  <script src="lib/supabase.js"></script>
+  <script src="lib/make.js"></script>
+  <script src="lib/auth.js"></script>
+  <script src="lib/router.js"></script>
 </body>
 </html>
