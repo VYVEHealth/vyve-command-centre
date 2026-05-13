@@ -11,6 +11,7 @@ window.VYVE_NAV = [
       { slug: "brief",       label: "Morning Brief",   icon: "layers",   status: "live" },
       { slug: "intel",       label: "Research & Grants", icon: "search", status: "live" },
       { slug: "competitors", label: "Competitor Watch", icon: "eye",     status: "live" },
+      { slug: "intel-hub",   label: "Intel Hub",       icon: "radar",    status: "live" },
       { slug: "dashboard",   label: "Dashboard",       icon: "grid",     status: "live" }
     ]
   },
@@ -63,6 +64,7 @@ window.VYVE_NAV = [
 window.VYVE_ICONS = {
   "layers":       '<svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>',
   "search":       '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>',
+  "radar":        '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 12 L12 4"/><path d="M12 12 L18.5 8"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>',
   "eye":          '<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
   "grid":         '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>',
   "trending-up":  '<svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>',
