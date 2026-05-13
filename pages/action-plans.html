@@ -1,0 +1,380 @@
+<div class="page active" id="page-action-plans" style="max-width:1280px">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Action Plans</div>
+      <div class="page-sub">10 team members &middot; 15 priority actions each &middot; the 150 things that make VYVE successful</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-ghost" id="ap-expand-all" type="button">Expand all</button>
+      <button class="btn btn-ghost" id="ap-export" type="button">Export</button>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="grid-4 stats-row" id="ap-kpis"></div>
+
+  <!-- Filters -->
+  <div style="display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 14px;align-items:center">
+    <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-right:4px">Filter:</div>
+    <button class="btn btn-ghost ap-filter" data-filter="all" type="button" style="font-size:12px">All</button>
+    <button class="btn btn-ghost ap-filter" data-filter="not-started" type="button" style="font-size:12px">Not started</button>
+    <button class="btn btn-ghost ap-filter" data-filter="in-progress" type="button" style="font-size:12px">In progress</button>
+    <button class="btn btn-ghost ap-filter" data-filter="blocked" type="button" style="font-size:12px">Blocked</button>
+    <button class="btn btn-ghost ap-filter" data-filter="done" type="button" style="font-size:12px">Done</button>
+    <button class="btn btn-ghost ap-filter" data-filter="overdue" type="button" style="font-size:12px">Overdue</button>
+    <button class="btn btn-ghost ap-filter" data-filter="due-soon" type="button" style="font-size:12px">Due in 14d</button>
+  </div>
+
+  <!-- Members + actions -->
+  <div id="ap-members"></div>
+</div>
+
+<style>
+  .ap-filter.active { background: var(--vyve-teal-dark); color: var(--text); border-color: var(--vyve-teal); }
+  .ap-member-head:hover { background: var(--surface-2); }
+  .ap-action-row { transition: background .15s; }
+  .ap-action-row:hover { background: var(--surface-2); }
+  .ap-progress-track { width: 120px; height: 6px; background: var(--surface-2); border-radius: 3px; overflow: hidden; }
+  .ap-progress-fill { height: 100%; background: linear-gradient(90deg, var(--vyve-teal), var(--vyve-teal-light)); transition: width .3s; }
+  .ap-status-pill { flex-shrink: 0; font-size: 10.5px; font-weight: 600; padding: 4px 10px; border-radius: 12px; min-width: 96px; text-align: center; text-transform: uppercase; letter-spacing: .4px; }
+  .ap-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--vyve-teal-dark); display: flex; align-items: center; justify-content: center; font-family: var(--font-head); font-weight: 700; color: var(--text); font-size: 14px; flex-shrink: 0; }
+  .ap-edit-form .form-group { margin-bottom: 14px; }
+  .ap-edit-form label { display: block; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; font-weight: 600; }
+  .ap-edit-form input[type="date"], .ap-edit-form select, .ap-edit-form textarea {
+    width: 100%; padding: 9px 11px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-sm);
+    color: var(--text); font-family: var(--font-body); font-size: 13px;
+  }
+  .ap-edit-form textarea { resize: vertical; min-height: 90px; }
+  .ap-edit-form input[type="range"] { width: 100%; accent-color: var(--vyve-teal-light); }
+  .ap-edit-form .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .ap-action-text { font-size: 13px; line-height: 1.55; color: var(--text); }
+  .ap-action-text.done { opacity: .6; text-decoration: line-through; }
+</style>
+
+<script>
+(function(){
+  if (!window.VYVE_UI) { console.error('[ActionPlans] VYVE_UI not loaded'); return; }
+
+  var SEED = [{"id": "lewis", "name": "Lewis Vines", "role": "Chief Executive Officer & Founder", "responsibility": "Overall responsibility for strategy, performance & operation", "actions": ["Define & communicate the business strategy & vision for the next 3 years", "Set individual roles & responsibilities with clear accountabilities. Create performance management structure", "Create operational plan for all core business functions — technology, service, product, sales, marketing, governance etc", "Build company culture — how decisions are made, what behaviours are rewarded, speed of execution, ownership expectations, internal communication, response to failure", "Close 3 signed strategic partnership agreements (insurance, occupational health or employee benefits) before year-end", "Set VYVE's 2026 OKRs with the full team — one set of quarterly targets per person, reviewed in a monthly all-hands", "Build the VYVE investor/funding pitch deck to Series A standard: problem, market size, solution, traction, team and financial ask", "Ensure the business is financially sustainable — define and achieve the revenue targets, pricing model and cost base required for bottom-line sustainability, managing cash runway and budget discipline alongside Ryan (FD)", "Drive execution — prioritised focus, remove blockers — support all areas", "Establish weekly & monthly team performance reviews against individual and business priorities", "Run a 14-day planning sprint with Alan and Dean to lock MVP launch scope, go-live date and launch marketing plan", "Recruit leading talent for the VYVE mission — setting hiring standards, build leadership capability, remove poor-fit hires quickly", "Secure 3 employer pilots live by September 2026", "Choose 2 funding routes (grant, angel or accelerator) and formally kick off the application process by end of May 2026", "Create shared workspace for the full team — hosting key actions, documents and the operational intel hub"]}, {"id": "dean", "name": "Dean", "role": "Chief Technical Officer", "responsibility": "Overall responsibility for VYVE Technology", "actions": ["Diagnose and fix Apple vs Android performance parity issues identified in the 08/05/26 workshop — report resolution within 2 weeks", "Define and lock the MVP feature scope in writing with Lewis and Alan before any Phase 2 development begins", "Resolve the app loading speed issue — set a target load time SLA and track it in the weekly tech health report", "Simplify the app UI: reduce on-screen text and numbers, increase visual clarity and redesign main tabs to Physical, Mind and Connect", "Implement SSO via SAML or OAuth — a hard requirement for enterprise clients and a blocker to closing larger deals", "Build the employer dashboard MVP: active user %, engagement trend and pillar breakdown by month — live before first enterprise deal", "Integrate CRM fully so client onboarding, engagement data and reporting flow without manual intervention", "Implement a GDPR-compliant data architecture: individual user data is never visible to employers, only aggregated insights", "Build the internal tech platform — track performance, actions, progress, insight, projects, planning etc", "Set up a staging environment so every feature is tested against production data before going live — no more direct-to-prod releases", "Build wearable integration (Apple Health / Google Fit) into the physical pillar — a key differentiator in enterprise sales", "Schedule penetration testing with a certified third party — minimum annually, ideally twice a year from launch", "Produce a monthly tech health report (uptime %, load speed, bugs raised vs resolved, sprint velocity — shared with Lewis) and maintain a running log of all technical decisions and technical debt so knowledge is not locked in one person", "Identify resource gaps and maintain a technology risk register: flag skill gaps, delivery blockers and third-party dependencies to Lewis and Alan monthly — ensuring VYVE can plan and resource critical build phases ahead of time", "Produce a 6-month technical roadmap that maps directly against the commercial GTM calendar — reviewed monthly with Alan"]}, {"id": "alan", "name": "Alan", "role": "Chief Product & Commercial Officer", "responsibility": "Overall responsibility for Product & Commercial Strategy", "actions": ["Define VYVE's pricing tiers in a locked document — entry, core and enterprise — with clear feature gates and annual contract terms", "Write the Product Requirements Document for MVP: every feature defined with acceptance criteria, priority and owner", "Define the Ideal Customer Profile in writing: company size, sector, HR team maturity, budget bracket and buying trigger", "Build the commercial model: CAC, LTV, churn assumptions and break-even by month — updated monthly with Ryan (FD)", "Map the full customer journey from first awareness to annual renewal — every touchpoint, owner and success metric", "Build a feature prioritisation framework (impact vs effort) and run it with the team at the start of every sprint", "Run pricing sensitivity conversations with 5 potential clients: understand the ceiling before the product launches — Vicki to support", "Set up product feedback loops: in-app survey, monthly client calls and usage analytics — all feeding a single product backlog", "Build the weekly KPI dashboard: active user %, pillar usage, monthly retention rate and NPS — reviewed every Monday", "Write the VYVE onboarding process: exactly what a new client experiences in their first 48 hours and first 30 days — agreed and co-owned with Vicki", "Define what a successful MVP launch looks like numerically — user targets, retention floor, NPS minimum — agreed with Lewis", "Build a competitor monitoring process: check each key competitor monthly for new features, pricing changes and funding news (Hub is created)", "Write the full GTM playbook: ICP, outbound sequence, demo structure, proposal template and objection-handling guide", "Document the partner product requirements: what VYVE must offer technically and contractually for integration into benefits platforms", "Define the mental health service levels and partner handoff model — inform/assess/refer — in writing before Q3 launch"]}, {"id": "calum", "name": "Calum", "role": "Physical Health Lead", "responsibility": "Overall responsibility for Physical Health Service", "actions": ["Define the overall VYVE physical health strategy and channel approach: positioning, what makes VYVE's physical offer distinct and valuable, channel mix (app, live, partnerships) and target user journeys — then define the Phase 1, 2 & 3 of the service: exact workout count, session types, who delivers them and recorded vs live split", "Record the full workout programme library — weight loss, strength, muscle gain, running and all-rounder — min 4-week progression per goal (male & female)", "Design progressive pathways for each programme: beginner to intermediate to advanced, with clear progression triggers", "Write the nutrition guidance brief that pairs with each workout goal — practical, evidence-based and written for everyday people", "Develop a monthly physical challenge format any client company can run with their workforce with no facilitation required", "Build a partner content pipeline: 3 external fitness or physiotherapy experts contributing content every quarter", "Manage the quality of all physical health content in VYVE's channel — defining content standards, sourcing expert-created content, creating original content where relevant, and applying a clinical safety checklist to every piece before publication", "Recruit & manage physical health partners — coaches, speakers, venues and organise timetable of services", "Develop the step and activity challenge framework that integrates with wearables and VYVE in-app tracking", "Build the live and group class schedule — minimum 2 sessions per week confirmed with dates and format (phased approach, as we grow the plan grows)", "Write an employer-facing guide: how the physical pillar reduces musculoskeletal absence and how to communicate it internally", "Run a structured pilot of the physical programme with a test group of 10+ people — capture feedback, measure engagement, iterate", "Build a seasonal content calendar so physical content aligns with January goals, summer activity and autumn reset moments", "Define the metrics for physical pillar success: target active engagement %, average sessions per user and retention benchmark", "Set up a master content library with version control so every asset is findable and no content is ever lost or duplicated"]}, {"id": "phil", "name": "Phil", "role": "Mental Health Lead", "responsibility": "Overall responsibility for mental health service", "actions": ["Define the overall mental health channel strategy for VYVE — how the mental health pillar stands out and delivers a valued service, the channel mix (digital, live, partner), target audience and partner selection rationale — then define service levels: inform / assess / refer — with clear partner handoff criteria agreed with Alan, from introductory wellness to full mental health service", "Design the full CBT programme structure: session count, weekly themes, homework exercises and outcomes tracking method", "Create the sleep support content suite: sleep hygiene guide, wind-down routine, 7-night sleep challenge and progress tracker", "Build the clinical governance framework: how mental health content is reviewed, approved and kept up to date", "Write and publish the crisis pathway: what happens if a user signals distress — escalation steps, signposting and safeguarding protocol", "Write the mental health welcome module: sets expectations, normalises help-seeking and reduces stigma from day one", "Build the Mental Health First Aid content package that employer organisations can deploy internally", "Create a 12-month mental health content calendar aligned to key dates: MHAD, Stress Awareness Month, World Suicide Prevention Day", "Define the outcomes measurement framework: how VYVE demonstrates the mental health pillar is working for clients", "Develop a manager guide module: spotting signs of struggle, how to have the conversation and where to signpost", "Create the stress and resilience workshop — deliverable as both a digital self-paced course and an in-person session", "Identify and brief 2 external clinical collaborators to peer-review all mental health content before it goes live", "Develop the EAP integration guidance document: how VYVE complements an existing EAP and how to communicate that to clients", "Define and scope the self-assessment tool & wellbeing Hub: what it measures, who it's for and how results feed into personalised content", "Run a full content quality audit on all mental health material before launch — checking clinical accuracy, tone, inclusivity and safeguarding"]}, {"id": "vicki", "name": "Vicki", "role": "Client & Relationship Director", "responsibility": "Overall responsibility for Business relationships", "actions": ["Build a comprehensive sales plan and approach for VYVE — covering target market segmentation, sales strategy, process design and commercial priorities — which serves as the framework for all sales activity, including a 50-name priority target account list segmented by size, sector and wellbeing signals", "Write and implement a structured outbound sales sequence: first contact, follow-up, demo booking and proposal with approved email templates", "Review and approve all email marketing templates end-to-end — confirm logic of engagement structure with Dean and Azuza", "Build a 20-minute demo script and a 45-minute full presentation — both reviewed and approved by Lewis before first use", "Create the VYVE proposal template: a single document personalisable per prospect in under 30 minutes", "Set up HubSpot pipeline stages and ensure every active prospect has a logged next action, close date and deal probability", "Run 10 discovery calls in the first 30 days — log every objection and buying signal in HubSpot immediately after each call", "Write the account management playbook: what the client relationship looks like month by month from signing to renewal", "Define the renewal and upsell process: when the conversation starts, who triggers it and what the upsell pathway looks like", "Identify and attend 3 HR, People or wellbeing events in 2026 where VYVE target clients are most likely to be present", "Write the client onboarding checklist: what a new corporate client experiences in their first 30 days — every step, every owner", "Build the partner sales channel: identify the first 3 referral partners, agree commission terms and brief them on the proposition", "Set monthly revenue targets with Alan for 2026 and present a pipeline report against those targets every week", "Run a win and loss analysis after every closed deal — document what won or lost it and feed findings into the sales playbook", "Lead business tender responses: build the tender library, own the submission process and brief in contributors with clear deadlines"]}, {"id": "cole", "name": "Cole", "role": "Community & Partnership Manager", "responsibility": "Overall responsibility for VYVE Community", "actions": ["Define the community strategy and phased launch plan for VYVE — covering community vision, target audience, content approach, engagement mechanics, partnership model, community KPIs and milestone-based phases from pre-launch through growth", "Confirm and launch the Connect challenge event for 1st June 2026 — date, format, promotion plan and participation target locked in writing", "Complete the Everyman Charity CIC registration — file all required documents, confirm charitable objects and appoint founding trustees (Lewis to support)", "Design the 1-in-5 pledge mechanics end-to-end: how a corporate payment triggers a community seat and how it is tracked and reported", "Build the ambassador programme: recruitment criteria, training curriculum, recognition system and comms toolkit", "Identify and onboard 10 founding ambassadors from the existing personal and VYVE network — run first training session", "Confirm 4 community events for 2026 — dates, venues, themes and speakers locked in writing", "Write the community events playbook so any VYVE client can run a local event under the VYVE brand without central support", "Define and activate the partner charity strategy: which organisations VYVE formally aligns with (e.g. Parkrun, mental health charities)", "Explore a MyFitnessPal partnership — assess integration fit, content collaboration opportunity and commercial terms", "Build a community events sponsor and partner model: how local businesses can co-fund or co-brand VYVE events", "Write the quarterly community impact report template — a document clients can share internally to evidence their CSR value", "Set up an online community space (app-based or forum) where VYVE members can connect and support each other between events", "Build the Everyman Charity fundraising strategy: how VYVE raises funds beyond the 1-in-5 pledge through events, grants and corporate giving", "Define the VYVE tagline and community vision statement — a big, powerful line capturing 'force for good / movement' positioning"]}, {"id": "azuza", "name": "Azuza", "role": "Social Media Marketing & Content Manager", "responsibility": "Overall responsibility for brand & online presence", "actions": ["Write and publish the VYVE brand guidelines document: tone of voice, visual identity rules, messaging hierarchy and do/do-not examples", "Launch VYVE's Instagram and LinkedIn channels with a 3-month content calendar locked, approved and ready to publish before going live", "Build the social media content plan: post schedule, content mix and platform-specific formats — 3 months planned in advance at all times", "Build the influencer programme: identify 10 health, wellness and workplace micro-influencers, brief the first 3 and agree content terms", "Write and distribute VYVE's first press release — announce the CIC launch, the 1-in-5 pledge and the founding team story", "Build the B2C acquisition funnel: map content to each stage from awareness to active membership, with conversion targets per stage", "Launch email marketing: build the subscriber list, write the welcome sequence and define the monthly newsletter format and frequency", "Create the SEO content strategy: identify 10 target keywords, brief 6 months of blog content and agree publication schedule", "Set up brand monitoring: Google Alerts, social listening tools and a weekly review of VYVE and key competitor mentions", "Run 3 proactive PR pitches in 2026 to tier-1 HR and business media — People Management, HR Magazine and one national outlet", "Build the employer marketing collateral pack: company brochure, one-page sales leave-behind, case study template and sales presentation", "Set up monthly marketing reporting: reach, engagement, leads generated and cost per lead — all flowing into HubSpot for Lewis and Alan", "Build the VYVE website to conversion standard: clear value proposition above the fold, social proof section and a demo booking CTA", "Run a brand awareness baseline survey with 20 target buyers before any paid marketing activity — to measure lift over time", "Support Cole with community challenge promotion — own the social media amplification plan for the 1st June Connect launch"]}, {"id": "ryan", "name": "Ryan Hewitt", "role": "Finance Director", "responsibility": "Overall responsibility for financial governance & assurance", "actions": ["Set up a cloud accounting system (Sage) with chart of accounts, bank feeds connected and opening balances entered", "Open a dedicated VYVE CIC business bank account and set up Stripe with proper reconciliation and expense controls", "Build the 12-month rolling cash flow forecast — updated monthly and shared with Lewis as the primary financial decision-making tool", "Produce the annual budget for FY2026/27: revenue targets by channel, headcount cost, tech spend and marketing investment", "Build the financial model underpinning the investor pitch: unit economics, LTV:CAC ratio, break-even month and 3-year P&L projection", "Prepare the financial due diligence pack: management accounts, bank statements, contracts summary and cap table — investor-ready", "Define and own financial KPIs for the monthly dashboard: MRR, gross margin, burn rate, runway and CAC — reviewed with Alan weekly", "Manage CIC financial compliance: annual accounts filing, CIC34 community interest report and Companies House obligations", "Set up payroll for any salaried team members and ensure PAYE, NI and pension auto-enrolment are correctly administered", "Build a VAT compliance process: determine registration threshold, configure accounting system and set up quarterly return schedule", "Identify and apply for 2 relevant grants in 2026 — Innovate UK, Nesta, Sport England or NHS health tech funding rounds — Lewis, Alan & Vicki to support", "Define the pricing model financial floor: minimum viable price per seat that covers costs and delivers target margin, shared with Alan", "Set up an expense management process: policy document, approval workflow and monthly reconciliation — no untracked spend", "Produce monthly management accounts by the 10th of each month: P&L, balance sheet, cash position and variance vs budget", "Review all contractor and supplier contracts for financial risk — flag payment terms, auto-renewals and liability clauses to Lewis"]}, {"id": "hr-director", "name": "Non-Exec HR Director", "role": "Non-Executive HR Director & CEO Advisor", "responsibility": "Responsibility for Internal governance & Service Insight", "actions": ["Review and advise on all current contractor agreements — flag gaps in IP assignment, confidentiality and termination clauses", "Produce a lightweight employee handbook covering conduct, holidays, expenses, disciplinary process and remote working policy", "Lead product-market fit advisory input: challenge assumptions on target customer, value proposition and pricing based on HR buyer perspective", "Define the performance review framework: how VYVE assesses, documents and acts on team performance quarterly", "Facilitate a team values and culture session — outputs become the VYVE internal culture code and inform hiring criteria", "Advise on equity and option schemes: EMI scheme eligibility, vesting schedule design and how to use equity to retain key people", "Review GDPR compliance for all employee and contractor data handling — confirm DPA obligations and any DPO requirements", "Provide monthly CEO advisory session with Lewis: 60 minutes, strategic sounding board, leadership challenges and board readiness", "Advise on compensation benchmarking: review current contractor rates and any salaried roles against UK market data", "Advise on org structure and hiring plan for the next 12 months — define which roles are needed and in what order", "Define the VYVE employer brand: what VYVE promises its own people and how that story is told in talent attraction", "Build a structured onboarding process for new team members: week 1 schedule, key introductions, tools access and 30-60-90 plan template", "Advise on client HR due diligence requirements: what larger corporates will ask about VYVE's own people practices before signing", "Review team meeting and governance cadence — advise on board meeting structure, decision rights and escalation protocols", "Identify and recommend 1 additional non-exec or advisor with commercial or clinical expertise to strengthen the VYVE board"]}];
+
+  var STATUS_LABELS = {
+    'not-started': 'Not started',
+    'in-progress': 'In progress',
+    'blocked': 'Blocked',
+    'done': 'Done'
+  };
+  var STATUS_STYLES = {
+    'not-started': 'background:var(--surface-2);color:var(--text-muted)',
+    'in-progress': 'background:rgba(77,170,170,.18);color:var(--vyve-teal-light)',
+    'blocked':     'background:rgba(224,96,96,.18);color:#e06060',
+    'done':        'background:rgba(57,165,118,.18);color:#39a576'
+  };
+
+  var STORAGE_KEY = 'vyve_action_plans';
+  var EXPAND_KEY  = 'vyve_action_plans_expanded';
+  var FILTER_KEY  = 'vyve_action_plans_filter';
+  var FULL_CACHE  = 'vyve_action_plans_full';
+
+  function loadOverrides(){ try { return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}') || {}; } catch(e){ return {}; } }
+  function saveOverride(actionId, patch){
+    var saved = loadOverrides();
+    saved[actionId] = Object.assign({}, saved[actionId] || {}, patch, { updated_at: new Date().toISOString() });
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(saved)); } catch(e){}
+  }
+  function loadExpanded(){ try { return JSON.parse(localStorage.getItem(EXPAND_KEY)||'{}') || {}; } catch(e){ return {}; } }
+  function saveExpanded(m){ try { localStorage.setItem(EXPAND_KEY, JSON.stringify(m)); } catch(e){} }
+  function loadFilter(){ try { return localStorage.getItem(FILTER_KEY) || 'all'; } catch(e){ return 'all'; } }
+  function saveFilter(f){ try { localStorage.setItem(FILTER_KEY, f); } catch(e){} }
+
+  function buildState(){
+    var overrides = loadOverrides();
+    var result = SEED.map(function(member){
+      return Object.assign({}, member, {
+        actions: member.actions.map(function(text, idx){
+          var actionId = member.id + '_' + (idx+1);
+          var override = overrides[actionId] || {};
+          return {
+            id: actionId,
+            position: idx + 1,
+            text: text,
+            status: override.status || 'not-started',
+            due: override.due || '',
+            progress: typeof override.progress === 'number' ? override.progress : 0,
+            notes: override.notes || '',
+            updated_at: override.updated_at || ''
+          };
+        })
+      });
+    });
+    // Write flat cache so lib/data.js (and therefore Brief/Dashboard) can read these actions
+    try {
+      var flat = [];
+      result.forEach(function(m){
+        m.actions.forEach(function(a){
+          flat.push({
+            id: a.id, member_id: m.id, member_name: m.name,
+            position: a.position, text: a.text,
+            status: a.status, due: a.due, progress: a.progress,
+            notes: a.notes, updated_at: a.updated_at
+          });
+        });
+      });
+      localStorage.setItem(FULL_CACHE, JSON.stringify(flat));
+    } catch(e){}
+    return result;
+  }
+
+  function parseDate(s){ if (!s) return null; var d = new Date(s); return isNaN(d.getTime()) ? null : d; }
+  function startOfDay(d){ d = d || new Date(); var x = new Date(d); x.setHours(0,0,0,0); return x; }
+  function daysUntil(s){ var d = parseDate(s); return d ? Math.ceil((d - startOfDay()) / 86400000) : null; }
+  function fmtDate(s){
+    var d = parseDate(s); if (!d) return '';
+    return d.toLocaleDateString('en-GB', { day:'numeric', month:'short', year: d.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined });
+  }
+  function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  function actionMatchesFilter(a, f){
+    if (f === 'all') return true;
+    if (f === 'overdue'){ var du = daysUntil(a.due); return du !== null && du < 0 && a.status !== 'done'; }
+    if (f === 'due-soon'){ var du = daysUntil(a.due); return du !== null && du >= 0 && du <= 14 && a.status !== 'done'; }
+    return a.status === f;
+  }
+
+  function memberProgress(member){
+    var total = member.actions.length;
+    var done = member.actions.filter(function(a){ return a.status === 'done'; }).length;
+    var inProgress = member.actions.filter(function(a){ return a.status === 'in-progress'; }).length;
+    var blocked = member.actions.filter(function(a){ return a.status === 'blocked'; }).length;
+    var pct = total ? Math.round((done + inProgress * 0.5) / total * 100) : 0;
+    return { total: total, done: done, inProgress: inProgress, blocked: blocked, pct: pct };
+  }
+
+  var state = buildState();
+  var expanded = loadExpanded();
+  var currentFilter = loadFilter();
+
+  function renderKPIs(){
+    var all = state.reduce(function(arr, m){ return arr.concat(m.actions); }, []);
+    var total = all.length;
+    var done = all.filter(function(a){ return a.status === 'done'; }).length;
+    var inProgress = all.filter(function(a){ return a.status === 'in-progress'; }).length;
+    var blocked = all.filter(function(a){ return a.status === 'blocked'; }).length;
+    var overdue = all.filter(function(a){ var du = daysUntil(a.due); return du !== null && du < 0 && a.status !== 'done'; }).length;
+    var pct = total ? Math.round(done / total * 100) : 0;
+    document.getElementById('ap-kpis').innerHTML =
+      '<div class="stat"><div class="stat-num">' + pct + '%</div><div class="stat-label">Complete</div><div class="stat-sub">' + done + ' of ' + total + ' done</div></div>' +
+      '<div class="stat"><div class="stat-num" style="color:var(--vyve-teal-light)">' + inProgress + '</div><div class="stat-label">In progress</div><div class="stat-sub">being worked on</div></div>' +
+      '<div class="stat"><div class="stat-num" style="color:' + (blocked ? '#e06060' : 'var(--text)') + '">' + blocked + '</div><div class="stat-label">Blocked</div><div class="stat-sub">' + (blocked ? 'needs unblocking' : 'all clear') + '</div></div>' +
+      '<div class="stat"><div class="stat-num" style="color:' + (overdue ? '#e06060' : 'var(--text)') + '">' + overdue + '</div><div class="stat-label">Overdue</div><div class="stat-sub">past deadline</div></div>';
+  }
+
+  function renderMembers(){
+    var html = '';
+    state.forEach(function(member){
+      var prog = memberProgress(member);
+      var isOpen = !!expanded[member.id];
+      var visible = member.actions.filter(function(a){ return actionMatchesFilter(a, currentFilter); });
+      var hidden = member.actions.length - visible.length;
+
+      html += '<div class="ap-member card" data-member="' + member.id + '" style="padding:0;margin-bottom:12px;overflow:hidden">';
+      html += '<div class="ap-member-head" data-toggle="' + member.id + '" style="display:flex;align-items:center;gap:14px;padding:14px 18px;cursor:pointer">';
+      html += '<div class="ap-avatar">' + esc(member.name.charAt(0)) + '</div>';
+      html += '<div style="flex:1;min-width:0">';
+      html += '<div style="font-family:var(--font-head);font-weight:600;color:var(--text);font-size:15px">' + esc(member.name) + '</div>';
+      html += '<div style="font-size:11.5px;color:var(--text-muted)">' + esc(member.role) + '</div>';
+      html += '</div>';
+      html += '<div style="display:flex;align-items:center;gap:14px;flex-shrink:0">';
+      html += '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">';
+      html += '<div style="font-family:var(--font-head);font-weight:600;color:var(--text);font-size:14px">' + prog.pct + '%</div>';
+      html += '<div style="display:flex;gap:6px;font-size:10.5px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px">';
+      html += '<span>' + prog.done + ' done</span>';
+      if (prog.inProgress) html += '<span>&middot; ' + prog.inProgress + ' active</span>';
+      if (prog.blocked) html += '<span style="color:#e06060">&middot; ' + prog.blocked + ' blocked</span>';
+      html += '</div></div>';
+      html += '<div class="ap-progress-track"><div class="ap-progress-fill" style="width:' + prog.pct + '%"></div></div>';
+      html += '<div style="color:var(--text-muted);font-size:18px;transform:rotate(' + (isOpen ? '90' : '0') + 'deg);transition:.2s;line-height:1">&rsaquo;</div>';
+      html += '</div></div>';
+
+      html += '<div data-body="' + member.id + '" style="display:' + (isOpen ? 'block' : 'none') + ';border-top:1px solid var(--border);padding:8px 0">';
+      html += '<div style="padding:10px 18px 4px;font-size:10.5px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px">' + esc(member.responsibility) + '</div>';
+      if (!visible.length){
+        html += '<div class="empty" style="padding:18px;text-align:left"><h3 style="margin:0;font-size:13px;font-weight:500">No actions match the current filter.</h3>';
+        if (hidden) html += '<p style="margin:4px 0 0;font-size:11.5px">(' + hidden + ' hidden)</p>';
+        html += '</div>';
+      } else {
+        visible.forEach(function(action){ html += renderActionRow(member, action); });
+        if (hidden){
+          html += '<div style="padding:8px 18px;font-size:11px;color:var(--text-muted);font-style:italic">' + hidden + ' more action' + (hidden > 1 ? 's' : '') + ' hidden by current filter</div>';
+        }
+      }
+      html += '</div></div>';
+    });
+    document.getElementById('ap-members').innerHTML = html;
+    wireRows();
+  }
+
+  function renderActionRow(member, action){
+    var du = daysUntil(action.due);
+    var dueColor = du === null ? 'var(--text-muted)' : (du < 0 && action.status !== 'done') ? '#e06060' : du <= 7 ? 'var(--vyve-gold)' : 'var(--text-muted)';
+    var dueText = action.due ? fmtDate(action.due) + (du !== null && du < 0 && action.status !== 'done' ? ' &middot; overdue' : du !== null && du >= 0 && du <= 14 && action.status !== 'done' ? ' &middot; ' + du + 'd left' : '') : '';
+    var doneCls = action.status === 'done' ? ' done' : '';
+
+    var html = '<div class="ap-action-row" data-action="' + action.id + '" style="display:flex;align-items:flex-start;gap:14px;padding:12px 18px;border-top:1px solid var(--border);cursor:pointer">';
+    html += '<div class="ap-status-pill" style="' + STATUS_STYLES[action.status] + ';margin-top:1px">' + STATUS_LABELS[action.status] + '</div>';
+    html += '<div style="flex:1;min-width:0">';
+    html += '<div class="ap-action-text' + doneCls + '"><span style="color:var(--text-muted);font-family:var(--font-head);font-weight:700;margin-right:8px">' + action.position + '.</span>' + esc(action.text) + '</div>';
+    var meta = [];
+    if (action.due) meta.push('<span style="color:' + dueColor + '">' + dueText + '</span>');
+    if (action.progress) meta.push('<span style="color:var(--vyve-teal-light)">' + action.progress + '% progress</span>');
+    if (action.notes) meta.push('<span style="color:var(--text-muted)" title="' + esc(action.notes) + '">&#9636; has notes</span>');
+    if (meta.length){
+      html += '<div style="font-size:11px;margin-top:6px;display:flex;gap:14px;flex-wrap:wrap">' + meta.join('') + '</div>';
+    }
+    html += '</div></div>';
+    return html;
+  }
+
+  function wireRows(){
+    document.querySelectorAll('[data-toggle]').forEach(function(el){
+      el.addEventListener('click', function(){
+        var id = el.getAttribute('data-toggle');
+        expanded[id] = !expanded[id];
+        saveExpanded(expanded);
+        renderMembers();
+      });
+    });
+    document.querySelectorAll('[data-action]').forEach(function(el){
+      el.addEventListener('click', function(e){
+        e.stopPropagation();
+        openEditModal(el.getAttribute('data-action'));
+      });
+    });
+  }
+
+  function findAction(id){
+    for (var i = 0; i < state.length; i++){
+      for (var j = 0; j < state[i].actions.length; j++){
+        if (state[i].actions[j].id === id) return { member: state[i], action: state[i].actions[j] };
+      }
+    }
+    return null;
+  }
+
+  function openEditModal(actionId){
+    var found = findAction(actionId);
+    if (!found) return;
+    var a = found.action, m = found.member;
+
+    var bodyHtml =
+      '<div class="ap-edit-form">' +
+        '<div class="form-group">' +
+          '<label>' + esc(m.name) + ' &middot; action ' + a.position + '</label>' +
+          '<div style="font-size:13px;line-height:1.6;color:var(--text);background:var(--surface-2);padding:12px 14px;border-radius:var(--r-sm);margin-top:4px">' + esc(a.text) + '</div>' +
+        '</div>' +
+        '<div class="form-row">' +
+          '<div class="form-group">' +
+            '<label for="apm-status">Status</label>' +
+            '<select id="apm-status">' +
+              '<option value="not-started"' + (a.status === 'not-started' ? ' selected' : '') + '>Not started</option>' +
+              '<option value="in-progress"' + (a.status === 'in-progress' ? ' selected' : '') + '>In progress</option>' +
+              '<option value="blocked"' + (a.status === 'blocked' ? ' selected' : '') + '>Blocked</option>' +
+              '<option value="done"' + (a.status === 'done' ? ' selected' : '') + '>Done</option>' +
+            '</select>' +
+          '</div>' +
+          '<div class="form-group">' +
+            '<label for="apm-due">Deadline</label>' +
+            '<input type="date" id="apm-due" value="' + (a.due ? a.due.slice(0,10) : '') + '"/>' +
+          '</div>' +
+        '</div>' +
+        '<div class="form-group">' +
+          '<label for="apm-progress">Progress</label>' +
+          '<input type="range" id="apm-progress" min="0" max="100" step="5" value="' + (a.progress || 0) + '"/>' +
+          '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-top:4px">' +
+            '<span>0%</span><span id="apm-progress-val" style="color:var(--text);font-weight:600">' + (a.progress || 0) + '%</span><span>100%</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="form-group">' +
+          '<label for="apm-notes">Notes &amp; progress log</label>' +
+          '<textarea id="apm-notes" rows="4" placeholder="What is done, what is blocking, next step...">' + esc(a.notes || '') + '</textarea>' +
+        '</div>' +
+        '<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:8px">' +
+          '<button class="btn btn-ghost" id="apm-cancel" type="button">Cancel</button>' +
+          '<button class="btn btn-primary" id="apm-save" type="button">Save changes</button>' +
+        '</div>' +
+      '</div>';
+
+    var modalRef = VYVE_UI.modal({ title: 'Edit action', body: bodyHtml });
+
+    var progressInput = document.getElementById('apm-progress');
+    var progressVal = document.getElementById('apm-progress-val');
+    progressInput.addEventListener('input', function(){ progressVal.textContent = progressInput.value + '%'; });
+    document.getElementById('apm-status').addEventListener('change', function(e){
+      if (e.target.value === 'done'){ progressInput.value = 100; progressVal.textContent = '100%'; }
+      else if (e.target.value === 'not-started'){ progressInput.value = 0; progressVal.textContent = '0%'; }
+    });
+    document.getElementById('apm-cancel').addEventListener('click', modalRef.close);
+    document.getElementById('apm-save').addEventListener('click', function(){
+      var newStatus = document.getElementById('apm-status').value;
+      var newDue = document.getElementById('apm-due').value;
+      var newProgress = parseInt(progressInput.value, 10) || 0;
+      var newNotes = document.getElementById('apm-notes').value;
+      if (newStatus === 'done' && newProgress < 100) newProgress = 100;
+      if (newStatus === 'not-started' && newProgress > 0) newProgress = 0;
+      saveOverride(actionId, { status: newStatus, due: newDue, progress: newProgress, notes: newNotes });
+      state = buildState();
+      modalRef.close();
+      renderAll();
+      VYVE_UI.toast('Saved', 'success');
+    });
+  }
+
+  function wireFilters(){
+    document.querySelectorAll('.ap-filter').forEach(function(b){
+      b.addEventListener('click', function(){
+        document.querySelectorAll('.ap-filter').forEach(function(x){ x.classList.remove('active'); });
+        b.classList.add('active');
+        currentFilter = b.getAttribute('data-filter');
+        saveFilter(currentFilter);
+        renderMembers();
+      });
+      b.classList.toggle('active', b.getAttribute('data-filter') === currentFilter);
+    });
+  }
+
+  document.getElementById('ap-expand-all').addEventListener('click', function(){
+    var anyOpen = state.some(function(m){ return expanded[m.id]; });
+    if (anyOpen) expanded = {};
+    else state.forEach(function(m){ expanded[m.id] = true; });
+    saveExpanded(expanded);
+    document.getElementById('ap-expand-all').textContent = anyOpen ? 'Expand all' : 'Collapse all';
+    renderMembers();
+  });
+
+  document.getElementById('ap-export').addEventListener('click', function(){
+    var data = state.map(function(m){
+      return { member: m.name, role: m.role,
+        actions: m.actions.map(function(a){
+          return { position: a.position, text: a.text, status: a.status, due: a.due, progress: a.progress, notes: a.notes };
+        })
+      };
+    });
+    var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = 'vyve-action-plans-' + new Date().toISOString().slice(0,10) + '.json';
+    a.click();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 100);
+    VYVE_UI.toast('Exported', 'success');
+  });
+
+  function renderAll(){
+    renderKPIs();
+    renderMembers();
+    var anyOpen = state.some(function(m){ return expanded[m.id]; });
+    document.getElementById('ap-expand-all').textContent = anyOpen ? 'Collapse all' : 'Expand all';
+  }
+
+  renderAll();
+  wireFilters();
+})();
+</script>
