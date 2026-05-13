@@ -1,20 +1,142 @@
 <div class="page active" id="page-finance">
   <div class="page-header">
-    <h1>Finance</h1>
-    <p>P&L, cashflow, runway, budget vs actual</p>
+    <div class="hdr-row">
+      <div>
+        <h1>Finance</h1>
+        <p>P&amp;L, cashflow, runway, budget vs actual</p>
+      </div>
+      <button class="btn btn-primary" id="fin-add">Log entry</button>
+    </div>
   </div>
 
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title">Not yet built</span>
-      <span class="badge badge-gold">Stub</span>
+  <div class="grid-4">
+    <div class="stat"><div class="stat-label">Monthly burn</div><div class="stat-value" id="fin-burn">—</div><div class="stat-sub" id="fin-burn-d">avg last 3 months</div></div>
+    <div class="stat"><div class="stat-label">Cash on hand</div><div class="stat-value" id="fin-cash">—</div><div class="stat-sub">latest entry</div></div>
+    <div class="stat"><div class="stat-label">Runway</div><div class="stat-value" id="fin-runway">—</div><div class="stat-sub" id="fin-runway-d">months</div></div>
+    <div class="stat"><div class="stat-label">MRR</div><div class="stat-value" id="fin-mrr">—</div><div class="stat-sub">recurring</div></div>
+  </div>
+
+  <div class="grid-2" style="margin-top:16px">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Recent entries</span></div>
+      <div class="tbl-wrap" style="border:none">
+        <table class="tbl">
+          <thead><tr><th>Month</th><th>Income</th><th>Costs</th><th>Net</th><th>Cash bal.</th></tr></thead>
+          <tbody id="fin-tbody"><tr><td colspan="5"><div class="empty"><span class="icon">·</span><h3>No financial entries</h3><p>Click &ldquo;Log entry&rdquo; to add monthly figures.</p></div></td></tr></tbody>
+        </table>
+      </div>
     </div>
-    <p style="font-size:13px;color:var(--text-muted);line-height:1.7">
-      This page is on the roadmap but hasn't been built yet. When you're ready to prioritise it,
-      let me know and I'll scaffold it properly. Here's what it's meant to do:
-    </p>
-    <p style="font-size:13px;color:var(--text);line-height:1.7;margin-top:14px;padding:14px;background:var(--surface-2);border-radius:var(--r-sm);border-left:3px solid var(--vyve-gold)">
-      Surface monthly P&L, cashflow forecast, runway in months, and burn rate. Pulls from your accounting source (likely Xero) via a Make.com scenario, with manual override entries for projections.
+
+    <div class="card">
+      <div class="card-header"><span class="card-title">Runway forecast</span></div>
+      <div id="fin-forecast" style="padding:14px 0">
+        <div class="empty"><span class="icon">·</span><h3>No forecast yet</h3><p>Log 2+ months of entries to project runway.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <div class="card-header"><span class="card-title">Notes</span></div>
+    <p style="font-size:12px;color:var(--text-muted);line-height:1.7">
+      Cashflow and P&amp;L are typically pulled from accounting software (Xero, QuickBooks). For now this page uses manual entries stored in browser localStorage.
+      When you're ready, wire to your accounting system via Make.com and the data flows automatically. The figures shown here are pre-tax, in GBP unless overridden.
     </p>
   </div>
 </div>
+
+<script>
+(function(){
+  var LS='vyve_finance_entries';
+  function lsGet(){ try { var v=localStorage.getItem(LS); return v?JSON.parse(v):[]; } catch(e){ return []; } }
+  function lsSet(v){ try { localStorage.setItem(LS,JSON.stringify(v)); } catch(e){} }
+
+  async function load(){
+    if (window.VYVE_MAKE){ var fm = await VYVE_MAKE.list('finance',{limit:500}); if (fm&&fm.length) return fm; }
+    return lsGet();
+  }
+  async function save(id, item){
+    if (window.VYVE_MAKE){ var r = await VYVE_MAKE.upsert('finance', id, item); if (r) return; }
+    var a = lsGet(); var i = a.findIndex(function(x){return x._id===id;}); var e = Object.assign({_id:id}, item);
+    if (i>=0) a[i]=e; else a.unshift(e); lsSet(a);
+  }
+
+  function render(items){
+    items = (items||[]).slice().sort(function(a,b){ return (a.month||'').localeCompare(b.month||''); });
+    var latest = items[items.length-1];
+
+    if (latest) {
+      document.getElementById('fin-cash').textContent = VYVE_UI.fmtMoney(latest.cash_balance);
+      document.getElementById('fin-mrr').textContent = VYVE_UI.fmtMoney(latest.mrr);
+    }
+
+    var last3 = items.slice(-3);
+    if (last3.length) {
+      var avgNet = last3.reduce(function(s,e){ return s + (Number(e.costs||0) - Number(e.income||0)); }, 0) / last3.length;
+      document.getElementById('fin-burn').textContent = avgNet > 0 ? VYVE_UI.fmtMoney(avgNet) : VYVE_UI.fmtMoney(0);
+      if (latest && avgNet > 0 && latest.cash_balance) {
+        var months = Math.round(Number(latest.cash_balance) / avgNet * 10)/10;
+        document.getElementById('fin-runway').textContent = months;
+        document.getElementById('fin-runway-d').textContent = months >= 12 ? 'months · healthy' : (months >= 6 ? 'months · monitor' : 'months · urgent');
+        var el = document.getElementById('fin-runway-d');
+        el.style.color = months >= 12 ? 'var(--success)' : (months >= 6 ? 'var(--warning)' : 'var(--danger)');
+      }
+    }
+
+    var tbody = document.getElementById('fin-tbody');
+    if (!items.length) {
+      tbody.innerHTML = '<tr><td colspan="5"><div class="empty"><span class="icon">·</span><h3>No financial entries</h3></div></td></tr>';
+      return;
+    }
+    tbody.innerHTML = items.slice(-12).reverse().map(function(e){
+      var net = Number(e.income||0) - Number(e.costs||0);
+      var netColor = net >= 0 ? 'var(--success)' : 'var(--danger)';
+      return '<tr><td style="font-weight:600">'+VYVE_UI.escape(e.month||'')+'</td><td>'+VYVE_UI.fmtMoney(e.income)+'</td><td>'+VYVE_UI.fmtMoney(e.costs)+'</td><td style="color:'+netColor+';font-weight:600">'+VYVE_UI.fmtMoney(net)+'</td><td>'+VYVE_UI.fmtMoney(e.cash_balance)+'</td></tr>';
+    }).join('');
+
+    // Simple forecast
+    if (items.length >= 2 && latest) {
+      var avgBurn = last3.reduce(function(s,e){ return s + (Number(e.costs||0) - Number(e.income||0)); }, 0) / last3.length;
+      if (avgBurn > 0 && latest.cash_balance) {
+        var monthsLeft = latest.cash_balance / avgBurn;
+        var rows = '';
+        var bal = Number(latest.cash_balance);
+        for (var i=1; i<=Math.min(12, Math.ceil(monthsLeft)+1); i++){
+          bal -= avgBurn;
+          if (bal < 0) { rows += '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:12.5px;color:var(--danger);font-weight:600">+'+i+' months → '+VYVE_UI.fmtMoney(bal)+' (out of runway)</div>'; break; }
+          rows += '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:12.5px;color:var(--text)"><span>+'+i+' months</span><span style="font-weight:600">'+VYVE_UI.fmtMoney(bal)+'</span></div>';
+        }
+        document.getElementById('fin-forecast').innerHTML = rows;
+      }
+    }
+  }
+
+  document.getElementById('fin-add').addEventListener('click', function(){
+    VYVE_UI.modal({
+      title: 'Log financial entry',
+      body: '<div class="form-row cols-2">'+
+              '<div class="form-group"><label>Month (YYYY-MM)</label><input id="f-month" placeholder="2026-05" value="'+new Date().toISOString().slice(0,7)+'"/></div>'+
+              '<div class="form-group"><label>Cash balance (£)</label><input id="f-cash" type="number"/></div>'+
+            '</div>'+
+            '<div class="form-row cols-2">'+
+              '<div class="form-group"><label>Income (£)</label><input id="f-inc" type="number"/></div>'+
+              '<div class="form-group"><label>Costs (£)</label><input id="f-costs" type="number"/></div>'+
+            '</div>'+
+            '<div class="form-row"><div class="form-group"><label>MRR (£, optional)</label><input id="f-mrr" type="number"/></div></div>'+
+            '<div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn btn-primary" id="f-save">Save</button></div>'
+    });
+    setTimeout(function(){
+      document.getElementById('f-save').addEventListener('click', async function(){
+        var m = document.getElementById('f-month').value.trim();
+        if (!m){ VYVE_UI.toast('Month required','error'); return; }
+        var item = { month: m, income: Number(document.getElementById('f-inc').value)||0, costs: Number(document.getElementById('f-costs').value)||0, cash_balance: Number(document.getElementById('f-cash').value)||0, mrr: Number(document.getElementById('f-mrr').value)||0, created_at:new Date().toISOString() };
+        await save('fin_'+m, item);
+        render(await load());
+        VYVE_UI.toast('Saved','success');
+        document.querySelector('.modal-overlay').classList.remove('open');
+      });
+    }, 50);
+  });
+
+  (async function(){ render(await load()); })();
+})();
+</script>

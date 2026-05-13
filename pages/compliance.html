@@ -1,20 +1,145 @@
 <div class="page active" id="page-compliance">
   <div class="page-header">
-    <h1>Compliance</h1>
-    <p>Regulatory monitoring and duty-of-care obligations</p>
+    <div class="hdr-row">
+      <div>
+        <h1>Compliance</h1>
+        <p>Regulatory tracker, duty-of-care obligations, upcoming deadlines</p>
+      </div>
+      <button class="btn btn-primary" id="comp-add">Add item</button>
+    </div>
+  </div>
+
+  <div class="grid-3" style="margin-bottom:18px">
+    <div class="stat"><div class="stat-label">Open obligations</div><div class="stat-value" id="comp-open">0</div></div>
+    <div class="stat"><div class="stat-label">Due in 30 days</div><div class="stat-value" id="comp-soon">0</div><div class="stat-sub" id="comp-soon-d">awaiting action</div></div>
+    <div class="stat"><div class="stat-label">Overdue</div><div class="stat-value" id="comp-overdue" style="color:var(--danger)">0</div></div>
   </div>
 
   <div class="card">
     <div class="card-header">
-      <span class="card-title">Not yet built</span>
-      <span class="badge badge-gold">Stub</span>
+      <span class="card-title">Tracker</span>
+      <select id="comp-filter" style="padding:7px 12px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface);color:var(--text);font-size:13px">
+        <option value="open">Open</option>
+        <option value="all">All</option>
+        <option value="done">Done</option>
+      </select>
     </div>
-    <p style="font-size:13px;color:var(--text-muted);line-height:1.7">
-      This page is on the roadmap but hasn't been built yet. When you're ready to prioritise it,
-      let me know and I'll scaffold it properly. Here's what it's meant to do:
-    </p>
-    <p style="font-size:13px;color:var(--text);line-height:1.7;margin-top:14px;padding:14px;background:var(--surface-2);border-radius:var(--r-sm);border-left:3px solid var(--vyve-gold)">
-      Track HSE, GDPR, CIC reporting deadlines, and emerging workplace wellbeing regulations. Output of the regulatory-compliance-watch agent surfaces here with actions to take.
-    </p>
+    <div id="comp-list"><div class="empty"><span class="icon">·</span><h3>No items yet</h3><p>Track HSE, GDPR, CIC, and emerging workplace wellbeing regulations.</p></div></div>
   </div>
 </div>
+
+<script>
+(function(){
+  var LS='vyve_compliance';
+  function lsGet(){ try { var v=localStorage.getItem(LS); return v?JSON.parse(v):[]; } catch(e){ return []; } }
+  function lsSet(v){ try { localStorage.setItem(LS,JSON.stringify(v)); } catch(e){} }
+
+  async function load(){
+    if (window.VYVE_MAKE){ var fm = await VYVE_MAKE.list('compliance',{limit:500}); if (fm&&fm.length) return fm; }
+    return lsGet();
+  }
+  async function save(id, item){
+    if (window.VYVE_MAKE){ var r = await VYVE_MAKE.upsert('compliance', id, item); if (r) return; }
+    var a = lsGet(); var i = a.findIndex(function(x){return x._id===id;}); var e = Object.assign({_id:id}, item);
+    if (i>=0) a[i]=e; else a.unshift(e); lsSet(a);
+  }
+  async function remove(id){ if (window.VYVE_MAKE) await VYVE_MAKE.remove('compliance', id); lsSet(lsGet().filter(function(x){return x._id!==id;})); }
+
+  function render(items){
+    var filter = document.getElementById('comp-filter').value;
+    var open = items.filter(function(i){ return (i.status||'open') !== 'done'; });
+    var soon = open.filter(function(i){
+      if (!i.due) return false;
+      var d = new Date(i.due).getTime();
+      return d - Date.now() < 30*86400000 && d > Date.now();
+    });
+    var overdue = open.filter(function(i){
+      if (!i.due) return false;
+      return new Date(i.due).getTime() < Date.now();
+    });
+    document.getElementById('comp-open').textContent = open.length;
+    document.getElementById('comp-soon').textContent = soon.length;
+    document.getElementById('comp-overdue').textContent = overdue.length;
+    document.getElementById('comp-soon-d').textContent = soon.length ? 'within 30 days' : 'all clear';
+
+    var view = filter==='all' ? items : (filter==='done' ? items.filter(function(i){return (i.status||'')==='done';}) : open);
+
+    var list = document.getElementById('comp-list');
+    if (!view.length){ list.innerHTML = '<div class="empty"><span class="icon">·</span><h3>Nothing matching this filter</h3></div>'; return; }
+    view.sort(function(a,b){ return new Date(a.due||'9999-12-31') - new Date(b.due||'9999-12-31'); });
+    list.innerHTML = view.map(function(i){
+      var areaColor = { 'gdpr':'badge-blue', 'hse':'badge-amber', 'cic':'badge-teal', 'occupational health':'badge-gold', 'safeguarding':'badge-red' }[(i.area||'').toLowerCase()] || 'badge-grey';
+      var dueColor = '';
+      if (i.due && (i.status||'open')!=='done') {
+        var diff = new Date(i.due).getTime() - Date.now();
+        if (diff < 0) dueColor = 'color:var(--danger);font-weight:600';
+        else if (diff < 30*86400000) dueColor = 'color:var(--warning);font-weight:600';
+      }
+      return '<div style="padding:14px 0;border-bottom:1px solid var(--border)">'+
+        '<div style="display:flex;align-items:flex-start;gap:12px">'+
+          '<div style="flex:1">'+
+            '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="badge '+areaColor+'">'+VYVE_UI.escape(i.area||'general')+'</span><div style="font-weight:600;color:var(--text);font-size:14px">'+VYVE_UI.escape(i.title||'')+'</div></div>'+
+            (i.description ? '<div style="font-size:13px;color:var(--text-muted);line-height:1.6;margin:6px 0">'+VYVE_UI.escape(i.description)+'</div>' : '')+
+            '<div style="font-size:12px;color:var(--text-muted);margin-top:6px">'+VYVE_UI.escape(i.owner||'No owner')+(i.due ? ' &middot; <span style="'+dueColor+'">due '+VYVE_UI.fmtDate(i.due)+'</span>' : '')+'</div>'+
+          '</div>'+
+          '<div style="display:flex;flex-direction:column;gap:4px">'+
+            ((i.status||'open')==='done' ? '<button class="btn" data-undo="'+i._id+'" style="font-size:11px">Reopen</button>' : '<button class="btn btn-primary" data-done="'+i._id+'" style="font-size:11px">Mark done</button>')+
+            '<button class="btn btn-ghost" data-del="'+i._id+'" style="font-size:11px">&times;</button>'+
+          '</div>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+
+    list.querySelectorAll('[data-done]').forEach(function(b){
+      b.addEventListener('click', async function(){
+        var arr = await load();
+        var it = arr.find(function(x){return x._id===b.dataset.done;});
+        if (it){ it.status='done'; it.completed_at=new Date().toISOString(); await save(it._id, it); render(await load()); VYVE_UI.toast('Marked done','success'); }
+      });
+    });
+    list.querySelectorAll('[data-undo]').forEach(function(b){
+      b.addEventListener('click', async function(){
+        var arr = await load();
+        var it = arr.find(function(x){return x._id===b.dataset.undo;});
+        if (it){ it.status='open'; delete it.completed_at; await save(it._id, it); render(await load()); }
+      });
+    });
+    list.querySelectorAll('[data-del]').forEach(function(b){
+      b.addEventListener('click', async function(){
+        if (!confirm('Delete?')) return;
+        await remove(b.dataset.del);
+        render(await load());
+        VYVE_UI.toast('Removed');
+      });
+    });
+  }
+
+  document.getElementById('comp-add').addEventListener('click', function(){
+    VYVE_UI.modal({
+      title: 'Add compliance item',
+      body: '<div class="form-row cols-2">'+
+              '<div class="form-group"><label>Area</label><select id="cm-area"><option value="GDPR">GDPR</option><option value="HSE">HSE</option><option value="CIC">CIC</option><option value="Occupational Health">Occupational Health</option><option value="Safeguarding">Safeguarding</option><option value="Other">Other</option></select></div>'+
+              '<div class="form-group"><label>Due date</label><input id="cm-due" type="date"/></div>'+
+            '</div>'+
+            '<div class="form-row"><div class="form-group"><label>Title</label><input id="cm-title" placeholder="e.g. Annual CIC report"/></div></div>'+
+            '<div class="form-row"><div class="form-group"><label>Description</label><textarea id="cm-desc" rows="3"></textarea></div></div>'+
+            '<div class="form-row"><div class="form-group"><label>Owner</label><input id="cm-owner"/></div></div>'+
+            '<div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn btn-primary" id="cm-save">Save</button></div>'
+    });
+    setTimeout(function(){
+      document.getElementById('cm-save').addEventListener('click', async function(){
+        var t = document.getElementById('cm-title').value.trim();
+        if (!t){ VYVE_UI.toast('Title required','error'); return; }
+        var item = { area: document.getElementById('cm-area').value, due: document.getElementById('cm-due').value, title: t, description: document.getElementById('cm-desc').value.trim(), owner: document.getElementById('cm-owner').value.trim(), status:'open', created_at:new Date().toISOString() };
+        await save('comp_'+Date.now(), item);
+        render(await load());
+        VYVE_UI.toast('Added','success');
+        document.querySelector('.modal-overlay').classList.remove('open');
+      });
+    }, 50);
+  });
+
+  document.getElementById('comp-filter').addEventListener('change', async function(){ render(await load()); });
+  (async function(){ render(await load()); })();
+})();
+</script>
