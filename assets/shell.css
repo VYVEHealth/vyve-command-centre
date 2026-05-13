@@ -1,0 +1,314 @@
+/* =====================================================================
+   VYVE Command Centre — Shell
+   Sidebar, topbar, login overlay, app frame, scrollbars, toast, modal.
+   ===================================================================== */
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, h4 {
+  font-family: var(--font-head);
+  font-weight: 600;
+  letter-spacing: -.01em;
+  margin: 0;
+}
+button, input, select, textarea { font-family: inherit; font-size: inherit; }
+button { cursor: pointer; border: 0; background: transparent; color: inherit; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-hover); }
+
+/* ---------- App frame ---------- */
+#app {
+  display: none;
+  min-height: 100vh;
+}
+#app.ready {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) 1fr;
+  min-height: 100vh;
+}
+
+/* ---------- Sidebar ---------- */
+aside.sidebar {
+  background: var(--sidebar-bg);
+  color: var(--sidebar-text);
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid rgba(0,0,0,.25);
+  position: sticky; top: 0;
+  height: 100vh; overflow-y: auto;
+}
+aside.sidebar::-webkit-scrollbar { width: 4px; }
+aside.sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 2px; }
+
+.brand {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.brand-title {
+  font-family: var(--font-head);
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -.01em;
+}
+.brand-sub {
+  font-size: 10px;
+  color: rgba(255,255,255,.42);
+  margin-top: 2px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.nav-section { padding: 16px 10px 4px; }
+.nav-section-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: rgba(255,255,255,.32);
+  letter-spacing: 1.3px;
+  text-transform: uppercase;
+  padding: 0 10px 6px;
+}
+.nav-item {
+  display: flex; align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--sidebar-text);
+  font-size: 13px;
+  font-weight: 500;
+  transition: background var(--t-fast), color var(--t-fast);
+  user-select: none;
+  margin-bottom: 1px;
+}
+.nav-item:hover { background: var(--sidebar-hover); color: #fff; }
+.nav-item.active { background: var(--sidebar-active); color: #fff; font-weight: 600; }
+.nav-item svg {
+  width: 16px; height: 16px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+}
+.nav-item .badge-dot {
+  margin-left: auto;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--vyve-gold);
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255,255,255,.06);
+  font-size: 11px;
+  color: rgba(255,255,255,.42);
+}
+.sidebar-footer .email {
+  color: rgba(255,255,255,.72);
+  font-weight: 500;
+  margin-bottom: 4px;
+  word-break: break-all;
+  font-size: 12px;
+}
+.sidebar-footer button {
+  font-size: 11px;
+  color: rgba(255,255,255,.6);
+  padding: 6px 10px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 6px;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.sidebar-footer button:hover { background: rgba(255,255,255,.06); color: #fff; }
+
+/* ---------- Main + topbar ---------- */
+main.main { min-width: 0; padding: 0; }
+.topbar {
+  display: flex; align-items: center; gap: 16px;
+  padding: 14px 28px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  position: sticky; top: 0; z-index: 10;
+  height: var(--topbar-h);
+}
+.topbar .crumbs {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-muted);
+  display: flex; align-items: center;
+  gap: 8px; flex-wrap: wrap;
+}
+.topbar .crumbs .crumb { color: var(--text-muted); }
+.topbar .crumbs .crumb.current { color: var(--text); font-weight: 600; }
+.topbar .topbar-date { font-size: 12px; color: var(--text-muted); }
+
+.content {
+  padding: 28px;
+  max-width: var(--content-max);
+  margin: 0 auto;
+}
+
+/* ---------- Login overlay ---------- */
+#login {
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--vyve-dark);
+  z-index: 100;
+  padding: 20px;
+}
+#login .card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: 36px 32px;
+  width: min(420px, 100%);
+  box-shadow: var(--shadow-lg);
+}
+#login .brand-block {
+  margin-bottom: 24px;
+  text-align: center;
+}
+#login .brand-block h1 {
+  font-size: 26px;
+  color: var(--vyve-teal);
+  margin-bottom: 4px;
+}
+#login .brand-block p {
+  font-size: 12px;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+#login label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+#login input {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  font-size: 14px;
+  margin-bottom: 14px;
+  outline: none;
+  background: var(--surface);
+  color: var(--text);
+  transition: border-color var(--t-fast);
+}
+#login input:focus { border-color: var(--accent); }
+#login button.primary {
+  width: 100%;
+  padding: 12px;
+  background: var(--vyve-teal);
+  color: var(--on-accent);
+  border-radius: var(--r-md);
+  font-size: 14px;
+  font-weight: 600;
+  transition: background var(--t-fast);
+}
+#login button.primary:hover { background: var(--vyve-teal-light); }
+#login .note {
+  margin-top: 14px;
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* ---------- Toast ---------- */
+.toast {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  background: var(--vyve-dark);
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: var(--r-md);
+  font-size: 13px;
+  font-weight: 500;
+  z-index: 9999;
+  box-shadow: var(--shadow-md);
+  animation: slideUp .25s ease;
+}
+.toast.success { background: var(--success); }
+.toast.error   { background: var(--danger); }
+.toast.warning { background: var(--warning); color: var(--vyve-dark); }
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+/* ---------- Modal ---------- */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(13,43,43,.55);
+  z-index: 500;
+  display: none;
+  align-items: center; justify-content: center;
+  padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  width: 520px;
+  max-width: 100%;
+  max-height: 88vh;
+  overflow-y: auto;
+  padding: 28px;
+  box-shadow: var(--shadow-lg);
+}
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 20px;
+}
+.modal-title {
+  font-family: var(--font-head);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+}
+.modal-close {
+  font-size: 20px;
+  color: var(--text-muted);
+  padding: 4px 8px;
+  border-radius: var(--r-sm);
+}
+.modal-close:hover { background: var(--surface-2); color: var(--text); }
+
+/* ---------- Scrollbars (main content) ---------- */
+main.main::-webkit-scrollbar { width: 6px; height: 6px; }
+main.main::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 3px;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 900px) {
+  #app.ready { grid-template-columns: 1fr; }
+  aside.sidebar {
+    position: fixed;
+    left: 0; top: 0;
+    width: 280px;
+    z-index: 50;
+    transform: translateX(-100%);
+    transition: transform var(--t-base);
+  }
+  aside.sidebar.open { transform: translateX(0); }
+  .topbar { padding: 12px 16px; }
+  .content { padding: 20px 16px; }
+}

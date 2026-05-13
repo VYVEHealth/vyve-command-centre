@@ -1,0 +1,90 @@
+/* =====================================================================
+   VYVE Command Centre — Design Tokens
+   Single source of truth. Brand colours, type, spacing, radii, shadows.
+   ===================================================================== */
+
+:root {
+  /* Brand colours (per spec) */
+  --vyve-dark:       #0D2B2B;
+  --vyve-teal:       #1B7878;
+  --vyve-teal-light: #4DAAAA;
+  --vyve-gold:       #C9A84C;
+
+  /* Derived neutrals (light theme default) */
+  --bg:           #F6F8F8;
+  --surface:      #FFFFFF;
+  --surface-2:    #F0F4F4;
+  --surface-3:    #E5ECEC;
+  --border:       #DCE4E4;
+  --border-strong:#C2CECE;
+  --text:         #0D2B2B;
+  --text-muted:   #5A7575;
+  --text-dim:     #8FA8A8;
+
+  /* Semantic (functional, not brand) */
+  --success: #2D9E4A;
+  --warning: #E09B3D;
+  --danger:  #E06060;
+  --info:    #3D7FD9;
+
+  /* Sidebar (always dark, on-brand) */
+  --sidebar-bg:     var(--vyve-dark);
+  --sidebar-text:   rgba(255,255,255,.78);
+  --sidebar-active: rgba(77,170,170,.18);
+  --sidebar-hover:  rgba(255,255,255,.06);
+
+  /* Accent (interactive elements) */
+  --accent:       var(--vyve-teal);
+  --accent-hover: var(--vyve-teal-light);
+  --on-accent:    #FFFFFF;
+
+  /* Type */
+  --font-head: 'Playfair Display', Georgia, serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* Radii */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 18px;
+
+  /* Spacing scale */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-7: 32px;
+  --s-8: 48px;
+
+  /* Layout */
+  --sidebar-w: 240px;
+  --topbar-h:  56px;
+  --content-max: 1280px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(13,43,43,.06);
+  --shadow-md: 0 4px 12px rgba(13,43,43,.08);
+  --shadow-lg: 0 24px 64px rgba(13,43,43,.18);
+
+  /* Motion */
+  --t-fast: .14s ease;
+  --t-base: .22s ease;
+}
+
+/* Dark theme override (toggle via [data-theme="dark"] on <html>) */
+html[data-theme="dark"] {
+  --bg:           #0A1F1F;
+  --surface:      #0F2A2A;
+  --surface-2:    #123333;
+  --surface-3:    #17403F;
+  --border:       rgba(255,255,255,.08);
+  --border-strong:rgba(255,255,255,.14);
+  --text:         #EAF2F2;
+  --text-muted:   #8FAAAA;
+  --text-dim:     #5A7575;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,.35);
+  --shadow-lg: 0 24px 64px rgba(0,0,0,.55);
+}
