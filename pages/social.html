@@ -1,0 +1,52 @@
+<div class="page active" id="page-social" style="margin:-32px -32px 0">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 28px;background:var(--surface-2);border-bottom:1px solid var(--border)">
+    <div>
+      <div style="font-family:var(--font-head);font-size:16px;font-weight:700;color:var(--text)">Social Media Management</div>
+      <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px">Powered by Metricool &middot; scheduling, analytics, content calendar across all channels</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn btn-ghost" id="sm-reload" title="Reload">Reload</button>
+      <a class="btn" href="https://app.metricool.com/evolution/instagram?blogId=5565297&userId=4317867" target="_blank" rel="noopener" style="font-size:12px">Open in new tab &rarr;</a>
+    </div>
+  </div>
+
+  <div id="sm-frame-wrap" style="position:relative;background:#1a1a1a;height:calc(100vh - 130px);min-height:600px">
+    <div id="sm-loader" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;color:var(--text-muted);z-index:1">
+      <span class="spinner"></span>
+      <div style="font-size:13px">Loading Metricool&hellip;</div>
+      <div style="font-size:11px;max-width:340px;text-align:center;line-height:1.5;margin-top:6px;color:var(--text-muted);opacity:.7">If this doesn't load within a few seconds, Metricool may be blocking iframe embedding. Use the &quot;Open in new tab&quot; button.</div>
+    </div>
+    <iframe
+      id="sm-frame"
+      src="https://app.metricool.com/evolution/instagram?blogId=5565297&userId=4317867"
+      style="width:100%;height:100%;border:0;display:block;background:#1a1a1a;opacity:0;transition:opacity .3s"
+      sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-forms"
+      referrerpolicy="no-referrer-when-downgrade"
+      loading="eager">
+    </iframe>
+  </div>
+</div>
+
+<script>
+(function(){
+  var frame = document.getElementById('sm-frame');
+  var loader = document.getElementById('sm-loader');
+  if (!frame) return;
+  frame.addEventListener('load', function(){
+    frame.style.opacity = '1';
+    if (loader) loader.style.display = 'none';
+  });
+  // Longer fail-safe (12s) since Metricool may need extra time to bootstrap if it allows embedding
+  setTimeout(function(){
+    frame.style.opacity = '1';
+    if (loader) loader.style.display = 'none';
+  }, 12000);
+  document.getElementById('sm-reload').addEventListener('click', function(){
+    if (loader){ loader.style.display = 'flex'; }
+    frame.style.opacity = '0';
+    var src = frame.src;
+    frame.src = 'about:blank';
+    setTimeout(function(){ frame.src = src; }, 50);
+  });
+})();
+</script>
