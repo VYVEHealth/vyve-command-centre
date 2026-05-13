@@ -1,20 +1,312 @@
 <div class="page active" id="page-strategy">
   <div class="page-header">
-    <h1>Strategy</h1>
-    <p>OKRs, decisions log, SWOT, North Star</p>
+    <div class="hdr-row">
+      <div>
+        <h1>Strategy</h1>
+        <p>OKRs, decisions log, North Star &mdash; the source of truth for why</p>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn" id="strat-export">Export</button>
+        <button class="btn btn-primary" id="strat-add">Add entry</button>
+      </div>
+    </div>
   </div>
 
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title">Not yet built</span>
-      <span class="badge badge-gold">Stub</span>
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="strat-northstar">North Star</button>
+    <button class="tab-btn" data-tab="strat-okrs">OKRs</button>
+    <button class="tab-btn" data-tab="strat-decisions">Decisions Log</button>
+    <button class="tab-btn" data-tab="strat-swot">SWOT</button>
+  </div>
+
+  <div id="strat-northstar" class="tab-panel active">
+    <div class="card">
+      <div class="card-header"><span class="card-title">North Star Metric</span></div>
+      <div style="text-align:center;padding:24px">
+        <div id="ns-value" class="stat-value" style="font-size:48px">&mdash;</div>
+        <div id="ns-name" style="font-size:14px;color:var(--text-muted);margin-top:6px;font-weight:600;letter-spacing:.4px;text-transform:uppercase">No North Star set</div>
+        <div id="ns-target" style="font-size:13px;color:var(--text-muted);margin-top:14px">Click below to define what success looks like</div>
+        <button class="btn btn-primary" id="ns-edit" style="margin-top:16px">Set / update</button>
+      </div>
     </div>
-    <p style="font-size:13px;color:var(--text-muted);line-height:1.7">
-      This page is on the roadmap but hasn't been built yet. When you're ready to prioritise it,
-      let me know and I'll scaffold it properly. Here's what it's meant to do:
-    </p>
-    <p style="font-size:13px;color:var(--text);line-height:1.7;margin-top:14px;padding:14px;background:var(--surface-2);border-radius:var(--r-sm);border-left:3px solid var(--vyve-gold)">
-      Quarterly OKRs, key decisions log with reasoning, rolling SWOT, and the North Star metric. The source of truth for 'why are we doing this?'
-    </p>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Mission &amp; Vision</span></div>
+      <div class="form-row"><div class="form-group"><label>Mission (one sentence, present tense)</label><textarea id="mission" rows="2"></textarea></div></div>
+      <div class="form-row"><div class="form-group"><label>Vision (what success looks like in 5 years)</label><textarea id="vision" rows="3"></textarea></div></div>
+      <div style="display:flex;justify-content:flex-end"><button class="btn btn-primary" id="save-mission">Save</button></div>
+    </div>
+  </div>
+
+  <div id="strat-okrs" class="tab-panel">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <span class="card-title">Quarterly OKRs</span>
+          <span class="card-sub" id="okr-quarter" style="margin-left:8px">&mdash;</span>
+        </div>
+        <button class="btn" id="add-okr">Add OKR</button>
+      </div>
+      <div id="okrs-list"><div class="empty"><span class="icon">&middot;</span><h3>No OKRs set yet</h3><p>Click &ldquo;Add OKR&rdquo; to define an Objective with up to 5 Key Results.</p></div></div>
+    </div>
+  </div>
+
+  <div id="strat-decisions" class="tab-panel">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Decisions Log</span>
+        <button class="btn" id="add-decision">Log a decision</button>
+      </div>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">Capture each key decision with the reasoning, the alternatives considered, and who decided. Future-you will thank present-you.</p>
+      <div id="decisions-list"><div class="empty"><span class="icon">&middot;</span><h3>No decisions logged</h3><p>Start with the most recent strategic call.</p></div></div>
+    </div>
+  </div>
+
+  <div id="strat-swot" class="tab-panel">
+    <div class="grid-2">
+      <div class="card"><div class="card-header"><span class="card-title" style="color:var(--success)">Strengths</span></div><textarea id="sw-s" rows="6" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface);color:var(--text);font-family:inherit;font-size:13px;resize:vertical"></textarea></div>
+      <div class="card"><div class="card-header"><span class="card-title" style="color:var(--danger)">Weaknesses</span></div><textarea id="sw-w" rows="6" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface);color:var(--text);font-family:inherit;font-size:13px;resize:vertical"></textarea></div>
+      <div class="card"><div class="card-header"><span class="card-title" style="color:var(--info)">Opportunities</span></div><textarea id="sw-o" rows="6" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface);color:var(--text);font-family:inherit;font-size:13px;resize:vertical"></textarea></div>
+      <div class="card"><div class="card-header"><span class="card-title" style="color:var(--warning)">Threats</span></div><textarea id="sw-t" rows="6" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface);color:var(--text);font-family:inherit;font-size:13px;resize:vertical"></textarea></div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:14px"><button class="btn btn-primary" id="save-swot">Save SWOT</button></div>
   </div>
 </div>
+
+<script>
+(function(){
+  // ==== Storage shim: tries Make, falls back to localStorage ====
+  var LS_PREFIX = 'vyve_strategy_';
+  function lsGet(key, def){ try { var v = localStorage.getItem(LS_PREFIX+key); return v ? JSON.parse(v) : def; } catch(e){ return def; } }
+  function lsSet(key, val){ try { localStorage.setItem(LS_PREFIX+key, JSON.stringify(val)); } catch(e){} }
+
+  async function loadList(makeKey, lsKey){
+    var fromMake = [];
+    try { if (window.VYVE_MAKE) fromMake = await VYVE_MAKE.list(makeKey, { limit: 200 }); } catch(e){}
+    if (fromMake && fromMake.length) return fromMake;
+    return lsGet(lsKey, []);
+  }
+  async function saveItem(makeKey, lsKey, id, item){
+    var ok = false;
+    if (window.VYVE_MAKE) {
+      var r = await VYVE_MAKE.upsert(makeKey, id, item);
+      if (r) ok = true;
+    }
+    if (!ok) {
+      var arr = lsGet(lsKey, []);
+      var idx = arr.findIndex(function(x){ return x._id === id; });
+      var entry = Object.assign({ _id: id }, item);
+      if (idx >= 0) arr[idx] = entry; else arr.unshift(entry);
+      lsSet(lsKey, arr);
+    }
+  }
+  async function removeItem(makeKey, lsKey, id){
+    if (window.VYVE_MAKE) await VYVE_MAKE.remove(makeKey, id);
+    var arr = lsGet(lsKey, []).filter(function(x){ return x._id !== id; });
+    lsSet(lsKey, arr);
+  }
+
+  // ==== Tabs ====
+  document.querySelectorAll('#page-strategy .tab-btn').forEach(function(b){
+    b.addEventListener('click', function(){
+      document.querySelectorAll('#page-strategy .tab-btn').forEach(function(x){x.classList.remove('active');});
+      document.querySelectorAll('#page-strategy .tab-panel').forEach(function(x){x.classList.remove('active');});
+      b.classList.add('active');
+      document.getElementById(b.dataset.tab).classList.add('active');
+    });
+  });
+
+  // ==== Quarter label ====
+  var d = new Date();
+  var q = Math.floor(d.getMonth()/3) + 1;
+  var ql = document.getElementById('okr-quarter');
+  if (ql) ql.textContent = 'Q' + q + ' ' + d.getFullYear();
+
+  // ==== North Star ====
+  function paintNorthStar() {
+    var ns = lsGet('northstar', null);
+    if (!ns) return;
+    document.getElementById('ns-value').textContent = ns.value || '&mdash;';
+    document.getElementById('ns-name').textContent = ns.name || '';
+    document.getElementById('ns-target').textContent = ns.target ? ('Target: ' + ns.target) : '';
+  }
+  paintNorthStar();
+  document.getElementById('ns-edit').addEventListener('click', function(){
+    var cur = lsGet('northstar', { name: '', value: '', target: '' });
+    VYVE_UI.modal({
+      title: 'Set North Star Metric',
+      body: '<div class="form-row"><div class="form-group"><label>Metric name</label><input id="ns-n" placeholder="e.g. Active members" value="'+VYVE_UI.escape(cur.name||'')+'"/></div></div>'+
+            '<div class="form-row cols-2">'+
+              '<div class="form-group"><label>Current value</label><input id="ns-v" value="'+VYVE_UI.escape(cur.value||'')+'"/></div>'+
+              '<div class="form-group"><label>Target (with timeframe)</label><input id="ns-t" placeholder="e.g. 10k by Dec 2026" value="'+VYVE_UI.escape(cur.target||'')+'"/></div>'+
+            '</div>'+
+            '<div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn btn-primary" id="ns-save">Save</button></div>'
+    });
+    setTimeout(function(){
+      document.getElementById('ns-save').addEventListener('click', function(){
+        lsSet('northstar', { name: document.getElementById('ns-n').value, value: document.getElementById('ns-v').value, target: document.getElementById('ns-t').value });
+        paintNorthStar();
+        VYVE_UI.toast('North Star saved', 'success');
+        document.querySelector('.modal-overlay').classList.remove('open');
+      });
+    }, 50);
+  });
+
+  // ==== Mission / Vision ====
+  var mv = lsGet('mv', { mission: '', vision: '' });
+  document.getElementById('mission').value = mv.mission || '';
+  document.getElementById('vision').value = mv.vision || '';
+  document.getElementById('save-mission').addEventListener('click', function(){
+    lsSet('mv', { mission: document.getElementById('mission').value, vision: document.getElementById('vision').value });
+    VYVE_UI.toast('Saved', 'success');
+  });
+
+  // ==== OKRs ====
+  function renderOKRs(items){
+    var mount = document.getElementById('okrs-list');
+    if (!items || !items.length) {
+      mount.innerHTML = '<div class="empty"><span class="icon">&middot;</span><h3>No OKRs set yet</h3><p>Click &ldquo;Add OKR&rdquo; to define an Objective with up to 5 Key Results.</p></div>';
+      return;
+    }
+    mount.innerHTML = items.map(function(o){
+      var krs = (o.key_results||[]).map(function(kr){
+        var pct = Math.max(0, Math.min(100, Number(kr.progress)||0));
+        var color = pct >= 70 ? 'var(--success)' : pct >= 35 ? 'var(--warning)' : 'var(--danger)';
+        return '<div style="padding:10px 0;border-bottom:1px solid var(--border)">'+
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div style="font-size:13px;color:var(--text);flex:1">'+VYVE_UI.escape(kr.title||'')+'</div><div style="font-size:13px;font-weight:600;color:'+color+';margin-left:10px">'+pct+'%</div></div>'+
+          '<div style="height:6px;background:var(--surface-2);border-radius:3px;overflow:hidden"><div style="height:100%;background:'+color+';width:'+pct+'%"></div></div>'+
+          '</div>';
+      }).join('');
+      return '<div style="padding:16px 0;border-bottom:1px solid var(--border)">'+
+        '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px">'+
+          '<div style="flex:1"><div style="font-weight:700;color:var(--text);font-size:14px;margin-bottom:3px">'+VYVE_UI.escape(o.objective||'')+'</div><div style="font-size:11.5px;color:var(--text-muted)">'+VYVE_UI.escape(o.owner||'No owner')+' &middot; '+VYVE_UI.escape(o.quarter||'')+'</div></div>'+
+          '<button class="btn btn-ghost" data-del-okr="'+o._id+'">&times;</button>'+
+        '</div>'+
+        (krs || '<div style="font-size:12px;color:var(--text-muted);font-style:italic">No Key Results yet</div>')+
+        '</div>';
+    }).join('');
+    mount.querySelectorAll('[data-del-okr]').forEach(function(b){
+      b.addEventListener('click', async function(){
+        await removeItem('okrs', 'okrs', b.dataset.delOkr);
+        var items = await loadList('okrs', 'okrs');
+        renderOKRs(items);
+        VYVE_UI.toast('Removed');
+      });
+    });
+  }
+  (async function(){ renderOKRs(await loadList('okrs', 'okrs')); })();
+
+  document.getElementById('add-okr').addEventListener('click', function(){
+    VYVE_UI.modal({
+      title: 'Add OKR',
+      body: '<div class="form-row"><div class="form-group"><label>Objective (aspirational)</label><input id="o-obj"/></div></div>'+
+            '<div class="form-row cols-2">'+
+              '<div class="form-group"><label>Owner</label><input id="o-owner"/></div>'+
+              '<div class="form-group"><label>Quarter</label><input id="o-q" value="Q'+q+' '+d.getFullYear()+'"/></div>'+
+            '</div>'+
+            '<div style="font-size:12px;color:var(--text-muted);margin:6px 0 4px;font-weight:600">Key Results (measurable, with starting % progress)</div>'+
+            '<div id="krs">'+
+              [0,1,2].map(function(i){ return '<div class="form-row cols-2"><div class="form-group"><label>KR '+(i+1)+'</label><input class="kr-title" placeholder="e.g. 50 enterprise demos booked"/></div><div class="form-group"><label>Progress %</label><input class="kr-pct" type="number" min="0" max="100" value="0"/></div></div>'; }).join('')+
+            '</div>'+
+            '<div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn btn-primary" id="okr-save">Save</button></div>'
+    });
+    setTimeout(function(){
+      document.getElementById('okr-save').addEventListener('click', async function(){
+        var titles = document.querySelectorAll('#krs .kr-title');
+        var pcts = document.querySelectorAll('#krs .kr-pct');
+        var krs = [];
+        for (var i=0; i<titles.length; i++) {
+          var t = titles[i].value.trim();
+          if (t) krs.push({ title: t, progress: Number(pcts[i].value)||0 });
+        }
+        var obj = document.getElementById('o-obj').value.trim();
+        if (!obj) { VYVE_UI.toast('Objective required', 'error'); return; }
+        var item = { objective: obj, owner: document.getElementById('o-owner').value.trim(), quarter: document.getElementById('o-q').value.trim(), key_results: krs, created_at: new Date().toISOString() };
+        await saveItem('okrs', 'okrs', 'okr_' + Date.now(), item);
+        var items = await loadList('okrs', 'okrs');
+        renderOKRs(items);
+        VYVE_UI.toast('Saved', 'success');
+        document.querySelector('.modal-overlay').classList.remove('open');
+      });
+    }, 50);
+  });
+
+  // ==== Decisions log ====
+  function renderDecisions(items){
+    var mount = document.getElementById('decisions-list');
+    if (!items || !items.length) {
+      mount.innerHTML = '<div class="empty"><span class="icon">&middot;</span><h3>No decisions logged</h3><p>Start with the most recent strategic call.</p></div>';
+      return;
+    }
+    mount.innerHTML = items.map(function(d){
+      return '<div style="padding:16px 0;border-bottom:1px solid var(--border)">'+
+        '<div style="display:flex;align-items:flex-start;gap:10px"><div style="flex:1">'+
+          '<div style="font-size:11.5px;color:var(--text-muted);margin-bottom:4px;font-weight:600;letter-spacing:.3px">'+VYVE_UI.fmtDate(d.date||d.created_at)+' &middot; '+VYVE_UI.escape(d.who||'')+'</div>'+
+          '<div style="font-weight:700;color:var(--text);font-size:14px;margin-bottom:6px">'+VYVE_UI.escape(d.decision||'(no title)')+'</div>'+
+          (d.reasoning ? '<div style="font-size:13px;color:var(--text);line-height:1.6;margin-bottom:6px">'+VYVE_UI.escape(d.reasoning)+'</div>' : '')+
+          (d.alternatives ? '<div style="font-size:12px;color:var(--text-muted);line-height:1.6"><strong style="color:var(--text)">Considered:</strong> '+VYVE_UI.escape(d.alternatives)+'</div>' : '')+
+        '</div><button class="btn btn-ghost" data-del-dec="'+d._id+'">&times;</button></div>'+
+        '</div>';
+    }).join('');
+    mount.querySelectorAll('[data-del-dec]').forEach(function(b){
+      b.addEventListener('click', async function(){
+        await removeItem('decisions', 'decisions', b.dataset.delDec);
+        renderDecisions(await loadList('decisions', 'decisions'));
+        VYVE_UI.toast('Removed');
+      });
+    });
+  }
+  (async function(){ renderDecisions(await loadList('decisions', 'decisions')); })();
+
+  document.getElementById('add-decision').addEventListener('click', function(){
+    VYVE_UI.modal({
+      title: 'Log a decision',
+      body: '<div class="form-row cols-2">'+
+              '<div class="form-group"><label>Date</label><input id="d-date" type="date" value="'+new Date().toISOString().slice(0,10)+'"/></div>'+
+              '<div class="form-group"><label>Decided by</label><input id="d-who"/></div>'+
+            '</div>'+
+            '<div class="form-row"><div class="form-group"><label>Decision (in one sentence)</label><input id="d-title"/></div></div>'+
+            '<div class="form-row"><div class="form-group"><label>Reasoning (why)</label><textarea id="d-why" rows="3"></textarea></div></div>'+
+            '<div class="form-row"><div class="form-group"><label>Alternatives considered</label><textarea id="d-alt" rows="2"></textarea></div></div>'+
+            '<div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn btn-primary" id="d-save">Save</button></div>'
+    });
+    setTimeout(function(){
+      document.getElementById('d-save').addEventListener('click', async function(){
+        var title = document.getElementById('d-title').value.trim();
+        if (!title) { VYVE_UI.toast('Decision title required', 'error'); return; }
+        var item = { decision: title, who: document.getElementById('d-who').value.trim(), date: document.getElementById('d-date').value, reasoning: document.getElementById('d-why').value.trim(), alternatives: document.getElementById('d-alt').value.trim(), created_at: new Date().toISOString() };
+        await saveItem('decisions', 'decisions', 'dec_' + Date.now(), item);
+        renderDecisions(await loadList('decisions', 'decisions'));
+        VYVE_UI.toast('Logged', 'success');
+        document.querySelector('.modal-overlay').classList.remove('open');
+      });
+    }, 50);
+  });
+
+  // ==== SWOT ====
+  var swot = lsGet('swot', { s: '', w: '', o: '', t: '' });
+  ['s','w','o','t'].forEach(function(k){ document.getElementById('sw-'+k).value = swot[k] || ''; });
+  document.getElementById('save-swot').addEventListener('click', function(){
+    var v = {}; ['s','w','o','t'].forEach(function(k){ v[k] = document.getElementById('sw-'+k).value; });
+    lsSet('swot', v);
+    VYVE_UI.toast('SWOT saved', 'success');
+  });
+
+  // ==== Add-entry / export ====
+  document.getElementById('strat-add').addEventListener('click', function(){
+    var active = document.querySelector('#page-strategy .tab-panel.active').id;
+    if (active === 'strat-okrs') document.getElementById('add-okr').click();
+    else if (active === 'strat-decisions') document.getElementById('add-decision').click();
+    else if (active === 'strat-northstar') document.getElementById('ns-edit').click();
+    else VYVE_UI.toast('Edit fields directly and click Save', 'success');
+  });
+  document.getElementById('strat-export').addEventListener('click', function(){
+    var bundle = { northstar: lsGet('northstar', null), mv: lsGet('mv', null), okrs: lsGet('okrs', []), decisions: lsGet('decisions', []), swot: lsGet('swot', null), exported_at: new Date().toISOString() };
+    var blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'vyve-strategy-' + new Date().toISOString().slice(0,10) + '.json';
+    a.click();
+    VYVE_UI.toast('Exported', 'success');
+  });
+})();
+</script>

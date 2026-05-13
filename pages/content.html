@@ -1,20 +1,187 @@
 <div class="page active" id="page-content">
   <div class="page-header">
-    <h1>Content</h1>
-    <p>Content calendar across podcast, LinkedIn, blog, newsletter</p>
+    <div class="hdr-row">
+      <div>
+        <h1>Content</h1>
+        <p>Unified content pipeline across LinkedIn, podcast, blog, newsletter</p>
+      </div>
+      <div style="display:flex;gap:8px">
+        <select id="ch-filter" style="padding:7px 12px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface);color:var(--text);font-size:13px">
+          <option value="">All channels</option>
+          <option value="linkedin">LinkedIn</option>
+          <option value="podcast">Podcast</option>
+          <option value="blog">Blog</option>
+          <option value="newsletter">Newsletter</option>
+          <option value="twitter">Twitter / X</option>
+          <option value="instagram">Instagram</option>
+        </select>
+        <button class="btn btn-primary" id="content-add">New piece</button>
+      </div>
+    </div>
   </div>
 
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title">Not yet built</span>
-      <span class="badge badge-gold">Stub</span>
-    </div>
-    <p style="font-size:13px;color:var(--text-muted);line-height:1.7">
-      This page is on the roadmap but hasn't been built yet. When you're ready to prioritise it,
-      let me know and I'll scaffold it properly. Here's what it's meant to do:
-    </p>
-    <p style="font-size:13px;color:var(--text);line-height:1.7;margin-top:14px;padding:14px;background:var(--surface-2);border-radius:var(--r-sm);border-left:3px solid var(--vyve-gold)">
-      Unified content pipeline: ideas → drafted → scheduled → published. One view across all channels. Output of the content-engine agent feeds here as draft ideas.
-    </p>
+  <div class="grid-4" style="margin-bottom:18px">
+    <div class="stat"><div class="stat-label">Ideas</div><div class="stat-value" id="kpi-idea">0</div></div>
+    <div class="stat"><div class="stat-label">Drafted</div><div class="stat-value" id="kpi-draft">0</div></div>
+    <div class="stat"><div class="stat-label">Scheduled</div><div class="stat-value" id="kpi-sched">0</div></div>
+    <div class="stat"><div class="stat-label">Published (30d)</div><div class="stat-value" id="kpi-pub">0</div></div>
+  </div>
+
+  <div class="kanban" id="content-kanban">
+    <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">Idea</span><span class="kanban-count" data-stage="idea">0</span></div><div class="kanban-body" data-stage="idea"></div></div>
+    <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">Drafting</span><span class="kanban-count" data-stage="drafting">0</span></div><div class="kanban-body" data-stage="drafting"></div></div>
+    <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">Ready</span><span class="kanban-count" data-stage="ready">0</span></div><div class="kanban-body" data-stage="ready"></div></div>
+    <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">Scheduled</span><span class="kanban-count" data-stage="scheduled">0</span></div><div class="kanban-body" data-stage="scheduled"></div></div>
+    <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">Published</span><span class="kanban-count" data-stage="published">0</span></div><div class="kanban-body" data-stage="published"></div></div>
   </div>
 </div>
+
+<script>
+(function(){
+  var LS = 'vyve_content_items';
+  function lsGet(){ try { var v = localStorage.getItem(LS); return v ? JSON.parse(v) : []; } catch(e){ return []; } }
+  function lsSet(v){ try { localStorage.setItem(LS, JSON.stringify(v)); } catch(e){} }
+
+  async function load(){
+    if (window.VYVE_MAKE) {
+      var fromMake = await VYVE_MAKE.list('content', { limit: 500 });
+      if (fromMake && fromMake.length) return fromMake;
+    }
+    return lsGet();
+  }
+  async function save(id, item){
+    var ok = false;
+    if (window.VYVE_MAKE) { var r = await VYVE_MAKE.upsert('content', id, item); if (r) ok = true; }
+    if (!ok) {
+      var arr = lsGet();
+      var i = arr.findIndex(function(x){ return x._id === id; });
+      var e = Object.assign({ _id: id }, item);
+      if (i >= 0) arr[i] = e; else arr.unshift(e);
+      lsSet(arr);
+    }
+  }
+  async function remove(id){
+    if (window.VYVE_MAKE) await VYVE_MAKE.remove('content', id);
+    lsSet(lsGet().filter(function(x){ return x._id !== id; }));
+  }
+
+  var channelColor = { linkedin:'badge-blue', podcast:'badge-gold', blog:'badge-teal', newsletter:'badge-amber', twitter:'badge-grey', instagram:'badge-red' };
+
+  function render(items){
+    var filter = document.getElementById('ch-filter').value;
+    if (filter) items = items.filter(function(i){ return (i.channel||'').toLowerCase() === filter; });
+    var stages = { idea:[], drafting:[], ready:[], scheduled:[], published:[] };
+    items.forEach(function(i){ var s = (i.status||'idea').toLowerCase(); if (!stages[s]) s='idea'; stages[s].push(i); });
+
+    // KPIs
+    document.getElementById('kpi-idea').textContent = stages.idea.length;
+    document.getElementById('kpi-draft').textContent = stages.drafting.length;
+    document.getElementById('kpi-sched').textContent = stages.scheduled.length;
+    var thirtyDaysAgo = Date.now() - 30*86400000;
+    document.getElementById('kpi-pub').textContent = items.filter(function(i){
+      if ((i.status||'').toLowerCase() !== 'published') return false;
+      var t = new Date(i.published_at || i.updated_at || i.created_at || 0).getTime();
+      return t >= thirtyDaysAgo;
+    }).length;
+
+    Object.keys(stages).forEach(function(stage){
+      var body = document.querySelector('.kanban-body[data-stage="'+stage+'"]');
+      var count = document.querySelector('.kanban-count[data-stage="'+stage+'"]');
+      if (count) count.textContent = stages[stage].length;
+      if (!body) return;
+      if (!stages[stage].length) {
+        body.innerHTML = '<div style="padding:16px 10px;text-align:center;font-size:11px;color:var(--text-muted)">Empty</div>';
+        return;
+      }
+      body.innerHTML = stages[stage].map(function(i){
+        var c = i.channel || 'other';
+        var badge = channelColor[c.toLowerCase()] || 'badge-grey';
+        return '<div class="kanban-card" data-id="'+i._id+'">'+
+          '<div class="kc-title">'+VYVE_UI.escape(i.title||'(untitled)')+'</div>'+
+          '<div class="kc-meta"><span class="badge '+badge+'" style="margin-right:6px">'+VYVE_UI.escape(c)+'</span>'+(i.owner ? VYVE_UI.escape(i.owner)+' &middot; ' : '')+(i.due ? 'due '+VYVE_UI.fmtDate(i.due) : '')+'</div>'+
+        '</div>';
+      }).join('');
+      body.querySelectorAll('.kanban-card').forEach(function(card){
+        card.addEventListener('click', function(){ editItem(card.dataset.id, items); });
+      });
+    });
+  }
+
+  function editItem(id, items){
+    var it = items.find(function(x){ return x._id === id; });
+    if (!it) return;
+    openModal('Edit content', it, async function(updated){
+      await save(id, updated);
+      render(await load());
+    }, async function(){
+      await remove(id);
+      render(await load());
+    });
+  }
+
+  function openModal(title, init, onSave, onDelete){
+    init = init || {};
+    VYVE_UI.modal({
+      title: title,
+      body: '<div class="form-row cols-2">'+
+              '<div class="form-group"><label>Title</label><input id="c-title" value="'+VYVE_UI.escape(init.title||'')+'"/></div>'+
+              '<div class="form-group"><label>Channel</label><select id="c-channel"><option value="linkedin">LinkedIn</option><option value="podcast">Podcast</option><option value="blog">Blog</option><option value="newsletter">Newsletter</option><option value="twitter">Twitter / X</option><option value="instagram">Instagram</option></select></div>'+
+            '</div>'+
+            '<div class="form-row cols-2">'+
+              '<div class="form-group"><label>Status</label><select id="c-status"><option value="idea">Idea</option><option value="drafting">Drafting</option><option value="ready">Ready</option><option value="scheduled">Scheduled</option><option value="published">Published</option></select></div>'+
+              '<div class="form-group"><label>Owner</label><input id="c-owner" value="'+VYVE_UI.escape(init.owner||'')+'"/></div>'+
+            '</div>'+
+            '<div class="form-row cols-2">'+
+              '<div class="form-group"><label>Pillar</label><select id="c-pillar"><option value="">—</option><option value="physical">Physical</option><option value="mental">Mental</option><option value="social">Social</option><option value="general">General</option></select></div>'+
+              '<div class="form-group"><label>Due / Publish date</label><input id="c-due" type="date" value="'+VYVE_UI.escape(init.due||'')+'"/></div>'+
+            '</div>'+
+            '<div class="form-row"><div class="form-group"><label>Notes / outline</label><textarea id="c-notes" rows="4">'+VYVE_UI.escape(init.notes||'')+'</textarea></div></div>'+
+            '<div class="form-row"><div class="form-group"><label>Hook / angle</label><textarea id="c-hook" rows="2">'+VYVE_UI.escape(init.hook||'')+'</textarea></div></div>'+
+            '<div style="display:flex;justify-content:space-between;gap:8px">'+
+              (onDelete ? '<button class="btn" id="c-del" style="color:var(--danger);border-color:rgba(224,96,96,.3)">Delete</button>' : '<span></span>')+
+              '<button class="btn btn-primary" id="c-save">Save</button>'+
+            '</div>'
+    });
+    setTimeout(function(){
+      if (init.channel) document.getElementById('c-channel').value = init.channel;
+      if (init.status) document.getElementById('c-status').value = init.status;
+      if (init.pillar) document.getElementById('c-pillar').value = init.pillar;
+      document.getElementById('c-save').addEventListener('click', function(){
+        var t = document.getElementById('c-title').value.trim();
+        if (!t) { VYVE_UI.toast('Title required','error'); return; }
+        var updated = {
+          title: t,
+          channel: document.getElementById('c-channel').value,
+          status: document.getElementById('c-status').value,
+          owner: document.getElementById('c-owner').value.trim(),
+          pillar: document.getElementById('c-pillar').value,
+          due: document.getElementById('c-due').value,
+          notes: document.getElementById('c-notes').value.trim(),
+          hook: document.getElementById('c-hook').value.trim(),
+          updated_at: new Date().toISOString(),
+          created_at: init.created_at || new Date().toISOString()
+        };
+        if (updated.status === 'published' && !init.published_at) updated.published_at = new Date().toISOString();
+        onSave(updated);
+        document.querySelector('.modal-overlay').classList.remove('open');
+      });
+      if (onDelete && document.getElementById('c-del')) {
+        document.getElementById('c-del').addEventListener('click', function(){
+          if (confirm('Delete this item?')) { onDelete(); document.querySelector('.modal-overlay').classList.remove('open'); }
+        });
+      }
+    }, 50);
+  }
+
+  document.getElementById('content-add').addEventListener('click', function(){
+    openModal('New content piece', {}, async function(item){
+      await save('content_'+Date.now(), item);
+      render(await load());
+      VYVE_UI.toast('Added', 'success');
+    });
+  });
+  document.getElementById('ch-filter').addEventListener('change', async function(){ render(await load()); });
+
+  (async function(){ render(await load()); })();
+})();
+</script>
