@@ -35,6 +35,10 @@
         <div id="brief-compliance" class="card-body"></div>
       </div>
       <div class="card">
+        <div class="card-header"><div class="card-title">Action plans</div><div class="card-sub" id="brief-ap-sub">Overdue &amp; due this fortnight</div></div>
+        <div id="brief-actions" class="card-body"></div>
+      </div>
+      <div class="card">
         <div class="card-header"><div class="card-title">Fresh intel</div><div class="card-sub">Latest signals</div></div>
         <div id="brief-intel" class="card-body"></div>
       </div>
@@ -63,13 +67,14 @@
   function renderKPIs(){
     var perf30 = D.performance.totalReach(30);
     var mrr = D.finance.mrr();
-    var activeTasks = D.tasks.activeCount();
     var pipeline = D.deals.pipelineValue();
+    var apPct = D.actions.completionPct();
+    var apOverdue = D.actions.overdue().length;
 
     var kpis = [
       { label: '30-day reach', value: D.fmt(perf30), sub: 'across LinkedIn, IG, FB' },
       { label: 'MRR', value: D.fmtGBP(mrr), sub: mrr ? 'latest snapshot' : 'add in Finance' },
-      { label: 'Active tasks', value: activeTasks, sub: activeTasks ? 'open across the team' : 'no open tasks' },
+      { label: 'Action plans', value: (apPct != null ? apPct : 0) + '%', sub: apOverdue ? apOverdue + ' overdue' : 'complete across the team' },
       { label: 'Pipeline', value: D.fmtGBP(pipeline), sub: pipeline ? 'open deals' : 'no deals yet' }
     ];
 
@@ -139,6 +144,51 @@
     }).join('');
   }
 
+  function renderActions(){
+    var overdue = D.actions.overdue();
+    var soon = D.actions.dueSoon(14);
+    // Dedupe (overdue items can technically also appear in dueSoon if due=today but that's filtered out by our dueSoon impl)
+    var items = overdue.concat(soon);
+    // Sort: overdue first (most overdue at top), then due-soon (soonest at top)
+    items.sort(function(a, b){
+      var aOver = (function(){ var d = D.parseDate(a.due); return d && d < D.startOfDay(); })();
+      var bOver = (function(){ var d = D.parseDate(b.due); return d && d < D.startOfDay(); })();
+      if (aOver && !bOver) return -1;
+      if (!aOver && bOver) return 1;
+      return D.parseDate(a.due) - D.parseDate(b.due);
+    });
+
+    var subEl = document.getElementById('brief-ap-sub');
+    if (subEl) subEl.textContent = overdue.length + ' overdue \u00b7 ' + soon.length + ' due in 14d';
+
+    if (!items.length) {
+      el('brief-actions').innerHTML = empty('No overdue or upcoming actions \u2014 add deadlines in Action Plans.');
+      return;
+    }
+
+    el('brief-actions').innerHTML = items.slice(0, 6).map(function(a){
+      var d = D.parseDate(a.due);
+      var today = D.startOfDay();
+      var isOverdue = d && d < today;
+      var days = d ? Math.ceil((d - today) / 86400000) : null;
+      var dateStr = d ? d.toLocaleDateString('en-GB', { day:'numeric', month:'short'}) : '';
+      var badgeText = isOverdue ? Math.abs(days) + 'd over' : (days === 0 ? 'today' : days + 'd');
+      var badgeColor = isOverdue ? '#e06060' : (days != null && days <= 7) ? 'var(--vyve-gold)' : 'var(--vyve-teal-light)';
+      var memberInitial = (a.member_name || '?').charAt(0);
+      var truncated = (a.text || '').length > 90 ? (a.text || '').slice(0, 88) + '\u2026' : (a.text || '');
+      return '<div class="list-row" data-route="#/action-plans" style="cursor:pointer">' +
+        '<div class="list-row-main">' +
+          '<div class="list-row-title">' +
+            '<span style="display:inline-block;width:18px;height:18px;border-radius:50%;background:var(--vyve-teal-dark);color:var(--text);font-size:10px;font-weight:700;text-align:center;line-height:18px;margin-right:8px;font-family:var(--font-head)">' + memberInitial + '</span>' +
+            truncated +
+          '</div>' +
+          '<div class="list-row-sub">' + (a.member_name || '') + ' \u00b7 ' + dateStr + '</div>' +
+        '</div>' +
+        '<span class="badge" style="background:' + badgeColor + '22;color:' + badgeColor + '">' + badgeText + '</span>' +
+      '</div>';
+    }).join('');
+  }
+
   function renderIntel(){
     var intel = D.intel.recent(3);
     var comp = D.competitors.recent(2);
@@ -180,6 +230,7 @@
     renderDeals();
     renderSessions();
     renderCompliance();
+    renderActions();
     renderIntel();
     renderActivity();
     wireRowClicks();
