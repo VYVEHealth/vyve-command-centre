@@ -2,6 +2,24 @@
 
 All notable changes documented commit-by-commit. Each entry links to the GitHub commit.
 
+## 2026-05-14 (continued, part 3)
+
+### Commit 60 - KPI targets & three-pillar attention bar
+*Commit: [`3700dd`](https://github.com/VYVEHealth/vyve-command-centre/commit/3700dd3707133e50272286846927fd7b225fad60)*
+
+New `lib/targets.js` module. Eight default targets: MRR (£20k), ARR (£240k), Runway (18 months), Sessions/month (40), Content/week (5), Deals closed/month (2), Pipeline value (£100k), and Action plan completion (70%). Each has a value, label, unit (currency/months/percent/count), and period. Defaults merge with localStorage overrides so updating one doesn't lose the others.
+
+Three rendering helpers on the targets API:
+- `compare(key, current)` returns the structured delta (current, target, delta, pct, direction, good flag)
+- `renderVsBadge(key, current)` produces an inline pill like `+15% vs target` coloured green/red/grey for above/below/at
+- `targetLineSvg(key, {width, height, padding, dataMax})` produces a dashed horizontal target line + label SVG fragment to inject after a sparkline polyline
+
+The Brief now shows MRR and Pipeline tiles with the vs-target badge appended inline. The Investor MRR sparkline gets a dashed grey target line + the badge next to the latest value.
+
+**Three-pillar attention bar on the Brief**: a new card between the KPI grid and pinned views, with a heading "Where your attention is going — last 7 days". A new `D.pillarMix(days)` data helper scans tasks, sessions, content, and action plans tagged with `pillar`, counts items in the recency window grouped by physical/mental/social/untagged, and the Brief renders the proportional segments (gold/teal/coral) with a legend showing counts and percentages. Empty-state message guides the user to start tagging items with a pillar if nothing is tagged yet. Makes the marketing-site promise visible internally.
+
+**Settings → Targets** tab: between Outbound and Integrations. Two-column grid of editable number inputs (one per target), with currency/months/% hints next to labels. Save and Reset to defaults buttons.
+
 ## 2026-05-14 (continued, part 2)
 
 ### Commit 58 - PDF export & board pack

@@ -71,6 +71,7 @@ On top of the data layer sits an **enterprise hub layer**: a central entity regi
 │   ├── shortcuts.js            # global keyboard shortcuts + bulk select primitive
 │   ├── drafts.js               # modal autosave to localStorage (7d GC)
 │   ├── pdf-export.js           # window.print()-based PDF export + board pack
+│   ├── targets.js              # KPI targets + vs-badge + sparkline target line
 │   └── quick-search.js         # Cmd+K — fuzzy match across pages + records
 └── pages/                      # one HTML partial per route
     ├── brief.html              # Morning Brief — daily synthesis
