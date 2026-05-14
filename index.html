@@ -89,6 +89,13 @@
         </nav>
 
         <div class="topnav-tools">
+          <a class="topnav-bell" id="topnav-bell" href="#/inbox" aria-label="Inbox">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            <span class="topnav-bell-dot" id="topnav-bell-dot" style="display:none"></span>
+          </a>
           <button class="topnav-search" id="topnav-search-btn" type="button" aria-label="Search (Cmd+K)">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
@@ -153,6 +160,11 @@
 
   <!-- Config + libs -->
   <script src="assets/sidebar-config.js"></script>
+  <script src="lib/store.js"></script>
+  <script src="lib/comments.js"></script>
+  <script src="lib/notifications.js"></script>
+  <script src="lib/views.js"></script>
+  <script src="lib/entities.js"></script>
   <script src="lib/ui.js"></script>
   <script src="lib/supabase.js"></script>
   <script src="lib/make.js"></script>
@@ -171,7 +183,23 @@
       var av2 = document.getElementById('user-avatar-drawer');
       if (av1) av1.textContent = letter;
       if (av2) av2.textContent = letter;
+      window.VYVE_CURRENT_USER = em || 'lewis';
     });
+
+    // Notification bell: update dot whenever notifs change
+    (function(){
+      function refresh(){
+        var dot = document.getElementById('topnav-bell-dot');
+        if (!dot || !window.VYVE_NOTIFS) return;
+        var n = window.VYVE_NOTIFS.unread();
+        dot.textContent = n > 9 ? '9+' : (n || '');
+        dot.style.display = n > 0 ? 'inline-flex' : 'none';
+      }
+      window.addEventListener('vyve:notif', refresh);
+      window.addEventListener('vyve:notif:read', refresh);
+      window.addEventListener('vyve:page', refresh);
+      setTimeout(refresh, 100);
+    })();
 
     // Sidebar drawer (secondary nav) — toggleable from topnav menu button
     (function(){

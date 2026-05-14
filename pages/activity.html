@@ -1,0 +1,116 @@
+<div class="page active" id="page-activity">
+  <div class="page-hero">
+    <div class="eyebrow">What changed</div>
+    <h1 class="page-title">Activity</h1>
+    <p class="page-sub">A live feed of every change across the hub. Comments, edits, completions, deletes, restores.</p>
+    <div class="hero-actions">
+      <button class="btn btn-ghost btn-sm" id="activity-refresh" type="button">↻ Refresh</button>
+    </div>
+  </div>
+
+  <div class="card" style="padding:0;overflow:hidden">
+    <div id="activity-list">
+      <div class="empty" style="padding:48px 24px"><span class="spinner"></span><h3 style="margin-top:14px">Loading</h3></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  if (!window.VYVE_STORE || !window.VYVE_COMMENTS || !window.VYVE_ENTITIES) {
+    document.getElementById('activity-list').innerHTML = '<div class="empty"><h3>Activity unavailable</h3><p>Required modules not loaded.</p></div>';
+    return;
+  }
+  var S = window.VYVE_STORE;
+  var C = window.VYVE_COMMENTS;
+  var E = window.VYVE_ENTITIES;
+  var D = window.VYVE_DATA;
+
+  function escape(s){
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function iconForOp(op){
+    if (op === 'create') return '+';
+    if (op === 'update') return '✎';
+    if (op === 'delete') return '✕';
+    if (op === 'restore') return '↻';
+    if (op === 'comment') return '✉';
+    return '·';
+  }
+
+  function actorOf(s){
+    if (!s) return 'someone';
+    if (s.indexOf('@') >= 0) return s.split('@')[0];
+    return s;
+  }
+
+  function renderEntry(entry){
+    var def = E.get(entry.type);
+    var typeLabel = def ? def.label : entry.type;
+    var rec = def ? def.get(entry.id) : null;
+    var title = rec && def ? def.titleOf(rec) : ('Record ' + entry.id);
+    var icon = iconForOp(entry.op);
+    var route = def ? def.route : '#/brief';
+    return '<div class="inbox-item" data-route="' + route + '">' +
+      '<div class="inbox-item-icon" style="font-family:var(--font-head);font-weight:700">' + icon + '</div>' +
+      '<div class="inbox-item-main">' +
+        '<div class="inbox-item-title">' + escape(title) + '</div>' +
+        '<div class="inbox-item-sub">' +
+          '<span class="type-pill">' + escape(typeLabel) + '</span>' +
+          '<span>' + escape(actorOf(entry.who)) + ' \u00b7 ' + escape(entry.op) + '</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="inbox-item-meta">' +
+        '<span class="meta-badge">' + D.relTime(new Date(entry.at)) + '</span>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function renderCommentEntry(c){
+    var def = E.get(c.type);
+    var typeLabel = def ? def.label : c.type;
+    var rec = def ? def.get(c.entity_id) : null;
+    var title = rec && def ? def.titleOf(rec) : ('Record ' + c.entity_id);
+    var route = def ? def.route : '#/brief';
+    return '<div class="inbox-item kind-mention" data-route="' + route + '">' +
+      '<div class="inbox-item-icon">\u2709</div>' +
+      '<div class="inbox-item-main">' +
+        '<div class="inbox-item-title">' + escape(c.body.length > 80 ? c.body.slice(0, 78) + '\u2026' : c.body) + '</div>' +
+        '<div class="inbox-item-sub">' +
+          '<span class="type-pill">' + escape(typeLabel) + '</span>' +
+          '<span>' + escape(actorOf(c.author)) + ' on \u201c' + escape(title) + '\u201d</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="inbox-item-meta"><span class="meta-badge">' + D.relTime(new Date(c.created_at)) + '</span></div>' +
+    '</div>';
+  }
+
+  function render(){
+    var audit = S.allChanges(200).map(function(e){ return Object.assign({}, e, { _kind: 'audit', _time: new Date(e.at) }); });
+    var comments = C.recent(100).map(function(c){ return Object.assign({}, c, { _kind: 'comment', _time: new Date(c.created_at) }); });
+    var all = audit.concat(comments).sort(function(a, b){ return b._time - a._time; }).slice(0, 200);
+
+    var listEl = document.getElementById('activity-list');
+    if (!all.length) {
+      listEl.innerHTML = '<div class="empty" style="padding:48px 24px"><h3>No activity yet</h3><p>As you and the team start adding, editing, and commenting, every change will show up here.</p></div>';
+      return;
+    }
+    listEl.innerHTML = all.map(function(e){
+      return e._kind === 'audit' ? renderEntry(e) : renderCommentEntry(e);
+    }).join('');
+
+    listEl.querySelectorAll('[data-route]').forEach(function(row){
+      row.addEventListener('click', function(){
+        var r = row.getAttribute('data-route');
+        if (r) location.hash = r;
+      });
+    });
+  }
+
+  document.getElementById('activity-refresh').addEventListener('click', render);
+  render();
+})();
+</script>

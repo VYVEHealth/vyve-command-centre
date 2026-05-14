@@ -926,3 +926,247 @@ main.main::-webkit-scrollbar-thumb { background: var(--border-strong); border-ra
   .content { padding: 18px 14px; }
   .modal { width: 96%; padding: 22px 20px; max-height: 92vh; }
 }
+
+/* =====================================================================
+   Notification bell (topnav)
+   ===================================================================== */
+.topnav-bell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--r-md);
+  color: var(--text-muted);
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.topnav-bell:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.topnav-bell-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 9.5px;
+  font-weight: var(--fw-bold);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  line-height: 1;
+  border: 1.5px solid var(--surface);
+  letter-spacing: 0;
+}
+
+/* =====================================================================
+   Universal comment thread (used on any entity detail)
+   ===================================================================== */
+.comments-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.comment-row {
+  display: flex;
+  gap: 10px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.comment-row:last-child { border-bottom: 0; }
+.comment-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--vyve-teal), var(--vyve-teal-light));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-family: var(--font-head);
+  font-weight: var(--fw-bold);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.comment-body {
+  flex: 1;
+  min-width: 0;
+}
+.comment-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.comment-author {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semi);
+  color: var(--text);
+}
+.comment-time {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+.comment-text {
+  font-size: var(--fs-base);
+  color: var(--text);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+.comment-text .mention {
+  color: var(--accent);
+  font-weight: var(--fw-semi);
+  background: var(--vyve-teal-pale);
+  padding: 1px 6px;
+  border-radius: var(--r-pill);
+}
+.comment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 12px;
+}
+.comment-form textarea {
+  width: 100%;
+  min-height: 70px;
+  padding: 10px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  font-size: var(--fs-base);
+  font-family: inherit;
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+  resize: vertical;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+}
+.comment-form textarea:focus {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-focus);
+}
+.comment-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.comment-form-hint {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+.comment-form-hint kbd {
+  margin: 0 2px;
+}
+
+/* =====================================================================
+   History / audit pill (used inline next to entity titles)
+   ===================================================================== */
+.audit-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  padding: 3px 9px;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  cursor: pointer;
+  transition: background var(--t-fast);
+}
+.audit-pill:hover {
+  background: var(--vyve-teal-pale);
+  color: var(--vyve-teal);
+}
+
+/* =====================================================================
+   Filter chips (used on Tasks, CRM, Sessions, Action Plans)
+   ===================================================================== */
+.filter-chip-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px 5px 12px;
+  border-radius: var(--r-pill);
+  background: var(--vyve-teal-pale);
+  color: var(--vyve-teal);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semi);
+}
+.filter-chip .chip-x {
+  border: 0;
+  background: transparent;
+  color: var(--vyve-teal);
+  cursor: pointer;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1;
+  margin-left: 2px;
+}
+.filter-chip .chip-x:hover { color: var(--accent-hover); }
+.filter-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border-radius: var(--r-pill);
+  background: transparent;
+  border: 1px dashed var(--border-strong);
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+  font-family: inherit;
+}
+.filter-add:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Saved views row */
+.views-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 12px;
+}
+.view-tab {
+  padding: 5px 12px;
+  border-radius: var(--r-md);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--text-muted);
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  font-family: inherit;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.view-tab:hover { color: var(--text); background: var(--surface-2); }
+.view-tab.active {
+  color: var(--text);
+  font-weight: var(--fw-semi);
+  background: var(--vyve-teal-pale);
+}
+.view-pin {
+  display: inline-block;
+  margin-left: 4px;
+  color: var(--vyve-gold);
+  font-size: 11px;
+}

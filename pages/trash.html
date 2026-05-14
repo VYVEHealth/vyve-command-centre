@@ -1,0 +1,81 @@
+<div class="page active" id="page-trash">
+  <div class="page-hero">
+    <div class="eyebrow">Recoverable</div>
+    <h1 class="page-title">Trash</h1>
+    <p class="page-sub">Anything you delete from the hub lands here. Restore in one click, or purge permanently when you’re sure.</p>
+  </div>
+
+  <div class="card" style="padding:0;overflow:hidden">
+    <div id="trash-list">
+      <div class="empty" style="padding:48px 24px"><span class="spinner"></span><h3 style="margin-top:14px">Loading</h3></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  if (!window.VYVE_STORE || !window.VYVE_ENTITIES) {
+    document.getElementById('trash-list').innerHTML = '<div class="empty"><h3>Trash unavailable</h3></div>';
+    return;
+  }
+  var S = window.VYVE_STORE;
+  var E = window.VYVE_ENTITIES;
+  var D = window.VYVE_DATA;
+
+  function escape(s){
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function render(){
+    var items = S.trash();
+    var listEl = document.getElementById('trash-list');
+    if (!items.length) {
+      listEl.innerHTML = '<div class="empty" style="padding:48px 24px"><h3>Empty</h3><p>Nothing has been deleted. When records get deleted, they\u2019ll appear here for 30 days before being permanently removed.</p></div>';
+      return;
+    }
+    listEl.innerHTML = items.map(function(it){
+      var def = E.get(it.type);
+      var rec = it.record || {};
+      var title = def ? def.titleOf(rec) : ('Record ' + it.id);
+      var typeLabel = def ? def.label : it.type;
+      return '<div class="inbox-item">' +
+        '<div class="inbox-item-icon">\u2715</div>' +
+        '<div class="inbox-item-main">' +
+          '<div class="inbox-item-title">' + escape(title) + '</div>' +
+          '<div class="inbox-item-sub">' +
+            '<span class="type-pill">' + escape(typeLabel) + '</span>' +
+            '<span>Deleted by ' + escape((it.deleted_by || '').split('@')[0] || 'unknown') + ' \u00b7 ' + D.relTime(new Date(it.deleted_at)) + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div style="display:flex;gap:6px;flex-shrink:0">' +
+          '<button class="btn btn-sm btn-ghost" data-act="restore" data-type="' + it.type + '" data-id="' + it.id + '">Restore</button>' +
+          '<button class="btn btn-sm btn-ghost" data-act="purge" data-type="' + it.type + '" data-id="' + it.id + '" style="color:var(--danger)">Purge</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    listEl.querySelectorAll('button[data-act]').forEach(function(btn){
+      btn.addEventListener('click', function(e){
+        e.stopPropagation();
+        var act = btn.getAttribute('data-act');
+        var t = btn.getAttribute('data-type');
+        var id = btn.getAttribute('data-id');
+        if (act === 'restore') {
+          var rec = S.restore(t, id);
+          window.VYVE_UI && window.VYVE_UI.toast && window.VYVE_UI.toast('Restored.', 'success');
+        } else if (act === 'purge') {
+          if (confirm('Permanently delete this record? This cannot be undone.')) {
+            S.purge(t, id);
+            window.VYVE_UI && window.VYVE_UI.toast && window.VYVE_UI.toast('Permanently deleted.', 'warning');
+          } else { return; }
+        }
+        render();
+      });
+    });
+  }
+
+  render();
+})();
+</script>

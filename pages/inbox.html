@@ -1,0 +1,493 @@
+<div class="page active" id="page-inbox">
+  <div class="page-hero">
+    <div class="eyebrow">What needs you today</div>
+    <h1 class="page-title">Inbox</h1>
+    <p class="page-sub">Everything assigned to you, awaiting you, or at risk of slipping. Clear it; close the day.</p>
+    <div class="hero-actions">
+      <button class="btn btn-ghost btn-sm" id="inbox-refresh" type="button">↻ Refresh</button>
+      <button class="btn btn-ghost btn-sm" id="inbox-mark-all" type="button">Mark all read</button>
+    </div>
+  </div>
+
+  <!-- Counts row -->
+  <div class="inbox-counts">
+    <button class="inbox-count active" data-filter="all">
+      <span class="num" id="cnt-all">0</span>
+      <span class="lbl">All</span>
+    </button>
+    <button class="inbox-count" data-filter="overdue">
+      <span class="num danger" id="cnt-overdue">0</span>
+      <span class="lbl">Overdue</span>
+    </button>
+    <button class="inbox-count" data-filter="today">
+      <span class="num" id="cnt-today">0</span>
+      <span class="lbl">Today</span>
+    </button>
+    <button class="inbox-count" data-filter="this-week">
+      <span class="num" id="cnt-week">0</span>
+      <span class="lbl">This week</span>
+    </button>
+    <button class="inbox-count" data-filter="mentions">
+      <span class="num" id="cnt-mentions">0</span>
+      <span class="lbl">Mentions</span>
+    </button>
+    <button class="inbox-count" data-filter="blocked">
+      <span class="num warn" id="cnt-blocked">0</span>
+      <span class="lbl">Blocked</span>
+    </button>
+    <button class="inbox-count" data-filter="stalled">
+      <span class="num warn" id="cnt-stalled">0</span>
+      <span class="lbl">Stalled deals</span>
+    </button>
+  </div>
+
+  <!-- Items list -->
+  <div class="card" style="padding:0;overflow:hidden">
+    <div id="inbox-list" class="inbox-list">
+      <div class="empty" style="padding:48px 24px">
+        <span class="spinner"></span>
+        <h3 style="margin-top:14px">Loading inbox</h3>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.inbox-counts {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 10px;
+  margin-bottom: 22px;
+}
+@media (max-width: 1100px) { .inbox-counts { grid-template-columns: repeat(4, 1fr); } }
+@media (max-width: 640px)  { .inbox-counts { grid-template-columns: repeat(2, 1fr); } }
+
+.inbox-count {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 14px 12px 12px;
+  cursor: pointer;
+  text-align: center;
+  font-family: inherit;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+}
+.inbox-count:hover { border-color: var(--border-strong); }
+.inbox-count.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--vyve-teal-pale);
+}
+.inbox-count .num {
+  font-family: var(--font-head);
+  font-size: var(--fs-2xl);
+  font-weight: var(--fw-bold);
+  color: var(--text);
+  line-height: 1;
+  display: block;
+  letter-spacing: var(--ls-tight);
+}
+.inbox-count .num.danger { color: var(--danger); }
+.inbox-count .num.warn   { color: var(--warning); }
+.inbox-count .lbl {
+  display: block;
+  margin-top: 6px;
+  font-size: var(--fs-xxs);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.inbox-list { background: var(--surface); }
+.inbox-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background var(--t-fast);
+}
+.inbox-item:last-child { border-bottom: 0; }
+.inbox-item:hover { background: var(--bg-alt); }
+.inbox-item-icon {
+  width: 32px; height: 32px;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.inbox-item.kind-overdue .inbox-item-icon { background: var(--danger-pale); color: var(--danger); }
+.inbox-item.kind-today .inbox-item-icon   { background: var(--vyve-teal-pale); color: var(--vyve-teal); }
+.inbox-item.kind-blocked .inbox-item-icon { background: var(--warning-pale); color: #8A5E1F; }
+.inbox-item.kind-mention .inbox-item-icon { background: var(--info-pale); color: var(--info); }
+.inbox-item.kind-stalled .inbox-item-icon { background: var(--warning-pale); color: #8A5E1F; }
+.inbox-item-icon svg {
+  width: 16px; height: 16px;
+  stroke: currentColor; fill: none;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+.inbox-item-main { flex: 1; min-width: 0; }
+.inbox-item-title {
+  font-size: var(--fs-base);
+  font-weight: var(--fw-medium);
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.inbox-item-sub {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  margin-top: 3px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.inbox-item-sub .type-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  font-size: 10px;
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.inbox-item-meta {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  flex-shrink: 0;
+  text-align: right;
+}
+.inbox-item-meta .meta-badge {
+  font-weight: var(--fw-semi);
+}
+.inbox-item-meta .meta-badge.danger { color: var(--danger); }
+.inbox-item-meta .meta-badge.warn   { color: var(--warning); }
+
+.inbox-section-label {
+  padding: 16px 22px 8px;
+  font-size: var(--fs-xxs);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-mega);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: var(--bg-alt);
+  border-bottom: 1px solid var(--border);
+}
+.inbox-empty {
+  padding: 64px 24px;
+  text-align: center;
+  color: var(--text-muted);
+}
+.inbox-empty h3 {
+  font-family: var(--font-head);
+  font-size: var(--fs-lg);
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.inbox-empty p {
+  font-size: var(--fs-sm);
+  max-width: 360px;
+  margin: 0 auto;
+}
+</style>
+
+<script>
+(function(){
+  if (!window.VYVE_DATA || !window.VYVE_ENTITIES) {
+    console.error('[Inbox] dependencies missing');
+    return;
+  }
+  var D = window.VYVE_DATA;
+  var E = window.VYVE_ENTITIES;
+  var N = window.VYVE_NOTIFS;
+  var ICONS = window.VYVE_ICONS || {};
+
+  function el(id){ return document.getElementById(id); }
+  function escape(s){
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  var currentFilter = 'all';
+
+  // ---------- Aggregator ----------
+  // Builds a unified list of inbox items from across the hub.
+  function buildItems(){
+    var today = D.startOfDay();
+    var weekFromNow = new Date(today.getTime() + 7 * 86400000);
+    var items = [];
+
+    function pushItem(entry){ items.push(entry); }
+
+    // Actions
+    D.actions.all().forEach(function(a){
+      if (a.status === 'done') return;
+      var due = D.parseDate(a.due);
+      if (a.status === 'blocked') {
+        pushItem({
+          kind: 'blocked', priority: 1,
+          type: 'action', id: a.id,
+          title: a.text || 'Untitled action',
+          sub: (a.member_name || ''),
+          meta: 'Blocked',
+          metaClass: 'warn',
+          when: due, route: '#/action-plans'
+        });
+      } else if (due && due < today) {
+        pushItem({
+          kind: 'overdue', priority: 0,
+          type: 'action', id: a.id,
+          title: a.text || 'Untitled action',
+          sub: (a.member_name || ''),
+          meta: Math.ceil((today - due) / 86400000) + 'd overdue',
+          metaClass: 'danger',
+          when: due, route: '#/action-plans'
+        });
+      } else if (due && due >= today && due <= weekFromNow) {
+        var days = Math.ceil((due - today) / 86400000);
+        pushItem({
+          kind: days === 0 ? 'today' : 'week', priority: 2,
+          type: 'action', id: a.id,
+          title: a.text || 'Untitled action',
+          sub: (a.member_name || ''),
+          meta: days === 0 ? 'Today' : days + 'd',
+          when: due, route: '#/action-plans'
+        });
+      }
+    });
+
+    // Tasks
+    D.tasks.all().forEach(function(t){
+      if (t.status === 'done' || t.status === 'complete') return;
+      var due = D.parseDate(t.due);
+      if (due && due < today) {
+        pushItem({
+          kind: 'overdue', priority: 0,
+          type: 'task', id: t.id,
+          title: t.title || 'Untitled task',
+          sub: t.owner || '',
+          meta: Math.ceil((today - due) / 86400000) + 'd overdue',
+          metaClass: 'danger',
+          when: due, route: '#/tasks'
+        });
+      } else if (due && due >= today && due <= weekFromNow) {
+        var days = Math.ceil((due - today) / 86400000);
+        pushItem({
+          kind: days === 0 ? 'today' : 'week', priority: 2,
+          type: 'task', id: t.id,
+          title: t.title || 'Untitled task',
+          sub: t.owner || '',
+          meta: days === 0 ? 'Today' : days + 'd',
+          when: due, route: '#/tasks'
+        });
+      }
+    });
+
+    // Compliance
+    D.compliance.dueSoon(30).forEach(function(c){
+      var due = D.parseDate(c.due);
+      if (!due) return;
+      var days = Math.ceil((due - today) / 86400000);
+      if (days < 0) {
+        pushItem({
+          kind: 'overdue', priority: 0,
+          type: 'compliance', id: c.id,
+          title: c.title || c.area || 'Compliance item',
+          sub: c.area || '',
+          meta: Math.abs(days) + 'd overdue',
+          metaClass: 'danger',
+          when: due, route: '#/compliance'
+        });
+      } else if (days <= 7) {
+        pushItem({
+          kind: days === 0 ? 'today' : 'week', priority: 2,
+          type: 'compliance', id: c.id,
+          title: c.title || c.area || 'Compliance item',
+          sub: c.area || '',
+          meta: days === 0 ? 'Today' : days + 'd',
+          when: due, route: '#/compliance'
+        });
+      }
+    });
+
+    // Sessions today/tomorrow
+    D.sessions.todayAndTomorrow().forEach(function(s){
+      var d = D.parseDate(s.date);
+      if (!d) return;
+      var isToday = d.toDateString() === new Date().toDateString();
+      var time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+      pushItem({
+        kind: isToday ? 'today' : 'week', priority: 2,
+        type: 'session', id: s.id,
+        title: s.title || 'Session',
+        sub: (s.client || s.attendees || '') + ' \u00b7 ' + (isToday ? 'Today' : 'Tomorrow') + ' ' + time,
+        meta: isToday ? 'Today' : 'Tmrw',
+        when: d, route: '#/sessions'
+      });
+    });
+
+    // Stalled deals (no update in 14d, not closed)
+    D.deals.all().forEach(function(deal){
+      var stage = (deal.stage || '').toLowerCase();
+      if (stage === 'closed-won' || stage === 'closed-lost') return;
+      var updatedAt = D.parseDate(deal.updated_at || deal.last_activity || deal.created_at);
+      if (!updatedAt) return;
+      var daysSince = Math.floor((today - updatedAt) / 86400000);
+      if (daysSince >= 14) {
+        pushItem({
+          kind: 'stalled', priority: 3,
+          type: 'deal', id: deal.id,
+          title: deal.company || deal.title || 'Deal',
+          sub: deal.stage || '',
+          meta: daysSince + 'd silent',
+          metaClass: 'warn',
+          when: updatedAt, route: '#/crm'
+        });
+      }
+    });
+
+    // Mentions for current user (last 14 days)
+    if (N) {
+      var meHandle = N.currentHandle();
+      var unreadMentions = N.list({ kind: 'mention', unreadOnly: true });
+      unreadMentions.forEach(function(notif){
+        pushItem({
+          kind: 'mention', priority: 1,
+          type: notif.entity_type, id: notif.entity_id,
+          title: '@' + meHandle + ' \u2014 ' + (notif.body_excerpt || ''),
+          sub: 'Mentioned by ' + notif.from,
+          meta: D.relTime(new Date(notif.created_at)),
+          when: new Date(notif.created_at),
+          route: '#/' + (notif.entity_type ? E.get(notif.entity_type) && E.get(notif.entity_type).route.replace('#/', '') : 'brief'),
+          notif_id: notif.id
+        });
+      });
+    }
+
+    return items;
+  }
+
+  // ---------- Filtering ----------
+  function filterItems(items, filter){
+    if (filter === 'all') return items;
+    if (filter === 'overdue')   return items.filter(function(i){ return i.kind === 'overdue'; });
+    if (filter === 'today')     return items.filter(function(i){ return i.kind === 'today'; });
+    if (filter === 'this-week') return items.filter(function(i){ return i.kind === 'today' || i.kind === 'week'; });
+    if (filter === 'mentions')  return items.filter(function(i){ return i.kind === 'mention'; });
+    if (filter === 'blocked')   return items.filter(function(i){ return i.kind === 'blocked'; });
+    if (filter === 'stalled')   return items.filter(function(i){ return i.kind === 'stalled'; });
+    return items;
+  }
+
+  // ---------- Render ----------
+  function iconFor(item){
+    var entityDef = E.get(item.type);
+    var iconName = entityDef ? entityDef.icon : 'check-square';
+    return ICONS[iconName] || ICONS['check-square'] || '';
+  }
+
+  function renderItem(item){
+    var def = E.get(item.type);
+    var typeLabel = def ? def.label : item.type;
+    return '<div class="inbox-item kind-' + item.kind + '" data-route="' + item.route + '" data-notif-id="' + (item.notif_id || '') + '">' +
+      '<div class="inbox-item-icon">' + iconFor(item) + '</div>' +
+      '<div class="inbox-item-main">' +
+        '<div class="inbox-item-title">' + escape(item.title) + '</div>' +
+        '<div class="inbox-item-sub">' +
+          '<span class="type-pill">' + escape(typeLabel) + '</span>' +
+          (item.sub ? '<span>' + escape(item.sub) + '</span>' : '') +
+        '</div>' +
+      '</div>' +
+      '<div class="inbox-item-meta">' +
+        '<span class="meta-badge ' + (item.metaClass || '') + '">' + escape(item.meta) + '</span>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function renderList(){
+    var items = buildItems();
+    // Sort: priority asc (overdue first), then nearest due first
+    items.sort(function(a, b){
+      if (a.priority !== b.priority) return a.priority - b.priority;
+      var aT = a.when ? a.when.getTime() : 0;
+      var bT = b.when ? b.when.getTime() : 0;
+      return aT - bT;
+    });
+
+    // Update counts
+    el('cnt-all').textContent      = items.length;
+    el('cnt-overdue').textContent  = items.filter(function(i){ return i.kind === 'overdue'; }).length;
+    el('cnt-today').textContent    = items.filter(function(i){ return i.kind === 'today'; }).length;
+    el('cnt-week').textContent     = items.filter(function(i){ return i.kind === 'today' || i.kind === 'week'; }).length;
+    el('cnt-mentions').textContent = items.filter(function(i){ return i.kind === 'mention'; }).length;
+    el('cnt-blocked').textContent  = items.filter(function(i){ return i.kind === 'blocked'; }).length;
+    el('cnt-stalled').textContent  = items.filter(function(i){ return i.kind === 'stalled'; }).length;
+
+    var filtered = filterItems(items, currentFilter);
+    var listEl = el('inbox-list');
+
+    if (!filtered.length) {
+      listEl.innerHTML = '<div class="inbox-empty">' +
+        '<h3>Inbox zero</h3>' +
+        '<p>Nothing pending in this view. Switch the filter above or get on with the work.</p>' +
+      '</div>';
+      return;
+    }
+
+    // Group by kind
+    var groups = [
+      { kind: 'overdue', label: 'Overdue' },
+      { kind: 'blocked', label: 'Blocked on you' },
+      { kind: 'mention', label: 'Mentions' },
+      { kind: 'today', label: 'Today' },
+      { kind: 'week', label: 'This week' },
+      { kind: 'stalled', label: 'Stalled deals' }
+    ];
+
+    var html = '';
+    groups.forEach(function(g){
+      var groupItems = filtered.filter(function(i){ return i.kind === g.kind; });
+      if (!groupItems.length) return;
+      html += '<div class="inbox-section-label">' + g.label + ' \u00b7 ' + groupItems.length + '</div>';
+      html += groupItems.map(renderItem).join('');
+    });
+
+    listEl.innerHTML = html;
+
+    // Wire clicks: navigate AND mark the underlying notif as read
+    listEl.querySelectorAll('.inbox-item').forEach(function(row){
+      row.addEventListener('click', function(){
+        var notifId = row.getAttribute('data-notif-id');
+        if (notifId && N) N.markRead(notifId);
+        var route = row.getAttribute('data-route');
+        if (route) location.hash = route;
+      });
+    });
+  }
+
+  // ---------- Wire ----------
+  el('inbox-refresh').addEventListener('click', renderList);
+  el('inbox-mark-all').addEventListener('click', function(){
+    if (N) N.markAllRead();
+    renderList();
+  });
+  document.querySelectorAll('.inbox-count').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.inbox-count').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      currentFilter = btn.getAttribute('data-filter');
+      renderList();
+    });
+  });
+
+  renderList();
+})();
+</script>

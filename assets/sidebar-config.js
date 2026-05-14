@@ -8,11 +8,13 @@ window.VYVE_NAV = [
   {
     section: "Daily",
     items: [
-      { slug: "brief",       label: "Morning Brief",   icon: "layers",   status: "live" },
-      { slug: "intel",       label: "Research & Grants", icon: "search", status: "live" },
-      { slug: "competitors", label: "Competitor Watch", icon: "eye",     status: "live" },
-      { slug: "intel-hub",   label: "Intel Hub",       icon: "radar",    status: "live" },
-      { slug: "dashboard",   label: "Dashboard",       icon: "grid",     status: "live" }
+      { slug: "brief",       label: "Morning Brief",     icon: "layers",       status: "live" },
+      { slug: "inbox",       label: "Inbox",             icon: "check-square", status: "live" },
+      { slug: "activity",    label: "Activity",          icon: "radar",        status: "live" },
+      { slug: "intel",       label: "Research & Grants", icon: "search",       status: "live" },
+      { slug: "competitors", label: "Competitor Watch",  icon: "eye",          status: "live" },
+      { slug: "intel-hub",   label: "Intel Hub",         icon: "radar",        status: "live" },
+      { slug: "dashboard",   label: "Dashboard",         icon: "grid",         status: "live" }
     ]
   },
   {
@@ -60,6 +62,7 @@ window.VYVE_NAV = [
     items: [
       { slug: "action-plans", label: "Action Plans", icon: "target",   status: "live" },
       { slug: "team",     label: "Team",     icon: "user",     status: "skeleton" },
+      { slug: "trash",    label: "Trash",    icon: "folder",   status: "live" },
       { slug: "settings", label: "Settings", icon: "settings", status: "live" }
     ]
   }
