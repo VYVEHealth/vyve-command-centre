@@ -9,6 +9,7 @@
     <button class="tab-btn" data-tab="set-integrations">Integrations</button>
     <button class="tab-btn" data-tab="set-stores">Data Stores</button>
     <button class="tab-btn" data-tab="set-auth">Auth & Access</button>
+    <button class="tab-btn" data-tab="set-diag">Diagnostics</button>
   </div>
 
   <div id="set-general" class="tab-panel active">
@@ -115,6 +116,31 @@
         </div>
       </div>
       <div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn btn-primary" id="save-auth">Save auth config</button></div>
+    </div>
+  </div>
+
+  <div id="set-diag" class="tab-panel">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Local data store</span><span class="badge" id="diag-total-status">checking…</span></div>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">All VYVE Command Centre data lives in this browser’s localStorage until Dean ships the Supabase tables. Each row below shows the storage key, the number of records, and the size in bytes. Editing on a page updates the corresponding key.</p>
+      <div id="diag-list" style="font-size:12.5px"></div>
+      <div style="display:flex;justify-content:space-between;gap:8px;margin-top:14px;align-items:center">
+        <div style="font-size:11px;color:var(--text-muted)" id="diag-seed-info"></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost" id="diag-refresh" type="button">↻ Refresh</button>
+          <button class="btn btn-ghost" id="diag-export" type="button">Export all</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-title">Reset</span></div>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">Use these to wipe local data and re-seed from the snapshot. Useful if you’re testing or if data has drifted into a broken state. <strong style="color:#e06060">Wipes are permanent</strong> — export first if you want a copy.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-ghost" id="diag-reseed" type="button">Re-seed all (keeps user edits where seedKey already finds data)</button>
+        <button class="btn btn-ghost" id="diag-force-reseed" type="button" style="border-color:#e06060;color:#e06060">Force re-seed (overwrites everything)</button>
+        <button class="btn btn-ghost" id="diag-wipe" type="button" style="border-color:#e06060;color:#e06060">Wipe all VYVE local data</button>
+      </div>
     </div>
   </div>
 </div>
@@ -232,5 +258,119 @@
     persist();
     VYVE_UI.toast('Store mapping saved', 'success');
   });
+
+  // ---------- Diagnostics ----------
+  var KEYS_TO_INSPECT = [
+    { key: 'vyve_performance_log', label: 'Performance (analytics)', page: 'performance' },
+    { key: 'vyve_podcast_eps',     label: 'Podcast episodes',         page: 'podcast' },
+    { key: 'vyve_podcast_guests',  label: 'Podcast guests',           page: 'podcast' },
+    { key: 'vyve_content_items',   label: 'Content items',            page: 'content' },
+    { key: 'vyve_tasks',           label: 'Tasks',                    page: 'tasks' },
+    { key: 'vyve_team',            label: 'Team members',             page: 'team' },
+    { key: 'vyve_knowledge',       label: 'Knowledge base',           page: 'knowledge' },
+    { key: 'vyve_partners',        label: 'Partners',                 page: 'partners' },
+    { key: 'vyve_clients',         label: 'Clients',                  page: 'clients' },
+    { key: 'vyve_deals',           label: 'Deals (CRM)',              page: 'crm' },
+    { key: 'vyve_compliance',      label: 'Compliance items',         page: 'compliance' },
+    { key: 'vyve_sessions',        label: 'Sessions',                 page: 'sessions' },
+    { key: 'vyve_investors',       label: 'Investors',                page: 'investor' },
+    { key: 'vyve_invoices',        label: 'Invoices',                 page: 'invoicing' },
+    { key: 'vyve_strategy_okrs',       label: 'Strategy — OKRs',         page: 'strategy' },
+    { key: 'vyve_strategy_decisions',  label: 'Strategy — Decisions',    page: 'strategy' },
+    { key: 'vyve_action_plans',        label: 'Action Plans — overrides', page: 'action-plans' },
+    { key: 'vyve_action_plans_full',   label: 'Action Plans — cache',     page: 'action-plans' }
+  ];
+
+  function diagInspect(){
+    var rows = '';
+    var totalRecords = 0, totalBytes = 0, populated = 0;
+    KEYS_TO_INSPECT.forEach(function(spec){
+      var raw = '';
+      try { raw = localStorage.getItem(spec.key) || ''; } catch(e){}
+      var size = raw.length;
+      var count = 0;
+      if (raw){
+        try {
+          var parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) count = parsed.length;
+          else if (typeof parsed === 'object' && parsed) count = Object.keys(parsed).length;
+        } catch(e){}
+      }
+      if (size > 0) populated++;
+      totalRecords += count;
+      totalBytes += size;
+      var sizeStr = size < 1024 ? size + ' B' : size < 1024*1024 ? (size/1024).toFixed(1) + ' KB' : (size/1024/1024).toFixed(2) + ' MB';
+      var status = size > 0 ? 'badge-green' : 'badge-grey';
+      rows += '<div class="list-row" data-page="' + spec.page + '" style="cursor:pointer">' +
+        '<div class="list-row-main"><div class="list-row-title">' + spec.label + '</div><div class="list-row-sub"><code style="font-size:11px;background:var(--surface-2);padding:1px 5px;border-radius:3px">' + spec.key + '</code></div></div>' +
+        '<div style="display:flex;gap:14px;align-items:center;flex-shrink:0">' +
+          '<div style="text-align:right"><div style="font-family:var(--font-head);font-weight:600;color:var(--text)">' + count + '</div><div style="font-size:10px;color:var(--text-muted)">records</div></div>' +
+          '<div style="text-align:right;min-width:55px"><div style="font-size:12px;color:var(--text-muted)">' + sizeStr + '</div></div>' +
+          '<span class="badge ' + status + '">' + (size > 0 ? 'has data' : 'empty') + '</span>' +
+        '</div>' +
+      '</div>';
+    });
+    document.getElementById('diag-list').innerHTML = rows;
+    document.getElementById('diag-total-status').className = 'badge badge-' + (populated > 8 ? 'green' : 'amber');
+    document.getElementById('diag-total-status').textContent = populated + ' of ' + KEYS_TO_INSPECT.length + ' keys populated';
+    var seedVer = '';
+    try { seedVer = localStorage.getItem('vyve_seeded_version') || '(not yet seeded)'; } catch(e){}
+    document.getElementById('diag-seed-info').textContent = 'Seed version: ' + seedVer + ' · ' + totalRecords + ' records total · ' + (totalBytes < 1024 ? totalBytes + ' B' : (totalBytes/1024).toFixed(1) + ' KB');
+    // Click row to navigate to source page
+    document.querySelectorAll('#diag-list [data-page]').forEach(function(row){
+      row.addEventListener('click', function(){ window.location.hash = '#/' + row.getAttribute('data-page'); });
+    });
+  }
+
+  document.getElementById('diag-refresh').addEventListener('click', diagInspect);
+
+  document.getElementById('diag-export').addEventListener('click', function(){
+    var bundle = {};
+    KEYS_TO_INSPECT.forEach(function(spec){
+      try { var v = localStorage.getItem(spec.key); if (v) bundle[spec.key] = JSON.parse(v); } catch(e){}
+    });
+    bundle._meta = { exported_at: new Date().toISOString(), seed_version: localStorage.getItem('vyve_seeded_version') };
+    var blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = 'vyve-command-centre-' + new Date().toISOString().slice(0,10) + '.json';
+    a.click();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 100);
+    VYVE_UI.toast('Exported all data', 'success');
+  });
+
+  document.getElementById('diag-reseed').addEventListener('click', function(){
+    if (!confirm('Re-seed all data? Existing user edits in keys that already contain data will be preserved (seedKey skip-if-existing).')) return;
+    try { localStorage.removeItem('vyve_seeded_version'); } catch(e){}
+    VYVE_UI.toast('Reload required — reloading…', 'success');
+    setTimeout(function(){ location.reload(); }, 700);
+  });
+
+  document.getElementById('diag-force-reseed').addEventListener('click', function(){
+    if (!confirm('Force re-seed ALL keys? This WIPES every VYVE local data key first and then reloads the seed. Permanent.')) return;
+    KEYS_TO_INSPECT.forEach(function(spec){
+      try { localStorage.removeItem(spec.key); } catch(e){}
+    });
+    try { localStorage.removeItem('vyve_seeded_version'); } catch(e){}
+    VYVE_UI.toast('Force-reseeded — reloading…', 'success');
+    setTimeout(function(){ location.reload(); }, 700);
+  });
+
+  document.getElementById('diag-wipe').addEventListener('click', function(){
+    if (!confirm('Wipe ALL VYVE local data? This deletes everything including action plans, edits, content. Permanent.')) return;
+    if (!confirm('Final confirmation — really wipe everything?')) return;
+    KEYS_TO_INSPECT.forEach(function(spec){
+      try { localStorage.removeItem(spec.key); } catch(e){}
+    });
+    // Also wipe action plans overrides and seed flag
+    ['vyve_action_plans_expanded','vyve_action_plans_filter','vyve_sb_fix_steps','vyve_seeded_version'].forEach(function(k){
+      try { localStorage.removeItem(k); } catch(e){}
+    });
+    VYVE_UI.toast('All VYVE local data wiped — reloading…', 'success');
+    setTimeout(function(){ location.reload(); }, 700);
+  });
+
+  diagInspect();
+
 })();
 </script>
