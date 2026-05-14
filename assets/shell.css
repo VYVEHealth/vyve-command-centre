@@ -298,6 +298,36 @@ main.main::-webkit-scrollbar-thumb {
 }
 
 /* ---------- Responsive ---------- */
+/* Sidebar toggle hamburger — hidden on desktop, shown on mobile */
+.sidebar-toggle {
+  display: none;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 7px 9px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--t-fast);
+}
+.sidebar-toggle:hover { background: var(--surface-2); }
+
+/* Overlay behind drawer on mobile */
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(13,43,43,.55);
+  z-index: 49;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--t-base);
+}
+.sidebar-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 @media (max-width: 900px) {
   #app.ready { grid-template-columns: 1fr; }
   aside.sidebar {
@@ -307,10 +337,43 @@ main.main::-webkit-scrollbar-thumb {
     z-index: 50;
     transform: translateX(-100%);
     transition: transform var(--t-base);
+    box-shadow: 0 0 24px rgba(0,0,0,.4);
   }
   aside.sidebar.open { transform: translateX(0); }
-  .topbar { padding: 12px 16px; }
+  .sidebar-toggle { display: inline-flex; }
+  .topbar { padding: 12px 16px; gap: 12px; }
   .content { padding: 20px 16px; }
+  /* Hide the long brand title in the topbar on tight screens; keep only the page name */
+  .topbar .crumbs .crumb:not(.current) { display: none; }
+  .topbar .crumbs > span:not(.crumb) { display: none; }
+  .topbar-date { display: none; }
+
+  /* KPI grids stack to 2 cols on mobile */
+  .grid-4 { grid-template-columns: repeat(2, 1fr) !important; }
+  .grid-3 { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* Page-header rows stack */
+  .page-header,
+  .hdr-row { flex-wrap: wrap; gap: 12px; }
+
+  /* Card padding tighter */
+  .card { padding: 18px 14px; }
+
+  /* Stats: prevent 28px num overflow */
+  .stat-num { font-size: 22px; }
+  .stat-value { font-size: 22px; }
+  .page-title { font-size: 22px; }
+}
+
+@media (max-width: 480px) {
+  .grid-4 { grid-template-columns: 1fr !important; }
+  .grid-3 { grid-template-columns: 1fr !important; }
+  .grid-2 { grid-template-columns: 1fr !important; }
+  .stats-row { grid-template-columns: 1fr !important; }
+  .content { padding: 16px 12px; }
+  .stat { padding: 14px 12px; }
+  /* Modal full-screen on tiny mobile */
+  .modal { width: 96%; padding: 22px 18px; max-height: 92vh; }
 }
 
 /* ---------- Modal body (was missing) ---------- */

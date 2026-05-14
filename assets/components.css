@@ -493,3 +493,40 @@ table.tbl tr:hover td { background: var(--surface-2); }
   color: var(--text-muted);
   margin-top: 2px;
 }
+
+/* ===== Mobile Action Plans tweaks ===== */
+@media (max-width: 720px) {
+  .ap-member-head {
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+  }
+  /* Make the right-side meta wrap to a new line cleanly */
+  .ap-member-head > div:last-child {
+    width: 100%;
+    justify-content: space-between !important;
+  }
+  /* Hide progress track on very narrow; pct + counts stay */
+  .ap-progress-track { display: none; }
+  /* Action rows: stack pill + text */
+  .ap-action-row {
+    flex-wrap: wrap !important;
+  }
+  .ap-status-pill {
+    min-width: auto !important;
+  }
+  /* Form rows stack */
+  .ap-edit-form .form-row {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ===== Generic mobile list row tweaks ===== */
+@media (max-width: 720px) {
+  .list-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .list-row-title {
+    white-space: normal;  /* allow wrapping on mobile so titles aren't cut */
+  }
+}

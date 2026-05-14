@@ -44,8 +44,16 @@
       </div>
     </aside>
 
+    <div class="sidebar-overlay" id="sidebar-overlay" aria-hidden="true"></div>
     <main class="main">
       <div class="topbar">
+        <button id="sidebar-toggle" type="button" aria-label="Toggle navigation" class="sidebar-toggle">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
         <div class="crumbs">
           <span class="crumb">VYVE</span>
           <span>/</span>
@@ -86,5 +94,23 @@
   <script src="lib/auth.js"></script>
   <script src="assets/seed-data.js"></script>
   <script src="lib/router.js"></script>
+  <script>
+    // Mobile sidebar toggle
+    (function(){
+      function $(s){ return document.querySelector(s); }
+      var sb = $('#sidebar');
+      var ov = $('#sidebar-overlay');
+      var btn = $('#sidebar-toggle');
+      function open(){ if (sb) sb.classList.add('open'); if (ov) ov.classList.add('open'); }
+      function close(){ if (sb) sb.classList.remove('open'); if (ov) ov.classList.remove('open'); }
+      function toggle(){ if (sb && sb.classList.contains('open')) close(); else open(); }
+      if (btn) btn.addEventListener('click', toggle);
+      if (ov)  ov.addEventListener('click', close);
+      // Close on route change
+      window.addEventListener('vyve:page', close);
+      // Close on Esc
+      document.addEventListener('keydown', function(e){ if (e.key === 'Escape') close(); });
+    })();
+  </script>
 </body>
 </html>
