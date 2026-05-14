@@ -14,7 +14,7 @@
 
 (function(){
   'use strict';
-  var SEED_VERSION = '2026-05-14.1';
+  var SEED_VERSION = '2026-05-14.2';
   var SEED_FLAG = 'vyve_seeded_version';
   try {
     if (localStorage.getItem(SEED_FLAG) === SEED_VERSION) return;
@@ -2419,6 +2419,459 @@
     } catch(e){ return false; }
   }
 
+
+  // ----------------------------------------------------------------
+  // Phase 3 content seed — Compliance, Sessions, Deals, Clients, Investors.
+  // Added in v2026-05-14.2. Skip-if-existing applies per key.
+  // ----------------------------------------------------------------
+  var complianceEntries = [
+  {
+    "_id": "cmp_cic34",
+    "title": "CIC34 Community Interest Report — annual filing",
+    "area": "CIC governance",
+    "owner": "Ryan",
+    "due": "2026-09-11",
+    "status": "open",
+    "desc": "Annual community-interest report filed alongside accounts at Companies House. Demonstrates VYVE's social purpose and how surpluses are applied.",
+    "created_at": "2026-05-14T17:25:03.893217Z",
+    "updated_at": "2026-05-14T17:25:03.893217Z"
+  },
+  {
+    "_id": "cmp_companies_house",
+    "title": "Companies House annual accounts filing",
+    "area": "CIC governance",
+    "owner": "Ryan",
+    "due": "2026-11-10",
+    "status": "open",
+    "desc": "Annual accounts filing — first set due 21 months after incorporation. Ryan to manage with bookkeeper.",
+    "created_at": "2026-05-14T17:25:03.893217Z",
+    "updated_at": "2026-05-14T17:25:03.893217Z"
+  },
+  {
+    "_id": "cmp_gdpr_dpa",
+    "title": "Data Protection policy + privacy notice",
+    "area": "GDPR",
+    "owner": "Dean",
+    "due": "2026-06-28",
+    "status": "open",
+    "desc": "Public privacy notice on marketing site + member portal. Internal data protection policy covering data flows, retention, DSAR process.",
+    "created_at": "2026-05-14T17:25:03.893217Z",
+    "updated_at": "2026-05-14T17:25:03.893217Z"
+  },
+  {
+    "_id": "cmp_gdpr_dpia",
+    "title": "DPIA for proactive wellbeing data processing",
+    "area": "GDPR",
+    "owner": "Dean",
+    "due": "2026-07-13",
+    "status": "open",
+    "desc": "Data Protection Impact Assessment — high-priority because health data is processed. Confirm lawful basis, minimisation, retention, employer access boundaries.",
+    "created_at": "2026-05-14T17:25:03.893217Z",
+    "updated_at": "2026-05-14T17:25:03.893217Z"
+  },
+  {
+    "_id": "cmp_gdpr_ropa",
+    "title": "Record of Processing Activities (ROPA)",
+    "area": "GDPR",
+    "owner": "Dean",
+    "due": "2026-07-28",
+    "status": "open",
+    "desc": "Article 30 ROPA documenting every data flow, purpose, lawful basis and retention. Required if controller of personal data.",
+    "created_at": "2026-05-14T17:25:03.893217Z",
+    "updated_at": "2026-05-14T17:25:03.893217Z"
+  },
+  {
+    "_id": "cmp_gdpr_dpo",
+    "title": "Assess DPO requirement and appoint if needed",
+    "area": "GDPR",
+    "owner": "HR Director (Non-Exec)",
+    "due": "2026-07-03",
+    "status": "open",
+    "desc": "Non-Exec HR Director to advise on DPA obligations. Special-category health data + monitoring likely triggers DPO requirement.",
+    "created_at": "2026-05-14T17:25:03.893217Z",
+    "updated_at": "2026-05-14T17:25:03.893217Z"
+  },
+  {
+    "_id": "cmp_clinical_gov",
+    "title": "Clinical governance framework — mental health pillar",
+    "area": "Clinical safety",
+    "owner": "Phil",
+    "due": "2026-06-13",
+    "status": "open",
+    "desc": "Required before any mental health content goes live. Review process, approvals, update cadence, clinical reviewer sign-off.",
+    "created_at": "2026-05-14T17:25:03.893217Z",
+    "updated_at": "2026-05-14T17:25:03.893217Z"
+  },
+  {
+    "_id": "cmp_crisis_pathway",
+    "title": "Crisis pathway — distress signals & escalation",
+    "area": "Clinical safety",
+    "owner": "Phil",
+    "due": "2026-06-28",
+    "status": "open",
+    "desc": "Hard requirement before mental health pillar launches. Escalation steps, signposting, safeguarding protocol.",
+    "created_at": "2026-05-14T17:25:03.893217Z",
+    "updated_at": "2026-05-14T17:25:03.893217Z"
+  },
+  {
+    "_id": "cmp_safeguarding",
+    "title": "Safeguarding policy — adults at risk",
+    "area": "Clinical safety",
+    "owner": "Phil",
+    "due": "2026-07-13",
+    "status": "open",
+    "desc": "Adult safeguarding policy aligned with Care Act. Covers identification, reporting, supporting users at risk.",
+    "created_at": "2026-05-14T17:25:03.893217Z",
+    "updated_at": "2026-05-14T17:25:03.893217Z"
+  },
+  {
+    "_id": "cmp_pen_test",
+    "title": "Penetration test by certified third party",
+    "area": "Security",
+    "owner": "Dean",
+    "due": "2026-08-12",
+    "status": "open",
+    "desc": "Minimum annually, ideally twice/year from launch. Required for enterprise sales.",
+    "created_at": "2026-05-14T17:25:03.893217Z",
+    "updated_at": "2026-05-14T17:25:03.893217Z"
+  },
+  {
+    "_id": "cmp_iso27001",
+    "title": "ISO 27001 readiness assessment",
+    "area": "Security",
+    "owner": "Dean",
+    "due": "2026-11-10",
+    "status": "open",
+    "desc": "Pre-certification readiness review. Larger enterprise buyers will ask. Move to full certification once revenue justifies.",
+    "created_at": "2026-05-14T17:25:03.893217Z",
+    "updated_at": "2026-05-14T17:25:03.893217Z"
+  },
+  {
+    "_id": "cmp_cyber_essentials",
+    "title": "Cyber Essentials certification",
+    "area": "Security",
+    "owner": "Dean",
+    "due": "2026-07-13",
+    "status": "open",
+    "desc": "UK gov-backed entry-level cyber security certification. Quick win that signals security maturity to corporate buyers.",
+    "created_at": "2026-05-14T17:25:03.893217Z",
+    "updated_at": "2026-05-14T17:25:03.893217Z"
+  },
+  {
+    "_id": "cmp_terms_of_service",
+    "title": "Terms of Service + acceptable use policy",
+    "area": "Legal",
+    "owner": "Lewis",
+    "due": "2026-06-23",
+    "status": "open",
+    "desc": "User-facing terms covering scope of wellbeing support (not medical advice), permitted uses, account, liability limits.",
+    "created_at": "2026-05-14T17:25:03.893217Z",
+    "updated_at": "2026-05-14T17:25:03.893217Z"
+  },
+  {
+    "_id": "cmp_employer_dpa",
+    "title": "Standard employer Data Processing Agreement",
+    "area": "Legal",
+    "owner": "Lewis",
+    "due": "2026-06-28",
+    "status": "open",
+    "desc": "DPA template VYVE provides to every employer client. Covers processor obligations, sub-processors, international transfers, audit rights.",
+    "created_at": "2026-05-14T17:25:03.893217Z",
+    "updated_at": "2026-05-14T17:25:03.893217Z"
+  },
+  {
+    "_id": "cmp_emp_handbook",
+    "title": "Employee handbook + contractor agreements review",
+    "area": "Employment",
+    "owner": "HR Director (Non-Exec)",
+    "due": "2026-07-13",
+    "status": "open",
+    "desc": "Lightweight employee handbook covering conduct, holidays, expenses, disciplinary process, remote working. Review existing contractor agreements for IP, confidentiality, termination clauses.",
+    "created_at": "2026-05-14T17:25:03.893217Z",
+    "updated_at": "2026-05-14T17:25:03.893217Z"
+  },
+  {
+    "_id": "cmp_hse_riskassess",
+    "title": "Mental health risk assessment template (HSE compliance)",
+    "area": "HSE / Workplace",
+    "owner": "Phil",
+    "due": "2026-07-28",
+    "status": "open",
+    "desc": "HSE guidance increasingly requires employers to assess psychosocial work risks. VYVE provides the template employers use — both compliance support and a sales hook.",
+    "created_at": "2026-05-14T17:25:03.893217Z",
+    "updated_at": "2026-05-14T17:25:03.893217Z"
+  }
+];
+  var sessionsEntries   = [
+  {
+    "_id": "sess_connect_kickoff",
+    "title": "Connect Challenge kickoff event",
+    "date": "2026-05-29T18:00:00Z",
+    "client": "VYVE community",
+    "format": "in-person",
+    "pillar": "social",
+    "facilitator": "Cole",
+    "attendees": "Founding ambassadors + early community",
+    "notes": "1st June launch of Connect Challenge. Owned by Cole, Azuza supports social amplification.",
+    "created_at": "2026-05-14T17:25:03.893217Z",
+    "updated_at": "2026-05-14T17:25:03.893217Z"
+  },
+  {
+    "_id": "sess_pilot_intro_1",
+    "title": "Pilot intro — employer pilot #1",
+    "date": "2026-05-21T14:00:00Z",
+    "client": "Pilot client #1",
+    "format": "online",
+    "pillar": "physical",
+    "facilitator": "Vicki + Lewis",
+    "attendees": "Pilot HR + leadership",
+    "notes": "First 30 minutes of the 1-hour pilot intro — Vicki opens, Lewis vision + roadmap, Q&A.",
+    "created_at": "2026-05-14T17:25:03.893217Z",
+    "updated_at": "2026-05-14T17:25:03.893217Z"
+  },
+  {
+    "_id": "sess_team_offsite",
+    "title": "VYVE team Q3 planning offsite",
+    "date": "2026-06-18T09:00:00Z",
+    "client": "VYVE internal",
+    "format": "in-person",
+    "pillar": "social",
+    "facilitator": "Lewis",
+    "attendees": "Full team (11)",
+    "notes": "Q3 OKR planning + culture session. HR Director (Non-Exec) facilitates values + culture block.",
+    "created_at": "2026-05-14T17:25:03.893217Z",
+    "updated_at": "2026-05-14T17:25:03.893217Z"
+  },
+  {
+    "_id": "sess_clinical_review_1",
+    "title": "Mental health content clinical review",
+    "date": "2026-05-18T10:00:00Z",
+    "client": "VYVE internal",
+    "format": "online",
+    "pillar": "mental",
+    "facilitator": "Phil",
+    "attendees": "External clinical reviewers",
+    "notes": "First peer-review session for mental health content before launch.",
+    "created_at": "2026-05-14T17:25:03.893217Z",
+    "updated_at": "2026-05-14T17:25:03.893217Z"
+  },
+  {
+    "_id": "sess_physical_pilot",
+    "title": "Physical pillar pilot — 10-person group",
+    "date": "2026-05-24T19:00:00Z",
+    "client": "VYVE community",
+    "format": "hybrid",
+    "pillar": "physical",
+    "facilitator": "Calum",
+    "attendees": "10 pilot participants",
+    "notes": "First structured pilot of physical programme. Calum measures engagement + feedback.",
+    "created_at": "2026-05-14T17:25:03.893217Z",
+    "updated_at": "2026-05-14T17:25:03.893217Z"
+  },
+  {
+    "_id": "sess_investor_panel",
+    "title": "Investor coffee — angel #1",
+    "date": "2026-05-19T11:00:00Z",
+    "client": "Angel investor",
+    "format": "in-person",
+    "pillar": "",
+    "facilitator": "Lewis",
+    "attendees": "Angel + Lewis",
+    "notes": "Initial conversation following pitch deck v1 send.",
+    "created_at": "2026-05-14T17:25:03.893217Z",
+    "updated_at": "2026-05-14T17:25:03.893217Z"
+  },
+  {
+    "_id": "sess_partner_parkrun",
+    "title": "Parkrun partnership exploration call",
+    "date": "2026-05-26T13:00:00Z",
+    "client": "Parkrun UK",
+    "format": "online",
+    "pillar": "social",
+    "facilitator": "Cole + Lewis",
+    "attendees": "Cole + Lewis + Parkrun contact",
+    "notes": "First exploration of strategic alignment with Parkrun community.",
+    "created_at": "2026-05-14T17:25:03.893217Z",
+    "updated_at": "2026-05-14T17:25:03.893217Z"
+  }
+];
+  var dealsEntries      = [
+  {
+    "_id": "deal_pilot1",
+    "company": "Pilot prospect #1 (placeholder)",
+    "title": "Q3 pilot — 50 seats",
+    "stage": "discovery",
+    "value": 4500,
+    "expected_close": "2026-07-13",
+    "owner": "Vicki",
+    "contact": "TBC",
+    "source": "Outbound",
+    "notes": "Discovery call scheduled. Tracking on Vicki's target account list.",
+    "created_at": "2026-05-14T17:25:03.893217Z",
+    "updated_at": "2026-05-14T17:25:03.893217Z"
+  },
+  {
+    "_id": "deal_pilot2",
+    "company": "Pilot prospect #2 (placeholder)",
+    "title": "Q3 pilot — 80 seats",
+    "stage": "contacted",
+    "value": 7200,
+    "expected_close": "2026-07-28",
+    "owner": "Vicki",
+    "contact": "TBC",
+    "source": "Inbound (LinkedIn)",
+    "notes": "First contact sent; awaiting response.",
+    "created_at": "2026-05-14T17:25:03.893217Z",
+    "updated_at": "2026-05-14T17:25:03.893217Z"
+  },
+  {
+    "_id": "deal_pilot3",
+    "company": "Pilot prospect #3 (placeholder)",
+    "title": "Q4 pilot — 30 seats",
+    "stage": "lead",
+    "value": 2700,
+    "expected_close": "2026-09-11",
+    "owner": "Vicki",
+    "contact": "TBC",
+    "source": "Referral",
+    "notes": "Warm intro via HR consultancy partner. Pending outreach.",
+    "created_at": "2026-05-14T17:25:03.893217Z",
+    "updated_at": "2026-05-14T17:25:03.893217Z"
+  },
+  {
+    "_id": "deal_pilot4",
+    "company": "Pilot prospect #4 (placeholder)",
+    "title": "Q3 pilot — 150 seats",
+    "stage": "demo",
+    "value": 13500,
+    "expected_close": "2026-06-28",
+    "owner": "Vicki",
+    "contact": "TBC",
+    "source": "Outbound",
+    "notes": "Demo completed. Considering proposal — pricing sensitivity check needed.",
+    "created_at": "2026-05-14T17:25:03.893217Z",
+    "updated_at": "2026-05-14T17:25:03.893217Z"
+  },
+  {
+    "_id": "deal_pilot5",
+    "company": "Pilot prospect #5 (placeholder)",
+    "title": "Q2 pilot — 25 seats",
+    "stage": "proposal",
+    "value": 2250,
+    "expected_close": "2026-06-03",
+    "owner": "Vicki",
+    "contact": "TBC",
+    "source": "Network",
+    "notes": "Proposal sent — awaiting feedback. Closing-this-month candidate.",
+    "created_at": "2026-05-14T17:25:03.893217Z",
+    "updated_at": "2026-05-14T17:25:03.893217Z"
+  },
+  {
+    "_id": "deal_pilot6",
+    "company": "Pilot prospect #6 (placeholder)",
+    "title": "Enterprise — 500 seats",
+    "stage": "discovery",
+    "value": 45000,
+    "expected_close": "2026-08-17",
+    "owner": "Vicki + Lewis",
+    "contact": "TBC",
+    "source": "Outbound",
+    "notes": "Larger enterprise. Will need SSO complete before progressing.",
+    "created_at": "2026-05-14T17:25:03.893217Z",
+    "updated_at": "2026-05-14T17:25:03.893217Z"
+  }
+];
+  var clientsEntries    = [
+  {
+    "_id": "client_demo_1",
+    "name": "Demo client (template)",
+    "stage": "lead",
+    "members": 0,
+    "value": 0,
+    "contact": "",
+    "email": "",
+    "start": "",
+    "renewal": "",
+    "notes": "Template placeholder — replace with first signed client. Sample shape: lead → signed → onboarding → live → renewing.",
+    "created_at": "2026-05-14T17:25:03.893217Z",
+    "updated_at": "2026-05-14T17:25:03.893217Z"
+  }
+];
+  var investorsEntries  = [
+  {
+    "_id": "inv_angel_1",
+    "name": "Angel investor #1 (placeholder)",
+    "stage": "approach",
+    "type": "Angel",
+    "round": "Pre-seed",
+    "amount": 25000,
+    "contact": "TBC",
+    "notes": "Target angel from health/wellbeing sector. Pitch deck send planned post-v1.",
+    "created_at": "2026-05-14T17:25:03.893217Z",
+    "updated_at": "2026-05-14T17:25:03.893217Z"
+  },
+  {
+    "_id": "inv_angel_2",
+    "name": "Angel investor #2 (placeholder)",
+    "stage": "meeting",
+    "type": "Angel",
+    "round": "Pre-seed",
+    "amount": 50000,
+    "contact": "TBC",
+    "notes": "Warm intro from network. First meeting booked.",
+    "created_at": "2026-05-14T17:25:03.893217Z",
+    "updated_at": "2026-05-14T17:25:03.893217Z"
+  },
+  {
+    "_id": "inv_innovate_uk",
+    "name": "Innovate UK (grant)",
+    "stage": "dd",
+    "type": "Grant",
+    "round": "Workplace Mental Health Innovation Fund",
+    "amount": 100000,
+    "contact": "Grant programme",
+    "notes": "Active grant application Q2 2026. Lewis writes vision narrative; Alan commercial; Vicki impact case.",
+    "created_at": "2026-05-14T17:25:03.893217Z",
+    "updated_at": "2026-05-14T17:25:03.893217Z"
+  },
+  {
+    "_id": "inv_nesta",
+    "name": "Nesta — Connected Communities",
+    "stage": "approach",
+    "type": "Grant",
+    "round": "Connected Communities",
+    "amount": 75000,
+    "contact": "Programme team",
+    "notes": "Q3 2026 submission target.",
+    "created_at": "2026-05-14T17:25:03.893217Z",
+    "updated_at": "2026-05-14T17:25:03.893217Z"
+  },
+  {
+    "_id": "inv_sportengland",
+    "name": "Sport England",
+    "stage": "approach",
+    "type": "Grant",
+    "round": "Movement for Change",
+    "amount": 50000,
+    "contact": "TBC",
+    "notes": "Ryan tracking grant rounds.",
+    "created_at": "2026-05-14T17:25:03.893217Z",
+    "updated_at": "2026-05-14T17:25:03.893217Z"
+  },
+  {
+    "_id": "inv_seed_lead",
+    "name": "Seed round lead (placeholder)",
+    "stage": "approach",
+    "type": "VC",
+    "round": "Seed",
+    "amount": 500000,
+    "contact": "TBC",
+    "notes": "Target Q4 2026 close. Pitch deck v1 in progress (Lewis owned, Ryan supports unit economics).",
+    "created_at": "2026-05-14T17:25:03.893217Z",
+    "updated_at": "2026-05-14T17:25:03.893217Z"
+  }
+];
+
   function seedKey(key, value){
     try {
       var existing = localStorage.getItem(key);
@@ -2448,9 +2901,16 @@
   if (seedKey('vyve_tasks',     tasksEntries))     didSeed = true;
   if (seedKey('vyve_partners',  partnersEntries))  didSeed = true;
 
+  // Phase 3 seeds
+  if (seedKey('vyve_compliance', complianceEntries)) didSeed = true;
+  if (seedKey('vyve_sessions',   sessionsEntries))   didSeed = true;
+  if (seedKey('vyve_deals',      dealsEntries))      didSeed = true;
+  if (seedKey('vyve_clients',    clientsEntries))    didSeed = true;
+  if (seedKey('vyve_investors',  investorsEntries))  didSeed = true;
+
   try { localStorage.setItem(SEED_FLAG, SEED_VERSION); } catch(e) {}
 
   if (didSeed && window.console) {
-    console.log('[VYVE/seed] Loaded real data: ' + performance.length + ' analytics, ' + podcastEps.length + ' episodes, ' + contentItems.length + ' content items, ' + teamMembers.length + ' team, ' + knowledgeEntries.length + ' KB, ' + tasksEntries.length + ' tasks, ' + partnersEntries.length + ' partners, ' + strategyOKRs.length + ' OKRs, ' + strategyDecisions.length + ' decisions');
+    console.log('[VYVE/seed] Loaded real data: ' + performance.length + ' analytics, ' + podcastEps.length + ' episodes, ' + contentItems.length + ' content items, ' + teamMembers.length + ' team, ' + knowledgeEntries.length + ' KB, ' + tasksEntries.length + ' tasks, ' + partnersEntries.length + ' partners, ' + strategyOKRs.length + ' OKRs, ' + strategyDecisions.length + ' decisions, ' + complianceEntries.length + ' compliance, ' + sessionsEntries.length + ' sessions, ' + dealsEntries.length + ' deals, ' + clientsEntries.length + ' clients, ' + investorsEntries.length + ' investors');
   }
 })();

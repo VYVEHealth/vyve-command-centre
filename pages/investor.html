@@ -20,8 +20,18 @@
 
 <script>
 (async function(){
-  if (!window.VYVE_MAKE) return;
-  var items = await VYVE_MAKE.list('investors', { limit: 100 });
+  var LS = 'vyve_investors';
+  function lsGet(){ try { var v = localStorage.getItem(LS); return v ? JSON.parse(v) : []; } catch(e){ return []; } }
+  async function load(){
+    // Prefer Make if configured, else fall back to localStorage seed
+    if (window.VYVE_MAKE && window.VYVE_MAKE.hasToken && window.VYVE_MAKE.hasToken()){
+      var fm = await VYVE_MAKE.list('investors', { limit: 100 });
+      if (fm && fm.length) return fm;
+    }
+    return lsGet();
+  }
+
+  var items = await load();
   var stages = { approach:[], meeting:[], dd:[], termsheet:[], closed:[] };
   items.forEach(function(i){
     var s = (i.stage||'approach').toLowerCase();
@@ -34,7 +44,15 @@
     if (count) count.textContent = stages[stage].length;
     if (!body) return;
     body.innerHTML = stages[stage].map(function(i){
-      return '<div class="kanban-card"><div class="kc-title">'+VYVE_UI.escape(i.name||i.firm||'(unknown)')+'</div><div class="kc-meta">'+VYVE_UI.escape(i.firm||'')+(i.value?' · '+VYVE_UI.fmtMoney(i.value):'')+'</div></div>';
+      var amount = i.amount ? (VYVE_UI.fmtMoney ? VYVE_UI.fmtMoney(i.amount) : '£' + Number(i.amount).toLocaleString('en-GB')) : '';
+      var meta = [];
+      if (i.type) meta.push(VYVE_UI.escape(i.type));
+      if (i.round) meta.push(VYVE_UI.escape(i.round));
+      if (amount) meta.push(amount);
+      return '<div class="kanban-card">' +
+        '<div class="kc-title">' + VYVE_UI.escape(i.name || i.firm || '(unknown)') + '</div>' +
+        '<div class="kc-meta">' + meta.join(' · ') + '</div>' +
+      '</div>';
     }).join('') || '<div class="empty" style="padding:20px 10px"><p style="font-size:11px">Empty</p></div>';
   });
 })();
