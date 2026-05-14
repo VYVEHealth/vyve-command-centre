@@ -149,7 +149,13 @@
       '<div class="form-row cols-2"><div class="form-group"><label>Deal value (£)</label><input id="d-val" type="number" min="0" value="'+(init.value||'')+'"/></div><div class="form-group"><label>Expected close</label><input id="d-close" type="date" value="'+VYVE_UI.escape((init.close_date||'').slice(0,10))+'"/></div></div>'+
       '<div class="form-row cols-2"><div class="form-group"><label>Primary contact</label><input id="d-contact" value="'+VYVE_UI.escape(init.contact||'')+'"/></div><div class="form-group"><label>Source</label><input id="d-source" placeholder="e.g. LinkedIn, referral, podcast" value="'+VYVE_UI.escape(init.source||'')+'"/></div></div>'+
       '<div class="form-row"><div class="form-group"><label>Notes / next step</label><textarea id="d-notes" rows="3">'+VYVE_UI.escape(init.notes||'')+'</textarea></div></div>'+
-      '<div style="display:flex;justify-content:space-between;gap:8px">'+(onDel?'<button class="btn" id="d-del" style="color:var(--danger);border-color:rgba(224,96,96,.3)">Delete</button>':'<span></span>')+'<button class="btn btn-primary" id="d-save">Save</button></div>'
+      '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center">'+
+        (onDel?'<button class="btn" id="d-del" style="color:var(--danger);border-color:rgba(224,96,96,.3)">Delete</button>':'<span></span>')+
+        '<div style="display:flex;gap:8px;align-items:center">'+
+          '<button type="button" class="btn btn-ghost btn-sm" id="d-send-email" title="Draft an email to the deal contact" style="display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Email contact</button>'+
+          '<button class="btn btn-primary" id="d-save">Save</button>'+
+        '</div>'+
+      '</div>'
     });
     setTimeout(function(){
       if (init.stage) document.getElementById('d-stage').value = init.stage;
@@ -161,6 +167,19 @@
         document.querySelector('.modal-overlay').classList.remove('open');
       });
       if (onDel) document.getElementById('d-del').addEventListener('click', function(){ if (confirm('Delete?')){ onDel(); document.querySelector('.modal-overlay').classList.remove('open'); }});
+      var sendBtn = document.getElementById('d-send-email');
+      if (sendBtn) sendBtn.addEventListener('click', function(){
+        if (!window.VYVE_INTEGRATIONS) return;
+        var dealLike = {
+          name: document.getElementById('d-name').value.trim(),
+          value: Number(document.getElementById('d-val').value) || 0,
+          notes: document.getElementById('d-notes').value.trim(),
+          contact: document.getElementById('d-contact').value.trim(),
+          contact_email: (init && init.contact_email) || ''
+        };
+        var draft = window.VYVE_INTEGRATIONS.emailForDeal(dealLike);
+        window.VYVE_INTEGRATIONS.gmailCompose(draft);
+      });
     }, 50);
   }
 

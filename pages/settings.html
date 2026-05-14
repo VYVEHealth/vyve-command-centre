@@ -6,6 +6,7 @@
   <div class="tab-bar">
     <button class="tab-btn active" data-tab="set-general">General</button>
     <button class="tab-btn" data-tab="set-people">People & Roles</button>
+    <button class="tab-btn" data-tab="set-outbound">Outbound</button>
     <button class="tab-btn" data-tab="set-integrations">Integrations</button>
     <button class="tab-btn" data-tab="set-stores">Data Stores</button>
     <button class="tab-btn" data-tab="set-auth">Auth & Access</button>
@@ -75,6 +76,61 @@
         </div>
         <div style="margin-top:10px;font-size:11px;color:var(--text-muted)">
           New team members are added automatically as <strong>Member</strong> on first login. Use this panel to upgrade them when needed.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="set-outbound" class="tab-panel">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Slack daily digest</span>
+        <span class="card-sub" id="slack-status">checking…</span>
+      </div>
+      <div style="padding:0 22px 18px;font-size:13px;color:var(--text-muted);line-height:1.55">
+        Auto-post a morning summary to Slack: priorities, overdue items, sessions today, deals closing this month. Set up an <a href="https://api.slack.com/messaging/webhooks" target="_blank" rel="noopener" style="color:var(--accent)">Incoming Webhook</a> for your VYVE workspace, paste the URL below, then toggle auto-send.
+      </div>
+      <div style="padding:0 22px 22px">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Slack incoming webhook URL</label>
+            <input id="slack-webhook" type="password" placeholder="https://hooks.slack.com/services/T.../B.../..." style="font-family:var(--font-mono, monospace);font-size:12px"/>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+            <input type="checkbox" id="digest-auto"/>
+            <span>Auto-send daily digest (after 6am, once per day)</span>
+          </label>
+          <div style="margin-left:auto;display:flex;gap:8px">
+            <button class="btn btn-ghost btn-sm" id="digest-preview">Preview</button>
+            <button class="btn btn-ghost btn-sm" id="digest-send-now">Send now</button>
+            <button class="btn btn-primary btn-sm" id="slack-save">Save</button>
+          </div>
+        </div>
+        <pre id="digest-preview-pane" style="display:none;margin-top:14px;padding:14px;background:var(--surface-2);border-radius:var(--r-md);font-size:12px;font-family:var(--font-mono, monospace);white-space:pre-wrap;color:var(--text);max-height:300px;overflow-y:auto"></pre>
+        <div id="digest-last-sent" style="margin-top:10px;font-size:11px;color:var(--text-muted)"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-title">Email & Calendar</span></div>
+      <div style="padding:0 22px 18px;font-size:13px;color:var(--text-muted);line-height:1.55">
+        How "Send to client" buttons (on CRM deals) and "Schedule" buttons (on sessions) behave.
+      </div>
+      <div style="padding:0 22px 22px">
+        <div style="display:flex;flex-direction:column;gap:10px;font-size:13px">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <input type="checkbox" id="use-gmail-web"/>
+            <span>Open emails in Gmail web (instead of default mail client)</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <input type="checkbox" id="use-google-cal" checked disabled/>
+            <span>Use Google Calendar for "Schedule" buttons <span style="color:var(--text-muted);font-size:11px">(only option for now)</span></span>
+          </label>
+        </div>
+        <div style="display:flex;justify-content:flex-end;margin-top:14px">
+          <button class="btn btn-primary btn-sm" id="email-save">Save</button>
         </div>
       </div>
     </div>
@@ -536,5 +592,95 @@
 
   renderPeople();
   window.addEventListener('vyve:acl:change', renderPeople);
+})();
+</script>
+
+<script>
+// Outbound integrations panel
+(function(){
+  if (!window.VYVE_INTEGRATIONS) return;
+  var I = window.VYVE_INTEGRATIONS;
+
+  function paintStatus(){
+    var hasUrl = !!I.get('slackWebhookUrl');
+    var auto = !!I.get('digestAutoSend');
+    var s = document.getElementById('slack-status');
+    if (!s) return;
+    if (!hasUrl) {
+      s.textContent = 'Not configured';
+      s.style.color = 'var(--text-muted)';
+    } else if (auto) {
+      s.textContent = 'Auto-send enabled';
+      s.style.color = 'var(--success)';
+    } else {
+      s.textContent = 'Configured (manual only)';
+      s.style.color = 'var(--vyve-teal)';
+    }
+  }
+
+  function paintLastSent(){
+    var el = document.getElementById('digest-last-sent');
+    if (!el) return;
+    var last = I.get('lastDigestSentAt');
+    if (!last) { el.textContent = 'Never sent.'; return; }
+    var d = new Date(last);
+    el.textContent = 'Last sent: ' + d.toLocaleString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+  }
+
+  function init(){
+    var webhookInput = document.getElementById('slack-webhook');
+    var autoToggle   = document.getElementById('digest-auto');
+    var gmailToggle  = document.getElementById('use-gmail-web');
+    if (!webhookInput) return;
+
+    webhookInput.value = I.get('slackWebhookUrl') || '';
+    autoToggle.checked = !!I.get('digestAutoSend');
+    gmailToggle.checked = !!I.get('useGmailWeb');
+
+    document.getElementById('slack-save').addEventListener('click', function(){
+      var url = webhookInput.value.trim();
+      I.set('slackWebhookUrl', url);
+      I.set('digestAutoSend', autoToggle.checked);
+      paintStatus();
+      if (window.VYVE_UI && window.VYVE_UI.toast) window.VYVE_UI.toast('Slack settings saved', 'success');
+    });
+
+    document.getElementById('digest-preview').addEventListener('click', function(){
+      var pane = document.getElementById('digest-preview-pane');
+      var d = I.buildDailyDigest();
+      pane.textContent = d.text;
+      pane.style.display = 'block';
+    });
+
+    document.getElementById('digest-send-now').addEventListener('click', function(){
+      if (!I.get('slackWebhookUrl')) {
+        if (window.VYVE_UI && window.VYVE_UI.toast) window.VYVE_UI.toast('Save your Slack webhook URL first', 'error');
+        return;
+      }
+      if (!confirm('Send the daily digest to Slack now?')) return;
+      I.sendDailyDigest().then(function(res){
+        if (res.ok) {
+          if (window.VYVE_UI && window.VYVE_UI.toast) window.VYVE_UI.toast('Sent to Slack', 'success');
+          paintLastSent();
+        } else {
+          if (window.VYVE_UI && window.VYVE_UI.toast) window.VYVE_UI.toast(res.reason || 'Send failed', 'error');
+        }
+      });
+    });
+
+    document.getElementById('email-save').addEventListener('click', function(){
+      I.set('useGmailWeb', gmailToggle.checked);
+      if (window.VYVE_UI && window.VYVE_UI.toast) window.VYVE_UI.toast('Email preferences saved', 'success');
+    });
+
+    paintStatus();
+    paintLastSent();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    setTimeout(init, 50);
+  }
 })();
 </script>
