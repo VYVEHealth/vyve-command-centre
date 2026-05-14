@@ -4,6 +4,34 @@ All notable changes documented commit-by-commit. Each entry links to the GitHub 
 
 ## 2026-05-14 (continued)
 
+### Commit 51 - Permissions & role gates
+*Commit: [`20c69e`](https://github.com/VYVEHealth/vyve-command-centre/commit/20c69e60f16da4a53ea6e1e7c2cc5a9f19b94f6d)*
+
+Three roles control what each person sees: **Owner** (Lewis, Dean), **Lead** (anyone with leadership/budget remit), **Member** (default for the team). Plus an **External** flag for advisors who get read-only on a whitelisted set of pages.
+
+Pages have a policy — anything not listed defaults to member. Owner-only: Settings, Trash. Lead+: Finance, Invoicing, Investor, Strategy, Org, Team. Everything else (CRM, Tasks, Action Plans, Content, Sessions, Compliance, Intel, etc.) is member-accessible. The router enforces this: a member trying to load `/#/finance` sees a friendly "Restricted" page instead.
+
+Sensitive **fields** are redacted inline for non-leads — Brief's MRR tile and Dashboard's Cash/Burn/Runway cards now show a small "🔒 Lead only" pill for members. They can still navigate the page; they just don't see the numbers.
+
+A **role pill** in the topbar makes the current role visible (gold for Owner, teal for Lead, grey for External, hidden for Member as the default). The sidebar drawer + top nav both auto-hide gated items so the UI doesn't show things the user can't reach.
+
+**Settings → People & Roles** is the admin panel. Owners see a table of every person with role dropdowns, an External checkbox, an "Add person" form, and a "Reset to defaults" escape hatch. New team members get auto-added as Members on first login; Owners promote when needed. Removing someone deletes their role assignment (they default back to Member on next login). Lewis and the current user can't remove themselves (anti-footgun).
+
+**Important caveat:** This is client-side enforcement only. It eliminates accidental exposure (a member won't stumble onto cash figures) but is NOT a security boundary against a determined attacker — anyone can read the source and bypass it. Real enforcement comes when Dean mirrors this model in Supabase Row Level Security. The data model here is designed to map 1:1 onto RLS policies when that happens.
+
+Internally:
+- `lib/acl.js` (NEW) — role storage, page policy, field redaction, people admin API
+- `lib/router.js` — `loadPage()` checks `canSeePage()` before injecting; `renderTopNav()` and `renderSidebar()` filter gated items; new `renderForbidden(slug)` shows the restricted state; chrome re-renders on `vyve:acl:role` and `vyve:acl:change` events
+- `index.html` — loads `lib/acl.js` (after views.js, before entities.js), adds `#topnav-role` pill, wires `setCurrentEmail` to the `vyve:user` event
+- `assets/shell.css` — `.topnav-role` + `.role-owner` / `.role-lead` / `.role-external` styles, `.acl-redacted` pill, `.acl-people-table` styles
+- `pages/settings.html` — new "People & Roles" tab between General and Integrations, with the full admin table
+- `pages/brief.html` — MRR tile checks `VYVE_ACL.shouldRedact('mrr')`; KPI stat clicks check `canSeePage()` before navigating (shows a toast if blocked)
+- `pages/dashboard.html` — Cash on hand / Monthly burn / Runway / MRR cards all check ACL redaction per field
+
+This unlocks putting real numbers in the hub. Cash position, runway, payroll details, valuation work — all can go in without leaking to the broader team.
+
+## 2026-05-14 (continued)
+
 ### Commit 49 - Saved views & filters
 *Commit: [`f82b36`](https://github.com/VYVEHealth/vyve-command-centre/commit/f82b3647c6dd7cf7abaa97f7c378427b42da7754)*
 
