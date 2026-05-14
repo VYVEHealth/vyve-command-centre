@@ -14,7 +14,7 @@
 
 (function(){
   'use strict';
-  var SEED_VERSION = '2026-05-13.1';
+  var SEED_VERSION = '2026-05-14.1';
   var SEED_FLAG = 'vyve_seeded_version';
   try {
     if (localStorage.getItem(SEED_FLAG) === SEED_VERSION) return;
@@ -1730,6 +1730,695 @@
   }
 ];
 
+
+  // ----------------------------------------------------------------
+  // Phase 2 content seed — Strategy, Team, Knowledge, Tasks, Partners.
+  // Added in v2026-05-14.1. Skip-if-existing applies per key, so anything
+  // the user has already started editing is left untouched.
+  // ----------------------------------------------------------------
+  var strategyNorthstar = {
+  "name": "Engaged Members",
+  "value": "0",
+  "target": "10,000 by Q4 2027"
+};
+  var strategyMV        = {
+  "mission": "VYVE makes proactive workplace wellbeing simple, evidence-based, and accessible to every workforce — across Physical, Mental and Social health.",
+  "vision": "A UK where every working adult has practical, daily support to live a healthier and more connected life — and where the workplace is the most powerful place to deliver it."
+};
+  var strategyOKRs      = [
+  {
+    "_id": "okr_q2_growth",
+    "objective": "Reach MVP launch readiness and close first paying customers",
+    "owner": "Lewis",
+    "quarter": "Q2 2026",
+    "krs": [
+      {
+        "_id": "kr_q2_1",
+        "text": "MVP feature scope locked and signed off by Lewis + Alan + Dean",
+        "target": "Sign-off",
+        "current": "",
+        "status": "in-progress"
+      },
+      {
+        "_id": "kr_q2_2",
+        "text": "3 employer pilots committed (signed LOI)",
+        "target": "3",
+        "current": "0",
+        "status": "not-started"
+      },
+      {
+        "_id": "kr_q2_3",
+        "text": "Series A-ready pitch deck v1 drafted",
+        "target": "v1",
+        "current": "",
+        "status": "in-progress"
+      },
+      {
+        "_id": "kr_q2_4",
+        "text": "2 grant applications submitted (Innovate UK / Nesta / Sport England)",
+        "target": "2",
+        "current": "0",
+        "status": "in-progress"
+      }
+    ],
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "okr_q3_launch",
+    "objective": "Public MVP launch + first 3 paying employer pilots live",
+    "owner": "Lewis",
+    "quarter": "Q3 2026",
+    "krs": [
+      {
+        "_id": "kr_q3_1",
+        "text": "Public MVP go-live by September 2026",
+        "target": "Go-live",
+        "current": "",
+        "status": "not-started"
+      },
+      {
+        "_id": "kr_q3_2",
+        "text": "3 employer pilots live with active users",
+        "target": "3",
+        "current": "0",
+        "status": "not-started"
+      },
+      {
+        "_id": "kr_q3_3",
+        "text": "Connect Challenge community event run (1st June)",
+        "target": "Run",
+        "current": "",
+        "status": "in-progress"
+      },
+      {
+        "_id": "kr_q3_4",
+        "text": "10 founding ambassadors onboarded",
+        "target": "10",
+        "current": "0",
+        "status": "not-started"
+      }
+    ],
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "okr_q4_traction",
+    "objective": "Prove repeatable commercial model + secure seed funding",
+    "owner": "Lewis",
+    "quarter": "Q4 2026",
+    "krs": [
+      {
+        "_id": "kr_q4_1",
+        "text": "10 paying employer clients live",
+        "target": "10",
+        "current": "0",
+        "status": "not-started"
+      },
+      {
+        "_id": "kr_q4_2",
+        "text": "Win rate on qualified opportunities >= 25%",
+        "target": "25%",
+        "current": "",
+        "status": "not-started"
+      },
+      {
+        "_id": "kr_q4_3",
+        "text": "Seed round closed or angel funding secured",
+        "target": "Close",
+        "current": "",
+        "status": "not-started"
+      },
+      {
+        "_id": "kr_q4_4",
+        "text": "Monthly retention >= 60%",
+        "target": "60%",
+        "current": "",
+        "status": "not-started"
+      }
+    ],
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  }
+];
+  var strategyDecisions = [
+  {
+    "_id": "dec_001",
+    "title": "Set up as a Community Interest Company (CIC)",
+    "context": "Mission-driven structure aligned with social purpose; supports 1-in-5 pledge model and unlocks grant pathways.",
+    "decision": "Incorporate as a CIC. Everyman Charity registered separately as the charitable vehicle.",
+    "owner": "Lewis",
+    "date": "2025-09-01",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "dec_002",
+    "title": "Three-pillar architecture: Physical, Mental, Social",
+    "context": "Most wellbeing platforms focus on one or two pillars. Workplace ROI evidence is strongest when all three are addressed together.",
+    "decision": "Adopt Physical + Mental + Social as the canonical pillars. Reflected in app, brand, and sales proposition.",
+    "owner": "Lewis",
+    "date": "2025-10-15",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "dec_003",
+    "title": "Build B2B2C, not pure B2C",
+    "context": "B2C unit economics are punishing for new wellbeing apps. Employer-funded model unlocks free access for employees and creates a durable revenue model.",
+    "decision": "Lead with B2B (employer pays). B2C available but not the primary GTM.",
+    "owner": "Lewis + Alan",
+    "date": "2025-11-20",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "dec_004",
+    "title": "1-in-5 pledge mechanic",
+    "context": "Differentiator vs other employer wellbeing platforms; supports CIC mission; gives clients a CSR story.",
+    "decision": "Every 5 corporate seats funds 1 community seat for someone who couldn't otherwise access wellbeing support, via Everyman Charity.",
+    "owner": "Lewis + Cole",
+    "date": "2026-01-10",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  }
+];
+  var strategySWOT      = {
+  "s": "Three-pillar proactive approach (Physical, Mental, Social) — broader than competitors. CIC mission with 1-in-5 pledge creates clear differentiation. Founder credibility from health/wellbeing sector. Real-life community programme (Everyman Charity).",
+  "w": "Pre-revenue with no signed customers yet. Small team; key dependencies on contractor model. MVP not yet launched. No SSO yet — blocker for larger enterprise deals.",
+  "o": "UK workplace wellbeing market growing ~10% YoY. HR mental-health legislation tightening — duty of care driving demand. Grants available (Innovate UK, Nesta, Sport England). Partnership channel largely untapped (insurance, occ health, EAPs).",
+  "t": "Funded competitors with sales firepower (Headspace, Calm Health, Unmind). Larger players moving downmarket. Economic pressure on HR budgets in 2026. AI commoditising parts of mental wellbeing content."
+};
+  var teamMembers       = [
+  {
+    "_id": "tm_lewis",
+    "name": "Lewis Vines",
+    "role": "CEO & Founder",
+    "dept": "Leadership",
+    "email": "lewis@vyvehealth.co.uk",
+    "start": "2025-09-01",
+    "resp": "Overall strategy, performance, fundraising, partnerships, culture",
+    "okrs": "Q2 2026: lock MVP scope; 3 pilots committed; pitch deck v1; 2 grants submitted",
+    "reports": "Whole team",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "tm_dean",
+    "name": "Dean Brown",
+    "role": "Chief Technical Officer",
+    "dept": "Technology",
+    "email": "dean@vyvehealth.co.uk",
+    "start": "2025-09-15",
+    "resp": "VYVE Technology — apps, platform, data architecture, security",
+    "okrs": "Apple/Android parity resolved; staging environment live; SSO implemented",
+    "reports": "Tech contractors",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "tm_alan",
+    "name": "Alan",
+    "role": "Chief Product & Commercial Officer",
+    "dept": "Product / Commercial",
+    "email": "alan@vyvehealth.co.uk",
+    "start": "2025-10-01",
+    "resp": "Product strategy + commercial model, GTM playbook, pricing, ICP",
+    "okrs": "Pricing tiers locked; PRD for MVP; commercial model with CAC/LTV",
+    "reports": "Vicki",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "tm_calum",
+    "name": "Calum",
+    "role": "Physical Health Lead",
+    "dept": "Service Delivery",
+    "email": "calum@vyvehealth.co.uk",
+    "start": "2025-11-01",
+    "resp": "Physical health service strategy, content library, partner coaches",
+    "okrs": "Workout library recorded; partner content pipeline live; metrics defined",
+    "reports": "Physical partners",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "tm_phil",
+    "name": "Phil",
+    "role": "Mental Health Lead",
+    "dept": "Service Delivery",
+    "email": "phil@vyvehealth.co.uk",
+    "start": "2025-11-01",
+    "resp": "Mental health service strategy, clinical governance, crisis pathway",
+    "okrs": "CBT programme structure; clinical governance framework; crisis pathway published",
+    "reports": "Clinical collaborators",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "tm_vicki",
+    "name": "Vicki",
+    "role": "Client & Relationship Director",
+    "dept": "Sales",
+    "email": "vicki@vyvehealth.co.uk",
+    "start": "2025-12-01",
+    "resp": "Sales plan, outbound, HubSpot pipeline, account management",
+    "okrs": "Sales plan + 50-name target list; 10 discovery calls; HubSpot pipeline configured",
+    "reports": "Sales partners",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "tm_cole",
+    "name": "Cole",
+    "role": "Community & Partnership Manager",
+    "dept": "Community",
+    "email": "cole@vyvehealth.co.uk",
+    "start": "2026-01-15",
+    "resp": "Community strategy, Connect events, ambassador programme, 1-in-5 pledge",
+    "okrs": "Connect Challenge 1st June; Everyman CIC registered; 10 ambassadors",
+    "reports": "Ambassadors",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "tm_azuza",
+    "name": "Azuza",
+    "role": "Social Media Marketing & Content Manager",
+    "dept": "Marketing",
+    "email": "azuza@vyvehealth.co.uk",
+    "start": "2026-02-01",
+    "resp": "Brand, social, content, influencer programme, press, email marketing",
+    "okrs": "Brand guidelines published; IG+LinkedIn live with 3-mo calendar; press release distributed",
+    "reports": "Content contractors",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "tm_ryan",
+    "name": "Ryan Hewitt",
+    "role": "Finance Director",
+    "dept": "Finance",
+    "email": "ryan@vyvehealth.co.uk",
+    "start": "2026-02-15",
+    "resp": "Financial governance, cash flow, cap table, CIC compliance, grants",
+    "okrs": "12-month cash flow live; FY budget; investor pitch financial model; 2 grants submitted",
+    "reports": "Bookkeeper",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "tm_hr",
+    "name": "Non-Exec HR Director",
+    "role": "Non-Executive HR Director & CEO Advisor",
+    "dept": "Advisory",
+    "email": "",
+    "start": "2026-03-01",
+    "resp": "Internal governance, contracts, employee handbook, board readiness, monthly CEO advisory",
+    "okrs": "Employee handbook produced; performance review framework; equity scheme advice",
+    "reports": "Lewis",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "tm_team_advisor",
+    "name": "Advisor seat (open)",
+    "role": "Advisor — commercial or clinical",
+    "dept": "Advisory",
+    "email": "",
+    "start": "",
+    "resp": "To be identified by Non-Exec HR Director — strengthen the VYVE board with commercial or clinical expertise",
+    "okrs": "Identify and onboard one advisor by Q3 2026",
+    "reports": "",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  }
+];
+  var knowledgeEntries  = [
+  {
+    "_id": "kb_morning_brief",
+    "title": "Morning Brief",
+    "type": "Playbook",
+    "summary": "How Lewis (and any team member) should use the Command Centre's Morning Brief to plan the day.",
+    "body": "1. Open the Morning Brief first thing.\n2. Read the 4 KPIs — flag anything that has moved the wrong way overnight.\n3. Read Today's Priorities and Action Plans cards — these are non-negotiables for the day.\n4. Sessions today/tomorrow — confirm prep for each.\n5. Compliance — if any item is overdue or in red, escalate.\n6. Fresh intel — anything actionable goes to Vicki or Alan.\n7. Recent activity — quick scan to know what's moving across the company.\n8. Decide the day's top 3 — write them down before any meetings.",
+    "owner": "Lewis",
+    "link": "",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "kb_brain_sync",
+    "title": "Brain Sync — keeping the operating brain current",
+    "type": "SOP",
+    "summary": "How and when to update the LewisBrain repo + Command Centre with new strategic context, decisions, and learnings.",
+    "body": "Weekly cadence:\n- Friday afternoon: Lewis logs the week's key decisions in Strategy → Decisions Log.\n- Friday afternoon: any new playbook content goes into Knowledge Base.\n- Monthly: brain/master.md template revisited; placeholders updated with current state.\n\nWhen something changes:\n- New role / new hire → update Team page.\n- New investor or partner conversation → log it in CRM (Investor) / Partners.\n- New strategic decision → Strategy → Decisions Log (this is the audit trail).\n- New OKR or KR shift → Strategy → OKRs.",
+    "owner": "Lewis",
+    "link": "https://github.com/VYVEHealth/LewisBrain",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "kb_agent_sync",
+    "title": "Agent Sync — managing the AI agents and skills",
+    "type": "SOP",
+    "summary": "How Lewis manages the VYVE-named skills (vyve-product-tracker, vyve-sales-intelligence, etc) so they stay accurate and useful.",
+    "body": "Quarterly:\n- Audit each VYVE-* skill in Claude — does it still reflect the current org and strategy?\n- Retire skills that no longer fit (move to /archive).\n- Add new skills for new functions (e.g. when a service goes live, build a service-monitor skill).\n\nOn major changes:\n- Pricing change → update vyve-sales-intelligence + vyve-investor-growth-tracker.\n- New pillar / new feature → update vyve-product-feature-scout + vyve-content-engine.\n- New compliance change → update vyve-regulatory-compliance-watch.",
+    "owner": "Lewis",
+    "link": "",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "kb_content_creation",
+    "title": "Content Creation — Lewis voice & 3-pillar architecture",
+    "type": "Playbook",
+    "summary": "How VYVE creates content that ladders up to the Physical, Mental, Social pillars in Lewis's voice.",
+    "body": "Voice: warm, direct, practical, evidence-informed. No corporate jargon. Always ground in a real human experience.\n\nPillar tagging: every piece of content tags Physical, Mental or Social — never untagged.\n\nDistribution rhythm:\n- LinkedIn: 3-4x per week (Lewis + company page).\n- Instagram: 4-5x per week (carousel + reel mix).\n- Podcast: 1 episode per week (Everyman).\n- Newsletter: monthly.\n\nFor playbook detail see Social Blueprint page.",
+    "owner": "Azuza",
+    "link": "",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "kb_grant_application",
+    "title": "Grant Application — process and active grants",
+    "type": "Playbook",
+    "summary": "How VYVE approaches grant funding — sources, process, and the 2 active applications for 2026.",
+    "body": "Target funders:\n- Innovate UK (workplace health innovation)\n- Nesta (digital wellbeing)\n- Sport England (Movement for Change)\n- NHS Health Tech Programme\n\nProcess:\n1. Ryan identifies the call and assesses fit (eligibility, deadline, ask size).\n2. Lewis approves go/no-go within 7 days.\n3. Ryan owns submission; Alan supports commercial model; Vicki supports impact case; Lewis writes vision narrative.\n4. Always submit at least 3 days before deadline.\n\n2026 active applications:\n- Innovate UK — Workplace Mental Health Innovation Fund — Q2 submission.\n- Nesta — Connected Communities — Q3 submission.",
+    "owner": "Ryan",
+    "link": "",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "kb_investor_comms",
+    "title": "Investor Comms — keeping investors and angels engaged",
+    "type": "Playbook",
+    "summary": "How VYVE communicates with prospective investors and angels — cadence, format, and what we share.",
+    "body": "Monthly investor update format:\n1. Headline number (revenue, pipeline, users) — one line.\n2. Wins of the month — 3 bullet points.\n3. Challenges and asks — 2-3 bullets, including what we need help with.\n4. Numbers — MRR, cash, runway, key product metric.\n5. What's coming next month.\n\nCadence:\n- Active deal: weekly catch-up if requested, otherwise bi-weekly until close.\n- Warm relationship: monthly update.\n- Cold relationship: quarterly update.\n\nAlways from Lewis. Always sent on the 1st of the month. Read receipts not required — focus on quality not anxiety.",
+    "owner": "Lewis",
+    "link": "",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "kb_partnerships",
+    "title": "Partnerships — types, qualification and process",
+    "type": "Playbook",
+    "summary": "How VYVE evaluates and progresses strategic partners across Corporate, Channel, Delivery, Research, Tech, Social Impact and Media categories.",
+    "body": "Partner types VYVE pursues:\n- Corporate: HR consultancies, occupational health providers, EAPs, insurance brokers — distribution channel.\n- Channel: Benefit platforms, broker networks — embedded distribution.\n- Delivery: Coaches, therapists, fitness partners — content + service supply.\n- Research: Universities, clinical bodies — credibility + outcomes evidence.\n- Tech: Integration partners (wearables, HRIS, comms tools).\n- Social impact: Mental health charities, Parkrun, sports bodies — community alignment.\n- Media: Wellbeing media, HR press — visibility.\n\nQualification: mutual value (we offer X, they offer Y), strategic fit, no IP/commercial conflict, time-to-value < 6 months.",
+    "owner": "Lewis + Cole + Vicki",
+    "link": "",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "kb_sales_pipeline",
+    "title": "Sales Pipeline — HubSpot stages and qualification",
+    "type": "Playbook",
+    "summary": "How Vicki manages the HubSpot pipeline — stages, qualification criteria and pipeline review cadence.",
+    "body": "Pipeline stages:\n1. Lead — inbound or sourced; not yet contacted.\n2. Contacted — first outreach sent.\n3. Discovery — discovery call scheduled or completed.\n4. Demo — demo scheduled or completed.\n5. Proposal — proposal sent, awaiting response.\n6. Negotiation — terms being agreed.\n7. Closed-won / Closed-lost.\n\nReview cadence:\n- Weekly pipeline review with Lewis on Monday (15 min).\n- Every active deal has: logged next action, expected close date, deal probability.\n- Win/loss log: every closed deal gets a 3-bullet post-mortem.\n\nMonthly revenue targets agreed with Alan; pipeline report against targets every week.",
+    "owner": "Vicki",
+    "link": "",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  }
+];
+  var tasksEntries      = [
+  {
+    "_id": "tk_mvp_scope_lock",
+    "title": "Lock MVP feature scope in writing",
+    "owner": "Dean",
+    "due": "2026-05-23",
+    "status": "doing",
+    "priority": "high",
+    "notes": "Sign-off required from Lewis + Alan + Dean before Phase 2 starts. Tracked in Action Plans (Dean #2, Alan #2).",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "tk_apple_android_parity",
+    "title": "Resolve Apple vs Android performance parity issues",
+    "owner": "Dean",
+    "due": "2026-05-22",
+    "status": "doing",
+    "priority": "high",
+    "notes": "Identified in 08/05/26 workshop. Target: resolution within 2 weeks of identification.",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "tk_pricing_tiers_lock",
+    "title": "Define and lock VYVE pricing tiers — entry / core / enterprise",
+    "owner": "Alan",
+    "due": "2026-05-30",
+    "status": "doing",
+    "priority": "high",
+    "notes": "Locked document with feature gates and annual contract terms. Co-sign with Ryan for financial floor.",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "tk_target_account_list",
+    "title": "Build 50-name priority target account list",
+    "owner": "Vicki",
+    "due": "2026-05-28",
+    "status": "doing",
+    "priority": "high",
+    "notes": "Segmented by size, sector, wellbeing signals. Owned by Vicki; review with Alan + Lewis.",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "tk_pitch_deck_v1",
+    "title": "Build VYVE investor pitch deck — Series A standard v1",
+    "owner": "Lewis",
+    "due": "2026-06-10",
+    "status": "todo",
+    "priority": "high",
+    "notes": "Problem, market size, solution, traction, team, financial ask. Ryan supports unit economics; Alan supports commercial.",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "tk_grant_innovate_uk",
+    "title": "Submit Innovate UK Workplace Mental Health grant application",
+    "owner": "Ryan",
+    "due": "2026-05-30",
+    "status": "doing",
+    "priority": "high",
+    "notes": "Lewis writes vision narrative; Alan commercial; Vicki impact case. Submit at least 3 days before deadline.",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "tk_sso_implementation",
+    "title": "Implement SSO via SAML or OAuth",
+    "owner": "Dean",
+    "due": "2026-06-30",
+    "status": "todo",
+    "priority": "high",
+    "notes": "Hard blocker for enterprise deals >100 seats.",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "tk_employer_dashboard",
+    "title": "Build employer dashboard MVP — active users / engagement trend / pillar breakdown",
+    "owner": "Dean",
+    "due": "2026-07-15",
+    "status": "todo",
+    "priority": "high",
+    "notes": "Live before first enterprise deal — without this we can't deliver value to HR.",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "tk_connect_launch_jun",
+    "title": "Launch Connect Challenge community event — 1st June 2026",
+    "owner": "Cole",
+    "due": "2026-06-01",
+    "status": "doing",
+    "priority": "high",
+    "notes": "Date, format, promotion plan and participation target locked. Azuza owns social amplification.",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "tk_brand_guidelines",
+    "title": "Publish VYVE brand guidelines document",
+    "owner": "Azuza",
+    "due": "2026-05-30",
+    "status": "doing",
+    "priority": "medium",
+    "notes": "Tone, visual identity, messaging hierarchy, do/do-not examples.",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "tk_pr_release_cic",
+    "title": "Distribute first VYVE press release — CIC launch + 1-in-5 pledge + founder story",
+    "owner": "Azuza",
+    "due": "2026-06-15",
+    "status": "todo",
+    "priority": "medium",
+    "notes": "Tier-1 HR/business media: People Management, HR Magazine, one national outlet.",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "tk_everyman_cic_reg",
+    "title": "Complete Everyman Charity CIC registration",
+    "owner": "Cole",
+    "due": "2026-06-30",
+    "status": "doing",
+    "priority": "high",
+    "notes": "Charitable objects, founding trustees appointed. Lewis supports.",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "tk_cash_flow_forecast",
+    "title": "Build 12-month rolling cash flow forecast",
+    "owner": "Ryan",
+    "due": "2026-05-25",
+    "status": "doing",
+    "priority": "high",
+    "notes": "Primary financial decision-making tool. Updated monthly. Shared with Lewis.",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "tk_clinical_gov",
+    "title": "Build clinical governance framework — mental health content",
+    "owner": "Phil",
+    "due": "2026-06-15",
+    "status": "todo",
+    "priority": "high",
+    "notes": "Review process, approvals, update cadence. Required before any mental health content goes live.",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "tk_crisis_pathway",
+    "title": "Write and publish crisis pathway — what happens if a user signals distress",
+    "owner": "Phil",
+    "due": "2026-06-30",
+    "status": "todo",
+    "priority": "high",
+    "notes": "Escalation steps, signposting, safeguarding protocol. Hard requirement before mental health pillar launches.",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  }
+];
+  var partnersEntries   = [
+  {
+    "_id": "ptn_parkrun",
+    "name": "Parkrun UK",
+    "type": "social-impact",
+    "status": "exploration",
+    "vt": "Brings VYVE community access to a national grassroots network and credible movement partner.",
+    "vv": "Wellbeing programming and CIC alignment for parkrun's community work; potential 1-in-5 pledge tie-in.",
+    "lc": "",
+    "notes": "Strategic alignment with movement-as-medicine. Cole leading initial conversations.",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "ptn_myfitnesspal",
+    "name": "MyFitnessPal",
+    "type": "tech",
+    "status": "exploration",
+    "vt": "Integration of nutrition/activity data into VYVE; access to a wellbeing platform user base.",
+    "vv": "Distribution to engaged tracker users; co-marketing.",
+    "lc": "",
+    "notes": "Assess integration fit, content collab opportunity, commercial terms. Cole leading.",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "ptn_innovate_uk",
+    "name": "Innovate UK",
+    "type": "research",
+    "status": "active",
+    "vt": "VYVE delivers credible workplace wellbeing innovation aligned with their priority areas.",
+    "vv": "Non-dilutive funding + endorsement.",
+    "lc": "",
+    "notes": "Active grant application Q2 2026 — Workplace Mental Health Innovation Fund.",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "ptn_nesta",
+    "name": "Nesta",
+    "type": "research",
+    "status": "exploration",
+    "vt": "Innovation case study in their Connected Communities and digital wellbeing portfolios.",
+    "vv": "Non-dilutive funding + research credibility.",
+    "lc": "",
+    "notes": "Target Q3 2026 submission.",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "ptn_sport_eng",
+    "name": "Sport England",
+    "type": "social-impact",
+    "status": "exploration",
+    "vt": "Workplace channel to deliver Movement-for-Change agenda.",
+    "vv": "Non-dilutive funding; co-branded community programmes.",
+    "lc": "",
+    "notes": "Sport England funding rounds tracked by Ryan.",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "ptn_apple_health",
+    "name": "Apple Health",
+    "type": "tech",
+    "status": "exploration",
+    "vt": "Showcase use case for Apple Health in workplace wellbeing.",
+    "vv": "Deep wearable integration — Calum's physical pillar differentiator.",
+    "lc": "",
+    "notes": "Tracked in Dean #11 — wearable integration build.",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "ptn_google_fit",
+    "name": "Google Fit",
+    "type": "tech",
+    "status": "exploration",
+    "vt": "Android parity for wellbeing data.",
+    "vv": "Android user base served alongside Apple.",
+    "lc": "",
+    "notes": "Tracked in Dean #11.",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  },
+  {
+    "_id": "ptn_employer_pilot1",
+    "name": "Employer pilot — TBC",
+    "type": "corporate",
+    "status": "exploration",
+    "vt": "Wellbeing programme that ties physical, mental and social pillars together with measurable employer outcomes.",
+    "vv": "First paying customer; reference case study.",
+    "lc": "",
+    "notes": "Target Q3 2026 go-live. Owned by Vicki + Lewis. 3 pilots needed by September.",
+    "created_at": "2026-05-14T04:24:36.425859Z",
+    "updated_at": "2026-05-14T04:24:36.425859Z"
+  }
+];
+
+
+  function seedKeyAny(key, value){
+    try {
+      if (localStorage.getItem(key) !== null) return false;
+      localStorage.setItem(key, JSON.stringify(value));
+      return true;
+    } catch(e){ return false; }
+  }
+
   function seedKey(key, value){
     try {
       var existing = localStorage.getItem(key);
@@ -1744,9 +2433,24 @@
   if (seedKey('vyve_podcast_eps', podcastEps)) didSeed = true;
   if (seedKey('vyve_content_items', contentItems)) didSeed = true;
 
+
+  // ----------- Phase 2 seeding calls -----------
+  // Strategy (each sub-key independent)
+  if (seedKeyAny('vyve_strategy_northstar', strategyNorthstar)) didSeed = true;
+  if (seedKeyAny('vyve_strategy_mv',        strategyMV))        didSeed = true;
+  if (seedKey   ('vyve_strategy_okrs',      strategyOKRs))      didSeed = true;
+  if (seedKey   ('vyve_strategy_decisions', strategyDecisions)) didSeed = true;
+  if (seedKeyAny('vyve_strategy_swot',      strategySWOT))      didSeed = true;
+
+  // Team / Knowledge / Tasks / Partners
+  if (seedKey('vyve_team',      teamMembers))      didSeed = true;
+  if (seedKey('vyve_knowledge', knowledgeEntries)) didSeed = true;
+  if (seedKey('vyve_tasks',     tasksEntries))     didSeed = true;
+  if (seedKey('vyve_partners',  partnersEntries))  didSeed = true;
+
   try { localStorage.setItem(SEED_FLAG, SEED_VERSION); } catch(e) {}
 
   if (didSeed && window.console) {
-    console.log('[VYVE/seed] Loaded real data: ' + performance.length + ' analytics, ' + podcastEps.length + ' episodes, ' + contentItems.length + ' content items');
+    console.log('[VYVE/seed] Loaded real data: ' + performance.length + ' analytics, ' + podcastEps.length + ' episodes, ' + contentItems.length + ' content items, ' + teamMembers.length + ' team, ' + knowledgeEntries.length + ' KB, ' + tasksEntries.length + ' tasks, ' + partnersEntries.length + ' partners, ' + strategyOKRs.length + ' OKRs, ' + strategyDecisions.length + ' decisions');
   }
 })();
