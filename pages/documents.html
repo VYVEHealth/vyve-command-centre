@@ -1,148 +1,441 @@
 <div class="page active" id="page-documents">
   <div class="page-header">
     <div class="hdr-row">
-      <div><div class="eyebrow">Reference</div><h1 class="page-title">Documents</h1><p class="page-sub">Upload, search and organise all VYVE documents in one place</p></div>
-      <button class="btn btn-primary" id="dc-add">Add document</button>
+      <div><div class="eyebrow">Storage centre</div><h1 class="page-title">Documents</h1><p class="page-sub">Upload, organise and share VYVE documents. Files live in Supabase Storage (private, 50MB max).</p></div>
+      <div class="hero-actions">
+        <button class="btn btn-primary" id="dc-add">Upload document</button>
+      </div>
     </div>
   </div>
 
-  <div class="grid-4" style="margin-bottom:18px">
-    <div class="stat"><div class="stat-label">Total documents</div><div class="stat-value" id="dc-total">0</div></div>
-    <div class="stat"><div class="stat-label">Added this month</div><div class="stat-value" id="dc-month">0</div></div>
-    <div class="stat"><div class="stat-label">Categories</div><div class="stat-value" id="dc-cats">0</div></div>
-    <div class="stat"><div class="stat-label">Pending review</div><div class="stat-value" id="dc-review" style="color:var(--warning)">0</div></div>
+  <!-- Gate states -->
+  <div id="dc-gate-notready" class="card" style="display:none;padding:30px 26px;text-align:center">
+    <div style="font-size:14px;color:var(--text-muted)">Connecting to Supabase…</div>
   </div>
 
-  <div class="tbl-wrap">
-    <div class="tbl-filters">
-      <div class="search"><input id="dc-search" placeholder="Search by title, tag or description..."/></div>
-      <select id="dc-cat-filter" style="padding:9px 12px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface-2);color:var(--text);font-size:13px"><option value="">All categories</option></select>
+  <div id="dc-gate-signin" class="card" style="display:none;padding:36px 26px">
+    <div style="max-width:420px;margin:0 auto;text-align:center">
+      <div style="font-family:var(--font-head);font-size:20px;font-weight:700;margin-bottom:8px">Sign in to access documents</div>
+      <p style="color:var(--text-muted);font-size:13.5px;line-height:1.55;margin-bottom:18px">Files are stored in Supabase Storage and restricted to the team allowlist. Sign in with your VYVE team email.</p>
+      <div style="display:flex;gap:8px;justify-content:center">
+        <input type="email" id="dc-signin-email" placeholder="team@vyvehealth.co.uk" style="flex:1;max-width:280px"/>
+        <button class="btn btn-primary" id="dc-signin-btn">Send magic link</button>
+      </div>
+      <div id="dc-signin-msg" style="margin-top:12px;font-size:12.5px;color:var(--text-muted)"></div>
     </div>
-    <table class="tbl">
-      <thead><tr><th>Title</th><th>Category</th><th>Owner</th><th>Tags</th><th>Updated</th><th>Status</th></tr></thead>
-      <tbody id="dc-tbody"><tr><td colspan="6"><div class="empty"><span class="icon">·</span><h3>No documents yet</h3><p>Click &ldquo;Add document&rdquo; to start your library. You can link to anywhere &mdash; Drive, Notion, internal URLs.</p></div></td></tr></tbody>
-    </table>
   </div>
 
-  <div class="card" style="margin-top:16px">
-    <div class="card-header"><span class="card-title">About this library</span></div>
-    <p style="font-size:12px;color:var(--text-muted);line-height:1.7">
-      This is your central index of documents &mdash; not file storage. Each entry holds a title, category, tags, description and a link to where the file actually lives (Google Drive, Notion, OneDrive, etc).
-      Native file uploads need Supabase Storage which is pending Dean's config.
-      When that lands, an Upload button replaces the &ldquo;Link to&rdquo; field.
-    </p>
+  <div id="dc-gate-denied" class="card" style="display:none;padding:36px 26px;text-align:center">
+    <div style="font-family:var(--font-head);font-size:18px;font-weight:700;margin-bottom:8px">Access restricted</div>
+    <p style="color:var(--text-muted);font-size:13px;max-width:420px;margin:0 auto 18px">You’re signed in as <strong id="dc-denied-email"></strong> but this email isn’t on the admin allowlist.</p>
+    <button class="btn btn-ghost btn-sm" id="dc-signout-btn">Sign out</button>
+  </div>
+
+  <!-- Real content -->
+  <div id="dc-content" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-bottom:14px;font-size:12.5px;color:var(--text-muted)">
+      <span>Signed in as <strong id="dc-current-email"></strong></span>
+      <span style="opacity:.4">·</span>
+      <a href="#" id="dc-signout-link" style="color:var(--accent)">Sign out</a>
+    </div>
+
+    <!-- KPIs -->
+    <div class="grid-4" style="margin-bottom:18px">
+      <div class="stat"><div class="stat-label">Total documents</div><div class="stat-value" id="dc-kpi-total">—</div></div>
+      <div class="stat"><div class="stat-label">Total size</div><div class="stat-value" id="dc-kpi-size">—</div></div>
+      <div class="stat"><div class="stat-label">Added this month</div><div class="stat-value" id="dc-kpi-month">—</div></div>
+      <div class="stat"><div class="stat-label">Categories</div><div class="stat-value" id="dc-kpi-cats">—</div></div>
+    </div>
+
+    <!-- Drag-and-drop zone -->
+    <div class="dropzone" id="dc-dropzone">
+      <div class="dropzone-inner">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <div style="margin-top:8px;font-size:13.5px"><strong>Drop files here</strong> or click to choose</div>
+        <div style="font-size:11.5px;color:var(--text-muted);margin-top:4px">PDF, Word, Excel, PowerPoint, text, CSV, images · max 50MB</div>
+      </div>
+      <input type="file" id="dc-file-input" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.jpg,.jpeg,.png,.gif,.webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain,text/csv,image/jpeg,image/png,image/gif,image/webp" style="display:none"/>
+    </div>
+
+    <!-- Upload progress -->
+    <div id="dc-uploads" style="margin-top:14px"></div>
+
+    <!-- Filter bar -->
+    <div style="display:flex;align-items:center;gap:10px;margin:18px 0 12px;flex-wrap:wrap">
+      <input type="search" id="dc-search" placeholder="Search by name" style="max-width:280px;font-size:13px"/>
+      <select id="dc-cat-filter" style="padding:7px 10px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface);color:var(--text);font-size:13px"><option value="">All categories</option></select>
+      <div style="margin-left:auto;font-size:11px;color:var(--text-muted)" id="dc-row-count"></div>
+    </div>
+
+    <!-- File list -->
+    <div class="card">
+      <table class="data-table" style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr>
+            <th class="dc-th">Name</th>
+            <th class="dc-th">Category</th>
+            <th class="dc-th">Size</th>
+            <th class="dc-th">Uploaded by</th>
+            <th class="dc-th">Date</th>
+            <th class="dc-th" style="width:90px">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="dc-files-body"></tbody>
+      </table>
+    </div>
   </div>
 </div>
 
+<style>
+  .dc-th { text-align:left;padding:11px 16px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--text-muted);border-bottom:1px solid var(--border); }
+  .dc-row td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid var(--border); }
+  .dc-row td:first-child { font-weight: 600; }
+  .dc-name { display: flex; align-items: center; gap: 10px; }
+  .dc-icon {
+    width: 32px; height: 32px; border-radius: var(--r-md);
+    background: var(--surface-2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10.5px; font-weight: 700; color: var(--text-muted);
+    flex-shrink: 0;
+    text-transform: uppercase;
+  }
+  .dc-icon.pdf { background: rgba(224, 96, 96, 0.1); color: #c14444; }
+  .dc-icon.doc, .dc-icon.docx { background: rgba(48, 108, 196, 0.1); color: #2965c1; }
+  .dc-icon.xls, .dc-icon.xlsx, .dc-icon.csv { background: rgba(58, 156, 58, 0.1); color: #2d7a2d; }
+  .dc-icon.ppt, .dc-icon.pptx { background: rgba(212, 119, 44, 0.12); color: #b86322; }
+  .dc-icon.img, .dc-icon.png, .dc-icon.jpg, .dc-icon.jpeg, .dc-icon.gif, .dc-icon.webp { background: rgba(77, 170, 170, 0.12); color: var(--vyve-teal, #4DAAAA); }
+
+  .dropzone {
+    border: 2px dashed var(--border);
+    border-radius: var(--r-lg);
+    padding: 28px 22px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, color 0.15s;
+    color: var(--text-muted);
+    background: var(--surface);
+  }
+  .dropzone:hover, .dropzone.dragover {
+    border-color: var(--vyve-teal, #4DAAAA);
+    background: var(--vyve-teal-pale, rgba(77,170,170,0.05));
+    color: var(--vyve-teal, #4DAAAA);
+  }
+  .dropzone-inner { pointer-events: none; }
+
+  .dc-upload-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--r-md);
+    background: var(--surface); margin-bottom: 8px; font-size: 12.5px;
+  }
+  .dc-upload-row .dc-up-name { flex: 1; }
+  .dc-upload-row .dc-up-bar { width: 120px; height: 4px; background: var(--surface-2); border-radius: 2px; overflow: hidden; }
+  .dc-upload-row .dc-up-fill { height: 100%; background: var(--vyve-teal, #4DAAAA); transition: width 0.2s; }
+  .dc-upload-row.success { border-color: var(--success, #3a9c3a); }
+  .dc-upload-row.error { border-color: var(--danger, #d05050); color: var(--danger, #d05050); }
+
+  .dc-action-btn {
+    background: transparent; border: 0; padding: 5px 8px; cursor: pointer;
+    color: var(--text-muted); font-size: 12px; border-radius: 4px;
+  }
+  .dc-action-btn:hover { background: var(--surface-2); color: var(--text); }
+  .dc-action-btn.danger:hover { color: var(--danger, #d05050); }
+</style>
+
 <script>
 (function(){
+  if (!window.VYVE_SUPABASE) return;
+  var S = window.VYVE_SUPABASE;
+  var BUCKET = 'cc-documents';
+  var MAX_SIZE = 50 * 1024 * 1024;
+  var CATEGORIES = ['Strategy', 'Finance', 'Legal', 'Marketing', 'Product', 'Sales', 'Operations', 'HR', 'Compliance', 'Other'];
 
-  var LS='vyve_documents';
-  function lsGet(){ try { var v=localStorage.getItem(LS); return v?JSON.parse(v):[]; } catch(e){ return []; } }
-  function lsSet(v){ try { localStorage.setItem(LS,JSON.stringify(v)); } catch(e){} }
-  async function load(){
-    if (window.VYVE_MAKE){ var fm = await VYVE_MAKE.list('documents',{limit:500}); if (fm&&fm.length) return fm; }
-    return lsGet();
+  var state = {
+    docs: [],
+    search: '',
+    category: ''
+  };
+
+  function show(id){ document.getElementById(id).style.display = ''; }
+  function hide(id){ document.getElementById(id).style.display = 'none'; }
+  function hideAll(){ ['dc-gate-notready','dc-gate-signin','dc-gate-denied','dc-content'].forEach(hide); }
+
+  function fmtSize(bytes){
+    if (!bytes) return '0 KB';
+    var kb = bytes / 1024;
+    if (kb < 1024) return Math.round(kb) + ' KB';
+    return (kb / 1024).toFixed(1) + ' MB';
   }
-  async function save(id, item){
-    if (window.VYVE_MAKE){ var r = await VYVE_MAKE.upsert('documents', id, item); if (r) return; }
-    var a = lsGet(); var i = a.findIndex(function(x){return x._id===id;}); var e = Object.assign({_id:id}, item);
-    if (i>=0) a[i]=e; else a.unshift(e); lsSet(a);
+  function fmtDate(iso){
+    if (!iso) return '—';
+    var d = new Date(iso);
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   }
-  async function remove(id){ if (window.VYVE_MAKE) await VYVE_MAKE.remove('documents', id); lsSet(lsGet().filter(function(x){return x._id!==id;})); }
+  function fileExt(name){
+    var p = (name || '').split('.');
+    if (p.length < 2) return '';
+    return p[p.length - 1].toLowerCase();
+  }
+  function fileTypeIcon(name){
+    var ext = fileExt(name);
+    if (['jpg','jpeg','png','gif','webp'].indexOf(ext) >= 0) return '<div class="dc-icon img">' + ext + '</div>';
+    return '<div class="dc-icon ' + ext + '">' + (ext || '?') + '</div>';
+  }
 
-  var DEFAULT_CATS = ['Contracts','Policies','SOPs','Templates','Brand','Marketing','Sales','Finance','Compliance','Research','Other'];
+  // ---------- Fetch + render ----------
+  async function fetchDocs(){
+    var res = await S.client.from('cc_documents').select('*').order('created_at', { ascending: false });
+    if (res.error){ console.error('[docs] fetch failed', res.error); state.docs = []; return; }
+    state.docs = res.data || [];
+  }
 
-  function render(items){
-    var q = (document.getElementById('dc-search').value||'').toLowerCase();
-    var cat = document.getElementById('dc-cat-filter').value;
-    var view = items.slice();
-    if (q) view = view.filter(function(d){
-      return (d.title||'').toLowerCase().includes(q) ||
-             (d.description||'').toLowerCase().includes(q) ||
-             (d.tags||[]).some(function(t){ return t.toLowerCase().includes(q); });
-    });
-    if (cat) view = view.filter(function(d){ return (d.category||'') === cat; });
-
-    // Build category dropdown
-    var cats = Array.from(new Set(DEFAULT_CATS.concat(items.map(function(d){return d.category;}).filter(Boolean)))).sort();
-    var sel = document.getElementById('dc-cat-filter');
-    var cur = sel.value;
-    sel.innerHTML = '<option value="">All categories</option>' + cats.map(function(c){ return '<option value="'+VYVE_UI.escape(c)+'">'+VYVE_UI.escape(c)+'</option>'; }).join('');
-    sel.value = cur;
-
-    // KPIs
-    document.getElementById('dc-total').textContent = items.length;
+  function renderKPIs(){
+    var total = state.docs.length;
+    var totalSize = state.docs.reduce(function(s, d){ return s + (d.file_size || 0); }, 0);
     var monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0,0,0,0);
-    document.getElementById('dc-month').textContent = items.filter(function(d){ return new Date(d.created_at||0).getTime() >= monthStart.getTime(); }).length;
-    document.getElementById('dc-cats').textContent = Array.from(new Set(items.map(function(d){return d.category;}).filter(Boolean))).length;
-    document.getElementById('dc-review').textContent = items.filter(function(d){ return (d.status||'')==='review'; }).length;
+    var thisMonth = state.docs.filter(function(d){ return new Date(d.created_at) >= monthStart; }).length;
+    var cats = {};
+    state.docs.forEach(function(d){ if (d.category) cats[d.category] = true; });
+    document.getElementById('dc-kpi-total').textContent = total;
+    document.getElementById('dc-kpi-size').textContent = fmtSize(totalSize);
+    document.getElementById('dc-kpi-month').textContent = thisMonth;
+    document.getElementById('dc-kpi-cats').textContent = Object.keys(cats).length;
+  }
 
-    var tbody = document.getElementById('dc-tbody');
-    if (!view.length){
-      tbody.innerHTML = '<tr><td colspan="6"><div class="empty"><span class="icon">·</span><h3>No documents match</h3></div></td></tr>';
+  function renderCategoryFilter(){
+    var sel = document.getElementById('dc-cat-filter');
+    var existing = {};
+    state.docs.forEach(function(d){ if (d.category) existing[d.category] = true; });
+    var options = '<option value="">All categories</option>' + Object.keys(existing).sort().map(function(c){
+      return '<option value="' + c + '"' + (state.category === c ? ' selected' : '') + '>' + c + '</option>';
+    }).join('');
+    sel.innerHTML = options;
+  }
+
+  function renderList(){
+    var rows = state.docs.filter(function(d){
+      if (state.category && d.category !== state.category) return false;
+      if (state.search && (d.name || '').toLowerCase().indexOf(state.search.toLowerCase()) < 0) return false;
+      return true;
+    });
+    document.getElementById('dc-row-count').textContent = rows.length + ' of ' + state.docs.length;
+    if (!rows.length){
+      document.getElementById('dc-files-body').innerHTML = '<tr><td colspan="6" style="padding:30px;text-align:center;color:var(--text-muted)">No documents yet. Drop files in the zone above to upload.</td></tr>';
       return;
     }
-    view.sort(function(a,b){ return new Date(b.updated_at||b.created_at||0) - new Date(a.updated_at||a.created_at||0); });
-    tbody.innerHTML = view.map(function(d){
-      var statusColor = d.status==='review' ? 'badge-amber' : d.status==='archived' ? 'badge-grey' : 'badge-green';
-      var tags = (d.tags||[]).slice(0,3).map(function(t){ return '<span style="display:inline-block;padding:1px 6px;background:var(--surface-2);border-radius:3px;font-size:10px;margin-right:3px;color:var(--text-muted)">'+VYVE_UI.escape(t)+'</span>'; }).join('');
-      return '<tr style="cursor:pointer" data-id="'+d._id+'">'+
-        '<td><div style="font-weight:600">'+VYVE_UI.escape(d.title||'')+'</div>'+(d.description?'<div style="font-size:11.5px;color:var(--text-muted);margin-top:2px">'+VYVE_UI.escape((d.description||'').slice(0,80))+'</div>':'')+'</td>'+
-        '<td>'+(d.category?'<span class="badge badge-teal">'+VYVE_UI.escape(d.category)+'</span>':'')+'</td>'+
-        '<td style="font-size:12px">'+VYVE_UI.escape(d.owner||'')+'</td>'+
-        '<td>'+tags+'</td>'+
-        '<td style="font-size:12px;color:var(--text-muted)">'+VYVE_UI.fmtRelative(d.updated_at||d.created_at)+'</td>'+
-        '<td><span class="badge '+statusColor+'">'+VYVE_UI.escape(d.status||'active')+'</span></td>'+
+    document.getElementById('dc-files-body').innerHTML = rows.map(function(d){
+      return '<tr class="dc-row" data-id="' + d.id + '">' +
+        '<td><div class="dc-name">' + fileTypeIcon(d.name) + '<div>' + (d.name || 'Untitled') + '</div></div></td>' +
+        '<td style="color:var(--text-muted)">' + (d.category || '—') + '</td>' +
+        '<td style="color:var(--text-muted)">' + fmtSize(d.file_size) + '</td>' +
+        '<td style="color:var(--text-muted);font-size:11.5px">' + (d.created_by || '—') + '</td>' +
+        '<td style="color:var(--text-muted)">' + fmtDate(d.created_at) + '</td>' +
+        '<td>' +
+          '<button class="dc-action-btn" data-action="download" title="Download"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>' +
+          '<button class="dc-action-btn danger" data-action="delete" title="Delete"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>' +
+        '</td>' +
       '</tr>';
     }).join('');
-    tbody.querySelectorAll('[data-id]').forEach(function(row){
-      row.addEventListener('click', function(){ edit(row.dataset.id, items); });
-    });
+    bindRowActions();
   }
 
-  function edit(id, items){
-    var d = items.find(function(x){return x._id===id;}); if(!d) return;
-    openModal('Edit document', d, async function(u){ await save(id, u); render(await load()); }, async function(){ await remove(id); render(await load()); });
-  }
-
-  function openModal(title, init, onSave, onDel){
-    init = init || {};
-    var catOptions = DEFAULT_CATS.map(function(c){ return '<option value="'+VYVE_UI.escape(c)+'">'+VYVE_UI.escape(c)+'</option>'; }).join('');
-    VYVE_UI.modal({ title: title, body:
-      '<div class="form-row"><div class="form-group"><label>Title</label><input id="d-title" value="'+VYVE_UI.escape(init.title||'')+'"/></div></div>'+
-      '<div class="form-row cols-2">'+
-        '<div class="form-group"><label>Category</label><select id="d-cat">'+catOptions+'</select></div>'+
-        '<div class="form-group"><label>Status</label><select id="d-status"><option value="active">Active</option><option value="review">Pending review</option><option value="archived">Archived</option></select></div>'+
-      '</div>'+
-      '<div class="form-row cols-2">'+
-        '<div class="form-group"><label>Owner</label><input id="d-owner" value="'+VYVE_UI.escape(init.owner||'')+'"/></div>'+
-        '<div class="form-group"><label>Tags (comma-separated)</label><input id="d-tags" value="'+VYVE_UI.escape((init.tags||[]).join(', '))+'"/></div>'+
-      '</div>'+
-      '<div class="form-row"><div class="form-group"><label>Link (Drive, Notion, internal URL...)</label><input id="d-link" placeholder="https://" value="'+VYVE_UI.escape(init.link||'')+'"/></div></div>'+
-      '<div class="form-row"><div class="form-group"><label>Description</label><textarea id="d-desc" rows="3">'+VYVE_UI.escape(init.description||'')+'</textarea></div></div>'+
-      '<div style="display:flex;justify-content:space-between;gap:8px">'+(onDel?'<button class="btn" id="d-del" style="color:var(--danger);border-color:rgba(224,96,96,.3)">Delete</button>':'<span></span>')+'<button class="btn btn-primary" id="d-save">Save</button></div>'
-    });
-    setTimeout(function(){
-      if (init.category) document.getElementById('d-cat').value = init.category;
-      if (init.status) document.getElementById('d-status').value = init.status;
-      document.getElementById('d-save').addEventListener('click', function(){
-        var t = document.getElementById('d-title').value.trim();
-        if (!t){ VYVE_UI.toast('Title required','error'); return; }
-        var tags = document.getElementById('d-tags').value.split(',').map(function(x){return x.trim();}).filter(Boolean);
-        var u = { title:t, category:document.getElementById('d-cat').value, status:document.getElementById('d-status').value, owner:document.getElementById('d-owner').value.trim(), tags:tags, link:document.getElementById('d-link').value.trim(), description:document.getElementById('d-desc').value.trim(), updated_at:new Date().toISOString(), created_at: init.created_at||new Date().toISOString() };
-        onSave(u);
-        document.querySelector('.modal-overlay').classList.remove('open');
+  function bindRowActions(){
+    document.querySelectorAll('#dc-files-body .dc-row').forEach(function(row){
+      var id = row.getAttribute('data-id');
+      row.querySelector('[data-action="download"]').addEventListener('click', function(e){
+        e.stopPropagation();
+        downloadDoc(id);
       });
-      if (onDel) document.getElementById('d-del').addEventListener('click', function(){ if (confirm('Delete?')){ onDel(); document.querySelector('.modal-overlay').classList.remove('open'); }});
-    }, 50);
+      row.querySelector('[data-action="delete"]').addEventListener('click', function(e){
+        e.stopPropagation();
+        deleteDoc(id);
+      });
+    });
   }
 
-  document.getElementById('dc-add').addEventListener('click', function(){
-    openModal('Add document', {}, async function(u){ await save('doc_'+Date.now(), u); render(await load()); VYVE_UI.toast('Added','success'); });
-  });
-  document.getElementById('dc-search').addEventListener('input', async function(){ render(await load()); });
-  document.getElementById('dc-cat-filter').addEventListener('change', async function(){ render(await load()); });
-  (async function(){ render(await load()); })();
+  async function downloadDoc(id){
+    var doc = state.docs.find(function(d){ return d.id === id; });
+    if (!doc){ return; }
+    try {
+      var res = await S.client.storage.from(BUCKET).createSignedUrl(doc.storage_path, 60);
+      if (res.error){ alert('Could not generate download link: ' + res.error.message); return; }
+      window.open(res.data.signedUrl, '_blank');
+    } catch(e){
+      alert('Download failed: ' + (e.message || 'unknown'));
+    }
+  }
+
+  async function deleteDoc(id){
+    var doc = state.docs.find(function(d){ return d.id === id; });
+    if (!doc){ return; }
+    if (!confirm('Delete "' + doc.name + '"? This removes the file and metadata permanently.')) return;
+    try {
+      var storageRes = await S.client.storage.from(BUCKET).remove([doc.storage_path]);
+      if (storageRes.error){ console.warn('[docs] storage remove warning:', storageRes.error); }
+      var rowRes = await S.client.from('cc_documents').delete().eq('id', id);
+      if (rowRes.error){ alert('Could not delete metadata row: ' + rowRes.error.message); return; }
+      await fetchDocs();
+      renderAll();
+      if (window.VYVE_UI && window.VYVE_UI.toast) window.VYVE_UI.toast('Document deleted', 'success');
+    } catch(e){
+      alert('Delete failed: ' + (e.message || 'unknown'));
+    }
+  }
+
+  // ---------- Upload ----------
+  function promptCategory(filename){
+    var defaultCat = '';
+    var existing = {};
+    state.docs.forEach(function(d){ if (d.category) existing[d.category] = true; });
+    var allCats = CATEGORIES.concat(Object.keys(existing).filter(function(c){ return CATEGORIES.indexOf(c) < 0; }));
+    var input = prompt('Category for "' + filename + '" (existing: ' + allCats.join(', ') + '):', defaultCat);
+    return input || null;
+  }
+
+  async function uploadFiles(files){
+    var email = await S.getUserEmail();
+    var uploadList = document.getElementById('dc-uploads');
+
+    for (var i = 0; i < files.length; i++){
+      var file = files[i];
+
+      // Size check
+      if (file.size > MAX_SIZE){
+        var row = document.createElement('div');
+        row.className = 'dc-upload-row error';
+        row.innerHTML = '<div class="dc-up-name">' + file.name + ' — too large (max 50MB)</div>';
+        uploadList.appendChild(row);
+        setTimeout(function(r){ return function(){ r.remove(); }; }(row), 5000);
+        continue;
+      }
+
+      var category = promptCategory(file.name);
+      if (category === null){ continue; }
+
+      var rowEl = document.createElement('div');
+      rowEl.className = 'dc-upload-row';
+      rowEl.innerHTML = '<div class="dc-up-name">' + file.name + '</div><div class="dc-up-bar"><div class="dc-up-fill" style="width:20%"></div></div><div style="font-size:11px;color:var(--text-muted)" class="dc-up-status">Uploading…</div>';
+      uploadList.appendChild(rowEl);
+
+      try {
+        var safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        var storagePath = (email || 'unknown').replace(/[^a-zA-Z0-9._-]/g, '_') + '/' + Date.now() + '_' + safeName;
+
+        // Upload to storage
+        var upRes = await S.client.storage.from(BUCKET).upload(storagePath, file, {
+          contentType: file.type || 'application/octet-stream',
+          upsert: false
+        });
+        if (upRes.error){ throw new Error(upRes.error.message); }
+
+        rowEl.querySelector('.dc-up-fill').style.width = '70%';
+        rowEl.querySelector('.dc-up-status').textContent = 'Saving metadata…';
+
+        // Insert metadata row
+        var metaRes = await S.client.from('cc_documents').insert({
+          name: file.name,
+          file_size: file.size,
+          file_type: file.type || fileExt(file.name),
+          category: category,
+          storage_path: storagePath
+        });
+        if (metaRes.error){ throw new Error(metaRes.error.message); }
+
+        rowEl.classList.add('success');
+        rowEl.querySelector('.dc-up-fill').style.width = '100%';
+        rowEl.querySelector('.dc-up-status').textContent = 'Done';
+        setTimeout(function(r){ return function(){ r.remove(); }; }(rowEl), 2000);
+      } catch(err){
+        rowEl.classList.add('error');
+        rowEl.querySelector('.dc-up-status').textContent = 'Failed: ' + (err.message || 'unknown');
+      }
+    }
+
+    await fetchDocs();
+    renderAll();
+  }
+
+  // ---------- Wiring ----------
+  function bindDropzone(){
+    var zone = document.getElementById('dc-dropzone');
+    var input = document.getElementById('dc-file-input');
+
+    zone.addEventListener('click', function(){ input.click(); });
+    input.addEventListener('change', function(e){
+      if (e.target.files && e.target.files.length){
+        uploadFiles(Array.from(e.target.files));
+        input.value = '';
+      }
+    });
+
+    ['dragenter','dragover'].forEach(function(ev){
+      zone.addEventListener(ev, function(e){ e.preventDefault(); e.stopPropagation(); zone.classList.add('dragover'); });
+    });
+    ['dragleave','drop'].forEach(function(ev){
+      zone.addEventListener(ev, function(e){ e.preventDefault(); e.stopPropagation(); zone.classList.remove('dragover'); });
+    });
+    zone.addEventListener('drop', function(e){
+      if (e.dataTransfer.files && e.dataTransfer.files.length){
+        uploadFiles(Array.from(e.dataTransfer.files));
+      }
+    });
+  }
+
+  function bindControls(){
+    document.getElementById('dc-add').addEventListener('click', function(){
+      document.getElementById('dc-file-input').click();
+    });
+    document.getElementById('dc-search').addEventListener('input', function(e){ state.search = e.target.value; renderList(); });
+    document.getElementById('dc-cat-filter').addEventListener('change', function(e){ state.category = e.target.value; renderList(); });
+    document.getElementById('dc-signout-link').addEventListener('click', function(e){
+      e.preventDefault();
+      S.signOut().then(function(){ boot(); });
+    });
+  }
+
+  function bindSignin(){
+    document.getElementById('dc-signin-btn').addEventListener('click', async function(){
+      var email = document.getElementById('dc-signin-email').value.trim();
+      if (!email) return;
+      var msg = document.getElementById('dc-signin-msg');
+      msg.textContent = 'Sending…';
+      try {
+        var res = await S.signInWithEmail(email);
+        if (res.error){ msg.textContent = 'Error: ' + res.error.message; msg.style.color = 'var(--danger)'; }
+        else { msg.textContent = 'Check your inbox.'; msg.style.color = 'var(--success)'; }
+      } catch(e){
+        msg.textContent = 'Error: ' + (e.message || 'unknown'); msg.style.color = 'var(--danger)';
+      }
+    });
+    document.getElementById('dc-signout-btn').addEventListener('click', function(){
+      S.signOut().then(function(){ boot(); });
+    });
+  }
+
+  function renderAll(){ renderKPIs(); renderCategoryFilter(); renderList(); }
+
+  async function boot(){
+    hideAll();
+    if (!S.isReady()){ show('dc-gate-notready'); S.onReady(boot); return; }
+
+    var session = await S.getSession();
+    if (!session){ show('dc-gate-signin'); return; }
+
+    var admin = await S.getCurrentAdmin();
+    if (!admin){
+      document.getElementById('dc-denied-email').textContent = await S.getUserEmail();
+      show('dc-gate-denied');
+      return;
+    }
+
+    document.getElementById('dc-current-email').textContent = admin.email;
+    show('dc-content');
+    bindControls();
+    bindDropzone();
+    await fetchDocs();
+    renderAll();
+  }
+
+  bindSignin();
+  boot();
 })();
 </script>
