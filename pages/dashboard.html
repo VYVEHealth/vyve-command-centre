@@ -157,8 +157,13 @@
 
     el('dash-pipeline-num').textContent = D.fmtGBP(pipeline);
     el('dash-pipeline-sub').textContent = dealsCount ? dealsCount + ' open deals' : 'No deals yet';
-    el('dash-mrr').textContent = D.fmtGBP(mrr);
-    el('dash-mrr-sub').textContent = mrr ? 'Latest snapshot' : 'Add in Finance';
+    if (window.VYVE_ACL && window.VYVE_ACL.shouldRedact('mrr')) {
+      el('dash-mrr').innerHTML = window.VYVE_ACL.redactedValue();
+      el('dash-mrr-sub').textContent = 'Lead-only';
+    } else {
+      el('dash-mrr').textContent = D.fmtGBP(mrr);
+      el('dash-mrr-sub').textContent = mrr ? 'Latest snapshot' : 'Add in Finance';
+    }
     el('dash-reach').textContent = D.fmt(perf30);
     el('dash-posts').textContent = content30;
   }
@@ -170,10 +175,14 @@
     var winRate = D.deals.winRate();
     var clients = D.clients.live().length;
     var clientsTotal = D.clients.all().length;
+    var ACL = window.VYVE_ACL;
+    var redactCash = ACL && ACL.shouldRedact('cash');
+    var redactBurn = ACL && ACL.shouldRedact('burn');
+    var redactRunway = ACL && ACL.shouldRedact('runway');
     el('dash-commercial').innerHTML =
-      kpiCard('Cash on hand', cash ? D.fmtGBP(cash) : '—', cash ? 'Most recent' : '', '#/finance') +
-      kpiCard('Monthly burn',  burn ? D.fmtGBP(burn) : '—', burn ? 'Current'    : '', '#/finance') +
-      kpiCard('Runway',        runway != null ? runway + ' months' : '—', runway != null ? '' : 'Add finance entries', '#/finance') +
+      kpiCard('Cash on hand', redactCash ? ACL.redactedValue() : (cash ? D.fmtGBP(cash) : '—'), redactCash ? 'Lead-only' : (cash ? 'Most recent' : ''), '#/finance') +
+      kpiCard('Monthly burn',  redactBurn ? ACL.redactedValue() : (burn ? D.fmtGBP(burn) : '—'), redactBurn ? 'Lead-only' : (burn ? 'Current' : ''), '#/finance') +
+      kpiCard('Runway',        redactRunway ? ACL.redactedValue() : (runway != null ? runway + ' months' : '—'), redactRunway ? 'Lead-only' : (runway != null ? '' : 'Add finance entries'), '#/finance') +
       kpiCard('Win rate',      winRate != null ? winRate + '%' : '—', winRate != null ? '' : 'No closed deals yet', '#/crm');
   }
 

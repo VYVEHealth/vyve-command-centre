@@ -89,6 +89,7 @@
         </nav>
 
         <div class="topnav-tools">
+          <span class="topnav-role" id="topnav-role" title="Your role" style="display:none"></span>
           <a class="topnav-bell" id="topnav-bell" href="#/inbox" aria-label="Inbox">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
@@ -164,6 +165,7 @@
   <script src="lib/comments.js"></script>
   <script src="lib/notifications.js"></script>
   <script src="lib/views.js"></script>
+  <script src="lib/acl.js"></script>
   <script src="lib/entities.js"></script>
   <script src="lib/ui.js"></script>
   <script src="lib/widgets.js"></script>
@@ -186,7 +188,25 @@
       if (av1) av1.textContent = letter;
       if (av2) av2.textContent = letter;
       window.VYVE_CURRENT_USER = em || 'lewis';
+      if (window.VYVE_ACL) window.VYVE_ACL.setCurrentEmail(em);
     });
+
+    // Role pill: render after ACL boots
+    (function(){
+      function paintRole(){
+        var el = document.getElementById('topnav-role');
+        if (!el || !window.VYVE_ACL) return;
+        var r = window.VYVE_ACL.role();
+        if (!r || r === 'member') { el.style.display = 'none'; return; }
+        el.style.display = 'inline-flex';
+        el.textContent = r;
+        el.className = 'topnav-role role-' + r;
+      }
+      window.addEventListener('vyve:acl:role', paintRole);
+      window.addEventListener('vyve:acl:change', paintRole);
+      window.addEventListener('vyve:user', paintRole);
+      setTimeout(paintRole, 150);
+    })();
 
     // Notification bell: update dot whenever notifs change
     (function(){

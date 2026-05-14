@@ -270,8 +270,13 @@
     el('brief-action-sub').textContent = apSubParts.join('  ·  ');
 
     el('brief-reach').textContent = D.fmt(perf30);
-    el('brief-mrr').textContent = D.fmtGBP(mrr);
-    el('brief-mrr-sub').textContent = mrr ? 'Latest snapshot' : 'Add in Finance';
+    if (window.VYVE_ACL && window.VYVE_ACL.shouldRedact('mrr')) {
+      el('brief-mrr').innerHTML = window.VYVE_ACL.redactedValue();
+      el('brief-mrr-sub').textContent = 'Lead-only';
+    } else {
+      el('brief-mrr').textContent = D.fmtGBP(mrr);
+      el('brief-mrr-sub').textContent = mrr ? 'Latest snapshot' : 'Add in Finance';
+    }
     el('brief-pipe').textContent = D.fmtGBP(pipeline);
     el('brief-pipe-sub').textContent = pipeline ? 'Open deals' : 'No deals yet';
   }
@@ -422,7 +427,14 @@
     document.querySelectorAll('#page-brief [data-route]').forEach(function(row){
       row.addEventListener('click', function(){
         var route = row.getAttribute('data-route');
-        if (route) window.location.hash = route;
+        if (!route) return;
+        // Strip leading "#/" and check ACL
+        var slug = route.replace(/^#\//, '').split('/')[0];
+        if (window.VYVE_ACL && !window.VYVE_ACL.canSeePage(slug)) {
+          if (window.VYVE_UI && window.VYVE_UI.toast) window.VYVE_UI.toast('Restricted — speak to Lewis for access', 'warning');
+          return;
+        }
+        window.location.hash = route;
       });
     });
   }

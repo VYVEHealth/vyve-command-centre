@@ -5,6 +5,7 @@
 
   <div class="tab-bar">
     <button class="tab-btn active" data-tab="set-general">General</button>
+    <button class="tab-btn" data-tab="set-people">People & Roles</button>
     <button class="tab-btn" data-tab="set-integrations">Integrations</button>
     <button class="tab-btn" data-tab="set-stores">Data Stores</button>
     <button class="tab-btn" data-tab="set-auth">Auth & Access</button>
@@ -35,6 +36,47 @@
         <div class="form-group"><label>Podcast RSS</label><input id="s-rss" placeholder="https://..."/></div>
       </div>
       <div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn btn-primary" id="save-general">Save</button></div>
+    </div>
+  </div>
+
+  <div id="set-people" class="tab-panel">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">People & roles</span>
+        <span class="card-sub" id="people-role-note">Loading…</span>
+      </div>
+      <div style="padding:0 22px 18px;font-size:13px;color:var(--text-muted);line-height:1.55">
+        Three roles control what each person can see:
+        <ul style="margin:8px 0 0;padding-left:20px">
+          <li><strong>Owner</strong> — Lewis &amp; Dean. Sees everything, manages roles here.</li>
+          <li><strong>Lead</strong> — Anyone with leadership / budget remit. Sees Finance, Strategy, Investor, and all sensitive fields (cash, runway, MRR).</li>
+          <li><strong>Member</strong> — Default for the team. Sees the operating hub (CRM, Tasks, Action Plans, Content, Sessions) with sensitive financial fields redacted.</li>
+          <li><strong>External</strong> — Advisors / contractors. Read-only, limited to Brief, Dashboard, Strategy, Investor, Documents.</li>
+        </ul>
+        <div style="margin-top:14px;padding:10px 14px;background:var(--warning-pale);color:#8A5E1F;border-radius:var(--r-md);font-size:12px">
+          <strong>Note:</strong> This is client-side enforcement only. Suitable for an internal trusted team but <strong>not</strong> a security boundary against a determined attacker. Real enforcement will mirror this model in Supabase Row Level Security (Dean to wire).
+        </div>
+      </div>
+      <div style="padding:0 22px 22px">
+        <table class="acl-people-table" id="people-table">
+          <thead><tr><th>Email</th><th>Name</th><th>Role</th><th>External</th><th>Added</th><th></th></tr></thead>
+          <tbody id="people-tbody"></tbody>
+        </table>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:14px;flex-wrap:wrap">
+          <input id="people-add-email" placeholder="someone@vyvehealth.co.uk" style="flex:1;min-width:200px;padding:8px 12px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface);font-size:13px"/>
+          <select id="people-add-role" class="acl-role-select">
+            <option value="member">Member</option>
+            <option value="lead">Lead</option>
+            <option value="owner">Owner</option>
+            <option value="external">External</option>
+          </select>
+          <button class="btn btn-primary btn-sm" id="people-add">Add person</button>
+          <button class="btn btn-ghost btn-sm" id="people-reset" style="margin-left:auto">Reset to defaults</button>
+        </div>
+        <div style="margin-top:10px;font-size:11px;color:var(--text-muted)">
+          New team members are added automatically as <strong>Member</strong> on first login. Use this panel to upgrade them when needed.
+        </div>
+      </div>
     </div>
   </div>
 
@@ -371,5 +413,128 @@
 
   diagInspect();
 
+})();
+</script>
+
+<script>
+// People & roles panel logic
+(function(){
+  if (!window.VYVE_ACL) return;
+
+  function escape(s){
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function isOwner(){ return window.VYVE_ACL.is('owner'); }
+  function currentEmail(){ return window.VYVE_ACL.currentEmail(); }
+
+  function renderPeople(){
+    var tbody = document.getElementById('people-tbody');
+    var note = document.getElementById('people-role-note');
+    if (!tbody) return;
+
+    if (note) {
+      if (isOwner()) {
+        note.textContent = 'You can manage roles here.';
+        note.style.color = 'var(--vyve-teal)';
+      } else {
+        note.textContent = 'Your role is "' + window.VYVE_ACL.role() + '" \u2014 only Owners can change role assignments.';
+        note.style.color = 'var(--warning)';
+      }
+    }
+
+    var people = window.VYVE_ACL.people();
+    var canEdit = isOwner();
+    tbody.innerHTML = people.map(function(p){
+      var roleSelect = '<select class="acl-role-select" data-row-email="' + escape(p.email) + '" ' + (canEdit ? '' : 'disabled') + '>' +
+        ['owner','lead','member'].map(function(r){
+          return '<option value="' + r + '"' + (p.role === r ? ' selected' : '') + '>' + r.charAt(0).toUpperCase() + r.slice(1) + '</option>';
+        }).join('') +
+      '</select>';
+      var extToggle = '<input type="checkbox" data-ext-email="' + escape(p.email) + '"' + (p.external ? ' checked' : '') + (canEdit ? '' : ' disabled') + '/>';
+      var added = p.addedAt ? new Date(p.addedAt).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '';
+      var removeBtn = canEdit && p.email.toLowerCase() !== currentEmail() && p.email.toLowerCase() !== 'lewis@vyvehealth.co.uk'
+        ? '<button class="btn btn-ghost btn-sm" data-remove-email="' + escape(p.email) + '" style="color:var(--danger)">Remove</button>'
+        : '<span style="color:var(--text-muted);font-size:11px">\u2014</span>';
+      return '<tr>' +
+        '<td><div style="font-weight:600">' + escape(p.email) + '</div></td>' +
+        '<td>' + escape(p.name || '') + '</td>' +
+        '<td>' + roleSelect + '</td>' +
+        '<td style="text-align:center">' + extToggle + '</td>' +
+        '<td style="font-size:12px;color:var(--text-muted)">' + added + '</td>' +
+        '<td style="text-align:right">' + removeBtn + '</td>' +
+      '</tr>';
+    }).join('');
+
+    // Wire change handlers
+    tbody.querySelectorAll('[data-row-email]').forEach(function(sel){
+      sel.addEventListener('change', function(){
+        var email = sel.getAttribute('data-row-email');
+        var newRole = sel.value;
+        var ext = !!tbody.querySelector('[data-ext-email="' + email + '"]').checked;
+        if (window.VYVE_ACL.setRole(email, newRole, ext)) {
+          if (window.VYVE_UI && window.VYVE_UI.toast) window.VYVE_UI.toast('Updated ' + email + ' to ' + newRole, 'success');
+          renderPeople();
+        }
+      });
+    });
+    tbody.querySelectorAll('[data-ext-email]').forEach(function(cb){
+      cb.addEventListener('change', function(){
+        var email = cb.getAttribute('data-ext-email');
+        var person = window.VYVE_ACL.people().find(function(p){ return p.email.toLowerCase() === email.toLowerCase(); });
+        if (person && window.VYVE_ACL.setRole(email, person.role, cb.checked)) {
+          if (window.VYVE_UI && window.VYVE_UI.toast) window.VYVE_UI.toast(cb.checked ? 'Marked external' : 'Unmarked external', 'success');
+          renderPeople();
+        }
+      });
+    });
+    tbody.querySelectorAll('[data-remove-email]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var email = btn.getAttribute('data-remove-email');
+        if (!confirm('Remove ' + email + ' from the role list? They will default back to "member" next time they log in.')) return;
+        if (window.VYVE_ACL.removePerson(email)) {
+          if (window.VYVE_UI && window.VYVE_UI.toast) window.VYVE_UI.toast('Removed ' + email, 'success');
+          renderPeople();
+        }
+      });
+    });
+
+    // Disable the add controls if not owner
+    var addBtn = document.getElementById('people-add');
+    var addEmail = document.getElementById('people-add-email');
+    var addRole = document.getElementById('people-add-role');
+    var resetBtn = document.getElementById('people-reset');
+    [addBtn, addEmail, addRole, resetBtn].forEach(function(el){
+      if (el) el.disabled = !canEdit;
+    });
+  }
+
+  document.getElementById('people-add') && document.getElementById('people-add').addEventListener('click', function(){
+    var email = document.getElementById('people-add-email').value.trim().toLowerCase();
+    if (!email || email.indexOf('@') < 0) {
+      if (window.VYVE_UI && window.VYVE_UI.toast) window.VYVE_UI.toast('Enter a valid email', 'error');
+      return;
+    }
+    var role = document.getElementById('people-add-role').value;
+    var external = role === 'external';
+    if (window.VYVE_ACL.setRole(email, role, external)) {
+      document.getElementById('people-add-email').value = '';
+      if (window.VYVE_UI && window.VYVE_UI.toast) window.VYVE_UI.toast('Added ' + email + ' as ' + role, 'success');
+      renderPeople();
+    }
+  });
+
+  document.getElementById('people-reset') && document.getElementById('people-reset').addEventListener('click', function(){
+    if (!confirm('Reset all role assignments to defaults? Only Lewis and Dean will remain as Owners. All other people will be cleared.')) return;
+    if (window.VYVE_ACL.resetToDefaults()) {
+      if (window.VYVE_UI && window.VYVE_UI.toast) window.VYVE_UI.toast('Reset to defaults', 'success');
+      renderPeople();
+    }
+  });
+
+  renderPeople();
+  window.addEventListener('vyve:acl:change', renderPeople);
 })();
 </script>
