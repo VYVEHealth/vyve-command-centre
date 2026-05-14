@@ -95,7 +95,7 @@
   <script src="assets/seed-data.js"></script>
   <script src="lib/router.js"></script>
   <script>
-    // Mobile sidebar toggle
+    // Mobile sidebar toggle + swipe-to-close gesture
     (function(){
       function $(s){ return document.querySelector(s); }
       var sb = $('#sidebar');
@@ -106,10 +106,36 @@
       function toggle(){ if (sb && sb.classList.contains('open')) close(); else open(); }
       if (btn) btn.addEventListener('click', toggle);
       if (ov)  ov.addEventListener('click', close);
-      // Close on route change
       window.addEventListener('vyve:page', close);
-      // Close on Esc
       document.addEventListener('keydown', function(e){ if (e.key === 'Escape') close(); });
+
+      // Swipe gestures: left-edge swipe-right opens the drawer; on drawer, swipe-left closes
+      var touchStartX = 0, touchStartY = 0, touchTracking = false;
+      function isMobile(){ return window.innerWidth <= 900; }
+
+      document.addEventListener('touchstart', function(e){
+        if (!isMobile()) return;
+        var t = e.touches[0];
+        touchStartX = t.clientX;
+        touchStartY = t.clientY;
+        // Track if starting from left edge (open) or on the drawer (close)
+        if (touchStartX < 24 && !sb.classList.contains('open')) touchTracking = 'open';
+        else if (sb.classList.contains('open') && touchStartX < 320) touchTracking = 'close';
+        else touchTracking = false;
+      }, { passive: true });
+
+      document.addEventListener('touchend', function(e){
+        if (!touchTracking) return;
+        var t = e.changedTouches[0];
+        var dx = t.clientX - touchStartX;
+        var dy = Math.abs(t.clientY - touchStartY);
+        // Require a primarily horizontal swipe of at least 60px
+        if (Math.abs(dx) > 60 && dy < 80){
+          if (touchTracking === 'open' && dx > 0) open();
+          else if (touchTracking === 'close' && dx < 0) close();
+        }
+        touchTracking = false;
+      }, { passive: true });
     })();
   </script>
 </body>

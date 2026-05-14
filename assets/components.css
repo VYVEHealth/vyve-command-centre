@@ -530,3 +530,75 @@ table.tbl tr:hover td { background: var(--surface-2); }
     white-space: normal;  /* allow wrapping on mobile so titles aren't cut */
   }
 }
+
+/* ===== Commit 30 mobile polish ===== */
+@media (max-width: 720px) {
+  /* Bigger tap target on Action Plans member-head — easier to hit on phone */
+  .ap-member-head {
+    padding: 16px 16px !important;
+    min-height: 56px;
+  }
+  /* Action rows: a bit more breathing room */
+  .ap-action-row {
+    padding: 14px 16px !important;
+  }
+  /* Status pills are larger */
+  .ap-status-pill {
+    padding: 5px 11px !important;
+    font-size: 11px !important;
+  }
+  /* Avatar slightly larger for hit area */
+  .ap-avatar {
+    width: 40px !important;
+    height: 40px !important;
+  }
+  /* Make filter pills wrap nicely + bigger tap targets */
+  .ap-filter {
+    padding: 7px 13px !important;
+  }
+  /* Page title on tight screens shouldn't break midway */
+  .page-title {
+    word-break: keep-all;
+  }
+}
+
+/* Topbar on mobile: don't let crumbs wrap to a second row */
+@media (max-width: 900px) {
+  .topbar {
+    flex-wrap: nowrap;
+    min-width: 0;
+  }
+  .topbar .crumbs {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .topbar .crumbs .crumb.current {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+/* Settings tabs: scrollable horizontally on narrow screens so all 5 tabs are reachable */
+@media (max-width: 720px) {
+  #page-settings .tab-bar {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+  #page-settings .tab-btn {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+}
+
+/* Brief page-sub: don't squash awkwardly on mobile */
+@media (max-width: 480px) {
+  #page-brief .page-sub {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+}
