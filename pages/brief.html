@@ -1,42 +1,79 @@
 <div class="page active" id="page-brief">
-  <div class="page-header">
-    <div>
-      <div class="page-title">Morning Brief</div>
-      <div class="page-sub" id="brief-date"></div>
+
+  <!-- Hero greeting block -->
+  <div class="brief-hero">
+    <div class="brief-hero-left">
+      <div class="eyebrow" id="brief-eyebrow">Morning Brief</div>
+      <h1 class="brief-greeting" id="brief-greeting">Morning, Lewis.</h1>
+      <p class="brief-motto">Build health before it breaks.</p>
     </div>
-    <div style="display:flex;gap:8px">
-      <button class="btn btn-ghost" id="brief-refresh" type="button">Refresh</button>
+    <div class="brief-hero-right">
+      <div class="brief-clock" id="brief-clock">&mdash;</div>
+      <div class="brief-day" id="brief-date">&mdash;</div>
+      <button class="btn btn-ghost btn-sm" id="brief-refresh" type="button" style="margin-top:12px">↻ Refresh</button>
     </div>
   </div>
 
-  <!-- KPIs row -->
-  <div class="grid-4 stats-row" id="brief-kpis"></div>
+  <!-- Hero stat (the single most important number) + 3 supporting KPIs -->
+  <div class="brief-kpi-grid">
+    <div class="stat-hero stat-hero-action" id="brief-action-hero">
+      <div class="stat-label">Team action plans</div>
+      <div class="stat-num" id="brief-action-pct">&mdash;</div>
+      <div class="stat-sub" id="brief-action-sub">&mdash;</div>
+    </div>
+    <div class="brief-supporting">
+      <div class="stat" data-route="#/performance" id="brief-stat-reach">
+        <div class="stat-label">30-day reach</div>
+        <div class="stat-num" id="brief-reach">&mdash;</div>
+        <div class="stat-sub">Across LinkedIn, IG, FB</div>
+      </div>
+      <div class="stat" data-route="#/finance" id="brief-stat-mrr">
+        <div class="stat-label">MRR</div>
+        <div class="stat-num" id="brief-mrr">&mdash;</div>
+        <div class="stat-sub" id="brief-mrr-sub">Latest snapshot</div>
+      </div>
+      <div class="stat" data-route="#/crm" id="brief-stat-pipe">
+        <div class="stat-label">Open pipeline</div>
+        <div class="stat-num" id="brief-pipe">&mdash;</div>
+        <div class="stat-sub" id="brief-pipe-sub">In flight</div>
+      </div>
+    </div>
+  </div>
 
   <!-- Two-column body -->
-  <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:18px;margin-top:18px" id="brief-grid">
-    <div style="display:flex;flex-direction:column;gap:18px">
+  <div class="brief-body">
+    <div class="brief-col-main">
       <div class="card">
-        <div class="card-header"><div class="card-title">Today's priorities</div><div class="card-sub" id="brief-task-count"></div></div>
+        <div class="card-header">
+          <div class="card-title">Today’s priorities</div>
+          <div class="card-sub" id="brief-task-count"></div>
+        </div>
         <div id="brief-tasks" class="card-body"></div>
       </div>
       <div class="card">
-        <div class="card-header"><div class="card-title">Closing this month</div><div class="card-sub" id="brief-deal-count"></div></div>
-        <div id="brief-deals" class="card-body"></div>
+        <div class="card-header">
+          <div class="card-title">Action plans</div>
+          <div class="card-sub" id="brief-ap-sub">Overdue &amp; due this fortnight</div>
+        </div>
+        <div id="brief-actions" class="card-body"></div>
       </div>
       <div class="card">
-        <div class="card-header"><div class="card-title">Sessions today & tomorrow</div><div class="card-sub" id="brief-sess-count"></div></div>
-        <div id="brief-sessions" class="card-body"></div>
+        <div class="card-header">
+          <div class="card-title">Closing this month</div>
+          <div class="card-sub" id="brief-deal-count"></div>
+        </div>
+        <div id="brief-deals" class="card-body"></div>
       </div>
     </div>
 
-    <div style="display:flex;flex-direction:column;gap:18px">
+    <div class="brief-col-side">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Sessions next 48h</div><div class="card-sub" id="brief-sess-count"></div></div>
+        <div id="brief-sessions" class="card-body"></div>
+      </div>
       <div class="card">
         <div class="card-header"><div class="card-title">Compliance due</div><div class="card-sub">Next 30 days</div></div>
         <div id="brief-compliance" class="card-body"></div>
-      </div>
-      <div class="card">
-        <div class="card-header"><div class="card-title">Action plans</div><div class="card-sub" id="brief-ap-sub">Overdue &amp; due this fortnight</div></div>
-        <div id="brief-actions" class="card-body"></div>
       </div>
       <div class="card">
         <div class="card-header"><div class="card-title">Fresh intel</div><div class="card-sub">Latest signals</div></div>
@@ -50,18 +87,168 @@
   </div>
 </div>
 
+<style>
+  /* Brief-specific layout */
+  .brief-hero {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 32px;
+    padding: 32px 36px;
+    background: linear-gradient(135deg, var(--vyve-cream) 0%, var(--bg-alt) 100%);
+    border: 1px solid var(--border);
+    border-radius: var(--r-xl);
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-xs);
+  }
+  .brief-hero-left { flex: 1; min-width: 0; }
+  .brief-hero-right { text-align: right; flex-shrink: 0; }
+
+  .brief-hero .eyebrow {
+    font-size: var(--fs-xxs);
+    font-weight: var(--fw-bold);
+    letter-spacing: var(--ls-mega);
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+  }
+  .brief-greeting {
+    font-family: var(--font-head);
+    font-size: var(--fs-4xl);
+    font-weight: var(--fw-bold);
+    color: var(--text);
+    line-height: 1;
+    letter-spacing: var(--ls-tight);
+    margin: 0 0 12px 0;
+  }
+  .brief-motto {
+    font-family: var(--font-head);
+    font-size: var(--fs-md);
+    font-style: italic;
+    color: var(--text-muted);
+    margin: 0;
+  }
+  .brief-clock {
+    font-family: var(--font-head);
+    font-size: var(--fs-3xl);
+    font-weight: var(--fw-bold);
+    color: var(--text);
+    letter-spacing: var(--ls-tight);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .brief-day {
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+    letter-spacing: var(--ls-wide);
+    text-transform: uppercase;
+    font-weight: var(--fw-semi);
+    margin-top: 8px;
+  }
+
+  /* KPI hierarchy */
+  .brief-kpi-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 2fr;
+    gap: 18px;
+    margin-bottom: 24px;
+  }
+  .stat-hero-action {
+    background: linear-gradient(135deg, var(--vyve-dark) 0%, #0f3232 100%);
+    color: #FAF8F4;
+    border: 0;
+    box-shadow: var(--shadow-md);
+  }
+  .stat-hero-action .stat-label {
+    color: rgba(255,255,255,.55);
+  }
+  .stat-hero-action .stat-num {
+    color: #FAF8F4;
+    font-size: var(--fs-hero);
+  }
+  .stat-hero-action .stat-sub {
+    color: rgba(255,255,255,.7);
+  }
+  .brief-supporting {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+  .brief-supporting .stat .stat-num { font-size: var(--fs-2xl); }
+
+  /* Body layout */
+  .brief-body {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 18px;
+  }
+  .brief-col-main, .brief-col-side {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  /* Stat hero accent dot — visually echoes the three pillars subtly */
+  .stat-hero-action::after {
+    content: '';
+    position: absolute;
+    top: 18px;
+    right: 20px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--vyve-teal-light);
+    box-shadow: 0 0 12px rgba(77,170,170,.6);
+  }
+
+  /* Mobile */
+  @media (max-width: 900px) {
+    .brief-hero {
+      flex-direction: column;
+      gap: 20px;
+      padding: 24px;
+    }
+    .brief-hero-right { text-align: left; }
+    .brief-greeting { font-size: var(--fs-3xl); }
+    .brief-clock { font-size: var(--fs-2xl); }
+    .brief-kpi-grid { grid-template-columns: 1fr; }
+    .brief-supporting { grid-template-columns: repeat(3, 1fr); }
+    .brief-body { grid-template-columns: 1fr; }
+    .stat-hero-action .stat-num { font-size: var(--fs-4xl); }
+  }
+  @media (max-width: 600px) {
+    .brief-supporting { grid-template-columns: 1fr; }
+    .brief-hero { padding: 22px; }
+    .brief-greeting { font-size: var(--fs-2xl); }
+  }
+</style>
+
 <script>
 (function(){
   if (!window.VYVE_DATA) { console.error('[Brief] VYVE_DATA not loaded'); return; }
   var D = window.VYVE_DATA;
 
   function el(id){ return document.getElementById(id); }
-  function empty(msg){ return '<div class="empty" style="padding:18px 0;font-size:13px">' + msg + '</div>'; }
+  function empty(msg){ return '<div class="empty" style="padding:20px 0">' + msg + '</div>'; }
 
-  function setDate(){
+  function setGreeting(){
+    var hour = new Date().getHours();
+    var name = 'Lewis';
+    var phase = hour < 5  ? 'Late night,' :
+                hour < 12 ? 'Morning,' :
+                hour < 17 ? 'Afternoon,' :
+                hour < 22 ? 'Evening,' : 'Late night,';
+    var eyebrow = hour < 12 ? 'Morning Brief' : hour < 17 ? 'Afternoon Brief' : 'Evening Brief';
+    el('brief-eyebrow').textContent = eyebrow;
+    el('brief-greeting').textContent = phase + ' ' + name + '.';
+  }
+
+  function setClock(){
     var d = new Date();
-    var opts = { weekday:'long', year:'numeric', month:'long', day:'numeric' };
-    el('brief-date').textContent = d.toLocaleDateString('en-GB', opts);
+    var hh = String(d.getHours()).padStart(2, '0');
+    var mm = String(d.getMinutes()).padStart(2, '0');
+    el('brief-clock').textContent = hh + ':' + mm;
+    el('brief-date').textContent = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
   }
 
   function renderKPIs(){
@@ -70,33 +257,78 @@
     var pipeline = D.deals.pipelineValue();
     var apPct = D.actions.completionPct();
     var apOverdue = D.actions.overdue().length;
+    var apDueSoon = D.actions.dueSoon(14).length;
 
-    var kpis = [
-      { label: '30-day reach', value: D.fmt(perf30), sub: 'across LinkedIn, IG, FB' },
-      { label: 'MRR', value: D.fmtGBP(mrr), sub: mrr ? 'latest snapshot' : 'add in Finance' },
-      { label: 'Action plans', value: (apPct != null ? apPct : 0) + '%', sub: apOverdue ? apOverdue + ' overdue' : 'complete across the team' },
-      { label: 'Pipeline', value: D.fmtGBP(pipeline), sub: pipeline ? 'open deals' : 'no deals yet' }
-    ];
+    el('brief-action-pct').textContent = (apPct != null ? apPct : 0) + '%';
+    var apSubParts = [];
+    if (apOverdue) apSubParts.push(apOverdue + ' overdue');
+    if (apDueSoon) apSubParts.push(apDueSoon + ' due in 14 days');
+    if (!apSubParts.length) apSubParts.push('Across the team');
+    el('brief-action-sub').textContent = apSubParts.join('  ·  ');
 
-    el('brief-kpis').innerHTML = kpis.map(function(k){
-      return '<div class="stat"><div class="stat-num">' + k.value + '</div><div class="stat-label">' + k.label + '</div><div class="stat-sub">' + k.sub + '</div></div>';
-    }).join('');
+    el('brief-reach').textContent = D.fmt(perf30);
+    el('brief-mrr').textContent = D.fmtGBP(mrr);
+    el('brief-mrr-sub').textContent = mrr ? 'Latest snapshot' : 'Add in Finance';
+    el('brief-pipe').textContent = D.fmtGBP(pipeline);
+    el('brief-pipe-sub').textContent = pipeline ? 'Open deals' : 'No deals yet';
   }
 
   function renderTasks(){
     var items = D.tasks.todayOrOverdue();
-    el('brief-task-count').textContent = items.length + ' due';
-    if (!items.length) { el('brief-tasks').innerHTML = empty('No tasks due today. Add some in Tasks.'); return; }
+    el('brief-task-count').textContent = items.length ? items.length + ' due' : '';
+    if (!items.length) { el('brief-tasks').innerHTML = empty('No tasks due today. Add in Tasks.'); return; }
     el('brief-tasks').innerHTML = items.slice(0, 6).map(function(t){
       var d = D.parseDate(t.due);
       var overdue = d && d < D.startOfDay();
-      var dateStr = d ? d.toLocaleDateString('en-GB', { day:'numeric', month:'short'}) : '';
-      var priority = (t.priority||'').toLowerCase();
-      var pColor = priority === 'high' ? '#e06060' : priority === 'medium' ? 'var(--vyve-gold)' : 'var(--text-muted)';
-      return '<div class="list-row" data-route="#/tasks" style="cursor:pointer">' +
-        '<div class="list-row-main"><div class="list-row-title">' + (t.title || 'Untitled') + '</div>' +
-        '<div class="list-row-sub">' + (t.owner ? t.owner + ' · ' : '') + '<span style="color:' + (overdue ? '#e06060' : 'var(--text-muted)') + '">' + (overdue ? 'Overdue · ' : '') + dateStr + '</span></div></div>' +
-        (priority ? '<span class="badge" style="background:' + pColor + '22;color:' + pColor + '">' + priority + '</span>' : '') +
+      var dateStr = d ? d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '';
+      var priority = (t.priority || '').toLowerCase();
+      var pClass = priority === 'high' ? 'badge-red' : priority === 'medium' ? 'badge-amber' : 'badge-grey';
+      return '<div class="list-row" data-route="#/tasks">' +
+        '<div class="list-row-main">' +
+          '<div class="list-row-title">' + (t.title || 'Untitled') + '</div>' +
+          '<div class="list-row-sub">' + (t.owner ? VYVE_UI.escape(t.owner) + '  ·  ' : '') +
+            (overdue ? '<span style="color:var(--danger);font-weight:600">Overdue · ' + dateStr + '</span>' : dateStr) +
+          '</div>' +
+        '</div>' +
+        (priority ? '<span class="badge ' + pClass + '">' + priority + '</span>' : '') +
+      '</div>';
+    }).join('');
+  }
+
+  function renderActions(){
+    var overdue = D.actions.overdue();
+    var soon = D.actions.dueSoon(14);
+    var items = overdue.concat(soon);
+    items.sort(function(a, b){
+      var aOver = (function(){ var d = D.parseDate(a.due); return d && d < D.startOfDay(); })();
+      var bOver = (function(){ var d = D.parseDate(b.due); return d && d < D.startOfDay(); })();
+      if (aOver && !bOver) return -1;
+      if (!aOver && bOver) return 1;
+      return D.parseDate(a.due) - D.parseDate(b.due);
+    });
+    el('brief-ap-sub').textContent = overdue.length + ' overdue  ·  ' + soon.length + ' due in 14d';
+    if (!items.length) {
+      el('brief-actions').innerHTML = empty('No overdue or upcoming actions — add deadlines in Action Plans.');
+      return;
+    }
+    el('brief-actions').innerHTML = items.slice(0, 6).map(function(a){
+      var d = D.parseDate(a.due);
+      var today = D.startOfDay();
+      var isOverdue = d && d < today;
+      var days = d ? Math.ceil((d - today) / 86400000) : null;
+      var badgeText = isOverdue ? Math.abs(days) + 'd over' : (days === 0 ? 'today' : days + 'd');
+      var badgeClass = isOverdue ? 'badge-red' : (days != null && days <= 7) ? 'badge-amber' : 'badge-teal';
+      var memberInitial = (a.member_name || '?').charAt(0);
+      var truncated = (a.text || '').length > 90 ? (a.text || '').slice(0, 88) + '…' : (a.text || '');
+      return '<div class="list-row" data-route="#/action-plans">' +
+        '<div class="list-row-main">' +
+          '<div class="list-row-title" style="display:flex;align-items:center;gap:10px">' +
+            '<span class="ap-avatar" style="width:24px;height:24px;font-size:11px;flex-shrink:0">' + memberInitial + '</span>' +
+            '<span style="overflow:hidden;text-overflow:ellipsis">' + VYVE_UI.escape(truncated) + '</span>' +
+          '</div>' +
+          '<div class="list-row-sub" style="margin-left:34px">' + VYVE_UI.escape(a.member_name || '') + '</div>' +
+        '</div>' +
+        '<span class="badge ' + badgeClass + '">' + badgeText + '</span>' +
       '</div>';
     }).join('');
   }
@@ -106,9 +338,11 @@
     el('brief-deal-count').textContent = items.length ? D.fmtGBP(items.reduce(function(s,d){return s+(Number(d.value)||0);},0)) : '';
     if (!items.length) { el('brief-deals').innerHTML = empty('No deals closing this month. Manage in CRM.'); return; }
     el('brief-deals').innerHTML = items.slice(0, 5).map(function(d){
-      return '<div class="list-row" data-route="#/crm" style="cursor:pointer">' +
-        '<div class="list-row-main"><div class="list-row-title">' + (d.company || d.title || 'Deal') + '</div>' +
-        '<div class="list-row-sub">' + (d.stage || '') + (d.expected_close ? ' · ' + new Date(d.expected_close).toLocaleDateString('en-GB',{day:'numeric',month:'short'}) : '') + '</div></div>' +
+      return '<div class="list-row" data-route="#/crm">' +
+        '<div class="list-row-main">' +
+          '<div class="list-row-title">' + (d.company || d.title || 'Deal') + '</div>' +
+          '<div class="list-row-sub">' + (d.stage || '') + (d.expected_close ? '  ·  ' + new Date(d.expected_close).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '') + '</div>' +
+        '</div>' +
         '<span class="stat-mini">' + D.fmtGBP(Number(d.value)||0) + '</span>' +
       '</div>';
     }).join('');
@@ -117,14 +351,21 @@
   function renderSessions(){
     var items = D.sessions.todayAndTomorrow();
     el('brief-sess-count').textContent = items.length ? items.length + ' upcoming' : '';
-    if (!items.length) { el('brief-sessions').innerHTML = empty('No sessions today or tomorrow. Schedule in Sessions.'); return; }
+    if (!items.length) { el('brief-sessions').innerHTML = empty('Nothing in the next 48 hours.'); return; }
     el('brief-sessions').innerHTML = items.map(function(s){
       var d = D.parseDate(s.date);
-      var time = d ? d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '';
+      var time = d ? d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '';
       var isToday = d && d.toDateString() === new Date().toDateString();
-      return '<div class="list-row" data-route="#/sessions" style="cursor:pointer">' +
-        '<div class="list-row-main"><div class="list-row-title">' + (s.title || 'Session') + '</div>' +
-        '<div class="list-row-sub">' + (s.client || s.attendees || '') + ' · ' + (isToday ? 'Today' : 'Tomorrow') + ' ' + time + '</div></div>' +
+      var pillar = (s.pillar || '').toLowerCase();
+      var pillarTag = ['physical', 'mental', 'social'].indexOf(pillar) >= 0
+        ? '<span class="pillar-tag ' + pillar + '">' + pillar + '</span>'
+        : '';
+      return '<div class="list-row" data-route="#/sessions">' +
+        '<div class="list-row-main">' +
+          '<div class="list-row-title">' + (s.title || 'Session') + '</div>' +
+          '<div class="list-row-sub">' + (s.client || s.attendees || '') + '  ·  ' + (isToday ? 'Today' : 'Tomorrow') + ' ' + time + '</div>' +
+        '</div>' +
+        pillarTag +
       '</div>';
     }).join('');
   }
@@ -135,56 +376,13 @@
     el('brief-compliance').innerHTML = items.slice(0, 5).map(function(c){
       var d = D.parseDate(c.due);
       var days = d ? Math.ceil((d - Date.now()) / 86400000) : null;
-      var color = days != null && days <= 7 ? '#e06060' : days != null && days <= 14 ? 'var(--vyve-gold)' : 'var(--text-muted)';
-      return '<div class="list-row" data-route="#/compliance" style="cursor:pointer">' +
-        '<div class="list-row-main"><div class="list-row-title">' + (c.title || c.area || 'Item') + '</div>' +
-        '<div class="list-row-sub">' + (c.area || '') + '</div></div>' +
-        '<span class="badge" style="background:' + color + '22;color:' + color + '">' + (days != null ? (days <= 0 ? 'overdue' : days + 'd') : '—') + '</span>' +
-      '</div>';
-    }).join('');
-  }
-
-  function renderActions(){
-    var overdue = D.actions.overdue();
-    var soon = D.actions.dueSoon(14);
-    // Dedupe (overdue items can technically also appear in dueSoon if due=today but that's filtered out by our dueSoon impl)
-    var items = overdue.concat(soon);
-    // Sort: overdue first (most overdue at top), then due-soon (soonest at top)
-    items.sort(function(a, b){
-      var aOver = (function(){ var d = D.parseDate(a.due); return d && d < D.startOfDay(); })();
-      var bOver = (function(){ var d = D.parseDate(b.due); return d && d < D.startOfDay(); })();
-      if (aOver && !bOver) return -1;
-      if (!aOver && bOver) return 1;
-      return D.parseDate(a.due) - D.parseDate(b.due);
-    });
-
-    var subEl = document.getElementById('brief-ap-sub');
-    if (subEl) subEl.textContent = overdue.length + ' overdue \u00b7 ' + soon.length + ' due in 14d';
-
-    if (!items.length) {
-      el('brief-actions').innerHTML = empty('No overdue or upcoming actions \u2014 add deadlines in Action Plans.');
-      return;
-    }
-
-    el('brief-actions').innerHTML = items.slice(0, 6).map(function(a){
-      var d = D.parseDate(a.due);
-      var today = D.startOfDay();
-      var isOverdue = d && d < today;
-      var days = d ? Math.ceil((d - today) / 86400000) : null;
-      var dateStr = d ? d.toLocaleDateString('en-GB', { day:'numeric', month:'short'}) : '';
-      var badgeText = isOverdue ? Math.abs(days) + 'd over' : (days === 0 ? 'today' : days + 'd');
-      var badgeColor = isOverdue ? '#e06060' : (days != null && days <= 7) ? 'var(--vyve-gold)' : 'var(--vyve-teal-light)';
-      var memberInitial = (a.member_name || '?').charAt(0);
-      var truncated = (a.text || '').length > 90 ? (a.text || '').slice(0, 88) + '\u2026' : (a.text || '');
-      return '<div class="list-row" data-route="#/action-plans" style="cursor:pointer">' +
+      var badgeClass = days != null && days <= 7 ? 'badge-red' : days != null && days <= 14 ? 'badge-amber' : 'badge-grey';
+      return '<div class="list-row" data-route="#/compliance">' +
         '<div class="list-row-main">' +
-          '<div class="list-row-title">' +
-            '<span style="display:inline-block;width:18px;height:18px;border-radius:50%;background:var(--vyve-teal-dark);color:var(--text);font-size:10px;font-weight:700;text-align:center;line-height:18px;margin-right:8px;font-family:var(--font-head)">' + memberInitial + '</span>' +
-            truncated +
-          '</div>' +
-          '<div class="list-row-sub">' + (a.member_name || '') + ' \u00b7 ' + dateStr + '</div>' +
+          '<div class="list-row-title">' + (c.title || c.area || 'Item') + '</div>' +
+          '<div class="list-row-sub">' + (c.area || '') + '</div>' +
         '</div>' +
-        '<span class="badge" style="background:' + badgeColor + '22;color:' + badgeColor + '">' + badgeText + '</span>' +
+        '<span class="badge ' + badgeClass + '">' + (days != null ? (days <= 0 ? 'overdue' : days + 'd') : '—') + '</span>' +
       '</div>';
     }).join('');
   }
@@ -193,23 +391,26 @@
     var intel = D.intel.recent(3);
     var comp = D.competitors.recent(2);
     var combined = intel.concat(comp).sort(function(a,b){ return new Date(b.created_at||0) - new Date(a.created_at||0); }).slice(0, 5);
-    if (!combined.length) { el('brief-intel').innerHTML = empty('No fresh intel yet. Add in Research/Grants or Competitors, or pull from the Intel Hub.'); return; }
+    if (!combined.length) { el('brief-intel').innerHTML = empty('No fresh intel yet.'); return; }
     el('brief-intel').innerHTML = combined.map(function(i){
       return '<div class="list-row">' +
-        '<div class="list-row-main"><div class="list-row-title">' + (i.title || 'Signal') + '</div>' +
-        '<div class="list-row-sub">' + (i.type || i.source || '') + (i.created_at ? ' · ' + D.relTime(new Date(i.created_at)) : '') + '</div></div>' +
+        '<div class="list-row-main">' +
+          '<div class="list-row-title">' + (i.title || 'Signal') + '</div>' +
+          '<div class="list-row-sub">' + (i.type || i.source || '') + (i.created_at ? '  ·  ' + D.relTime(new Date(i.created_at)) : '') + '</div>' +
+        '</div>' +
       '</div>';
     }).join('');
   }
 
   function renderActivity(){
     var items = D.activity(6);
-    if (!items.length) { el('brief-activity').innerHTML = empty('No activity yet — start adding tasks, deals, or content.'); return; }
-    var iconFor = { task:'✓', deal:'£', session:'📅', content:'✎', podcast:'🎙', client:'◐', compliance:'⚖' };
+    if (!items.length) { el('brief-activity').innerHTML = empty('No activity yet.'); return; }
     el('brief-activity').innerHTML = items.map(function(i){
       return '<div class="list-row">' +
-        '<div class="list-row-main"><div class="list-row-title">' + (iconFor[i.type]||'•') + ' ' + i.title + '</div>' +
-        '<div class="list-row-sub">' + i.type + ' · ' + D.relTime(i.date) + '</div></div>' +
+        '<div class="list-row-main">' +
+          '<div class="list-row-title">' + i.title + '</div>' +
+          '<div class="list-row-sub">' + i.type + '  ·  ' + D.relTime(i.date) + '</div>' +
+        '</div>' +
       '</div>';
     }).join('');
   }
@@ -224,13 +425,14 @@
   }
 
   function renderAll(){
-    setDate();
+    setGreeting();
+    setClock();
     renderKPIs();
     renderTasks();
+    renderActions();
     renderDeals();
     renderSessions();
     renderCompliance();
-    renderActions();
     renderIntel();
     renderActivity();
     wireRowClicks();
@@ -238,5 +440,7 @@
 
   el('brief-refresh').addEventListener('click', renderAll);
   renderAll();
+  // Tick the clock every 30s, refresh greeting on the minute
+  setInterval(function(){ setClock(); setGreeting(); }, 30000);
 })();
 </script>
