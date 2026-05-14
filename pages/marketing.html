@@ -1,11 +1,11 @@
-<div class="page active" id="page-knowledge">
+<div class="page active" id="page-marketing">
   <div class="page-hero">
-    <div class="eyebrow">Source of Truth</div>
-    <h1 class="page-title">Knowledge</h1>
-    <p class="page-sub">Strategy, documents, knowledge base. The reference layer that informs every decision.</p>
+    <div class="eyebrow">Brand & Reach</div>
+    <h1 class="page-title">Marketing</h1>
+    <p class="page-sub">Brand, content, social, podcast, performance. The full marketing engine, with live signal.</p>
   </div>
 
-  <div class="hub-tiles" id="hub-knowledge-tiles"></div>
+  <div class="hub-tiles" id="hub-marketing-tiles"></div>
 </div>
 
 <style>
@@ -125,10 +125,10 @@
 
 <script>
 (function(){
-  if (!window.VYVE_DATA) { console.error('[hub-knowledge] VYVE_DATA not loaded'); return; }
+  if (!window.VYVE_DATA) { console.error('[hub-marketing] VYVE_DATA not loaded'); return; }
   var D = window.VYVE_DATA;
   var ICONS = window.VYVE_ICONS || {};
-  var tiles = [{"slug": "strategy", "label": "Strategy", "icon": "compass", "primary": "'\\u2014'", "secondary": "'OKRs, North Star, plan'", "badge": null}, {"slug": "documents", "label": "Documents", "icon": "folder", "primary": "(function(){ var d = D.documents && D.documents.all ? D.documents.all().length : 0; return d; })()", "secondary": "'documents stored'", "badge": null}, {"slug": "knowledge", "label": "Knowledge Base", "icon": "book", "primary": "(function(){ var k = D.knowledge && D.knowledge.all ? D.knowledge.all().length : 0; return k; })()", "secondary": "'reference entries'", "badge": null}];
+  var tiles = [{"slug": "content", "label": "Content", "icon": "edit", "primary": "D.content.inFlight().length", "secondary": "'in flight  \\u00b7  ' + D.content.publishedLast30().length + ' published 30d'", "badge": null}, {"slug": "social-blueprint", "label": "Social Blueprint", "icon": "compass", "primary": "'\\u2014'", "secondary": "'Plan & playbook'", "badge": "'<span class=\"tile-badge badge-teal\">live</span>'"}, {"slug": "performance", "label": "Performance", "icon": "bar-chart", "primary": "D.fmt(D.performance.totalReach(30))", "secondary": "(function(){ var g = D.performance.reachGrowth30d('linkedin'); return g != null ? (g >= 0 ? '+' : '') + g + '% LinkedIn 30d' : '30-day reach'; })()", "badge": null}, {"slug": "podcast", "label": "Podcast", "icon": "mic", "primary": "D.podcast.published().length", "secondary": "D.podcast.inProduction().length + ' in production'", "badge": null}, {"slug": "brand", "label": "Brand", "icon": "droplet", "primary": "'\\u2014'", "secondary": "'Identity, voice, assets'", "badge": null}];
   var arrow = '<svg class="tile-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
 
   function safe(fn){ try { return fn(); } catch(e){ console.warn('tile metric error', e); return ''; } }
@@ -152,6 +152,6 @@
     '</a>';
   }
 
-  document.getElementById('hub-knowledge-tiles').innerHTML = tiles.map(renderTile).join('');
+  document.getElementById('hub-marketing-tiles').innerHTML = tiles.map(renderTile).join('');
 })();
 </script>
