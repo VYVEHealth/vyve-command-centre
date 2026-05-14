@@ -2,10 +2,7 @@
   <div class="page-header">
     <div class="hdr-row">
       <div><div class="eyebrow">Delivery</div><h1 class="page-title">Tasks</h1><p class="page-sub">Company-wide task management across the team</p></div>
-      <div style="display:flex;gap:8px">
-        <select id="tk-owner-filter" style="padding:7px 12px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface);color:var(--text);font-size:13px"><option value="">All owners</option></select>
-        <button class="btn btn-primary" id="tk-add">Add task</button>
-      </div>
+      <button class="btn btn-primary" id="tk-add">Add task</button>
     </div>
   </div>
 
@@ -15,6 +12,9 @@
     <div class="stat"><div class="stat-label">Overdue</div><div class="stat-value" id="tk-overdue" style="color:var(--danger)">0</div></div>
     <div class="stat"><div class="stat-label">Completed (7d)</div><div class="stat-value" id="tk-done" style="color:var(--success)">0</div></div>
   </div>
+
+  <!-- Saved views & filters bar -->
+  <div id="tk-views-bar"></div>
 
   <div class="kanban">
     <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">To do</span><span class="kanban-count" data-tk="todo">0</span></div><div class="kanban-body" data-tk="todo"></div></div>
@@ -28,41 +28,63 @@
 (function(){
 
   var LS='vyve_tasks';
+  var allItems = [];
+  var viewsBar = null;
+
   function lsGet(){ try { var v=localStorage.getItem(LS); return v?JSON.parse(v):[]; } catch(e){ return []; } }
   function lsSet(v){ try { localStorage.setItem(LS,JSON.stringify(v)); } catch(e){} }
+
   async function load(){
     if (window.VYVE_MAKE){ var fm = await VYVE_MAKE.list('tasks',{limit:500}); if (fm&&fm.length) return fm; }
     return lsGet();
   }
   async function save(id, item){
-    if (window.VYVE_MAKE){ var r = await VYVE_MAKE.upsert('tasks', id, item); if (r) return; }
+    var existing = lsGet().find(function(x){return x._id===id;});
+    var op = existing ? 'update' : 'create';
+    var diff = existing && window.VYVE_STORE ? window.VYVE_STORE.diff(existing, Object.assign({}, existing, item)) : null;
+    if (window.VYVE_MAKE){ var r = await VYVE_MAKE.upsert('tasks', id, item); if (r) {
+      if (window.VYVE_STORE) window.VYVE_STORE.logChange('task', id, null, op, diff);
+      return;
+    }}
     var a = lsGet(); var i = a.findIndex(function(x){return x._id===id;}); var e = Object.assign({_id:id}, item);
     if (i>=0) a[i]=e; else a.unshift(e); lsSet(a);
+    if (window.VYVE_STORE) window.VYVE_STORE.logChange('task', id, null, op, diff);
   }
-  async function remove(id){ if (window.VYVE_MAKE) await VYVE_MAKE.remove('tasks', id); lsSet(lsGet().filter(function(x){return x._id!==id;})); }
+  async function remove(id){
+    var existing = lsGet().find(function(x){return x._id===id;});
+    if (window.VYVE_STORE && existing) window.VYVE_STORE.softDelete('task', id, existing);
+    if (window.VYVE_MAKE) await VYVE_MAKE.remove('tasks', id);
+    lsSet(lsGet().filter(function(x){return x._id!==id;}));
+  }
+
+  function uniqueOwners(items){
+    return Array.from(new Set(items.map(function(t){return t.owner;}).filter(Boolean))).sort();
+  }
+  function uniqueAreas(items){
+    return Array.from(new Set(items.map(function(t){return t.area;}).filter(Boolean))).sort();
+  }
+
+  function applyFilters(items, filters){
+    return VYVE_VIEWS_UI.applyFilters(items, filters, {
+      due: function(t){ return t.due; }
+    });
+  }
 
   function render(items){
-    var ownerFilter = document.getElementById('tk-owner-filter').value;
-    if (ownerFilter) items = items.filter(function(t){ return (t.owner||'') === ownerFilter; });
-
-    // Build owner list
-    var allOwners = Array.from(new Set(items.map(function(t){return t.owner;}).filter(Boolean))).sort();
-    var sel = document.getElementById('tk-owner-filter');
-    var current = sel.value;
-    sel.innerHTML = '<option value="">All owners</option>' + allOwners.map(function(o){ return '<option value="'+VYVE_UI.escape(o)+'">'+VYVE_UI.escape(o)+'</option>'; }).join('');
-    sel.value = current;
+    var filters = viewsBar ? viewsBar.getFilters() : {};
+    var filtered = applyFilters(items, filters);
 
     var stages = { todo:[], doing:[], blocked:[], done:[] };
-    items.forEach(function(t){ var s = (t.status||'todo').toLowerCase(); if (!stages[s]) s='todo'; stages[s].push(t); });
+    filtered.forEach(function(t){ var s = (t.status||'todo').toLowerCase(); if (!stages[s]) s='todo'; stages[s].push(t); });
 
     var now = new Date(); now.setHours(0,0,0,0);
     var tomorrow = now.getTime() + 86400000;
     var weekAgo = Date.now() - 7*86400000;
-    var open = items.filter(function(t){return (t.status||'')!=='done';});
+    var open = filtered.filter(function(t){return (t.status||'')!=='done';});
     document.getElementById('tk-open').textContent = open.length;
     document.getElementById('tk-today').textContent = open.filter(function(t){ return t.due && new Date(t.due).getTime() >= now.getTime() && new Date(t.due).getTime() < tomorrow; }).length;
     document.getElementById('tk-overdue').textContent = open.filter(function(t){ return t.due && new Date(t.due).getTime() < now.getTime(); }).length;
-    document.getElementById('tk-done').textContent = items.filter(function(t){ return t.status==='done' && new Date(t.completed_at||t.updated_at||0).getTime() > weekAgo; }).length;
+    document.getElementById('tk-done').textContent = filtered.filter(function(t){ return t.status==='done' && new Date(t.completed_at||t.updated_at||0).getTime() > weekAgo; }).length;
 
     Object.keys(stages).forEach(function(stage){
       var body = document.querySelector('.kanban-body[data-tk="'+stage+'"]');
@@ -81,17 +103,28 @@
         var prioBadge = '';
         if (t.priority === 'high') prioBadge = '<span class="badge badge-red" style="margin-right:6px;font-size:9px">HIGH</span>';
         else if (t.priority === 'low') prioBadge = '<span class="badge badge-grey" style="margin-right:6px;font-size:9px">LOW</span>';
-        return '<div class="kanban-card" data-id="'+t._id+'"><div class="kc-title">'+prioBadge+VYVE_UI.escape(t.title||'')+'</div><div class="kc-meta">'+VYVE_UI.escape(t.owner||'Unassigned')+(t.due?' &middot; <span style="'+dueColor+'">'+VYVE_UI.fmtDate(t.due)+'</span>':'')+'</div></div>';
+        var ccount = (window.VYVE_COMMENTS ? window.VYVE_COMMENTS.count('task', t._id) : 0);
+        var discussBtn = '<button type="button" class="task-discuss-btn" data-discuss="'+t._id+'" title="Comments & history" style="position:absolute;top:8px;right:8px;padding:3px 8px;border-radius:999px;background:'+(ccount ? 'var(--vyve-teal-pale)' : 'transparent')+';color:'+(ccount ? 'var(--vyve-teal)' : 'var(--text-muted)')+';font-size:10.5px;font-weight:600;border:0;cursor:pointer">'+(ccount || '✉')+'</button>';
+        return '<div class="kanban-card" data-id="'+t._id+'" style="position:relative;padding-right:42px">'+discussBtn+'<div class="kc-title">'+prioBadge+VYVE_UI.escape(t.title||'')+'</div><div class="kc-meta">'+VYVE_UI.escape(t.owner||'Unassigned')+(t.due?' &middot; <span style="'+dueColor+'">'+VYVE_UI.fmtDate(t.due)+'</span>':'')+'</div></div>';
       }).join('');
       body.querySelectorAll('.kanban-card').forEach(function(card){
-        card.addEventListener('click', function(){ edit(card.dataset.id, items); });
+        card.addEventListener('click', function(e){
+          if (e.target.closest && e.target.closest('[data-discuss]')){
+            e.stopPropagation();
+            if (window.VYVE_WIDGETS && window.VYVE_WIDGETS.recordModal) {
+              window.VYVE_WIDGETS.recordModal('task', card.dataset.id);
+            }
+            return;
+          }
+          edit(card.dataset.id, filtered);
+        });
       });
     });
   }
 
   function edit(id, items){
     var t = items.find(function(x){return x._id===id;}); if(!t) return;
-    openModal('Edit task', t, async function(u){ await save(id, u); render(await load()); }, async function(){ await remove(id); render(await load()); });
+    openModal('Edit task', t, async function(u){ await save(id, u); allItems = await load(); refreshBar(); render(allItems); }, async function(){ await remove(id); allItems = await load(); refreshBar(); render(allItems); });
   }
 
   function openModal(title, init, onSave, onDel){
@@ -119,10 +152,33 @@
     }, 50);
   }
 
+  function refreshBar(){
+    if (viewsBar) viewsBar.refresh();
+  }
+
+  function mountViewsBar(){
+    if (!window.VYVE_VIEWS_UI) return;
+    viewsBar = VYVE_VIEWS_UI.mount(document.getElementById('tk-views-bar'), {
+      page: 'tasks',
+      fields: [
+        { key: 'status',   label: 'Status',   type: 'select', options: ['todo','doing','blocked','done'] },
+        { key: 'priority', label: 'Priority', type: 'select', options: ['high','normal','low'] },
+        { key: 'owner',    label: 'Owner',    type: 'select', dynamicOptions: function(){ return uniqueOwners(allItems); } },
+        { key: 'area',     label: 'Area',     type: 'select', dynamicOptions: function(){ return uniqueAreas(allItems); } },
+        { key: 'due',      label: 'Due',      type: 'date-range' }
+      ],
+      onChange: function(){ render(allItems); }
+    });
+  }
+
   document.getElementById('tk-add').addEventListener('click', function(){
-    openModal('Add task', {}, async function(u){ await save('tk_'+Date.now(), u); render(await load()); VYVE_UI.toast('Added','success'); });
+    openModal('Add task', {}, async function(u){ await save('tk_'+Date.now(), u); allItems = await load(); refreshBar(); render(allItems); VYVE_UI.toast('Added','success'); });
   });
-  document.getElementById('tk-owner-filter').addEventListener('change', async function(){ render(await load()); });
-  (async function(){ render(await load()); })();
+
+  (async function(){
+    mountViewsBar();
+    allItems = await load();
+    render(allItems);
+  })();
 })();
 </script>

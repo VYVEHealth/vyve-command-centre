@@ -40,6 +40,9 @@
     </div>
   </div>
 
+  <!-- Pinned views (rendered if user has pinned any) -->
+  <div id="brief-pinned-views" style="margin-bottom:18px"></div>
+
   <!-- Two-column body -->
   <div class="brief-body">
     <div class="brief-col-main">
@@ -442,5 +445,39 @@
   renderAll();
   // Tick the clock every 30s, refresh greeting on the minute
   setInterval(function(){ setClock(); setGreeting(); }, 30000);
+})();
+</script>
+
+<script>
+(function(){
+  function renderPinnedViews(){
+    var el = document.getElementById('brief-pinned-views');
+    if (!el || !window.VYVE_VIEWS) return;
+    var pinned = window.VYVE_VIEWS.pinned();
+    if (!pinned.length) { el.innerHTML = ''; return; }
+
+    el.innerHTML = '<div class="card">' +
+      '<div class="card-header">' +
+        '<div class="card-title">Pinned views</div>' +
+        '<div class="card-sub">' + pinned.length + ' view' + (pinned.length === 1 ? '' : 's') + ' pinned across the hub</div>' +
+      '</div>' +
+      '<div class="card-body" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:10px;padding:14px 20px 18px">' +
+        pinned.map(function(v){
+          var route = '#/' + v.page;
+          return '<a href="' + route + '" style="display:block;padding:14px;border:1px solid var(--border);border-radius:var(--r-md);text-decoration:none;color:var(--text);transition:border-color var(--t-fast)" onmouseenter="this.style.borderColor=\'var(--accent)\'" onmouseleave="this.style.borderColor=\'var(--border)\'">' +
+            '<div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px">' + v.page + '</div>' +
+            '<div style="font-family:var(--font-head);font-size:18px;font-weight:700;line-height:1.2;color:var(--text)">' + (v.name || 'Untitled view') + '</div>' +
+            '<div style="font-size:11px;color:var(--text-muted);margin-top:8px">' + Object.keys(v.filters || {}).length + ' filter' + (Object.keys(v.filters || {}).length === 1 ? '' : 's') + '</div>' +
+          '</a>';
+        }).join('') +
+      '</div>' +
+    '</div>';
+  }
+
+  // Render on load + when page becomes visible
+  renderPinnedViews();
+  window.addEventListener('vyve:page', function(e){
+    if (e.detail && e.detail.slug === 'brief') renderPinnedViews();
+  });
 })();
 </script>

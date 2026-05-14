@@ -13,6 +13,9 @@
     <div class="stat"><div class="stat-label">Win rate (90d)</div><div class="stat-value" id="crm-win">—</div></div>
   </div>
 
+  <!-- Saved views & filters bar -->
+  <div id="crm-views-bar"></div>
+
   <div class="kanban">
     <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">Lead</span><span class="kanban-count" data-crm="lead">0</span></div><div class="kanban-body" data-crm="lead"></div></div>
     <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">Discovery</span><span class="kanban-count" data-crm="discovery">0</span></div><div class="kanban-body" data-crm="discovery"></div></div>
@@ -53,7 +56,28 @@
 
   var WEIGHTS = { lead:0.1, discovery:0.25, proposal:0.5, negotiation:0.75, won:1.0, lost:0.0 };
 
+  var allItems = [];
+  var viewsBar = null;
+
+  function uniqueStages(items){
+    return Array.from(new Set(items.map(function(d){return d.stage;}).filter(Boolean))).sort();
+  }
+  function uniqueOwners(items){
+    return Array.from(new Set(items.map(function(d){return d.owner;}).filter(Boolean))).sort();
+  }
+  function uniqueSources(items){
+    return Array.from(new Set(items.map(function(d){return d.source;}).filter(Boolean))).sort();
+  }
+
+  function applyFilters(items, filters){
+    return window.VYVE_VIEWS_UI ? window.VYVE_VIEWS_UI.applyFilters(items, filters, {
+      close_date: function(d){ return d.close_date; }
+    }) : items;
+  }
+
   function render(items){
+    var filters = viewsBar ? viewsBar.getFilters() : {};
+    items = applyFilters(items, filters);
     var stages = { lead:[], discovery:[], proposal:[], negotiation:[], won:[] };
     var active = items.filter(function(d){ return (d.stage||'lead') !== 'lost' && (d.stage||'lead') !== 'won' || (d.stage==='won' && new Date(d.close_date||d.updated_at||0).getTime() > Date.now()-90*86400000); });
     items.forEach(function(d){ var s=(d.stage||'lead').toLowerCase(); if (stages[s]) stages[s].push(d); });
@@ -97,15 +121,25 @@
             }
             return;
           }
-          edit(card.dataset.id, items);
+          edit(card.dataset.id);
         });
       });
     });
   }
 
-  function edit(id, items){
-    var d = items.find(function(x){return x._id===id;}); if(!d) return;
-    openModal('Edit deal', d, async function(u){ await save(id, u); render(await load()); }, async function(){ await remove(id); render(await load()); });
+  function edit(id){
+    var d = allItems.find(function(x){return x._id===id;}); if(!d) return;
+    openModal('Edit deal', d, async function(u){
+      await save(id, u);
+      allItems = await load();
+      if (viewsBar) viewsBar.refresh();
+      render(allItems);
+    }, async function(){
+      await remove(id);
+      allItems = await load();
+      if (viewsBar) viewsBar.refresh();
+      render(allItems);
+    });
   }
 
   function openModal(title, init, onSave, onDel){
@@ -131,8 +165,33 @@
   }
 
   document.getElementById('crm-add').addEventListener('click', function(){
-    openModal('Add deal', {}, async function(u){ await save('deal_'+Date.now(), u); render(await load()); VYVE_UI.toast('Added','success'); });
+    openModal('Add deal', {}, async function(u){
+      await save('deal_'+Date.now(), u);
+      allItems = await load();
+      if (viewsBar) viewsBar.refresh();
+      render(allItems);
+      VYVE_UI.toast('Added','success');
+    });
   });
-  (async function(){ render(await load()); })();
+
+  function mountViewsBar(){
+    if (!window.VYVE_VIEWS_UI) return;
+    viewsBar = VYVE_VIEWS_UI.mount(document.getElementById('crm-views-bar'), {
+      page: 'crm',
+      fields: [
+        { key: 'stage',  label: 'Stage',  type: 'select', options: ['lead','discovery','proposal','negotiation','won','lost'] },
+        { key: 'owner',  label: 'Owner',  type: 'select', dynamicOptions: function(){ return uniqueOwners(allItems); } },
+        { key: 'source', label: 'Source', type: 'select', dynamicOptions: function(){ return uniqueSources(allItems); } },
+        { key: 'close_date', label: 'Closing', type: 'date-range' }
+      ],
+      onChange: function(){ render(allItems); }
+    });
+  }
+
+  (async function(){
+    mountViewsBar();
+    allItems = await load();
+    render(allItems);
+  })();
 })();
 </script>
