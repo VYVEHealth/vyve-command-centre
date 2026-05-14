@@ -4,6 +4,74 @@ All notable changes documented commit-by-commit. Each entry links to the GitHub 
 
 ## 2026-05-14
 
+### Commits 32-39 — Authentic VYVE design system
+
+Major redesign pass to make the Command Centre feel like an enterprise platform and authentic to VYVE rather than a generic admin UI. Aligned to the vyvehealth.co.uk brand voice ("Build health before it breaks.") and visual language.
+
+**Commit 32 — Design tokens v2**
+- Three-pillar accent system: Physical (gold), Mental (teal), Social (coral) used throughout
+- Warmer cream-white neutrals (#F7F5F0) matching the marketing site, not cold mint
+- Full typographic scale (--fs-xxs through --fs-hero at 56px) for proper hierarchy
+- Real elevation shadows (--shadow-xs through --shadow-xl + --shadow-focus for keyboard nav)
+- Italic Playfair Display variant loaded for the brand motto
+- Letter-spacing scale, z-index scale, motion scale
+
+**Commit 33 — Chrome rebuild**
+- Sidebar: VYVE wordmark + "Command Centre" eyebrow + italic tagline "Build health before it breaks."
+- Sidebar nav: left-edge accent on active items, refined hover states, subtle gradient background
+- Sidebar footer: user avatar circle (gradient teal) + email + sign-out + version stamp
+- Topbar: time-aware greeting (Good morning / afternoon / evening / Working late) with real-time clock-style date, page context on right
+- Login screen: full-bleed two-pane experience with brand-side (radial gradients + "Build health before it breaks." hero) and form-side (refined inputs with proper focus rings)
+- Modal overlay: backdrop blur, modal entry animation
+- Toast: pill shape with subtle elevation
+
+**Commit 34 — Components rebuild**
+- Three stat sizes by importance: stat-hero (56px num), stat (medium, 30px), stat-mini (inline)
+- Pillar accent classes: .pillar-tag.physical|mental|social, .pillar-heading, pillar-tinted stat top-borders
+- Cards now have real elevation (--shadow-xs default, --shadow-sm on hover, --shadow-md for elevated variant)
+- Buttons: refined focus rings via --shadow-focus, btn-sm and btn-lg variants, btn:active scale animation
+- Form inputs: uppercase eyebrow-style labels, larger padding, focus shadow ring (not just border colour)
+- Tabs: cleaner pill design with proper depth
+- List rows: gentle hover background, proper truncation
+- Action Plans member cards: refined with gradient avatars, smoother transitions
+- Pillar-tinted avatars (.ap-avatar.physical|mental|social)
+- Section divider component with optional centred label
+- Page hero pattern (.page-hero + eyebrow + page-title + page-sub)
+
+**Commit 35 — Brief redesign**
+- Greeting hero block with eyebrow ("Morning Brief"), large Playfair greeting ("Morning, Lewis."), italic motto, real-time clock + day label, refresh button
+- KPI hierarchy: dark hero stat showing Action Plans completion (the metric that drives everything) + 3 supporting stats (reach, MRR, pipeline)
+- Hero stat sits on a dark gradient with a glowing teal pulse dot
+- Pillar tags now appear on Sessions items where pillar is set
+- Action Plans card uses pillar-aware mini avatars
+- Real-time clock updates every 30 seconds, greeting transitions phase by hour
+
+**Commit 36 — Dashboard redesign**
+- Page-hero intro block with eyebrow + Playfair headline + intro paragraph
+- Top KPI row: hero stat (Open pipeline — most important number for a pre-revenue company) + 3 supporting (MRR, reach, posts)
+- Section dividers use the new .section-divider pattern (subtle horizontal line with centred uppercase label)
+- LinkedIn chart: refined SVG with smoother curve, larger latest-point indicator, teal brand colour, cream tick lines
+- Channel breakdown: tabular-style metrics with uppercase eyebrow labels
+- Team health stripe: pillar-tinted member avatars, hierarchy of badges (overdue red, blocked red, active teal)
+- All section dividers reskinned uniformly
+
+**Commit 37 — Action Plans page hero + pillar avatars**
+- Page hero with "Team Operating System" eyebrow
+- Each member's avatar coloured by department:
+  - Physical (Calum): gold gradient
+  - Mental (Lewis, Dean, Alan, Phil, Ryan): teal gradient
+  - Social (Vicki, Cole, Azuza): coral gradient
+
+**Commit 38 — Action Plans avatar fix**
+- Patched inline CSS specificity so pillar classes win
+- Larger avatar (38px), gradient backgrounds, white text, subtle elevation
+
+**Commit 39 — Page hero applied consistently**
+- All 20 pages now use the consistent VYVE page hero pattern: uppercase eyebrow accent, Playfair page-title, muted intro paragraph
+- Pages: Intel, Competitors, Tasks, Strategy, Team, Performance, Podcast, Content, Compliance, Finance, CRM, Clients, Sessions, Partners, Knowledge, Invoicing, Investor, Brand, Documents, Settings
+
+The Brief and Dashboard remain the "showcase" pages with the hero stat treatment. Every other page gets the consistent intro pattern so the hub feels like one product, not a collection of templates.
+
 ### Commit 30 — Mobile polish (swipe + tap targets)
 - Sidebar swipe-to-close gesture: swipe right from left edge to open, swipe left on drawer to close.
 - Larger tap targets on Action Plans (member-head min 56px tall, status pill 5px×11px padding).
