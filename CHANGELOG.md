@@ -4,6 +4,34 @@ All notable changes documented commit-by-commit. Each entry links to the GitHub 
 
 ## 2026-05-14
 
+### Commit 30 — Mobile polish (swipe + tap targets)
+- Sidebar swipe-to-close gesture: swipe right from left edge to open, swipe left on drawer to close.
+- Larger tap targets on Action Plans (member-head min 56px tall, status pill 5px×11px padding).
+- Action Plans avatar grown to 40×40 on mobile.
+- Settings tabs scroll horizontally on narrow screens so all 5 tabs are reachable.
+- Topbar doesn't wrap on mobile; current crumb truncates with ellipsis instead.
+- Brief subtitle font/line-height tuned for tiny mobile screens.
+
+### Commit 29 — Intel + Competitors full CRUD
+- `pages/intel.html` rewritten — Grants / Legislation / Research tabs, KPI row (Total / Grants / Legislation / Research), full add/edit/delete modal with title, type, source, summary, link, deadline.
+- `pages/competitors.html` rewritten — KPI row (Total / Pricing moves / Product launches / Positioning), search filter, full add/edit/delete modal with competitor, type, title, summary, link.
+- Both pages read from Make if token configured, fall back to localStorage.
+- Seeded 10 intel signals (Innovate UK / Nesta / Sport England grants; HSE psychosocial guidance, ICO AI health-data guidance, Employment Rights Bill 2025; HSE 2025 stats, Deloitte £56bn report, CIPD survey, WHO mental health at work).
+- Seeded 6 competitor signals (Headspace Health, Calm Health, Unmind, Oliva, Perci pricing, Big Health funding).
+- SEED_VERSION bumped to `2026-05-14.4`.
+
+### Commit 28 — Auto-pull from Make + freshness indicator
+- `lib/make.js` extended with `lastRefreshedAt(key)`, `autoPullPerformance/Podcast/Content(thresholdMs)`.
+- Performance/Podcast/Content auto-trigger a Make refresh on page load if token configured and last refresh > 1h ago.
+- Tiny "refreshed Nm ago" indicator next to the manual Refresh button.
+- No-op gracefully if no token / no store ID / threshold not crossed.
+
+### Commit 27 — Pre-seed Action Plans flat cache
+- 150 actions seeded into `vyve_action_plans_full` on first load so Brief/Dashboard surface them without Lewis needing to visit the Action Plans page first.
+- All seeded as not-started, no deadlines, 0% progress.
+- Page itself rewrites this cache on every render, so user edits via the Action Plans page always overwrite the seed.
+- SEED_VERSION bumped to `2026-05-14.3`.
+
 ### Commit 26 — README & Changelog
 - Added this README documenting architecture, file layout, conventions, roadmap.
 - Added CHANGELOG.md with full commit-by-commit history.
