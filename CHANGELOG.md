@@ -2,6 +2,95 @@
 
 All notable changes documented commit-by-commit. Each entry links to the GitHub commit.
 
+## 2026-05-14 (continued)
+
+### Commit 49 - Saved views & filters
+*Commit: [`f82b36`](https://github.com/VYVEHealth/vyve-command-centre/commit/f82b3647c6dd7cf7abaa97f7c378427b42da7754)*
+
+The big list pages now have a mountable filter chip bar with a saved-views row above it. Tasks and CRM are the first two pages wired up; the underlying `VYVE_VIEWS_UI` helper is generic and can be dropped onto any page that has a list.
+
+Each filter is one of: select (status, owner, priority, source), select with dynamic options (e.g. owner list pulled live from current data), or date-range (today / this week / overdue / no due). Click "+ Add filter" to add one, click the × on a chip to remove it. Once any filters are active, the bar exposes a "★ Save view" button — name the view and it persists in `localStorage` keyed by page. Saved views appear as tabs at the top of the bar; click one to activate, click "Pin" to surface it on the Brief, click "Delete view" to remove it.
+
+The Brief now renders a "Pinned views" card listing all pinned views as clickable shortcut cards — the user builds their own operational dashboard.
+
+Internally:
+- `lib/views-ui.js` — generic mountable chip bar + saved views row, exposes `VYVE_VIEWS_UI.mount(el, opts)` and `applyFilters(items, filters, fieldMap)`
+- `pages/tasks.html` — refactored to mount the views bar, includes filter fields for status / priority / owner / area / due
+- `pages/crm.html` — refactored to mount the views bar, includes filter fields for stage / owner / source / close_date
+- `pages/brief.html` — new "Pinned views" section that reads `VYVE_VIEWS.pinned()` and renders as a card grid
+- Tasks page also gained: audit logging on save, soft delete on remove, comment+history Discuss button on each kanban card — matching what Action Plans and CRM already had
+
+Filter state is per-browser for now. When Supabase comes online, the same API switches backend and views become shared/per-user.
+
+### Commit 48 - Audit trail wired into save/delete flows
+*Commit: [`2050a7`](https://github.com/VYVEHealth/vyve-command-centre/commit/2050a7a71097b0339d8ab1f2fb2c6a79d91f9ba6)*
+
+Every save and delete on Action Plans and CRM now logs to `VYVE_STORE`. The record modal's History tab shows a real audit trail: who, when, what changed (computed via `VYVE_STORE.diff(before, after)`). Soft deletes also flow through `VYVE_STORE.softDelete(type, id, record)` so deleted records can be restored from the Trash page rather than disappearing forever.
+
+Internally:
+- `pages/action-plans.html` — `saveOverride()` now calls `VYVE_STORE.logChange('action', id, who, op, diff)` after persistence; op is `'create'` for new actions and `'update'` for edits
+- `pages/crm.html` — `save()` captures existing record, computes diff, calls `logChange('deal', ...)`; `remove()` calls `softDelete('deal', id, record)` before the Make/local delete
+
+This is what unlocks the hub being trustworthy. People can't accidentally lose a record, and "who changed this?" has a real answer.
+
+### Commit 47 - Cross-record global search in Cmd+K
+*Commit: [`8dd651`](https://github.com/VYVEHealth/vyve-command-centre/commit/8dd651793769cde8c56c0e2ceb20fb78a4c92cd9)*
+
+Cmd+K used to jump between pages. Now it jumps to records too — any deal, action, task, session, compliance item, client, intel signal, competitor signal, content piece, or podcast episode by title. Results are grouped (Pages / Records) and selecting a record opens the record modal directly (Details + Comments + History tabs).
+
+Fuzzy match scoring: exact match > starts-with > contains > subsequence. Records also score against their sub-line (so "Acme £50k" matches a deal even if the company name is just "Acme Industries"). Recents persist per browser as itemKey strings.
+
+Internally:
+- `lib/quick-search.js` — rewritten to v2; `pageIndex()` + `recordIndex()` merged into one searchable set
+- Recents now stored as `'kind::type::id_or_slug'` strings so they survive across sessions
+- Keyboard nav (↑/↓/Enter/Esc) unchanged
+
+### Commit 46 - Universal comments + @mentions
+*Commit: [`07fe2c`](https://github.com/VYVEHealth/vyve-command-centre/commit/07fe2c7cdf923c8e69c94e714447aa22a922d84e)*
+
+Any record can now have a comment thread. Every Action Plan row and every CRM kanban card has a "Discuss" affordance that shows the comment count when there are comments. Click it to open the record modal with three tabs:
+
+- **Details** — compact key/value view of the record
+- **Comments** — full thread, `@name` to mention a teammate (mentions get notifications and surface in their Inbox), Cmd+Enter to post
+- **History** — audit trail (powered by commit 48)
+
+There's also a Delete button in the modal that goes through `VYVE_STORE.softDelete`, so anything deleted from any record-detail modal is recoverable from Trash.
+
+Internally:
+- `lib/widgets.js` (NEW) — `commentsPanel(el, type, id, opts)`, `historyPanel(el, type, id)`, `recordModal(type, id)`. Mountable into any DOM element.
+- `lib/entities.js` — patched so deal lookups match both `id` and `_id` (CRM stores deals as `_id`); deal `titleOf` and `subOf` also updated to read the CRM's field shape
+- `pages/action-plans.html` — every action row gets a Discuss button + counter pill
+- `pages/crm.html` — every kanban card gets a Discuss button + counter pill in the top-right corner; click on the discuss button opens the record modal instead of the edit modal
+- `index.html` — loads `lib/widgets.js`; added `tab-count` CSS for the comment count badge
+
+This is the single feature that converts "we should put it in the Command Centre" from a discipline problem into a default behaviour — conversations happen inside the records, not over them in Slack.
+
+### Commit 45 - Foundation primitives + Inbox + Activity + Trash
+*Commit: [`d0a577`](https://github.com/VYVEHealth/vyve-command-centre/commit/d0a577cab52a9cd83b59598db82ec7b74cf222af)*
+
+Five new primitives in `lib/` and three new pages. The primitives are designed so any page can hook into them without knowing about the others:
+
+- **`lib/entities.js`** — Central registry mapping each entity type (action, task, deal, session, compliance, client, intel, competitor, content, podcast) to `{label, icon, route, list(), get(id), titleOf(r), subOf(r), ownerOf(r), statusOf(r), dueOf(r)}`. Lets Inbox/Search/Comments/Audit/Notifications enumerate the same surface.
+- **`lib/store.js`** — Storage abstraction: `logChange(type, id, who, op, diff)`, `history(type, id)`, `softDelete(type, id, record, who)`, `restore`, `purge`, `trash`, `isDeleted`, `diff(before, after)`. Local-first now; same API will swap to Supabase backend later.
+- **`lib/comments.js`** — Threaded comments keyed by `type:entity_id`. Auto-parses `@mentions` and fires notifications via `VYVE_NOTIFS.push`.
+- **`lib/notifications.js`** — Per-user notification queue powering the topnav bell + the Inbox mentions strip. `push/list/unread/markRead/markAllRead`.
+- **`lib/views.js`** — Per-page saved-view storage: `listForPage(page)`, `add(page, name, filters)`, `remove(id)`, `pin(id, bool)`, `pinned()`.
+
+Pages:
+
+- **`pages/inbox.html`** — Aggregates everything that needs Lewis today: overdue actions, overdue tasks, today/this-week items, blocked actions, compliance due in 7d, sessions today/tomorrow, stalled deals (no update in 14d), and unread @-mentions. 7-count filter bar (All / Overdue / Today / This week / Mentions / Blocked / Stalled). Groups by kind. Click an item → navigates to the source page AND marks the underlying notification as read.
+- **`pages/activity.html`** — Cross-record activity feed merging the audit log + comments, sorted by time. Anyone on the team can see what changed across the hub since they last opened it.
+- **`pages/trash.html`** — Soft-deleted records with Restore / Purge buttons. Each entry shows what was deleted, by whom, when.
+
+Chrome:
+
+- Notification bell in the topnav (`#topnav-bell`) with red unread-count dot (`#topnav-bell-dot`) that updates on `vyve:notif` and `vyve:notif:read` events
+- `window.VYVE_CURRENT_USER` set from the logged-in email so audit/comments/notifications all know who's acting
+- Sidebar drawer: Inbox + Activity added to "Daily" section; Trash added to "Org" section
+- CSS additions: bell, comment thread, mention chip, comment form, audit pill, filter chips, view tabs
+
+These five pieces are what every subsequent commit (46-49) hooks into. They were built first so the rest could compose cleanly.
+
 ## 2026-05-14
 
 ### Commits 41-43 - Enterprise top-nav architecture

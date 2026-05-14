@@ -23,6 +23,8 @@ Everything else (Strategy, Tasks, Sessions, CRM, Clients, Content, Podcast, Perf
 
 Static SPA. Hash router pulls in HTML page partials from `/pages/*.html`. Each page reads/writes its own localStorage key (`vyve_<thing>`). A shared data registry (`lib/data.js`) reads across keys and exposes typed accessors that the Brief and Dashboard use. Optional Make.com data-store integration (`lib/make.js`) for live data refresh. Supabase auth (`lib/auth.js`) gates access via magic-link + admin allowlist (currently permissive fallback until Dean's `admin_users` table is live — toggle to strict in Settings).
 
+On top of the data layer sits an **enterprise hub layer**: a central entity registry (`lib/entities.js`) that knows every record type; an audit trail + soft-delete store (`lib/store.js`); a universal comments + @mentions module (`lib/comments.js`); a notification queue (`lib/notifications.js`); saved views & filters (`lib/views.js`); reusable mountable widgets (`lib/widgets.js`, `lib/views-ui.js`). Every page composes against these primitives so features like the Inbox, cross-record Cmd+K search, audit history, comment threads, and filter chip bars work consistently across the whole hub.
+
 ## Stack
 
 - **Frontend:** vanilla JS + HTML + CSS (no framework, no build step)
@@ -56,7 +58,15 @@ Static SPA. Hash router pulls in HTML page partials from `/pages/*.html`. Each p
 │   ├── supabase.js             # Supabase client init (anon key)
 │   ├── auth.js                 # magic-link + admin allowlist
 │   ├── ui.js                   # toast, modal, escape, fmt helpers
-│   └── data.js                 # shared read API across all pages
+│   ├── data.js                 # shared read API across all pages
+│   ├── entities.js             # central entity registry (10 types)
+│   ├── store.js                # audit trail + soft-delete primitive
+│   ├── comments.js             # universal comments + @mentions
+│   ├── notifications.js        # notification queue (powers topnav bell)
+│   ├── views.js                # saved views & filters store
+│   ├── views-ui.js             # mountable filter chip bar + saved views row
+│   ├── widgets.js              # commentsPanel, historyPanel, recordModal
+│   └── quick-search.js         # Cmd+K — fuzzy match across pages + records
 └── pages/                      # one HTML partial per route
     ├── brief.html              # Morning Brief — daily synthesis
     ├── intel.html
