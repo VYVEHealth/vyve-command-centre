@@ -1,0 +1,361 @@
+<div class="page active" id="page-active-users">
+  <div class="page-hero">
+    <div class="eyebrow">Org · Live data</div>
+    <h1 class="page-title">Active Users</h1>
+    <p class="page-sub">Real member activity from the portal database. Read-only.</p>
+  </div>
+
+  <!-- Gate states -->
+  <div id="au-gate-notready" class="card" style="display:none;padding:30px 26px;text-align:center">
+    <div style="font-size:14px;color:var(--text-muted);margin-bottom:10px">Connecting to Supabase…</div>
+  </div>
+
+  <div id="au-gate-signin" class="card" style="display:none;padding:36px 26px">
+    <div style="max-width:420px;margin:0 auto;text-align:center">
+      <div style="font-family:var(--font-head);font-size:22px;font-weight:700;margin-bottom:8px">Sign in to view member data</div>
+      <p style="color:var(--text-muted);font-size:13.5px;line-height:1.55;margin-bottom:20px">Live member data is restricted. Sign in with your VYVE team email — we’ll send you a magic link.</p>
+      <div style="display:flex;gap:8px;justify-content:center">
+        <input type="email" id="au-signin-email" placeholder="team@vyvehealth.co.uk" style="flex:1;max-width:280px"/>
+        <button class="btn btn-primary" id="au-signin-btn">Send magic link</button>
+      </div>
+      <div id="au-signin-msg" style="margin-top:12px;font-size:12.5px;color:var(--text-muted)"></div>
+    </div>
+  </div>
+
+  <div id="au-gate-denied" class="card" style="display:none;padding:36px 26px;text-align:center">
+    <div style="font-family:var(--font-head);font-size:20px;font-weight:700;margin-bottom:8px">Access restricted</div>
+    <p style="color:var(--text-muted);font-size:13.5px;max-width:420px;margin:0 auto 20px">You’re signed in as <strong id="au-denied-email"></strong> but this email isn’t on the admin allowlist. Ask Lewis or Dean to add you to <code>admin_users</code>.</p>
+    <button class="btn btn-ghost btn-sm" id="au-signout-btn">Sign out</button>
+  </div>
+
+  <!-- Real content -->
+  <div id="au-content" style="display:none">
+    <!-- Top bar: signed-in identity + sign-out -->
+    <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-bottom:14px;font-size:12.5px;color:var(--text-muted)">
+      <span>Signed in as <strong id="au-current-email"></strong></span>
+      <span style="opacity:.4">·</span>
+      <a href="#" id="au-signout-link" style="color:var(--accent)">Sign out</a>
+    </div>
+
+    <!-- KPI strip -->
+    <div class="grid-4" style="margin-bottom:18px">
+      <div class="stat">
+        <div class="stat-label">Total members</div>
+        <div class="stat-value" id="au-kpi-total">—</div>
+        <div class="stat-sub" id="au-kpi-total-sub">In auth + members</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Active 7d</div>
+        <div class="stat-value" id="au-kpi-7d">—</div>
+        <div class="stat-sub">Logged activity</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Active 30d</div>
+        <div class="stat-value" id="au-kpi-30d">—</div>
+        <div class="stat-sub">Logged activity</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Avg wellbeing</div>
+        <div class="stat-value" id="au-kpi-wellbeing">—</div>
+        <div class="stat-sub">Latest weekly score</div>
+      </div>
+    </div>
+
+    <!-- Filter bar -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+      <div style="display:inline-flex;background:var(--surface-2);border-radius:var(--r-md);padding:3px">
+        <button class="seg-btn active" data-filter="all">All</button>
+        <button class="seg-btn" data-filter="active">Active (30d)</button>
+        <button class="seg-btn" data-filter="inactive">Inactive</button>
+      </div>
+      <input type="search" id="au-search" placeholder="Search by name or email" style="max-width:280px;font-size:13px"/>
+      <div style="margin-left:auto;font-size:11px;color:var(--text-muted)" id="au-row-count"></div>
+    </div>
+
+    <!-- Member roster -->
+    <div class="card">
+      <table class="data-table" id="au-roster" style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:11px 16px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--text-muted);border-bottom:1px solid var(--border)">Name</th>
+            <th style="text-align:left;padding:11px 16px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--text-muted);border-bottom:1px solid var(--border)">Persona</th>
+            <th style="text-align:left;padding:11px 16px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--text-muted);border-bottom:1px solid var(--border)">Last active</th>
+            <th style="text-align:left;padding:11px 16px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--text-muted);border-bottom:1px solid var(--border)">Wellbeing</th>
+            <th style="text-align:left;padding:11px 16px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--text-muted);border-bottom:1px solid var(--border)">Engagement</th>
+            <th style="text-align:left;padding:11px 16px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--text-muted);border-bottom:1px solid var(--border)">Status</th>
+          </tr>
+        </thead>
+        <tbody id="au-roster-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<style>
+  .seg-btn {
+    background: transparent;
+    border: 0;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: calc(var(--r-md) - 3px);
+    transition: background 0.15s, color 0.15s;
+  }
+  .seg-btn.active {
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  }
+  .au-row { transition: background 0.1s; }
+  .au-row:hover { background: var(--surface-2); cursor: pointer; }
+  .au-row td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid var(--border); }
+  .au-row td:first-child { font-weight: 600; }
+  .au-name-cell { display: flex; align-items: center; gap: 10px; }
+  .au-avatar {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--vyve-teal), var(--vyve-teal-light));
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-head); font-weight: 700; font-size: 12px;
+    flex-shrink: 0;
+  }
+  .au-email { font-size: 11px; color: var(--text-muted); font-weight: 400; }
+  .au-status-pill {
+    display: inline-flex;
+    padding: 2px 8px;
+    border-radius: var(--r-pill);
+    font-size: 10.5px;
+    font-weight: 600;
+    text-transform: capitalize;
+    letter-spacing: 0.02em;
+  }
+  .au-status-pill.active { background: rgba(58, 156, 58, 0.12); color: var(--success, #3a9c3a); }
+  .au-status-pill.cancelled, .au-status-pill.churned { background: rgba(224, 96, 96, 0.10); color: var(--danger, #d05050); }
+  .au-status-pill.trial { background: rgba(212, 155, 44, 0.12); color: var(--vyve-gold, #D49B2C); }
+  .au-status-pill.unknown { background: var(--surface-2); color: var(--text-muted); }
+  .au-score-bar {
+    display: flex; align-items: center; gap: 6px;
+    font-variant-numeric: tabular-nums;
+  }
+  .au-score-track {
+    width: 60px; height: 5px; background: var(--surface-2); border-radius: 3px; overflow: hidden;
+  }
+  .au-score-fill { height: 100%; background: var(--vyve-teal); }
+  .data-table thead th { background: var(--surface); position: sticky; top: 0; }
+</style>
+
+<script>
+(function(){
+  if (!window.VYVE_SUPABASE) return;
+
+  var S = window.VYVE_SUPABASE;
+  var state = {
+    members: [],
+    activity30: {},   // member_id -> last_active iso
+    activity7: {},
+    weeklyScores: {}, // member_id -> { wellbeing, engagement, week_start }
+    filter: 'all',
+    search: ''
+  };
+
+  function show(id){ document.getElementById(id).style.display = ''; }
+  function hide(id){ document.getElementById(id).style.display = 'none'; }
+  function hideAll(){
+    ['au-gate-notready','au-gate-signin','au-gate-denied','au-content'].forEach(hide);
+  }
+
+  function avatar(name){
+    var initial = (name || '?').charAt(0).toUpperCase();
+    return '<div class="au-avatar">' + initial + '</div>';
+  }
+
+  function relTime(iso){
+    if (!iso) return '—';
+    var d = new Date(iso);
+    if (isNaN(d)) return '—';
+    var diff = (Date.now() - d.getTime()) / 1000;
+    if (diff < 3600) return Math.round(diff/60) + 'm ago';
+    if (diff < 86400) return Math.round(diff/3600) + 'h ago';
+    if (diff < 7*86400) return Math.round(diff/86400) + 'd ago';
+    return d.toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+  }
+
+  function scoreBar(value, max){
+    max = max || 10;
+    if (value == null || isNaN(value)) return '<span style="color:var(--text-muted)">—</span>';
+    var pct = Math.min(100, (value / max) * 100);
+    return '<div class="au-score-bar"><div class="au-score-track"><div class="au-score-fill" style="width:' + pct.toFixed(0) + '%"></div></div><span>' + value + '</span></div>';
+  }
+
+  function statusPill(status){
+    var s = (status || 'unknown').toLowerCase();
+    var label = s.charAt(0).toUpperCase() + s.slice(1);
+    return '<span class="au-status-pill ' + s + '">' + label + '</span>';
+  }
+
+  // ---------- Data fetch ----------
+  async function fetchData(){
+    if (!S.client) return;
+
+    // Members table (rich profile data)
+    var membersRes = await S.client.from('members').select('id,email,first_name,last_name,persona,subscription_status,last_active_at,onboarding_complete,re_engagement_stream,created_at').order('last_active_at', { ascending: false, nullsFirst: false });
+    if (membersRes.error){
+      console.error('[active-users] members fetch failed', membersRes.error);
+      state.members = [];
+    } else {
+      state.members = membersRes.data || [];
+    }
+
+    // member_activity_log within last 30 days
+    var thirtyDaysAgo = new Date(Date.now() - 30*86400000).toISOString();
+    var sevenDaysAgo = new Date(Date.now() - 7*86400000).toISOString();
+
+    var act30Res = await S.client.from('member_activity_log').select('member_id,created_at').gte('created_at', thirtyDaysAgo);
+    if (!act30Res.error && act30Res.data){
+      var seen30 = {};
+      var seen7 = {};
+      act30Res.data.forEach(function(row){
+        seen30[row.member_id] = true;
+        if (row.created_at >= sevenDaysAgo) seen7[row.member_id] = true;
+      });
+      state.activity30 = seen30;
+      state.activity7 = seen7;
+    }
+
+    // Weekly scores - latest per member
+    var scoresRes = await S.client.from('weekly_scores').select('member_id,wellbeing_score,engagement_score,week_start').order('week_start', { ascending: false });
+    if (!scoresRes.error && scoresRes.data){
+      var byMember = {};
+      scoresRes.data.forEach(function(row){
+        if (!byMember[row.member_id]) byMember[row.member_id] = row;
+      });
+      state.weeklyScores = byMember;
+    }
+  }
+
+  function fullName(m){
+    var n = ((m.first_name || '') + ' ' + (m.last_name || '')).trim();
+    return n || (m.email || '—');
+  }
+
+  function renderKPIs(){
+    var total = state.members.length;
+    var active7 = Object.keys(state.activity7).length;
+    var active30 = Object.keys(state.activity30).length;
+    var wellbeingScores = Object.values(state.weeklyScores).map(function(s){ return Number(s.wellbeing_score) || 0; }).filter(function(v){ return v > 0; });
+    var avgWellbeing = wellbeingScores.length ? (wellbeingScores.reduce(function(a,b){return a+b;}, 0) / wellbeingScores.length).toFixed(1) : '—';
+
+    document.getElementById('au-kpi-total').textContent = total;
+    document.getElementById('au-kpi-7d').textContent = active7;
+    document.getElementById('au-kpi-30d').textContent = active30;
+    document.getElementById('au-kpi-wellbeing').textContent = avgWellbeing;
+  }
+
+  function renderRoster(){
+    var rows = state.members.filter(function(m){
+      // Filter
+      if (state.filter === 'active' && !state.activity30[m.id]) return false;
+      if (state.filter === 'inactive' && state.activity30[m.id]) return false;
+      // Search
+      if (state.search){
+        var hay = (fullName(m) + ' ' + (m.email || '')).toLowerCase();
+        if (hay.indexOf(state.search.toLowerCase()) < 0) return false;
+      }
+      return true;
+    });
+
+    document.getElementById('au-row-count').textContent = rows.length + ' shown of ' + state.members.length;
+
+    if (!rows.length){
+      document.getElementById('au-roster-body').innerHTML = '<tr><td colspan="6" style="padding:30px;text-align:center;color:var(--text-muted)">No members match.</td></tr>';
+      return;
+    }
+
+    document.getElementById('au-roster-body').innerHTML = rows.map(function(m){
+      var name = fullName(m);
+      var scores = state.weeklyScores[m.id] || {};
+      return '<tr class="au-row" data-id="' + m.id + '">' +
+        '<td><div class="au-name-cell">' + avatar(name) + '<div><div>' + name + '</div><div class="au-email">' + (m.email || '') + '</div></div></div></td>' +
+        '<td style="color:var(--text-muted)">' + (m.persona || '—') + '</td>' +
+        '<td style="color:var(--text-muted)">' + relTime(m.last_active_at) + '</td>' +
+        '<td>' + scoreBar(scores.wellbeing_score, 10) + '</td>' +
+        '<td>' + scoreBar(scores.engagement_score, 100) + '</td>' +
+        '<td>' + statusPill(m.subscription_status) + '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  function bindControls(){
+    document.querySelectorAll('#page-active-users .seg-btn').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        document.querySelectorAll('#page-active-users .seg-btn').forEach(function(b){ b.classList.remove('active'); });
+        btn.classList.add('active');
+        state.filter = btn.getAttribute('data-filter');
+        renderRoster();
+      });
+    });
+    document.getElementById('au-search').addEventListener('input', function(e){
+      state.search = e.target.value;
+      renderRoster();
+    });
+    document.getElementById('au-signout-link').addEventListener('click', function(e){
+      e.preventDefault();
+      S.signOut().then(function(){ boot(); });
+    });
+  }
+
+  function bindSignin(){
+    document.getElementById('au-signin-btn').addEventListener('click', async function(){
+      var email = document.getElementById('au-signin-email').value.trim();
+      if (!email){ return; }
+      var msg = document.getElementById('au-signin-msg');
+      msg.textContent = 'Sending…';
+      try {
+        var res = await S.signInWithEmail(email);
+        if (res.error){ msg.textContent = 'Error: ' + res.error.message; msg.style.color = 'var(--danger)'; }
+        else { msg.textContent = 'Check your inbox for the magic link.'; msg.style.color = 'var(--success)'; }
+      } catch(e){
+        msg.textContent = 'Error: ' + (e.message || 'unknown'); msg.style.color = 'var(--danger)';
+      }
+    });
+    document.getElementById('au-signout-btn').addEventListener('click', function(){
+      S.signOut().then(function(){ boot(); });
+    });
+  }
+
+  async function boot(){
+    hideAll();
+    if (!S.isReady()){
+      show('au-gate-notready');
+      S.onReady(boot);
+      return;
+    }
+
+    var session = await S.getSession();
+    if (!session){
+      show('au-gate-signin');
+      return;
+    }
+
+    var admin = await S.getCurrentAdmin();
+    if (!admin){
+      document.getElementById('au-denied-email').textContent = await S.getUserEmail();
+      show('au-gate-denied');
+      return;
+    }
+
+    // Authenticated and admin
+    document.getElementById('au-current-email').textContent = admin.email;
+    show('au-content');
+    bindControls();
+    await fetchData();
+    renderKPIs();
+    renderRoster();
+  }
+
+  bindSignin();
+  boot();
+})();
+</script>

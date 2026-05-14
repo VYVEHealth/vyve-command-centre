@@ -62,6 +62,7 @@ window.VYVE_NAV = [
     items: [
       { slug: "action-plans", label: "Action Plans", icon: "target",   status: "live" },
       { slug: "team",     label: "Team",     icon: "user",     status: "skeleton" },
+      { slug: "active-users", label: "Active Users", icon: "users", status: "live" },
       { slug: "trash",    label: "Trash",    icon: "folder",   status: "live" },
       { slug: "settings", label: "Settings", icon: "settings", status: "live" }
     ]
