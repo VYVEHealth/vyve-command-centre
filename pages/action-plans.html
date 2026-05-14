@@ -83,8 +83,14 @@
   function loadOverrides(){ try { return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}') || {}; } catch(e){ return {}; } }
   function saveOverride(actionId, patch){
     var saved = loadOverrides();
-    saved[actionId] = Object.assign({}, saved[actionId] || {}, patch, { updated_at: new Date().toISOString() });
+    var before = saved[actionId] || {};
+    saved[actionId] = Object.assign({}, before, patch, { updated_at: new Date().toISOString() });
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(saved)); } catch(e){}
+    // Audit trail
+    if (window.VYVE_STORE) {
+      var op = Object.keys(before).length ? 'update' : 'create';
+      window.VYVE_STORE.logChange('action', actionId, null, op, patch);
+    }
   }
   function loadExpanded(){ try { return JSON.parse(localStorage.getItem(EXPAND_KEY)||'{}') || {}; } catch(e){ return {}; } }
   function saveExpanded(m){ try { localStorage.setItem(EXPAND_KEY, JSON.stringify(m)); } catch(e){} }

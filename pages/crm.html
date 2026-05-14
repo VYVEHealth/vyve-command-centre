@@ -33,11 +33,23 @@
     return lsGet();
   }
   async function save(id, item){
-    if (window.VYVE_MAKE){ var r = await VYVE_MAKE.upsert('deals', id, item); if (r) return; }
+    var existing = lsGet().find(function(x){return x._id===id;});
+    var op = existing ? 'update' : 'create';
+    var diff = existing && window.VYVE_STORE ? window.VYVE_STORE.diff(existing, Object.assign({}, existing, item)) : null;
+    if (window.VYVE_MAKE){ var r = await VYVE_MAKE.upsert('deals', id, item); if (r) {
+      if (window.VYVE_STORE) window.VYVE_STORE.logChange('deal', id, null, op, diff);
+      return;
+    }}
     var a = lsGet(); var i = a.findIndex(function(x){return x._id===id;}); var e = Object.assign({_id:id}, item);
     if (i>=0) a[i]=e; else a.unshift(e); lsSet(a);
+    if (window.VYVE_STORE) window.VYVE_STORE.logChange('deal', id, null, op, diff);
   }
-  async function remove(id){ if (window.VYVE_MAKE) await VYVE_MAKE.remove('deals', id); lsSet(lsGet().filter(function(x){return x._id!==id;})); }
+  async function remove(id){
+    var existing = lsGet().find(function(x){return x._id===id;});
+    if (window.VYVE_STORE && existing) window.VYVE_STORE.softDelete('deal', id, existing);
+    if (window.VYVE_MAKE) await VYVE_MAKE.remove('deals', id);
+    lsSet(lsGet().filter(function(x){return x._id!==id;}));
+  }
 
   var WEIGHTS = { lead:0.1, discovery:0.25, proposal:0.5, negotiation:0.75, won:1.0, lost:0.0 };
 
