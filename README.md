@@ -69,6 +69,8 @@ On top of the data layer sits an **enterprise hub layer**: a central entity regi
 │   ├── acl.js                  # roles, page gates, field redaction
 │   ├── integrations.js         # Slack daily digest, Gmail compose, Google Calendar
 │   ├── shortcuts.js            # global keyboard shortcuts + bulk select primitive
+│   ├── drafts.js               # modal autosave to localStorage (7d GC)
+│   ├── pdf-export.js           # window.print()-based PDF export + board pack
 │   └── quick-search.js         # Cmd+K — fuzzy match across pages + records
 └── pages/                      # one HTML partial per route
     ├── brief.html              # Morning Brief — daily synthesis

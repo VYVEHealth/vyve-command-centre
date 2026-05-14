@@ -2,6 +2,26 @@
 
 All notable changes documented commit-by-commit. Each entry links to the GitHub commit.
 
+## 2026-05-14 (continued, part 2)
+
+### Commit 58 - PDF export & board pack
+*Commit: [`f16331`](https://github.com/VYVEHealth/vyve-command-centre/commit/f163317abb0804c69a0cfaad02c5ab8475a09618)*
+
+Two complementary print/PDF flows. The first is a **global Print icon in the topbar** (printer SVG, sits between the role pill and the help icon) that calls `VYVE_PDF.printPage()` — it inserts a VYVE-branded header (logo, strapline, page title, date) into the DOM, applies a `print-mode` body class, and triggers `window.print()`. The print stylesheet (~4.7KB appended to shell.css) hides every piece of chrome (topbar, sidebar, modals, toasts, bulk action bar, add buttons, tab bars, draft banners, empty-state CTAs), keeps only `.page.active`, swaps to A4 portrait with 18mm/14mm margins, and reformats cards/stats to print-friendly borders without shadows. Works in any browser via the native "Save as PDF" option in the print dialog.
+
+The second flow is the **board pack** at Investor → Export board pack. It builds a multi-section document on-the-fly: a Snapshot section (MRR, Cash, Runway, round target + committed + %, pipeline count), an Operating Signal section (sessions delivered 30d, content published 30d, deals closing this month), a Fundraise Pipeline section (one table per stage with name/type/round/amount/last-contact/next-step), and the Latest Board Update on a fresh page (`page-break-before: always`). The whole thing renders as a clean, polished PDF you can email to a board member or angel. Uses tabular layouts with subtle borders and the same VYVE brand header.
+
+The board pack DOM is built into a hidden `#vyve-board-pack` container that only displays when `body.print-board-pack` is set, so it doesn't pollute the live screen. Removed after the print dialog closes.
+
+### Commit 57 - Modal autosave + empty-state CTAs
+*Commit: [`0b4d06`](https://github.com/VYVEHealth/vyve-command-centre/commit/0b4d0627b0b5604f377c3fb493d2bab402a4adc8)*
+
+New `lib/drafts.js` module persists in-progress modal edits to localStorage. The `VYVE_UI.modal()` helper got an optional `draftKey` option — when set, every input/textarea/select with an id inside the modal gets its value saved on every keystroke (debounced 400ms). On reopen, values are restored and a teal pill at the top reads "Draft restored from X min ago" with a Discard button. Drafts auto-GC after 7 days.
+
+Wired into the five highest-traffic modals: Task edit/new (`task:<id>` or `task:new`), CRM deal edit/new, Session edit/new, Investor edit/new, Investor board update, and Content piece edit/new. Each save handler calls `_modal.draft.clear()` before persisting the record, so completed saves don't leave stale drafts behind. Close-without-save preserves the draft.
+
+Brief empty-state helper was upgraded to support `{msg, ctaHref, ctaLabel}` — backward compatible with strings. All seven empty cards on the Brief now show context-aware action links: "No tasks due today → Plan today's tasks", "No deals closing this month → Add or update deals", "No fresh intel yet → Log market intel", etc. CTA pills are teal with a hover lift.
+
 ## 2026-05-14 (continued)
 
 ### Commit 55 - Real content on hub pages
