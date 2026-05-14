@@ -7,6 +7,7 @@
     <button class="tab-btn active" data-tab="set-general">General</button>
     <button class="tab-btn" data-tab="set-people">People & Roles</button>
     <button class="tab-btn" data-tab="set-outbound">Outbound</button>
+    <button class="tab-btn" data-tab="set-targets">Targets</button>
     <button class="tab-btn" data-tab="set-integrations">Integrations</button>
     <button class="tab-btn" data-tab="set-stores">Data Stores</button>
     <button class="tab-btn" data-tab="set-auth">Auth & Access</button>
@@ -131,6 +132,22 @@
         </div>
         <div style="display:flex;justify-content:flex-end;margin-top:14px">
           <button class="btn btn-primary btn-sm" id="email-save">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="set-targets" class="tab-panel">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">KPI targets</span>
+        <span class="card-sub">Targets appear as dashed lines on charts and as "vs target" badges on stat tiles.</span>
+      </div>
+      <div style="padding:0 22px 22px">
+        <div id="targets-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:8px"></div>
+        <div style="display:flex;justify-content:flex-end;margin-top:18px;gap:8px">
+          <button class="btn btn-ghost btn-sm" id="targets-reset">Reset to defaults</button>
+          <button class="btn btn-primary btn-sm" id="targets-save">Save targets</button>
         </div>
       </div>
     </div>
@@ -682,5 +699,66 @@
   } else {
     setTimeout(init, 50);
   }
+})();
+</script>
+
+<script>
+// KPI targets editor
+(function(){
+  if (!window.VYVE_TARGETS) return;
+  var T = window.VYVE_TARGETS;
+
+  function unitInputHint(unit){
+    return {
+      currency: '£',
+      months: 'months',
+      percent: '%',
+      count: ''
+    }[unit] || '';
+  }
+
+  function renderGrid(){
+    var targets = T.load();
+    var grid = document.getElementById('targets-grid');
+    if (!grid) return;
+    grid.innerHTML = Object.keys(targets).map(function(key){
+      var t = targets[key];
+      var hint = unitInputHint(t.unit);
+      return '<div class="form-group" data-target-key="' + key + '">' +
+        '<label style="display:flex;align-items:center;gap:8px;font-size:12.5px">' +
+          '<span>' + (t.label || key) + '</span>' +
+          (hint ? '<span style="color:var(--text-muted);font-size:11px;font-weight:400">' + hint + '</span>' : '') +
+        '</label>' +
+        '<input type="number" min="0" step="' + (t.unit === 'currency' ? '100' : '1') + '" data-target-input value="' + (t.value || 0) + '"/>' +
+      '</div>';
+    }).join('');
+  }
+
+  function saveAll(){
+    var inputs = document.querySelectorAll('#targets-grid [data-target-input]');
+    inputs.forEach(function(input){
+      var key = input.parentElement.getAttribute('data-target-key');
+      var val = Number(input.value) || 0;
+      T.set(key, val);
+    });
+    if (window.VYVE_UI && window.VYVE_UI.toast) window.VYVE_UI.toast('Targets saved', 'success');
+  }
+
+  function reset(){
+    if (!confirm('Reset all targets to default values?')) return;
+    try { localStorage.removeItem('vyve.targets'); } catch(e){}
+    renderGrid();
+    if (window.VYVE_UI && window.VYVE_UI.toast) window.VYVE_UI.toast('Targets reset to defaults', 'success');
+  }
+
+  function init(){
+    if (!document.getElementById('targets-grid')) return;
+    renderGrid();
+    document.getElementById('targets-save').addEventListener('click', saveAll);
+    document.getElementById('targets-reset').addEventListener('click', reset);
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else setTimeout(init, 50);
 })();
 </script>

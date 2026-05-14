@@ -40,6 +40,16 @@
     </div>
   </div>
 
+  <!-- Three-pillar attention bar -->
+  <div class="pillar-bar" id="brief-pillar-bar">
+    <div class="pillar-bar-head">
+      <div class="pillar-bar-title">Where your attention is going — last 7 days</div>
+      <div class="pillar-bar-meta" id="brief-pillar-meta">—</div>
+    </div>
+    <div class="pillar-bar-track" id="brief-pillar-track"></div>
+    <div class="pillar-bar-legend" id="brief-pillar-legend"></div>
+  </div>
+
   <!-- Pinned views (rendered if user has pinned any) -->
   <div id="brief-pinned-views" style="margin-bottom:18px"></div>
 
@@ -286,9 +296,17 @@
       el('brief-mrr-sub').textContent = 'Lead-only';
     } else {
       el('brief-mrr').textContent = D.fmtGBP(mrr);
+      if (window.VYVE_TARGETS && mrr) {
+        var badge = window.VYVE_TARGETS.renderVsBadge('mrr', mrr);
+        if (badge) el('brief-mrr').innerHTML = D.fmtGBP(mrr) + ' ' + badge;
+      }
       el('brief-mrr-sub').textContent = mrr ? 'Latest snapshot' : 'Add in Finance';
     }
     el('brief-pipe').textContent = D.fmtGBP(pipeline);
+    if (window.VYVE_TARGETS && pipeline) {
+      var pbadge = window.VYVE_TARGETS.renderVsBadge('pipeline_value', pipeline);
+      if (pbadge) el('brief-pipe').innerHTML = D.fmtGBP(pipeline) + ' ' + pbadge;
+    }
     el('brief-pipe-sub').textContent = pipeline ? 'Open deals' : 'No deals yet';
   }
 
@@ -461,7 +479,41 @@
     renderCompliance();
     renderIntel();
     renderActivity();
+    renderPillarMix();
     wireRowClicks();
+  }
+
+  function renderPillarMix(){
+    if (!D.pillarMix) return;
+    var mix = D.pillarMix(7);
+    var track = el('brief-pillar-track');
+    var legend = el('brief-pillar-legend');
+    var meta = el('brief-pillar-meta');
+    if (!track) return;
+    var tagged = mix.physical + mix.mental + mix.social;
+    if (tagged === 0) {
+      track.innerHTML = '';
+      legend.innerHTML = '<div class="pillar-bar-empty">No items tagged with a pillar yet. Set <em>Pillar</em> on tasks, sessions, content and actions to see your three-pillar mix here.</div>';
+      meta.textContent = '0 tagged items';
+      return;
+    }
+    var total = tagged + mix.untagged;
+    meta.textContent = tagged + ' tagged ' + (mix.untagged ? '· ' + mix.untagged + ' untagged' : '');
+    var pct = {
+      physical: (mix.physical / tagged) * 100,
+      mental: (mix.mental / tagged) * 100,
+      social: (mix.social / tagged) * 100
+    };
+    // Show track in proportion of tagged items only
+    var segs = [];
+    if (mix.physical) segs.push('<div class="pillar-bar-seg physical" style="width:' + pct.physical.toFixed(1) + '%" title="Physical: ' + mix.physical + '"></div>');
+    if (mix.mental)   segs.push('<div class="pillar-bar-seg mental"   style="width:' + pct.mental.toFixed(1)   + '%" title="Mental: ' + mix.mental + '"></div>');
+    if (mix.social)   segs.push('<div class="pillar-bar-seg social"   style="width:' + pct.social.toFixed(1)   + '%" title="Social: ' + mix.social + '"></div>');
+    track.innerHTML = segs.join('');
+    legend.innerHTML =
+      '<div class="lg physical"><span class="lg-dot"></span>Physical <span class="lg-count">' + mix.physical + ' · ' + Math.round(pct.physical) + '%</span></div>' +
+      '<div class="lg mental"><span class="lg-dot"></span>Mental <span class="lg-count">' + mix.mental + ' · ' + Math.round(pct.mental) + '%</span></div>' +
+      '<div class="lg social"><span class="lg-dot"></span>Social <span class="lg-count">' + mix.social + ' · ' + Math.round(pct.social) + '%</span></div>';
   }
 
   el('brief-refresh').addEventListener('click', renderAll);
