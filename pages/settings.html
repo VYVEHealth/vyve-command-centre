@@ -87,6 +87,15 @@
         <div class="form-group"><label>deals</label><input data-store-key="deals"/></div>
         <div class="form-group"><label>investors</label><input data-store-key="investors"/></div>
       </div>
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);margin:14px 0 10px;font-weight:600">Used by Refresh-from-Make buttons</div>
+      <div class="form-row cols-2">
+        <div class="form-group"><label>performance <span style="color:var(--text-muted);font-weight:400">(VYVE Analytics)</span></label><input data-store-key="performance" placeholder="107716"/></div>
+        <div class="form-group"><label>podcast <span style="color:var(--text-muted);font-weight:400">(VYVE Podcast Episodes)</span></label><input data-store-key="podcast" placeholder="113609"/></div>
+      </div>
+      <div class="form-row cols-2">
+        <div class="form-group"><label>posts <span style="color:var(--text-muted);font-weight:400">(VYVE Post Log)</span></label><input data-store-key="posts" placeholder="106900"/></div>
+        <div class="form-group"></div>
+      </div>
       <div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn btn-primary" id="save-stores">Save store mapping</button></div>
     </div>
   </div>
@@ -120,8 +129,14 @@
     $('s-mk-base').value = window.VYVE_CONFIG.make.base || '';
     $('s-mk-token').value = window.VYVE_CONFIG.make.token || '';
     var stores = window.VYVE_CONFIG.make.stores || {};
+    var KNOWN_DEFAULTS = {
+      performance: '107716',  // VYVE Analytics
+      podcast:     '113609',  // VYVE Podcast Episodes
+      posts:       '106900'   // VYVE Post Log
+    };
     document.querySelectorAll('[data-store-key]').forEach(function(inp){
-      inp.value = stores[inp.dataset.storeKey] || '';
+      var k = inp.dataset.storeKey;
+      inp.value = stores[k] || KNOWN_DEFAULTS[k] || '';
     });
   }
 

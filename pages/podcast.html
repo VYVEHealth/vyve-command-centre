@@ -6,6 +6,7 @@
         <p>Episode pipeline, guest CRM, performance per episode</p>
       </div>
       <div style="display:flex;gap:8px">
+        <button class="btn" id="pod-refresh" title="Pull the latest podcast episodes from Make">↻ Refresh from Make</button>
         <button class="btn" id="pod-add-guest">Add guest</button>
         <button class="btn btn-primary" id="pod-add-ep">New episode</button>
       </div>
@@ -224,5 +225,34 @@
   document.getElementById('guest-search').addEventListener('input', async function(){ renderGuests(await loadGuests()); });
 
   (async function(){ var eps = await loadEps(); renderPipeline(eps); renderPublished(eps); renderGuests(await loadGuests()); })();
+
+  // Refresh from Make
+  (function(){
+    var btn = document.getElementById('pod-refresh');
+    if (!btn) return;
+    btn.addEventListener('click', async function(){
+      if (!window.VYVE_MAKE || !window.VYVE_MAKE.hasToken || !window.VYVE_MAKE.hasToken()){
+        VYVE_UI.toast('Add your Make API token in Settings first', 'error'); return;
+      }
+      if (!window.VYVE_MAKE.storeId || !window.VYVE_MAKE.storeId('podcast')){
+        VYVE_UI.toast('Set the podcast store ID in Settings → Data Stores', 'error'); return;
+      }
+      btn.disabled = true;
+      var label = btn.textContent;
+      btn.textContent = 'Refreshing...';
+      try {
+        var n = await window.VYVE_MAKE.refreshPodcast();
+        VYVE_UI.toast('Refreshed: ' + n + ' episodes', 'success');
+        if (typeof render === 'function' && typeof load === 'function') render(await load());
+        else location.reload();
+      } catch(e){
+        VYVE_UI.toast('Refresh failed — see console', 'error');
+        console.error('[Podcast refresh]', e);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = label;
+      }
+    });
+  })();
 })();
 </script>

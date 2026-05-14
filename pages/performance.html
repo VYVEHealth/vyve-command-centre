@@ -11,6 +11,7 @@
           <option value="30" selected>Last 30 days</option>
           <option value="90">Last 90 days</option>
         </select>
+        <button class="btn" id="perf-refresh" title="Pull the latest analytics from Make">↻ Refresh from Make</button>
         <button class="btn" id="perf-log">Log result</button>
       </div>
     </div>
@@ -171,5 +172,32 @@
 
   document.getElementById('perf-period').addEventListener('change', async function(){ render(await load()); });
   (async function(){ render(await load()); })();
+
+  // Refresh from Make
+  document.getElementById('perf-refresh').addEventListener('click', async function(){
+    var btn = this;
+    if (!window.VYVE_MAKE || !window.VYVE_MAKE.hasToken || !window.VYVE_MAKE.hasToken()){
+      VYVE_UI.toast('Add your Make API token in Settings first', 'error');
+      return;
+    }
+    if (!window.VYVE_MAKE.storeId || !window.VYVE_MAKE.storeId('performance')){
+      VYVE_UI.toast('Set the performance store ID in Settings → Data Stores', 'error');
+      return;
+    }
+    btn.disabled = true;
+    var label = btn.textContent;
+    btn.textContent = 'Refreshing...';
+    try {
+      var n = await window.VYVE_MAKE.refreshPerformance();
+      VYVE_UI.toast('Refreshed: ' + n + ' records', 'success');
+      render(await load());
+    } catch(e){
+      VYVE_UI.toast('Refresh failed — see console', 'error');
+      console.error('[Performance refresh]', e);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = label;
+    }
+  });
 })();
 </script>
