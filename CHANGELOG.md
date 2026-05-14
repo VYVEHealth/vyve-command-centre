@@ -4,6 +4,47 @@ All notable changes documented commit-by-commit. Each entry links to the GitHub 
 
 ## 2026-05-14
 
+### Commits 41-43 - Enterprise top-nav architecture
+
+The Command Centre now feels like an enterprise SaaS (Linear / Stripe / Notion) rather than a sidebar-heavy admin tool. Primary navigation moved to a horizontal top bar of 6 departments; the long sidebar list became a secondary slide-in drawer for power users. Each department has its own hub page of clickable tiles showing live KPIs, and Cmd+K opens a fuzzy quick-search overlay for instant jumps to any page.
+
+**Commit 41 - New chrome (top-nav primary, sidebar drawer secondary)**
+- Top navigation bar with 6 dept tabs: Daily, Commercial, Marketing, Delivery, Knowledge, Org (sourced from new `window.VYVE_NAV_TOP` config)
+- Each tab is a route to that department's hub page (`#/commercial`, `#/marketing`, etc) -- except Daily which still routes to Brief
+- Active tab gets teal pale background + bottom underline accent
+- Sidebar repositioned as fixed slide-in drawer (transform: translateX(-100%) by default); the hamburger button in the top nav opens it
+- Search button in top right shows the search icon + "Search" label + visible `Cmd+K` kbd shortcut hint
+- User avatar moves to the top right (next to the search button); same avatar still appears in the drawer footer
+- Breadcrumbs row below the main top nav shows path: `VYVE / Commercial / CRM` (clickable, hidden on Brief)
+- Router rewritten to render top-nav tabs from `VYVE_NAV_TOP`, set active tab from `VYVE_ROUTE_TO_TOP[slug]`, paint breadcrumbs based on hub + page entry, and resolve hub slugs as valid pages
+- Cmd+K quick-search overlay scaffolded (full impl in commit 43)
+- Mobile: <1100px hides tab labels (icons only), <900px hides tabs entirely (use hamburger to open drawer for nav)
+
+**Commit 42 - 5 hub pages with tile grids + live KPIs**
+- New `pages/commercial.html`, `pages/marketing.html`, `pages/delivery.html`, `pages/knowledge.html`, `pages/org.html`
+- Each hub uses the standard page-hero pattern (eyebrow + Playfair title + intro paragraph)
+- Below the hero: grid of clickable tiles, 3-up on desktop / 2-up on tablet / 1-up on mobile
+- Each tile shows: rounded icon block (teal pale tint), tile label (Playfair), live primary KPI (large), live secondary metric (small right-aligned), animated right-arrow on hover, optional status badge (e.g. "3 overdue" red, "live" teal)
+- All KPIs read from `VYVE_DATA` (the shared cross-page intelligence layer):
+  - **Commercial**: Finance (cash + runway months), Sales Pipeline (open £ + open deal count), Clients (live + total), Investors (count), Partners (count), Invoicing (unpaid count)
+  - **Marketing**: Content (in-flight + 30d published), Social Blueprint, Performance (30d reach + LinkedIn growth %), Podcast (published + in-production), Brand
+  - **Delivery**: Sessions (this week + 48h), Tasks (active + overdue badge), Compliance (due 30d + soon badge)
+  - **Knowledge**: Strategy, Documents (count), Knowledge Base (count)
+  - **Org**: Action Plans (completion % + overdue/due-soon badge), Team (members), Settings
+- Tiles smooth-hover with translateY(-2px) + shadow lift + accent border colour
+- Tile primary number uses the Playfair display face at 24px; large enough to scan instantly
+
+**Commit 43 - Full Cmd+K quick search**
+- Fuzzy match across all pages (hubs + flat nav items) with weighted scoring: exact-match > starts-with > contains > subsequence
+- Keyboard nav: Up/Down to move, Enter to open, Esc to close, Cmd+K (or Ctrl+K) to toggle
+- Click on the search button in the top nav also opens the overlay
+- Results show: square rounded icon, label (Playfair-style weight), section name (muted sub)
+- Active result gets teal-pale background; mouse hover updates active index in sync with keyboard
+- Empty state on no query: shows last 5 recently-visited pages (stored in `localStorage` under `vyve.qs.recent`), or top hub pages if no history
+- "No matches for X" empty state for failed searches
+- Recents auto-update on every page navigation (excluding the Brief launchpad)
+- Smooth backdrop blur, slide-in animation, esc-key kbd hint visible in footer
+
 ### Commits 32-39 — Authentic VYVE design system
 
 Major redesign pass to make the Command Centre feel like an enterprise platform and authentic to VYVE rather than a generic admin UI. Aligned to the vyvehealth.co.uk brand voice ("Build health before it breaks.") and visual language.
