@@ -1,0 +1,521 @@
+<div class="page active" id="page-calendar">
+  <div class="page-hero">
+    <div class="eyebrow">Schedule</div>
+    <h1 class="page-title">Calendar</h1>
+    <p class="page-sub">Team events, sessions and meetings in one shared view. Generate Google Meet links and invite attendees.</p>
+    <div class="hero-actions">
+      <button class="btn btn-primary" id="cal-add">New event</button>
+    </div>
+  </div>
+
+  <!-- Gate states -->
+  <div id="cal-gate-notready" class="card" style="display:none;padding:30px 26px;text-align:center"><div style="color:var(--text-muted)">Connecting to Supabase…</div></div>
+  <div id="cal-gate-signin" class="card" style="display:none;padding:36px 26px">
+    <div style="max-width:420px;margin:0 auto;text-align:center">
+      <div style="font-family:var(--font-head);font-size:20px;font-weight:700;margin-bottom:8px">Sign in to view calendar</div>
+      <p style="color:var(--text-muted);font-size:13.5px;line-height:1.55;margin-bottom:18px">Calendar events are restricted to the team. Sign in with your VYVE email.</p>
+      <div style="display:flex;gap:8px;justify-content:center">
+        <input type="email" id="cal-signin-email" placeholder="team@vyvehealth.co.uk" style="flex:1;max-width:280px"/>
+        <button class="btn btn-primary" id="cal-signin-btn">Send magic link</button>
+      </div>
+      <div id="cal-signin-msg" style="margin-top:12px;font-size:12.5px;color:var(--text-muted)"></div>
+    </div>
+  </div>
+  <div id="cal-gate-denied" class="card" style="display:none;padding:36px 26px;text-align:center">
+    <div style="font-family:var(--font-head);font-size:18px;font-weight:700;margin-bottom:8px">Access restricted</div>
+    <p style="color:var(--text-muted);font-size:13px;max-width:420px;margin:0 auto 18px">You’re signed in as <strong id="cal-denied-email"></strong> but this email isn’t on the admin allowlist.</p>
+    <button class="btn btn-ghost btn-sm" id="cal-signout-btn">Sign out</button>
+  </div>
+
+  <!-- Real content -->
+  <div id="cal-content" style="display:none">
+    <!-- Top bar -->
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="btn btn-ghost btn-sm" id="cal-prev" title="Previous">‹</button>
+        <div style="font-family:var(--font-head);font-size:20px;font-weight:700;min-width:200px;text-align:center" id="cal-period-label">—</div>
+        <button class="btn btn-ghost btn-sm" id="cal-next" title="Next">›</button>
+        <button class="btn btn-ghost btn-sm" id="cal-today">Today</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div style="display:inline-flex;background:var(--surface-2);border-radius:var(--r-md);padding:3px">
+          <button class="seg-btn active" data-view="month">Month</button>
+          <button class="seg-btn" data-view="week">Week</button>
+          <button class="seg-btn" data-view="agenda">Agenda</button>
+        </div>
+        <div style="display:inline-flex;background:var(--surface-2);border-radius:var(--r-md);padding:3px">
+          <button class="seg-btn" data-scope="mine">Mine</button>
+          <button class="seg-btn active" data-scope="team">Team</button>
+          <button class="seg-btn" data-scope="all">All</button>
+        </div>
+        <span style="font-size:12px;color:var(--text-muted)" id="cal-current-email"></span>
+      </div>
+    </div>
+
+    <!-- Calendar views -->
+    <div class="card" style="padding:0;overflow:hidden">
+      <div id="cal-month-view" class="cal-view"></div>
+      <div id="cal-week-view" class="cal-view" style="display:none"></div>
+      <div id="cal-agenda-view" class="cal-view" style="display:none"></div>
+    </div>
+
+    <!-- Legend -->
+    <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--text-muted);padding:12px 4px">
+      <span style="display:inline-flex;align-items:center;gap:6px"><span class="cal-dot" style="background:var(--vyve-teal,#4DAAAA)"></span>Team event</span>
+      <span style="display:inline-flex;align-items:center;gap:6px"><span class="cal-dot" style="background:var(--vyve-gold,#D49B2C)"></span>Session</span>
+      <span style="display:inline-flex;align-items:center;gap:6px"><span class="cal-dot" style="background:var(--vyve-coral,#D17F6E)"></span>Private (yours)</span>
+      <span style="display:inline-flex;align-items:center;gap:6px;margin-left:auto"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>Has Meet link</span>
+    </div>
+  </div>
+</div>
+
+<style>
+  .seg-btn { background:transparent;border:0;padding:6px 12px;font-size:12px;font-weight:600;color:var(--text-muted);cursor:pointer;border-radius:calc(var(--r-md) - 3px);transition:background .15s,color .15s; }
+  .seg-btn.active { background:var(--surface);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.06); }
+  .cal-dot { display:inline-block;width:8px;height:8px;border-radius:50%; }
+
+  /* Month grid */
+  .cal-month-grid { display:grid;grid-template-columns:repeat(7, 1fr);background:var(--border); gap:1px; }
+  .cal-month-header { background:var(--surface);padding:8px 10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);text-align:center; }
+  .cal-day { background:var(--surface);min-height:96px;padding:6px 8px;cursor:pointer;display:flex;flex-direction:column;gap:3px;position:relative;transition:background .12s; }
+  .cal-day:hover { background:var(--surface-2); }
+  .cal-day.other-month { opacity:.42; }
+  .cal-day.today { background:rgba(77,170,170,.06); }
+  .cal-day.today .cal-day-num { background:var(--vyve-teal,#4DAAAA);color:#fff;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-weight:700; }
+  .cal-day-num { font-size:12px;font-weight:600;color:var(--text);align-self:flex-start; }
+  .cal-day-events { display:flex;flex-direction:column;gap:2px;flex:1;overflow:hidden; }
+  .cal-event { font-size:10.5px;padding:2px 5px;border-radius:3px;color:var(--text);background:var(--surface-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;font-weight:500;border-left:2px solid var(--vyve-teal); }
+  .cal-event.session { border-left-color:var(--vyve-gold,#D49B2C); background:rgba(212,155,44,.07); }
+  .cal-event.private { border-left-color:var(--vyve-coral,#D17F6E); background:rgba(209,127,110,.07); }
+  .cal-event.team { border-left-color:var(--vyve-teal,#4DAAAA); background:rgba(77,170,170,.07); }
+  .cal-event:hover { background:var(--surface); }
+  .cal-event-more { font-size:10.5px;color:var(--text-muted);padding:1px 5px; }
+
+  /* Week grid */
+  .cal-week-grid { display:grid;grid-template-columns:60px repeat(7, 1fr);background:var(--border);gap:1px; }
+  .cal-week-header { background:var(--surface);padding:10px 8px;font-size:11px;font-weight:700;text-align:center;color:var(--text); }
+  .cal-week-header.today-col { color:var(--vyve-teal,#4DAAAA); }
+  .cal-week-time { background:var(--surface);font-size:10px;color:var(--text-muted);padding:8px 4px;text-align:right;font-family:var(--font-mono,monospace); }
+  .cal-week-cell { background:var(--surface);min-height:48px;cursor:pointer;position:relative;transition:background .12s; }
+  .cal-week-cell:hover { background:var(--surface-2); }
+  .cal-week-event { position:absolute;left:2px;right:2px;background:var(--vyve-teal,#4DAAAA);color:#fff;padding:3px 6px;font-size:10.5px;font-weight:500;border-radius:3px;overflow:hidden;cursor:pointer;z-index:2; }
+  .cal-week-event.session { background:var(--vyve-gold,#D49B2C); }
+  .cal-week-event.private { background:var(--vyve-coral,#D17F6E); }
+
+  /* Agenda list */
+  .cal-agenda-list { padding:0; }
+  .cal-agenda-day { padding:14px 22px;border-bottom:1px solid var(--border); }
+  .cal-agenda-day-head { display:flex;align-items:baseline;gap:10px;margin-bottom:10px; }
+  .cal-agenda-day-num { font-family:var(--font-head);font-size:24px;font-weight:700;color:var(--text); }
+  .cal-agenda-day-weekday { font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted); }
+  .cal-agenda-day.is-today .cal-agenda-day-num { color:var(--vyve-teal,#4DAAAA); }
+  .cal-agenda-event { display:flex;align-items:center;gap:12px;padding:10px 0;cursor:pointer;border-radius:var(--r-md);transition:background .12s;padding-left:8px; }
+  .cal-agenda-event:hover { background:var(--surface-2); }
+  .cal-agenda-time { font-family:var(--font-mono,monospace);font-size:12px;color:var(--text-muted);min-width:96px; }
+  .cal-agenda-stripe { width:4px;height:36px;border-radius:2px;background:var(--vyve-teal,#4DAAAA);flex-shrink:0; }
+  .cal-agenda-stripe.session { background:var(--vyve-gold,#D49B2C); }
+  .cal-agenda-stripe.private { background:var(--vyve-coral,#D17F6E); }
+  .cal-agenda-main { flex:1;min-width:0; }
+  .cal-agenda-title { font-weight:600;font-size:13.5px; }
+  .cal-agenda-sub { font-size:11.5px;color:var(--text-muted);margin-top:2px; }
+  .cal-meet-icon { color:var(--vyve-teal,#4DAAAA);flex-shrink:0; }
+
+  .cal-empty { padding:60px 20px;text-align:center;color:var(--text-muted);font-size:13px; }
+</style>
+
+<script>
+(function(){
+  if (!window.VYVE_SUPABASE) return;
+  var S = window.VYVE_SUPABASE;
+  var TABLE = 'cc_calendar_events';
+
+  var state = {
+    view: 'month',         // 'month' | 'week' | 'agenda'
+    scope: 'team',         // 'mine' | 'team' | 'all'
+    cursor: new Date(),    // current period anchor
+    events: [],
+    sessions: [],
+    me: null               // current admin email
+  };
+
+  function show(id){ document.getElementById(id).style.display = ''; }
+  function hide(id){ document.getElementById(id).style.display = 'none'; }
+  function hideAll(){ ['cal-gate-notready','cal-gate-signin','cal-gate-denied','cal-content'].forEach(hide); }
+
+  // ---------- Date helpers ----------
+  function startOfMonth(d){ var x = new Date(d); x.setDate(1); x.setHours(0,0,0,0); return x; }
+  function endOfMonth(d){ var x = new Date(d); x.setMonth(x.getMonth()+1, 0); x.setHours(23,59,59,999); return x; }
+  function startOfWeek(d){ var x = new Date(d); var day = (x.getDay() + 6) % 7; x.setDate(x.getDate() - day); x.setHours(0,0,0,0); return x; }
+  function addDays(d, n){ var x = new Date(d); x.setDate(x.getDate() + n); return x; }
+  function sameDay(a, b){ return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate(); }
+  function fmtTime(d){ var h = d.getHours(); var m = d.getMinutes(); var ampm = h >= 12 ? 'pm' : 'am'; h = h % 12 || 12; return h + (m ? ':' + (m<10?'0':'') + m : '') + ampm; }
+  function fmtDateRange(a, b){
+    var sameYear = a.getFullYear() === b.getFullYear();
+    var sameMonth = sameYear && a.getMonth() === b.getMonth();
+    if (sameMonth) return a.toLocaleDateString('en-GB',{day:'numeric'}) + '–' + b.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+    return a.toLocaleDateString('en-GB',{day:'numeric',month:'short'}) + ' – ' + b.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+  }
+
+  // ---------- Data ----------
+  async function fetchData(){
+    // Pull events for a window spanning ~6 weeks around the cursor (covers any view)
+    var anchor = state.cursor;
+    var from = addDays(startOfMonth(anchor), -10).toISOString();
+    var to = addDays(endOfMonth(anchor), 10).toISOString();
+
+    var evRes = await S.client.from(TABLE).select('*').gte('start_at', from).lte('start_at', to).order('start_at', { ascending: true });
+    state.events = evRes.error ? [] : (evRes.data || []);
+
+    // Sessions read-only feed
+    var sesRes = await S.client.from('cc_sessions').select('*').gte('session_date', from.slice(0,10)).lte('session_date', to.slice(0,10));
+    state.sessions = sesRes.error ? [] : (sesRes.data || []);
+  }
+
+  function eventsForDay(d){
+    var key = d.toISOString().slice(0,10);
+    var fromEvents = state.events.filter(function(e){
+      var sa = new Date(e.start_at);
+      return sa.toISOString().slice(0,10) === key && visibilityMatches(e);
+    }).map(function(e){ return { kind: 'event', ref: e, start: new Date(e.start_at), end: new Date(e.end_at), title: e.title, meet: e.meet_url, type: e.visibility === 'private' ? 'private' : 'team' }; });
+
+    var fromSessions = state.sessions.filter(function(s){ return s.session_date === key; }).map(function(s){
+      return { kind: 'session', ref: s, start: parseSessionStart(s), end: parseSessionStart(s), title: s.title, type: 'session' };
+    });
+
+    return fromEvents.concat(fromSessions).sort(function(a,b){ return a.start - b.start; });
+  }
+
+  function parseSessionStart(s){
+    // cc_sessions has session_date but no time. Default to 10am.
+    var d = new Date(s.session_date + 'T10:00:00');
+    return d;
+  }
+
+  function visibilityMatches(e){
+    if (state.scope === 'all') return true;
+    if (state.scope === 'mine') return e.owner_email === state.me;
+    // team: show team + shared events for everyone, private only for owner
+    if (e.visibility === 'private') return e.owner_email === state.me;
+    return true;
+  }
+
+  // ---------- Render: Month ----------
+  function renderMonth(){
+    var mount = document.getElementById('cal-month-view');
+    var monthStart = startOfMonth(state.cursor);
+    var gridStart = startOfWeek(monthStart);
+    var today = new Date(); today.setHours(0,0,0,0);
+
+    var html = '<div class="cal-month-grid">';
+    var weekdays = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    weekdays.forEach(function(d){ html += '<div class="cal-month-header">' + d + '</div>'; });
+
+    for (var i = 0; i < 42; i++){
+      var d = addDays(gridStart, i);
+      var isOtherMonth = d.getMonth() !== state.cursor.getMonth();
+      var isToday = sameDay(d, today);
+      var evts = eventsForDay(d);
+      var visible = evts.slice(0, 3);
+      var more = evts.length - visible.length;
+
+      html += '<div class="cal-day ' + (isOtherMonth ? 'other-month' : '') + ' ' + (isToday ? 'today' : '') + '" data-date="' + d.toISOString() + '">';
+      html += '<span class="cal-day-num">' + d.getDate() + '</span>';
+      html += '<div class="cal-day-events">';
+      visible.forEach(function(ev){
+        var meetIcon = ev.meet ? ' ▸' : '';
+        html += '<div class="cal-event ' + ev.type + '" data-evt="' + ev.kind + ':' + ev.ref.id + '">' + (ev.start ? fmtTime(ev.start) + ' ' : '') + escape(ev.title) + meetIcon + '</div>';
+      });
+      if (more > 0) html += '<div class="cal-event-more">+' + more + ' more</div>';
+      html += '</div></div>';
+    }
+    html += '</div>';
+    mount.innerHTML = html;
+
+    mount.querySelectorAll('.cal-day').forEach(function(cell){
+      cell.addEventListener('click', function(e){
+        if (e.target.closest('.cal-event')) return;
+        var iso = cell.getAttribute('data-date');
+        openEventModal({ start_at: iso, end_at: addDays(new Date(iso), 0).toISOString() });
+      });
+    });
+    mount.querySelectorAll('.cal-event').forEach(function(el){
+      el.addEventListener('click', function(){ openEventDetail(el.getAttribute('data-evt')); });
+    });
+  }
+
+  // ---------- Render: Week ----------
+  function renderWeek(){
+    var mount = document.getElementById('cal-week-view');
+    var weekStart = startOfWeek(state.cursor);
+    var today = new Date(); today.setHours(0,0,0,0);
+    var html = '<div class="cal-week-grid">';
+    html += '<div class="cal-week-header"></div>';
+    for (var d = 0; d < 7; d++){
+      var day = addDays(weekStart, d);
+      var isToday = sameDay(day, today);
+      html += '<div class="cal-week-header' + (isToday ? ' today-col' : '') + '">' + day.toLocaleDateString('en-GB',{weekday:'short'}) + '<br><span style="font-family:var(--font-head);font-size:18px;font-weight:700">' + day.getDate() + '</span></div>';
+    }
+    // 7am - 9pm hours
+    for (var h = 7; h <= 21; h++){
+      var label = (h % 12 || 12) + (h < 12 ? 'am' : 'pm');
+      html += '<div class="cal-week-time">' + label + '</div>';
+      for (var d2 = 0; d2 < 7; d2++){
+        var dayKey = addDays(weekStart, d2);
+        dayKey.setHours(h, 0, 0, 0);
+        html += '<div class="cal-week-cell" data-date="' + dayKey.toISOString() + '"></div>';
+      }
+    }
+    html += '</div>';
+    mount.innerHTML = html;
+
+    // Place events on the grid (single-block per event)
+    var rows = mount.querySelectorAll('.cal-week-cell');
+    for (var di = 0; di < 7; di++){
+      var d = addDays(weekStart, di);
+      var dayEvts = eventsForDay(d);
+      dayEvts.forEach(function(ev){
+        if (!ev.start) return;
+        var hour = ev.start.getHours();
+        if (hour < 7 || hour > 21) return;
+        // Find the cell for this hour and column
+        var cellSelector = '.cal-week-cell[data-date^="' + d.toISOString().slice(0,10) + 'T' + (hour < 10 ? '0' : '') + hour + ':"]';
+        var cell = mount.querySelector(cellSelector);
+        if (!cell) return;
+        var pillEl = document.createElement('div');
+        pillEl.className = 'cal-week-event ' + ev.type;
+        pillEl.setAttribute('data-evt', ev.kind + ':' + ev.ref.id);
+        pillEl.innerHTML = (ev.start ? fmtTime(ev.start) + ' ' : '') + escape(ev.title);
+        cell.appendChild(pillEl);
+        pillEl.addEventListener('click', function(e){ e.stopPropagation(); openEventDetail(pillEl.getAttribute('data-evt')); });
+      });
+    }
+
+    mount.querySelectorAll('.cal-week-cell').forEach(function(cell){
+      cell.addEventListener('click', function(e){
+        if (e.target.closest('.cal-week-event')) return;
+        openEventModal({ start_at: cell.getAttribute('data-date'), end_at: cell.getAttribute('data-date') });
+      });
+    });
+  }
+
+  // ---------- Render: Agenda ----------
+  function renderAgenda(){
+    var mount = document.getElementById('cal-agenda-view');
+    var today = new Date(); today.setHours(0,0,0,0);
+    var html = '<div class="cal-agenda-list">';
+    var hasAny = false;
+
+    for (var i = 0; i < 21; i++){
+      var d = addDays(today, i);
+      var evts = eventsForDay(d);
+      if (!evts.length) continue;
+      hasAny = true;
+      var isToday = sameDay(d, today);
+      html += '<div class="cal-agenda-day ' + (isToday ? 'is-today' : '') + '">';
+      html += '<div class="cal-agenda-day-head"><div class="cal-agenda-day-num">' + d.getDate() + '</div><div><div class="cal-agenda-day-weekday">' + d.toLocaleDateString('en-GB',{weekday:'long'}) + '</div><div style="font-size:11px;color:var(--text-muted)">' + d.toLocaleDateString('en-GB',{month:'long',year:'numeric'}) + '</div></div></div>';
+      evts.forEach(function(ev){
+        var time = ev.start ? fmtTime(ev.start) + (ev.end && ev.end !== ev.start ? ' – ' + fmtTime(ev.end) : '') : 'All day';
+        var meetIcon = ev.meet ? '<span class="cal-meet-icon" title="Has Meet link"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></span>' : '';
+        html += '<div class="cal-agenda-event" data-evt="' + ev.kind + ':' + ev.ref.id + '">' +
+          '<div class="cal-agenda-time">' + time + '</div>' +
+          '<div class="cal-agenda-stripe ' + ev.type + '"></div>' +
+          '<div class="cal-agenda-main"><div class="cal-agenda-title">' + escape(ev.title) + '</div><div class="cal-agenda-sub">' + (ev.kind === 'session' ? 'Session' : ('Event · ' + (ev.ref.owner_email || ''))) + (ev.ref.location ? ' · ' + escape(ev.ref.location) : '') + '</div></div>' +
+          meetIcon +
+        '</div>';
+      });
+      html += '</div>';
+    }
+    if (!hasAny) html += '<div class="cal-empty">No events in the next 21 days.</div>';
+    html += '</div>';
+    mount.innerHTML = html;
+    mount.querySelectorAll('.cal-agenda-event').forEach(function(el){
+      el.addEventListener('click', function(){ openEventDetail(el.getAttribute('data-evt')); });
+    });
+  }
+
+  function renderCurrent(){
+    document.getElementById('cal-month-view').style.display = state.view === 'month' ? '' : 'none';
+    document.getElementById('cal-week-view').style.display = state.view === 'week' ? '' : 'none';
+    document.getElementById('cal-agenda-view').style.display = state.view === 'agenda' ? '' : 'none';
+    if (state.view === 'month'){ renderMonth(); document.getElementById('cal-period-label').textContent = state.cursor.toLocaleDateString('en-GB',{month:'long',year:'numeric'}); }
+    else if (state.view === 'week'){ renderWeek(); var ws = startOfWeek(state.cursor); var we = addDays(ws, 6); document.getElementById('cal-period-label').textContent = fmtDateRange(ws, we); }
+    else { renderAgenda(); document.getElementById('cal-period-label').textContent = 'Next 21 days'; }
+  }
+
+  // ---------- Event modal (create/edit) ----------
+  function openEventModal(initial){
+    initial = initial || {};
+    var isEdit = !!initial.id;
+    var start = initial.start_at ? new Date(initial.start_at) : new Date();
+    var end = initial.end_at ? new Date(initial.end_at) : new Date(start.getTime() + 3600000);
+
+    var modal = VYVE_UI.modal({
+      title: isEdit ? 'Edit event' : 'New event',
+      draftKey: 'calendar:' + (initial.id || 'new'),
+      body:
+        '<div class="form-row"><div class="form-group"><label>Title</label><input id="ev-title" value="' + escape(initial.title || '') + '"/></div></div>' +
+        '<div class="form-row cols-2"><div class="form-group"><label>Start</label><input id="ev-start" type="datetime-local" value="' + toLocalDateTime(start) + '"/></div><div class="form-group"><label>End</label><input id="ev-end" type="datetime-local" value="' + toLocalDateTime(end) + '"/></div></div>' +
+        '<div class="form-row cols-2"><div class="form-group"><label>Visibility</label><select id="ev-visibility"><option value="team">Team (all admins)</option><option value="private">Private (just you)</option><option value="shared">Shared (team + attendees)</option></select></div><div class="form-group"><label>Location</label><input id="ev-location" value="' + escape(initial.location || '') + '" placeholder="Address, room, or blank"/></div></div>' +
+        '<div class="form-row"><div class="form-group"><label>Attendees (comma-separated emails)</label><input id="ev-attendees" value="' + escape(initial.attendees || '') + '" placeholder="optional"/></div></div>' +
+        '<div class="form-row"><div class="form-group"><label>Google Meet link</label><div style="display:flex;gap:6px"><input id="ev-meet" value="' + escape(initial.meet_url || '') + '" placeholder="meet.google.com/..." style="flex:1"/><button type="button" class="btn btn-ghost btn-sm" id="ev-meet-gen" title="Open meet.google.com/new in a new tab; copy the link back here">Generate</button></div></div></div>' +
+        '<div class="form-row"><div class="form-group"><label>Description</label><textarea id="ev-desc" rows="3">' + escape(initial.description || '') + '</textarea></div></div>' +
+        '<div style="display:flex;justify-content:space-between;gap:8px">' +
+          (isEdit && initial.owner_email === state.me ? '<button class="btn" id="ev-del" style="color:var(--danger);border-color:rgba(224,96,96,.3)">Delete</button>' : '<span></span>') +
+          '<button class="btn btn-primary" id="ev-save">Save</button>' +
+        '</div>'
+    });
+
+    setTimeout(function(){
+      if (initial.visibility) document.getElementById('ev-visibility').value = initial.visibility;
+      document.getElementById('ev-meet-gen').addEventListener('click', function(){
+        // Open the Meet new-room URL in a new tab. User copies link back.
+        window.open('https://meet.google.com/new', '_blank', 'noopener');
+        if (window.VYVE_UI && window.VYVE_UI.toast) window.VYVE_UI.toast('Copy the new Meet link from the opened tab', 'info');
+      });
+      document.getElementById('ev-save').addEventListener('click', async function(){
+        var title = document.getElementById('ev-title').value.trim();
+        if (!title){ if (VYVE_UI && VYVE_UI.toast) VYVE_UI.toast('Title required', 'error'); return; }
+        var record = {
+          title: title,
+          description: document.getElementById('ev-desc').value.trim() || null,
+          start_at: fromLocalDateTime(document.getElementById('ev-start').value),
+          end_at: fromLocalDateTime(document.getElementById('ev-end').value),
+          location: document.getElementById('ev-location').value.trim() || null,
+          meet_url: document.getElementById('ev-meet').value.trim() || null,
+          visibility: document.getElementById('ev-visibility').value,
+          attendees: document.getElementById('ev-attendees').value.trim() || null,
+          updated_at: new Date().toISOString()
+        };
+        try {
+          var res;
+          if (isEdit) {
+            res = await S.client.from(TABLE).update(record).eq('id', initial.id);
+          } else {
+            record.owner_email = state.me;
+            res = await S.client.from(TABLE).insert(record);
+          }
+          if (res.error){ alert('Save failed: ' + res.error.message); return; }
+          if (modal.draft) modal.draft.clear();
+          modal.close();
+          if (VYVE_UI && VYVE_UI.toast) VYVE_UI.toast(isEdit ? 'Event updated' : 'Event created', 'success');
+          await fetchData();
+          renderCurrent();
+        } catch(e){
+          alert('Save threw: ' + (e.message || 'unknown'));
+        }
+      });
+      var delBtn = document.getElementById('ev-del');
+      if (delBtn){
+        delBtn.addEventListener('click', async function(){
+          if (!confirm('Delete this event? This cannot be undone.')) return;
+          var res = await S.client.from(TABLE).delete().eq('id', initial.id);
+          if (res.error){ alert('Delete failed: ' + res.error.message); return; }
+          modal.close();
+          if (VYVE_UI && VYVE_UI.toast) VYVE_UI.toast('Event deleted', 'success');
+          await fetchData();
+          renderCurrent();
+        });
+      }
+    }, 50);
+  }
+
+  function openEventDetail(token){
+    var parts = token.split(':');
+    var kind = parts[0]; var id = parts[1];
+    if (kind === 'event'){
+      var ev = state.events.find(function(e){ return e.id === id; });
+      if (ev) openEventModal(ev);
+    } else if (kind === 'session'){
+      // Sessions are read-only from the calendar - link to the sessions page
+      window.location.hash = '#/sessions';
+    }
+  }
+
+  function toLocalDateTime(d){
+    var pad = function(n){ return n < 10 ? '0' + n : '' + n; };
+    return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+  function fromLocalDateTime(s){
+    if (!s) return new Date().toISOString();
+    return new Date(s).toISOString();
+  }
+  function escape(s){ return (s||'').toString().replace(/[<>&"]/g, function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]; }); }
+
+  // ---------- Wiring ----------
+  function bindControls(){
+    document.querySelectorAll('#page-calendar .seg-btn[data-view]').forEach(function(b){
+      b.addEventListener('click', function(){
+        document.querySelectorAll('#page-calendar .seg-btn[data-view]').forEach(function(x){ x.classList.remove('active'); });
+        b.classList.add('active'); state.view = b.getAttribute('data-view'); renderCurrent();
+      });
+    });
+    document.querySelectorAll('#page-calendar .seg-btn[data-scope]').forEach(function(b){
+      b.addEventListener('click', function(){
+        document.querySelectorAll('#page-calendar .seg-btn[data-scope]').forEach(function(x){ x.classList.remove('active'); });
+        b.classList.add('active'); state.scope = b.getAttribute('data-scope'); renderCurrent();
+      });
+    });
+    document.getElementById('cal-prev').addEventListener('click', function(){
+      if (state.view === 'month') state.cursor.setMonth(state.cursor.getMonth()-1);
+      else if (state.view === 'week') state.cursor.setDate(state.cursor.getDate()-7);
+      else state.cursor.setDate(state.cursor.getDate()-21);
+      fetchData().then(renderCurrent);
+    });
+    document.getElementById('cal-next').addEventListener('click', function(){
+      if (state.view === 'month') state.cursor.setMonth(state.cursor.getMonth()+1);
+      else if (state.view === 'week') state.cursor.setDate(state.cursor.getDate()+7);
+      else state.cursor.setDate(state.cursor.getDate()+21);
+      fetchData().then(renderCurrent);
+    });
+    document.getElementById('cal-today').addEventListener('click', function(){
+      state.cursor = new Date(); fetchData().then(renderCurrent);
+    });
+    document.getElementById('cal-add').addEventListener('click', function(){
+      var d = new Date(); d.setHours(d.getHours() + 1, 0, 0, 0);
+      openEventModal({ start_at: d.toISOString(), end_at: new Date(d.getTime() + 3600000).toISOString(), visibility: 'team' });
+    });
+    document.getElementById('cal-signout-link') && document.getElementById('cal-signout-link').addEventListener('click', function(e){
+      e.preventDefault(); S.signOut().then(boot);
+    });
+
+    window.VYVE_PAGE_SHORTCUTS = { onNew: function(){ document.getElementById('cal-add').click(); } };
+  }
+
+  function bindSignin(){
+    document.getElementById('cal-signin-btn').addEventListener('click', async function(){
+      var email = document.getElementById('cal-signin-email').value.trim();
+      if (!email) return;
+      var msg = document.getElementById('cal-signin-msg');
+      msg.textContent = 'Sending…';
+      try {
+        var res = await S.signInWithEmail(email);
+        if (res.error){ msg.textContent = 'Error: ' + res.error.message; msg.style.color = 'var(--danger)'; }
+        else { msg.textContent = 'Check your inbox.'; msg.style.color = 'var(--success)'; }
+      } catch(e){ msg.textContent = 'Error: ' + (e.message || 'unknown'); msg.style.color = 'var(--danger)'; }
+    });
+    document.getElementById('cal-signout-btn').addEventListener('click', function(){ S.signOut().then(boot); });
+  }
+
+  async function boot(){
+    hideAll();
+    if (!S.isReady()){ show('cal-gate-notready'); S.onReady(boot); return; }
+    var session = await S.getSession();
+    if (!session){ show('cal-gate-signin'); return; }
+    var admin = await S.getCurrentAdmin();
+    if (!admin){
+      document.getElementById('cal-denied-email').textContent = await S.getUserEmail();
+      show('cal-gate-denied');
+      return;
+    }
+    state.me = admin.email;
+    document.getElementById('cal-current-email').textContent = admin.email;
+    show('cal-content');
+    bindControls();
+    await fetchData();
+    renderCurrent();
+  }
+
+  bindSignin();
+  boot();
+})();
+</script>
