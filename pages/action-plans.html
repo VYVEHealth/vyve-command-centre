@@ -1,9 +1,11 @@
 <div class="page active" id="page-action-plans" style="max-width:1280px">
-  <div class="page-header">
-    <div>
-      <div class="page-title">Action Plans</div>
-      <div class="page-sub">10 team members &middot; 15 priority actions each &middot; the 150 things that make VYVE successful</div>
-    </div>
+  <div class="page-hero">
+    <div class="eyebrow">Team Operating System</div>
+    <h1 class="page-title">Action Plans</h1>
+    <p class="page-sub">10 team members &middot; 15 priority actions each. The 150 things that make VYVE successful, tracked together.</p>
+  </div>
+  <div class="page-header" style="margin-top:-12px">
+    <div></div>
     <div style="display:flex;gap:8px">
       <button class="btn btn-ghost" id="ap-expand-all" type="button">Expand all</button>
       <button class="btn btn-ghost" id="ap-export" type="button">Export</button>
@@ -178,7 +180,20 @@
 
       html += '<div class="ap-member card" data-member="' + member.id + '" style="padding:0;margin-bottom:12px;overflow:hidden">';
       html += '<div class="ap-member-head" data-toggle="' + member.id + '" style="display:flex;align-items:center;gap:14px;padding:14px 18px;cursor:pointer">';
-      html += '<div class="ap-avatar">' + esc(member.name.charAt(0)) + '</div>';
+      var memberPillar = ({
+        'tm_calum': 'physical',
+        'tm_phil': 'mental',
+        'tm_lewis': '',
+        'tm_dean': 'mental',
+        'tm_alan': 'mental',
+        'tm_ryan': 'mental',
+        'tm_vicki': 'social',
+        'tm_cole': 'social',
+        'tm_azuza': 'social',
+        'tm_hr': '',
+        'tm_team_advisor': ''
+      })[member.id] || '';
+      html += '<div class="ap-avatar' + (memberPillar ? ' ' + memberPillar : '') + '">' + esc(member.name.charAt(0)) + '</div>';
       html += '<div style="flex:1;min-width:0">';
       html += '<div style="font-family:var(--font-head);font-weight:600;color:var(--text);font-size:15px">' + esc(member.name) + '</div>';
       html += '<div style="font-size:11.5px;color:var(--text-muted)">' + esc(member.role) + '</div>';
