@@ -16,6 +16,7 @@
           <option value="instagram">Instagram</option>
         </select>
         <button class="btn" id="content-refresh" title="Pull the latest content items from Make">↻ Refresh from Make</button>
+        <span id="content-fresh" style="font-size:11px;color:var(--text-muted);align-self:center;margin-left:-2px"></span>
         <button class="btn btn-primary" id="content-add">New piece</button>
       </div>
     </div>
@@ -185,6 +186,29 @@
 
   (async function(){ render(await load()); })();
 
+  // Freshness + auto-pull
+  (function(){
+    function renderFresh(){
+      var el = document.getElementById('content-fresh');
+      if (!el || !window.VYVE_MAKE || !VYVE_MAKE.lastRefreshedAt) return;
+      var t = VYVE_MAKE.lastRefreshedAt('posts');
+      if (!t){ el.textContent = ''; return; }
+      var diff = Math.floor((Date.now() - t) / 1000);
+      var when = diff < 60 ? 'just now' :
+                 diff < 3600 ? Math.floor(diff/60) + 'm ago' :
+                 diff < 86400 ? Math.floor(diff/3600) + 'h ago' :
+                 Math.floor(diff/86400) + 'd ago';
+      el.textContent = 'refreshed ' + when;
+    }
+    window.__con_renderFresh = renderFresh;
+    renderFresh();
+    if (window.VYVE_MAKE && VYVE_MAKE.autoPullContent){
+      VYVE_MAKE.autoPullContent(3600000).then(function(n){
+        if (n > 0){ renderFresh(); try { if (typeof render === 'function' && typeof load === 'function') load().then(render); else location.reload(); } catch(e){} }
+      });
+    }
+  })();
+
   // Refresh from Make
   (function(){
     var btn = document.getElementById('content-refresh');
@@ -202,6 +226,7 @@
       try {
         var n = await window.VYVE_MAKE.refreshContent();
         VYVE_UI.toast('Refreshed: ' + n + ' items', 'success');
+        if (window.__con_renderFresh) window.__con_renderFresh();
         if (typeof render === 'function' && typeof load === 'function') render(await load());
         else location.reload();
       } catch(e){
