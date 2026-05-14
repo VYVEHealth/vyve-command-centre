@@ -14,7 +14,7 @@
 
 (function(){
   'use strict';
-  var SEED_VERSION = '2026-05-14.3';
+  var SEED_VERSION = '2026-05-14.4';
   var SEED_FLAG = 'vyve_seeded_version';
   try {
     if (localStorage.getItem(SEED_FLAG) === SEED_VERSION) return;
@@ -4678,6 +4678,183 @@
   }
 ];
 
+
+  // Intel / Competitors seed — v2026-05-14.4
+  var intelEntries       = [
+  {
+    "_id": "intel_inn_uk_mh",
+    "title": "Innovate UK — Workplace Mental Health Innovation Fund",
+    "type": "grant",
+    "source": "Innovate UK",
+    "summary": "Annual funding round for UK SMEs delivering workplace mental health innovation. Fits VYVE's three-pillar approach with measurable outcomes. Ryan tracking; Lewis writes vision narrative; Alan commercial; Vicki impact case.",
+    "link": "https://www.gov.uk/government/organisations/innovate-uk",
+    "deadline": "",
+    "created_at": "2026-05-14T17:38:56.394649Z",
+    "updated_at": "2026-05-14T17:38:56.394649Z"
+  },
+  {
+    "_id": "intel_nesta_cc",
+    "title": "Nesta — Connected Communities programme",
+    "type": "grant",
+    "source": "Nesta",
+    "summary": "Funds digital innovation for community wellbeing. Strong fit for VYVE's social pillar + Everyman charity model.",
+    "link": "https://www.nesta.org.uk/",
+    "deadline": "",
+    "created_at": "2026-05-14T17:38:56.394649Z",
+    "updated_at": "2026-05-14T17:38:56.394649Z"
+  },
+  {
+    "_id": "intel_se_mfc",
+    "title": "Sport England — Movement for Change",
+    "type": "grant",
+    "source": "Sport England",
+    "summary": "Workplace channel for delivering Sport England's Movement-for-Change agenda. Non-dilutive funding + co-branded community programmes.",
+    "link": "https://www.sportengland.org/",
+    "deadline": "",
+    "created_at": "2026-05-14T17:38:56.394649Z",
+    "updated_at": "2026-05-14T17:38:56.394649Z"
+  },
+  {
+    "_id": "intel_hse_psych",
+    "title": "HSE psychosocial risk assessment guidance",
+    "type": "legislation",
+    "source": "HSE",
+    "summary": "HSE increasingly expects employers to assess psychosocial work risks alongside physical hazards. VYVE provides the assessment template employers use — compliance support and a sales hook.",
+    "link": "https://www.hse.gov.uk/stress/",
+    "deadline": "",
+    "created_at": "2026-05-14T17:38:56.394649Z",
+    "updated_at": "2026-05-14T17:38:56.394649Z"
+  },
+  {
+    "_id": "intel_gdpr_ai",
+    "title": "ICO guidance on AI and special-category health data",
+    "type": "legislation",
+    "source": "ICO",
+    "summary": "Growing scrutiny of AI-driven processing of health data. VYVE's DPIA must address how AI is applied to wellbeing data and what employer-side aggregations are permissible.",
+    "link": "https://ico.org.uk/",
+    "deadline": "",
+    "created_at": "2026-05-14T17:38:56.394649Z",
+    "updated_at": "2026-05-14T17:38:56.394649Z"
+  },
+  {
+    "_id": "intel_employment_rights",
+    "title": "Employment Rights Bill 2025 — workplace wellbeing obligations",
+    "type": "legislation",
+    "source": "GOV.UK",
+    "summary": "Strengthens employer duty of care including mental health considerations. Tailwind for VYVE's proactive workplace wellbeing positioning. Alan to update commercial narrative.",
+    "link": "",
+    "deadline": "",
+    "created_at": "2026-05-14T17:38:56.394649Z",
+    "updated_at": "2026-05-14T17:38:56.394649Z"
+  },
+  {
+    "_id": "intel_hsewb_2025",
+    "title": "HSE workplace wellbeing statistics 2025/26",
+    "type": "research",
+    "source": "HSE",
+    "summary": "914k people self-reported work-related stress, depression or anxiety in latest stats. 17.1m working days lost. Use in pitch deck and proposal templates.",
+    "link": "https://www.hse.gov.uk/statistics/",
+    "deadline": "",
+    "created_at": "2026-05-14T17:38:56.394649Z",
+    "updated_at": "2026-05-14T17:38:56.394649Z"
+  },
+  {
+    "_id": "intel_deloitte_wb",
+    "title": "Deloitte UK Mental Health and Employers 2025",
+    "type": "research",
+    "source": "Deloitte",
+    "summary": "Reports £56bn cost to UK employers per year. ROI on wellbeing investment estimated at £5 for every £1 spent. Use as commercial proof point.",
+    "link": "https://www2.deloitte.com/",
+    "deadline": "",
+    "created_at": "2026-05-14T17:38:56.394649Z",
+    "updated_at": "2026-05-14T17:38:56.394649Z"
+  },
+  {
+    "_id": "intel_cipd_health",
+    "title": "CIPD Health and Wellbeing at Work 2025 survey",
+    "type": "research",
+    "source": "CIPD",
+    "summary": "Annual benchmark of UK employers' wellbeing maturity. Use for ICP segmentation and to identify high-readiness buyers.",
+    "link": "https://www.cipd.org/",
+    "deadline": "",
+    "created_at": "2026-05-14T17:38:56.394649Z",
+    "updated_at": "2026-05-14T17:38:56.394649Z"
+  },
+  {
+    "_id": "intel_who_psych",
+    "title": "WHO guidelines on mental health at work",
+    "type": "research",
+    "source": "WHO",
+    "summary": "International framework for workplace mental health interventions. Useful credibility anchor in proposals and proposals where international clients are in scope.",
+    "link": "https://www.who.int/",
+    "deadline": "",
+    "created_at": "2026-05-14T17:38:56.394649Z",
+    "updated_at": "2026-05-14T17:38:56.394649Z"
+  }
+];
+  var competitorsEntries = [
+  {
+    "_id": "comp_headspace_health",
+    "competitor": "Headspace Health (Ginger)",
+    "title": "Enterprise mental health platform with care navigation + EAP integration",
+    "type": "product",
+    "summary": "Major US incumbent moving aggressively into UK enterprise. Differentiators: clinical depth, large EAP partnerships. VYVE counter-positioning: three pillars (not just mental), workplace-first not consumer-first, UK CIC mission.",
+    "link": "https://www.headspace.com/health",
+    "created_at": "2026-05-14T17:38:56.394649Z",
+    "updated_at": "2026-05-14T17:38:56.394649Z"
+  },
+  {
+    "_id": "comp_calm_health",
+    "competitor": "Calm Health",
+    "title": "Mental wellness app extending into clinical care pathways",
+    "type": "product",
+    "summary": "Subscription-strong, expanding via partnerships with insurers. VYVE counter-positioning: B2B employer-funded model with measurable outcomes; physical + social pillars built in.",
+    "link": "https://health.calm.com/",
+    "created_at": "2026-05-14T17:38:56.394649Z",
+    "updated_at": "2026-05-14T17:38:56.394649Z"
+  },
+  {
+    "_id": "comp_unmind",
+    "competitor": "Unmind",
+    "title": "B2B workplace mental health platform — UK headquartered",
+    "type": "positioning",
+    "summary": "Closest direct competitor in UK market. Strong on clinical content, partnerships with HR consultancies. VYVE differentiation: 1-in-5 community pledge, broader pillars, faster MVP iteration.",
+    "link": "https://unmind.com/",
+    "created_at": "2026-05-14T17:38:56.394649Z",
+    "updated_at": "2026-05-14T17:38:56.394649Z"
+  },
+  {
+    "_id": "comp_oliva",
+    "competitor": "Oliva Health",
+    "title": "Mental wellbeing with therapist sessions — European expansion",
+    "type": "product",
+    "summary": "Sessions-led model; recently raised seed extension. Differentiates on therapy access. VYVE positioning: pillar breadth + community + proactive over reactive.",
+    "link": "https://www.oliva.health/",
+    "created_at": "2026-05-14T17:38:56.394649Z",
+    "updated_at": "2026-05-14T17:38:56.394649Z"
+  },
+  {
+    "_id": "comp_perci_pricing",
+    "competitor": "Perci Health",
+    "title": "Cancer-focused workplace wellbeing — pricing review",
+    "type": "pricing",
+    "summary": "Specialist niche pricing model worth understanding even though scope differs. Demonstrates that employer buyers will pay for clearly-scoped specialist support.",
+    "link": "https://www.perci.health/",
+    "created_at": "2026-05-14T17:38:56.394649Z",
+    "updated_at": "2026-05-14T17:38:56.394649Z"
+  },
+  {
+    "_id": "comp_bhi_funding",
+    "competitor": "Big Health (Sleepio, Daylight)",
+    "title": "Funded clinical workplace wellbeing",
+    "type": "funding",
+    "summary": "Well-funded, clinical-trial-grade content. Indicates investor appetite for evidenced workplace wellbeing. Use in pitch deck competitive section.",
+    "link": "https://www.bighealth.com/",
+    "created_at": "2026-05-14T17:38:56.394649Z",
+    "updated_at": "2026-05-14T17:38:56.394649Z"
+  }
+];
+
   function seedKey(key, value){
     try {
       var existing = localStorage.getItem(key);
@@ -4719,9 +4896,13 @@
   // so user edits via Action Plans page (which rewrites this key) are preserved.
   if (seedKey('vyve_action_plans_full', actionPlansFull)) didSeed = true;
 
+  // Intel + Competitors seed
+  if (seedKey('vyve_intel',       intelEntries))       didSeed = true;
+  if (seedKey('vyve_competitors', competitorsEntries)) didSeed = true;
+
   try { localStorage.setItem(SEED_FLAG, SEED_VERSION); } catch(e) {}
 
   if (didSeed && window.console) {
-    console.log('[VYVE/seed] Loaded real data: ' + performance.length + ' analytics, ' + podcastEps.length + ' episodes, ' + contentItems.length + ' content items, ' + teamMembers.length + ' team, ' + knowledgeEntries.length + ' KB, ' + tasksEntries.length + ' tasks, ' + partnersEntries.length + ' partners, ' + strategyOKRs.length + ' OKRs, ' + strategyDecisions.length + ' decisions, ' + complianceEntries.length + ' compliance, ' + sessionsEntries.length + ' sessions, ' + dealsEntries.length + ' deals, ' + clientsEntries.length + ' clients, ' + investorsEntries.length + ' investors, ' + actionPlansFull.length + ' action plans');
+    console.log('[VYVE/seed] Loaded real data: ' + performance.length + ' analytics, ' + podcastEps.length + ' episodes, ' + contentItems.length + ' content items, ' + teamMembers.length + ' team, ' + knowledgeEntries.length + ' KB, ' + tasksEntries.length + ' tasks, ' + partnersEntries.length + ' partners, ' + strategyOKRs.length + ' OKRs, ' + strategyDecisions.length + ' decisions, ' + complianceEntries.length + ' compliance, ' + sessionsEntries.length + ' sessions, ' + dealsEntries.length + ' deals, ' + clientsEntries.length + ' clients, ' + investorsEntries.length + ' investors, ' + actionPlansFull.length + ' action plans, ' + intelEntries.length + ' intel signals, ' + competitorsEntries.length + ' competitor signals');
   }
 })();

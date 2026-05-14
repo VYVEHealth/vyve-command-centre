@@ -5,34 +5,151 @@
         <h1>Competitor Watch</h1>
         <p>Daily competitor scan — pricing moves, product launches, positioning shifts</p>
       </div>
-      <button class="btn btn-primary" id="comp-import">Add competitor signal</button>
+      <button class="btn btn-primary" id="comp-add">Add competitor signal</button>
     </div>
   </div>
 
+  <div class="grid-4" style="margin-bottom:18px">
+    <div class="stat"><div class="stat-label">Signals tracked</div><div class="stat-value" id="comp-total">0</div></div>
+    <div class="stat"><div class="stat-label">Pricing moves</div><div class="stat-value" id="comp-pricing">0</div></div>
+    <div class="stat"><div class="stat-label">Product launches</div><div class="stat-value" id="comp-product">0</div></div>
+    <div class="stat"><div class="stat-label">Positioning</div><div class="stat-value" id="comp-positioning">0</div></div>
+  </div>
+
   <div class="card">
-    <div id="comp-list"><div class="empty"><span class="icon">·</span><h3>Loading</h3></div></div>
+    <div class="card-header">
+      <div class="search" style="max-width:360px"><input id="comp-search" placeholder="Filter by competitor or keyword..."/></div>
+    </div>
+    <div id="comp-list" style="margin-top:12px"></div>
   </div>
 </div>
 
 <script>
-(async function(){
-  if (!window.VYVE_MAKE) return;
-  var items = await VYVE_MAKE.list('competitors', { limit: 50 });
-  var mount = document.getElementById('comp-list');
-  if (!items.length) {
-    mount.innerHTML = '<div class="empty"><span class="icon">·</span><h3>No competitor signals yet</h3><p>Items from the daily competitor scan agent will appear here.</p></div>';
-    return;
+(function(){
+  var LS = 'vyve_competitors';
+  function lsGet(){ try { var v = localStorage.getItem(LS); return v ? JSON.parse(v) : []; } catch(e){ return []; } }
+  function lsSet(v){ try { localStorage.setItem(LS, JSON.stringify(v)); } catch(e){} }
+
+  async function load(){
+    if (window.VYVE_MAKE && VYVE_MAKE.hasToken && VYVE_MAKE.hasToken()){
+      var fm = await VYVE_MAKE.list('competitors', { limit: 200 });
+      if (fm && fm.length) return fm;
+    }
+    return lsGet();
   }
-  mount.innerHTML = items.map(function(c){
-    var typeColor = { 'pricing':'badge-amber', 'product':'badge-blue', 'content':'badge-teal', 'positioning':'badge-gold' }[(c.type||'').toLowerCase()] || 'badge-grey';
-    return '<div style="padding:14px 0;border-bottom:1px solid var(--border)">'+
-      '<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:6px">'+
-        '<span class="badge '+typeColor+'">'+VYVE_UI.escape(c.type||'signal')+'</span>'+
-        '<div style="flex:1"><div style="font-weight:600;color:var(--text)">'+VYVE_UI.escape(c.competitor||c.title||'(unknown)')+'</div>'+
-        '<div style="font-size:12px;color:var(--text-muted)">'+VYVE_UI.fmtRelative(c.created_at||c.date)+'</div></div>'+
-      '</div>'+
-      (c.summary ? '<div style="font-size:13px;color:var(--text);line-height:1.6;margin-left:0">'+VYVE_UI.escape(c.summary)+'</div>' : '')+
-    '</div>';
-  }).join('');
+  function saveItem(id, item){
+    var a = lsGet();
+    var i = a.findIndex(function(x){ return x._id === id; });
+    var entry = Object.assign({ _id: id }, item, { updated_at: new Date().toISOString() });
+    if (i >= 0) a[i] = entry; else a.unshift(entry);
+    lsSet(a);
+  }
+  function removeItem(id){ lsSet(lsGet().filter(function(x){ return x._id !== id; })); }
+
+  function escape(s){ return VYVE_UI.escape(String(s||'')); }
+  function fmtDate(s){ if (!s) return ''; var d = new Date(s); return isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }); }
+
+  var TYPE_BADGE = {
+    pricing: 'badge-amber',
+    product: 'badge-blue',
+    content: 'badge-teal',
+    positioning: 'badge-gold',
+    funding: 'badge-green',
+    other: 'badge-grey'
+  };
+
+  function render(items){
+    var q = (document.getElementById('comp-search').value || '').toLowerCase().trim();
+    if (q){
+      items = items.filter(function(c){
+        return (c.competitor||'').toLowerCase().includes(q) ||
+               (c.title||'').toLowerCase().includes(q) ||
+               (c.summary||'').toLowerCase().includes(q) ||
+               (c.type||'').toLowerCase().includes(q);
+      });
+    }
+    items = items.sort(function(a,b){ return new Date(b.created_at||0) - new Date(a.created_at||0); });
+
+    var counts = { pricing: 0, product: 0, content: 0, positioning: 0, funding: 0, other: 0 };
+    items.forEach(function(c){ var t = (c.type||'other').toLowerCase(); if (counts[t] !== undefined) counts[t]++; else counts.other++; });
+    document.getElementById('comp-total').textContent = items.length;
+    document.getElementById('comp-pricing').textContent = counts.pricing;
+    document.getElementById('comp-product').textContent = counts.product;
+    document.getElementById('comp-positioning').textContent = counts.positioning;
+
+    var mount = document.getElementById('comp-list');
+    if (!items.length){
+      mount.innerHTML = '<div class="empty" style="padding:30px 0"><span class="icon">·</span><h3>' + (q ? 'No matches' : 'No competitor signals yet') + '</h3><p>' + (q ? 'Try a different keyword.' : 'Use \"Add competitor signal\" or wire the competitor scan agent through Make.') + '</p></div>';
+      return;
+    }
+    mount.innerHTML = items.map(function(c){
+      var badgeColor = TYPE_BADGE[(c.type||'other').toLowerCase()] || 'badge-grey';
+      return '<div class="list-row" data-id="' + escape(c._id) + '" style="cursor:pointer">' +
+        '<div class="list-row-main">' +
+          '<div class="list-row-title"><span class="badge ' + badgeColor + '" style="margin-right:8px">' + escape(c.type || 'signal') + '</span>' + escape(c.competitor || c.title || '(unknown)') + '</div>' +
+          '<div class="list-row-sub">' + escape((c.summary || c.title || '').slice(0, 180)) + '</div>' +
+        '</div>' +
+        '<div style="display:flex;gap:6px;align-items:center;flex-shrink:0">' +
+          (c.created_at ? '<span style="font-size:11px;color:var(--text-muted);white-space:nowrap">' + escape(fmtDate(c.created_at)) + '</span>' : '') +
+        '</div>' +
+      '</div>';
+    }).join('');
+    mount.querySelectorAll('[data-id]').forEach(function(row){
+      row.addEventListener('click', function(){ openEdit(row.dataset.id); });
+    });
+  }
+
+  function openEdit(idOrNull){
+    var items = lsGet();
+    var existing = idOrNull ? items.find(function(x){ return x._id === idOrNull; }) || {} : {};
+    var id = idOrNull || ('comp_' + Date.now() + '_' + Math.random().toString(36).slice(2,7));
+    var body =
+      '<div class="form-row cols-2">' +
+        '<div class="form-group"><label>Competitor</label><input id="c-competitor" value="' + escape(existing.competitor || '') + '" placeholder="e.g. Headspace, Unmind" style="width:100%"/></div>' +
+        '<div class="form-group"><label>Type</label>' +
+          '<select id="c-type" style="width:100%">' +
+            ['pricing','product','content','positioning','funding','other'].map(function(t){ return '<option value="' + t + '"' + (existing.type === t ? ' selected' : '') + '>' + t.charAt(0).toUpperCase() + t.slice(1) + '</option>'; }).join('') +
+          '</select>' +
+        '</div>' +
+      '</div>' +
+      '<div class="form-group"><label>Title / headline</label><input id="c-title" value="' + escape(existing.title || '') + '" placeholder="e.g. Headspace launches enterprise tier" style="width:100%"/></div>' +
+      '<div class="form-group"><label>Summary</label><textarea id="c-summary" rows="3" style="width:100%">' + escape(existing.summary || '') + '</textarea></div>' +
+      '<div class="form-group"><label>Link</label><input id="c-link" value="' + escape(existing.link || '') + '" placeholder="https://..." style="width:100%"/></div>' +
+      '<div style="display:flex;justify-content:space-between;gap:10px;margin-top:8px">' +
+        (idOrNull ? '<button class="btn btn-ghost" id="c-del" style="border-color:#e06060;color:#e06060" type="button">Delete</button>' : '<span></span>') +
+        '<div style="display:flex;gap:8px">' +
+          '<button class="btn btn-ghost" id="c-cancel" type="button">Cancel</button>' +
+          '<button class="btn btn-primary" id="c-save" type="button">Save</button>' +
+        '</div>' +
+      '</div>';
+    var m = VYVE_UI.modal({ title: idOrNull ? 'Edit competitor signal' : 'Add competitor signal', body: body });
+    document.getElementById('c-cancel').addEventListener('click', m.close);
+    document.getElementById('c-save').addEventListener('click', function(){
+      var name = document.getElementById('c-competitor').value.trim();
+      var title = document.getElementById('c-title').value.trim();
+      if (!name && !title){ VYVE_UI.toast('Competitor or title required', 'error'); return; }
+      saveItem(id, {
+        competitor: name,
+        title: title,
+        type: document.getElementById('c-type').value,
+        summary: document.getElementById('c-summary').value.trim(),
+        link: document.getElementById('c-link').value.trim(),
+        created_at: existing.created_at || new Date().toISOString()
+      });
+      m.close();
+      load().then(render);
+      VYVE_UI.toast('Saved', 'success');
+    });
+    if (idOrNull){
+      document.getElementById('c-del').addEventListener('click', function(){
+        if (confirm('Delete this signal?')){ removeItem(id); m.close(); load().then(render); VYVE_UI.toast('Deleted', 'success'); }
+      });
+    }
+  }
+
+  document.getElementById('comp-add').addEventListener('click', function(){ openEdit(null); });
+  document.getElementById('comp-search').addEventListener('input', function(){ load().then(render); });
+
+  load().then(render);
 })();
 </script>
