@@ -1384,3 +1384,177 @@ kbd {
   box-shadow: var(--shadow-sm);
   color: #fff;
 }
+
+/* =====================================================================
+   Print / PDF export styling
+   The screen-only #vyve-print-header sits behind body.print-mode.
+   On @media print, everything except .page.active + the print header
+   is hidden. Board pack uses an extra body class to swap content out.
+   ===================================================================== */
+
+#vyve-print-header { display: none; }
+#vyve-board-pack { display: none; }
+
+@media print {
+  /* Reset page */
+  @page { size: A4 portrait; margin: 18mm 14mm 18mm 14mm; }
+  body { background: #fff; color: #1a1a1a; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  /* Hide chrome */
+  body > .topnav,
+  body > .sidebar,
+  body > #cmdk-overlay,
+  body > #quick-search,
+  body > .modal-overlay,
+  body > .toast-stack,
+  body > .bulk-action-bar,
+  .hero-actions,
+  .tab-bar,
+  .page-header .btn,
+  button[id$="-add"],
+  .add-btn { display: none !important; }
+
+  /* Pages: render only the active one */
+  .page { display: none !important; }
+  .page.active { display: block !important; padding: 0 !important; }
+
+  /* Constrain colours to greys + accents for print */
+  .card { border: 1px solid #ddd !important; box-shadow: none !important; page-break-inside: avoid; }
+  .card-header { padding: 12px 16px !important; }
+  .card-body, .card-header { background: #fff !important; }
+  .stat { border: 1px solid #ddd !important; page-break-inside: avoid; }
+
+  .empty-cta, .btn { display: none !important; }
+  .draft-banner { display: none !important; }
+
+  /* Show the print header */
+  #vyve-print-header {
+    display: block !important;
+    margin-bottom: 24px;
+    padding-bottom: 14px;
+    border-bottom: 2px solid #1a1a1a;
+  }
+  #vyve-print-header .vph-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
+  #vyve-print-header .vph-brand { }
+  #vyve-print-header .vph-logo {
+    font-family: var(--font-head, serif);
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: #1a1a1a;
+    line-height: 1;
+  }
+  #vyve-print-header .vph-strapline {
+    font-size: 10px;
+    color: #666;
+    margin-top: 3px;
+    letter-spacing: 0.02em;
+  }
+  #vyve-print-header .vph-meta { text-align: right; }
+  #vyve-print-header .vph-title {
+    font-family: var(--font-head, serif);
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a1a1a;
+  }
+  #vyve-print-header .vph-date {
+    font-size: 11px;
+    color: #666;
+    margin-top: 2px;
+  }
+  #vyve-print-header .vph-sub {
+    font-size: 10px;
+    color: #999;
+    margin-top: 2px;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  /* ---- Board pack mode ---- */
+  body.print-board-pack .page,
+  body.print-board-pack > .topnav,
+  body.print-board-pack > .sidebar { display: none !important; }
+
+  body.print-board-pack #vyve-board-pack {
+    display: block !important;
+    font-family: var(--font-body, system-ui, sans-serif);
+    color: #1a1a1a;
+    font-size: 11pt;
+    line-height: 1.5;
+  }
+  #vyve-board-pack .bp-section { margin-bottom: 18px; page-break-inside: avoid; }
+  #vyve-board-pack .bp-section h2 {
+    font-family: var(--font-head, serif);
+    font-size: 16pt;
+    font-weight: 700;
+    margin: 0 0 10px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #ddd;
+    color: #1a1a1a;
+  }
+  #vyve-board-pack .bp-section h3 {
+    font-size: 11pt;
+    font-weight: 600;
+    margin: 14px 0 6px;
+    color: #444;
+  }
+  #vyve-board-pack .bp-page-break { page-break-before: always; }
+
+  #vyve-board-pack .bp-kpis {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin: 8px 0 4px;
+  }
+  #vyve-board-pack .bp-kpi {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px 12px;
+  }
+  #vyve-board-pack .bp-kpi-label {
+    font-size: 8.5pt;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  #vyve-board-pack .bp-kpi-value {
+    font-family: var(--font-head, serif);
+    font-size: 14pt;
+    font-weight: 700;
+    color: #1a1a1a;
+  }
+
+  #vyve-board-pack .bp-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9pt;
+    margin-top: 6px;
+  }
+  #vyve-board-pack .bp-table th,
+  #vyve-board-pack .bp-table td {
+    border-bottom: 1px solid #eee;
+    padding: 5px 8px;
+    text-align: left;
+    vertical-align: top;
+  }
+  #vyve-board-pack .bp-table th {
+    background: #f7f7f5;
+    font-weight: 600;
+    font-size: 8.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #666;
+  }
+
+  #vyve-board-pack .bp-update-meta {
+    font-size: 9.5pt;
+    color: #666;
+    margin-bottom: 6px;
+  }
+  #vyve-board-pack .bp-update-body p {
+    margin: 0 0 6px;
+    line-height: 1.55;
+  }
+}

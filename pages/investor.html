@@ -332,7 +332,7 @@
 
   document.getElementById('inv-add').addEventListener('click', function(){ openInvestorModal({}); });
   document.getElementById('inv-export').addEventListener('click', function(){
-    if (window.VYVE_UI && window.VYVE_UI.toast) window.VYVE_UI.toast('Board pack export coming soon', 'info');
+    if (window.VYVE_PDF) window.VYVE_PDF.printBoardPack();
   });
 
   window.VYVE_PAGE_SHORTCUTS = {
