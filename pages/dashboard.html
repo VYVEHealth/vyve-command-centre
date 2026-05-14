@@ -54,6 +54,12 @@
     <div class="card-body" id="dash-channels"></div>
   </div>
 
+  <!-- Action plans health stripe -->
+  <div class="card" style="margin-top:18px">
+    <div class="card-header"><div class="card-title">Action plans &mdash; team health</div><div class="card-sub" id="dash-ap-sub"></div></div>
+    <div class="card-body" id="dash-ap-stripe"></div>
+  </div>
+
   <!-- Recent activity -->
   <div class="card" style="margin-top:18px">
     <div class="card-header"><div class="card-title">Recent activity</div></div>
@@ -120,7 +126,14 @@
     var tasksOverdue = D.tasks.overdue().length;
     var sessThisWeek = D.sessions.thisWeek().length;
     var compDueSoon = D.compliance.dueSoon(30).length;
+    var apPct = D.actions.completionPct();
+    var apOverdue = D.actions.overdue().length;
+    var apDueSoon = D.actions.dueSoon(14).length;
+    var apInProgress = D.actions.inProgress().length;
+    var apBlocked = D.actions.blocked().length;
+
     el('dash-delivery').innerHTML =
+      kpiCard('Action plans', (apPct != null ? apPct : 0) + '%', apOverdue ? apOverdue + ' overdue \u00b7 ' + apDueSoon + ' due in 14d' : (apInProgress + ' in progress' + (apBlocked ? ' \u00b7 ' + apBlocked + ' blocked' : '')), '#/action-plans') +
       kpiCard('Active tasks', tasksActive, tasksOverdue ? tasksOverdue + ' overdue' : 'on track', '#/tasks') +
       kpiCard('Sessions this week', sessThisWeek, sessThisWeek ? 'scheduled' : 'add in Sessions', '#/sessions') +
       kpiCard('Compliance due', compDueSoon, compDueSoon ? 'next 30 days' : 'all clear', '#/compliance');
@@ -217,6 +230,66 @@
     });
   }
 
+  function renderActionStripe(){
+    // Per-member overview: name, %, in-progress, blocked, overdue
+    var all = D.actions.all();
+    if (!all.length) {
+      el('dash-ap-stripe').innerHTML = '<div class="empty" style="padding:12px 0">Open the Action Plans page to seed the team\u2019s priority actions.</div>';
+      el('dash-ap-sub').textContent = '';
+      return;
+    }
+    // Group by member
+    var byMember = {};
+    all.forEach(function(a){
+      var key = a.member_id || 'unknown';
+      if (!byMember[key]) byMember[key] = { name: a.member_name || key, actions: [] };
+      byMember[key].actions.push(a);
+    });
+    var totalOverdue = 0, totalBlocked = 0, totalInProgress = 0;
+    var rows = Object.keys(byMember).map(function(id){
+      var m = byMember[id];
+      var total = m.actions.length;
+      var done = m.actions.filter(function(a){ return a.status === 'done'; }).length;
+      var inProgress = m.actions.filter(function(a){ return a.status === 'in-progress'; }).length;
+      var blocked = m.actions.filter(function(a){ return a.status === 'blocked'; }).length;
+      var overdue = m.actions.filter(function(a){
+        if (a.status === 'done') return false;
+        var d = D.parseDate(a.due); return d && d < D.startOfDay();
+      }).length;
+      totalOverdue += overdue;
+      totalBlocked += blocked;
+      totalInProgress += inProgress;
+      var pct = total ? Math.round(done / total * 100) : 0;
+      return { id: id, name: m.name, pct: pct, done: done, total: total, inProgress: inProgress, blocked: blocked, overdue: overdue };
+    });
+    // Sort: most overdue first, then most blocked, then alphabetical
+    rows.sort(function(a, b){
+      if (b.overdue !== a.overdue) return b.overdue - a.overdue;
+      if (b.blocked !== a.blocked) return b.blocked - a.blocked;
+      return a.name.localeCompare(b.name);
+    });
+
+    el('dash-ap-sub').textContent = totalInProgress + ' in progress \u00b7 ' + totalBlocked + ' blocked \u00b7 ' + totalOverdue + ' overdue';
+
+    el('dash-ap-stripe').innerHTML = rows.map(function(r){
+      var pctColor = r.pct >= 60 ? '#39a576' : r.pct >= 30 ? 'var(--vyve-gold)' : 'var(--text-muted)';
+      var badges = '';
+      if (r.overdue) badges += '<span class="badge" style="background:#e0606022;color:#e06060">' + r.overdue + ' overdue</span>';
+      if (r.blocked) badges += '<span class="badge" style="background:#e0606022;color:#e06060">' + r.blocked + ' blocked</span>';
+      if (r.inProgress) badges += '<span class="badge" style="background:rgba(77,170,170,.18);color:var(--vyve-teal-light)">' + r.inProgress + ' active</span>';
+      return '<div class="list-row" data-route="#/action-plans" style="cursor:pointer">' +
+        '<div class="list-row-main">' +
+          '<div class="list-row-title">' + r.name + '</div>' +
+          '<div class="list-row-sub">' + r.done + ' of ' + r.total + ' complete</div>' +
+        '</div>' +
+        '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">' +
+          badges +
+          '<span style="font-family:var(--font-head);font-weight:600;color:' + pctColor + ';min-width:42px;text-align:right">' + r.pct + '%</span>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
   function renderAll(){
     renderTop();
     renderCommercial();
@@ -224,6 +297,7 @@
     renderDelivery();
     renderChart();
     renderChannels();
+    renderActionStripe();
     renderActivity();
     wireRowClicks();
   }
