@@ -1,47 +1,61 @@
 <div class="page active" id="page-dashboard">
-  <div class="page-header">
-    <div>
-      <div class="page-title">Dashboard</div>
-      <div class="page-sub">Live performance across the business</div>
+
+  <!-- Page hero -->
+  <div class="page-hero">
+    <div class="eyebrow">Dashboard</div>
+    <h1 class="page-title">Live performance across the business</h1>
+    <p class="page-sub">Commercial, Marketing, Delivery &amp; Ops &mdash; every KPI in one place. Click any stat to dive into the source page.</p>
+    <div class="hero-actions">
+      <button class="btn btn-ghost btn-sm" id="dash-refresh" type="button">↻ Refresh</button>
     </div>
-    <button class="btn btn-ghost" id="dash-refresh" type="button">Refresh</button>
   </div>
 
-  <!-- Top KPI row -->
-  <div class="grid-4 stats-row" id="dash-top"></div>
+  <!-- Hero KPI row -->
+  <div class="dash-top-grid">
+    <div class="stat-hero" data-route="#/crm" id="dash-pipeline">
+      <div class="stat-label">Open pipeline</div>
+      <div class="stat-num" id="dash-pipeline-num">&mdash;</div>
+      <div class="stat-sub" id="dash-pipeline-sub">In flight</div>
+    </div>
+    <div class="dash-top-side">
+      <div class="stat" data-route="#/finance">
+        <div class="stat-label">MRR</div>
+        <div class="stat-num" id="dash-mrr">&mdash;</div>
+        <div class="stat-sub" id="dash-mrr-sub">Latest snapshot</div>
+      </div>
+      <div class="stat" data-route="#/performance">
+        <div class="stat-label">30-day reach</div>
+        <div class="stat-num" id="dash-reach">&mdash;</div>
+        <div class="stat-sub">Social channels</div>
+      </div>
+      <div class="stat" data-route="#/content">
+        <div class="stat-label">Posts (30d)</div>
+        <div class="stat-num" id="dash-posts">&mdash;</div>
+        <div class="stat-sub">Published</div>
+      </div>
+    </div>
+  </div>
 
   <!-- Section: Commercial -->
-  <div style="margin-top:24px">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-      <span style="width:4px;height:18px;background:var(--vyve-teal-light);border-radius:2px"></span>
-      <div style="font-family:var(--font-head);font-size:16px;font-weight:600;color:var(--text)">Commercial</div>
-    </div>
-    <div class="grid-4 stats-row" id="dash-commercial"></div>
-  </div>
+  <div class="section-divider"><span>Commercial</span></div>
+  <div class="grid-4 stats-row" id="dash-commercial"></div>
 
   <!-- Section: Marketing -->
-  <div style="margin-top:24px">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-      <span style="width:4px;height:18px;background:var(--vyve-teal-light);border-radius:2px"></span>
-      <div style="font-family:var(--font-head);font-size:16px;font-weight:600;color:var(--text)">Marketing</div>
-    </div>
-    <div class="grid-4 stats-row" id="dash-marketing"></div>
-  </div>
+  <div class="section-divider"><span>Marketing</span></div>
+  <div class="grid-4 stats-row" id="dash-marketing"></div>
 
   <!-- Section: Delivery & Ops -->
-  <div style="margin-top:24px">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-      <span style="width:4px;height:18px;background:var(--vyve-teal-light);border-radius:2px"></span>
-      <div style="font-family:var(--font-head);font-size:16px;font-weight:600;color:var(--text)">Delivery & Ops</div>
-    </div>
-    <div class="grid-4 stats-row" id="dash-delivery"></div>
-  </div>
+  <div class="section-divider"><span>Delivery &amp; Ops</span></div>
+  <div class="grid-4 stats-row" id="dash-delivery"></div>
 
   <!-- LinkedIn reach chart -->
-  <div class="card" style="margin-top:24px">
+  <div class="card" style="margin-top:28px">
     <div class="card-header">
-      <div class="card-title">LinkedIn reach — last 31 days</div>
-      <div class="card-sub" id="dash-chart-sub"></div>
+      <div>
+        <div class="card-title">LinkedIn reach</div>
+        <div class="card-sub" id="dash-chart-sub" style="margin-top:4px"></div>
+      </div>
+      <span class="badge badge-teal">Last 31 days</span>
     </div>
     <div class="card-body">
       <svg id="dash-chart" viewBox="0 0 720 240" style="width:100%;height:240px;display:block"></svg>
@@ -49,23 +63,74 @@
   </div>
 
   <!-- Channel breakdown -->
-  <div class="card" style="margin-top:18px">
-    <div class="card-header"><div class="card-title">Channel breakdown — all-time totals</div></div>
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Channel breakdown</div>
+      <div class="card-sub">All-time totals</div>
+    </div>
     <div class="card-body" id="dash-channels"></div>
   </div>
 
-  <!-- Action plans health stripe -->
-  <div class="card" style="margin-top:18px">
-    <div class="card-header"><div class="card-title">Action plans &mdash; team health</div><div class="card-sub" id="dash-ap-sub"></div></div>
+  <!-- Action plans team health -->
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Action plans — team health</div>
+        <div class="card-sub" id="dash-ap-sub" style="margin-top:4px"></div>
+      </div>
+      <button class="btn btn-sm btn-ghost" data-route="#/action-plans">View all →</button>
+    </div>
     <div class="card-body" id="dash-ap-stripe"></div>
   </div>
 
   <!-- Recent activity -->
-  <div class="card" style="margin-top:18px">
-    <div class="card-header"><div class="card-title">Recent activity</div></div>
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Recent activity</div>
+      <div class="card-sub">Across the hub</div>
+    </div>
     <div class="card-body" id="dash-activity"></div>
   </div>
 </div>
+
+<style>
+  /* Dashboard hero KPI layout */
+  .dash-top-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 18px;
+    margin-bottom: 8px;
+  }
+  .dash-top-side {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+  .dash-top-side .stat .stat-num { font-size: var(--fs-2xl); }
+
+  #page-dashboard .stat-hero {
+    background: linear-gradient(135deg, var(--vyve-dark) 0%, #0f3232 100%);
+    color: #FAF8F4;
+    border: 0;
+    cursor: pointer;
+    transition: transform var(--t-fast), box-shadow var(--t-fast);
+  }
+  #page-dashboard .stat-hero:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+  #page-dashboard .stat-hero .stat-label { color: rgba(255,255,255,.55); }
+  #page-dashboard .stat-hero .stat-num   { color: #FAF8F4; }
+  #page-dashboard .stat-hero .stat-sub   { color: rgba(255,255,255,.7); }
+
+  @media (max-width: 900px) {
+    .dash-top-grid { grid-template-columns: 1fr; }
+    .dash-top-side { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (max-width: 600px) {
+    .dash-top-side { grid-template-columns: 1fr; }
+  }
+</style>
 
 <script>
 (function(){
@@ -73,9 +138,9 @@
   var D = window.VYVE_DATA;
   function el(id){ return document.getElementById(id); }
   function kpiCard(label, value, sub, route){
-    return '<div class="stat"' + (route ? ' data-route="' + route + '" style="cursor:pointer"' : '') + '>' +
-      '<div class="stat-num">' + value + '</div>' +
+    return '<div class="stat"' + (route ? ' data-route="' + route + '"' : '') + '>' +
       '<div class="stat-label">' + label + '</div>' +
+      '<div class="stat-num">' + value + '</div>' +
       '<div class="stat-sub">' + (sub || '') + '</div>' +
     '</div>';
   }
@@ -85,11 +150,17 @@
     var pipeline = D.deals.pipelineValue();
     var perf30 = D.performance.totalReach(30);
     var content30 = D.content.publishedLast30().length;
-    el('dash-top').innerHTML =
-      kpiCard('MRR', D.fmtGBP(mrr), mrr ? 'latest snapshot' : 'add in Finance', '#/finance') +
-      kpiCard('Pipeline', D.fmtGBP(pipeline), pipeline ? 'open deals' : 'no deals yet', '#/crm') +
-      kpiCard('30-day reach', D.fmt(perf30), 'social channels', '#/performance') +
-      kpiCard('30-day posts', content30, 'published', '#/content');
+    var dealsCount = D.deals.all().filter(function(d){
+      var s = (d.stage || '').toLowerCase();
+      return s !== 'closed-won' && s !== 'closed-lost';
+    }).length;
+
+    el('dash-pipeline-num').textContent = D.fmtGBP(pipeline);
+    el('dash-pipeline-sub').textContent = dealsCount ? dealsCount + ' open deals' : 'No deals yet';
+    el('dash-mrr').textContent = D.fmtGBP(mrr);
+    el('dash-mrr-sub').textContent = mrr ? 'Latest snapshot' : 'Add in Finance';
+    el('dash-reach').textContent = D.fmt(perf30);
+    el('dash-posts').textContent = content30;
   }
 
   function renderCommercial(){
@@ -100,11 +171,10 @@
     var clients = D.clients.live().length;
     var clientsTotal = D.clients.all().length;
     el('dash-commercial').innerHTML =
-      kpiCard('Cash on hand', cash ? D.fmtGBP(cash) : '—', cash ? 'most recent' : '', '#/finance') +
-      kpiCard('Monthly burn', burn ? D.fmtGBP(burn) : '—', burn ? 'current' : '', '#/finance') +
-      kpiCard('Runway', runway != null ? runway + ' months' : '—', runway != null ? '' : 'add finance entries', '#/finance') +
-      kpiCard('Win rate', winRate != null ? winRate + '%' : '—', winRate != null ? '' : 'no closed deals yet', '#/crm') +
-      kpiCard('Live clients', clients, clientsTotal ? 'of ' + clientsTotal + ' total' : 'add in Clients', '#/clients');
+      kpiCard('Cash on hand', cash ? D.fmtGBP(cash) : '—', cash ? 'Most recent' : '', '#/finance') +
+      kpiCard('Monthly burn',  burn ? D.fmtGBP(burn) : '—', burn ? 'Current'    : '', '#/finance') +
+      kpiCard('Runway',        runway != null ? runway + ' months' : '—', runway != null ? '' : 'Add finance entries', '#/finance') +
+      kpiCard('Win rate',      winRate != null ? winRate + '%' : '—', winRate != null ? '' : 'No closed deals yet', '#/crm');
   }
 
   function renderMarketing(){
@@ -114,11 +184,12 @@
     var liReach = D.performance.latestReachByChannel();
     var liLatest = liReach.linkedin ? Number(liReach.linkedin.reach) : 0;
     var liGrowth = D.performance.reachGrowth30d('linkedin');
+    var igEng = D.performance.last30().filter(function(r){return r.channel==='instagram';}).reduce(function(s,r){return s+(Number(r.engagements)||0);}, 0);
     el('dash-marketing').innerHTML =
       kpiCard('Podcast eps published', pubEps, inProd ? inProd + ' in production' : '', '#/podcast') +
-      kpiCard('Content in flight', contentInFlight, contentInFlight ? 'across channels' : 'plan in Content', '#/content') +
-      kpiCard('LinkedIn impressions', D.fmt(liLatest), liGrowth != null ? (liGrowth >= 0 ? '+' : '') + liGrowth + '% over 31d' : 'latest day', '#/performance') +
-      kpiCard('IG engagement (31d)', D.fmt(D.performance.last30().filter(function(r){return r.channel==='instagram';}).reduce(function(s,r){return s+(Number(r.engagements)||0);}, 0)), 'likes + comments', '#/performance');
+      kpiCard('Content in flight', contentInFlight, contentInFlight ? 'Across channels' : 'Plan in Content', '#/content') +
+      kpiCard('LinkedIn impressions', D.fmt(liLatest), liGrowth != null ? (liGrowth >= 0 ? '+' : '') + liGrowth + '% over 31d' : 'Latest day', '#/performance') +
+      kpiCard('IG engagement (31d)', D.fmt(igEng), 'Likes + comments', '#/performance');
   }
 
   function renderDelivery(){
@@ -133,10 +204,10 @@
     var apBlocked = D.actions.blocked().length;
 
     el('dash-delivery').innerHTML =
-      kpiCard('Action plans', (apPct != null ? apPct : 0) + '%', apOverdue ? apOverdue + ' overdue \u00b7 ' + apDueSoon + ' due in 14d' : (apInProgress + ' in progress' + (apBlocked ? ' \u00b7 ' + apBlocked + ' blocked' : '')), '#/action-plans') +
-      kpiCard('Active tasks', tasksActive, tasksOverdue ? tasksOverdue + ' overdue' : 'on track', '#/tasks') +
-      kpiCard('Sessions this week', sessThisWeek, sessThisWeek ? 'scheduled' : 'add in Sessions', '#/sessions') +
-      kpiCard('Compliance due', compDueSoon, compDueSoon ? 'next 30 days' : 'all clear', '#/compliance');
+      kpiCard('Action plans', (apPct != null ? apPct : 0) + '%', apOverdue ? apOverdue + ' overdue · ' + apDueSoon + ' due in 14d' : (apInProgress + ' in progress' + (apBlocked ? ' · ' + apBlocked + ' blocked' : '')), '#/action-plans') +
+      kpiCard('Active tasks', tasksActive, tasksOverdue ? tasksOverdue + ' overdue' : 'On track', '#/tasks') +
+      kpiCard('Sessions this week', sessThisWeek, sessThisWeek ? 'Scheduled' : 'Add in Sessions', '#/sessions') +
+      kpiCard('Compliance due', compDueSoon, compDueSoon ? 'Next 30 days' : 'All clear', '#/compliance');
   }
 
   function renderChart(){
@@ -144,11 +215,11 @@
       .sort(function(a,b){ return (a.date||'').localeCompare(b.date||''); });
     var svg = el('dash-chart');
     if (rows.length < 2) {
-      svg.innerHTML = '<text x="360" y="120" text-anchor="middle" fill="#999" font-size="14" font-family="Inter">No LinkedIn data yet</text>';
+      svg.innerHTML = '<text x="360" y="120" text-anchor="middle" fill="#9DA3A3" font-size="13" font-family="Inter">No LinkedIn data yet</text>';
       el('dash-chart-sub').textContent = '';
       return;
     }
-    var W = 720, H = 240, padL = 40, padR = 20, padT = 20, padB = 40;
+    var W = 720, H = 240, padL = 50, padR = 20, padT = 24, padB = 36;
     var values = rows.map(function(r){ return Number(r.reach)||0; });
     var min = Math.min.apply(null, values);
     var max = Math.max.apply(null, values);
@@ -162,28 +233,33 @@
     var pathD = 'M ' + points.map(function(p){ return p[0] + ',' + p[1]; }).join(' L ');
     var areaD = pathD + ' L ' + points[points.length-1][0] + ',' + (H - padB) + ' L ' + padL + ',' + (H - padB) + ' Z';
     var ticks = '';
-    [min, min + range * 0.5, max].forEach(function(v, i){
+    [min, min + range * 0.5, max].forEach(function(v){
       var y = padT + (H - padT - padB) - (v - min) / range * (H - padT - padB);
-      ticks += '<line x1="' + padL + '" x2="' + (W - padR) + '" y1="' + y + '" y2="' + y + '" stroke="#2a3a3a" stroke-dasharray="2 4" stroke-width="1"/>';
-      ticks += '<text x="' + (padL - 6) + '" y="' + (y + 4) + '" text-anchor="end" fill="#888" font-size="10" font-family="Inter">' + Math.round(v) + '</text>';
+      ticks += '<line x1="' + padL + '" x2="' + (W - padR) + '" y1="' + y + '" y2="' + y + '" stroke="#E4DFD4" stroke-dasharray="3 5" stroke-width="1"/>';
+      ticks += '<text x="' + (padL - 8) + '" y="' + (y + 4) + '" text-anchor="end" fill="#9DA3A3" font-size="10.5" font-family="Inter">' + Math.round(v).toLocaleString() + '</text>';
     });
-    // X labels: first, middle, last
     var labelIdx = [0, Math.floor(rows.length/2), rows.length - 1];
     var xLabels = labelIdx.map(function(i){
       var d = rows[i].date || '';
-      return '<text x="' + points[i][0] + '" y="' + (H - 16) + '" text-anchor="middle" fill="#888" font-size="10" font-family="Inter">' + d.slice(5) + '</text>';
+      return '<text x="' + points[i][0] + '" y="' + (H - 14) + '" text-anchor="middle" fill="#9DA3A3" font-size="10.5" font-family="Inter">' + d.slice(5) + '</text>';
     }).join('');
 
     svg.innerHTML =
+      '<defs><linearGradient id="dashGrad" x1="0" x2="0" y1="0" y2="1">' +
+        '<stop offset="0%" stop-color="#4DAAAA" stop-opacity="0.32"/>' +
+        '<stop offset="100%" stop-color="#4DAAAA" stop-opacity="0"/>' +
+      '</linearGradient></defs>' +
       ticks +
-      '<path d="' + areaD + '" fill="url(#dashGrad)" opacity="0.4"/>' +
-      '<path d="' + pathD + '" fill="none" stroke="#4DAAAA" stroke-width="2"/>' +
-      points.map(function(p){ return '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="3" fill="#4DAAAA"/>'; }).join('') +
-      xLabels +
-      '<defs><linearGradient id="dashGrad" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#4DAAAA" stop-opacity="0.6"/><stop offset="100%" stop-color="#4DAAAA" stop-opacity="0"/></linearGradient></defs>';
+      '<path d="' + areaD + '" fill="url(#dashGrad)"/>' +
+      '<path d="' + pathD + '" fill="none" stroke="#1B7878" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>' +
+      points.map(function(p, i){
+        var isLast = i === points.length - 1;
+        return '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="' + (isLast ? 4.5 : 2.5) + '" fill="' + (isLast ? '#1B7878' : '#4DAAAA') + '"/>';
+      }).join('') +
+      xLabels;
 
     var growth = D.performance.reachGrowth30d('linkedin');
-    el('dash-chart-sub').textContent = (growth != null ? (growth >= 0 ? '+' : '') + growth + '% growth · ' : '') + min + ' → ' + max;
+    el('dash-chart-sub').textContent = (growth != null ? (growth >= 0 ? '+' : '') + growth + '% growth  ·  ' : '') + min.toLocaleString() + '  →  ' + max.toLocaleString();
   }
 
   function renderChannels(){
@@ -196,49 +272,38 @@
       byChannel[c].count++;
     });
     var rows = Object.keys(byChannel).sort();
-    if (!rows.length) { el('dash-channels').innerHTML = '<div class="empty" style="padding:12px 0">No performance data yet.</div>'; return; }
+    if (!rows.length) { el('dash-channels').innerHTML = '<div class="empty" style="padding:14px 0">No performance data yet.</div>'; return; }
     el('dash-channels').innerHTML = rows.map(function(c){
       var d = byChannel[c];
       return '<div class="list-row">' +
         '<div class="list-row-main"><div class="list-row-title" style="text-transform:capitalize">' + c + '</div>' +
         '<div class="list-row-sub">' + d.count + ' records</div></div>' +
-        '<div style="display:flex;gap:18px;align-items:center">' +
-          '<div style="text-align:right"><div style="font-size:11px;color:var(--text-muted)">Reach</div><div style="font-family:var(--font-head);font-weight:600;color:var(--text)">' + D.fmt(d.reach) + '</div></div>' +
-          '<div style="text-align:right"><div style="font-size:11px;color:var(--text-muted)">Engagement</div><div style="font-family:var(--font-head);font-weight:600;color:var(--text)">' + D.fmt(d.eng) + '</div></div>' +
+        '<div style="display:flex;gap:24px;align-items:center">' +
+          '<div style="text-align:right"><div style="font-size:var(--fs-xxs);color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;font-weight:600">Reach</div><div class="stat-mini">' + D.fmt(d.reach) + '</div></div>' +
+          '<div style="text-align:right"><div style="font-size:var(--fs-xxs);color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;font-weight:600">Engagement</div><div class="stat-mini">' + D.fmt(d.eng) + '</div></div>' +
         '</div></div>';
     }).join('');
   }
 
-  function renderActivity(){
-    var items = D.activity(8);
-    if (!items.length) { el('dash-activity').innerHTML = '<div class="empty" style="padding:12px 0">No activity yet — start adding entries across the hub.</div>'; return; }
-    var iconFor = { task:'✓', deal:'£', session:'📅', content:'✎', podcast:'🎙', client:'◐', compliance:'⚖' };
-    el('dash-activity').innerHTML = items.map(function(i){
-      return '<div class="list-row">' +
-        '<div class="list-row-main"><div class="list-row-title">' + (iconFor[i.type]||'•') + ' ' + i.title + '</div>' +
-        '<div class="list-row-sub">' + i.type + ' · ' + D.relTime(i.date) + '</div></div>' +
-      '</div>';
-    }).join('');
-  }
-
-  function wireRowClicks(){
-    document.querySelectorAll('#page-dashboard [data-route]').forEach(function(c){
-      c.addEventListener('click', function(){
-        var route = c.getAttribute('data-route');
-        if (route) window.location.hash = route;
-      });
-    });
-  }
-
   function renderActionStripe(){
-    // Per-member overview: name, %, in-progress, blocked, overdue
     var all = D.actions.all();
     if (!all.length) {
-      el('dash-ap-stripe').innerHTML = '<div class="empty" style="padding:12px 0">Open the Action Plans page to seed the team\u2019s priority actions.</div>';
+      el('dash-ap-stripe').innerHTML = '<div class="empty" style="padding:14px 0">Open the Action Plans page to seed the team’s priority actions.</div>';
       el('dash-ap-sub').textContent = '';
       return;
     }
-    // Group by member
+    // Map department to pillar tint
+    var deptToPillar = {
+      'Service Delivery': 'physical',
+      'Technology': 'mental',
+      'Product / Commercial': 'mental',
+      'Sales': 'social',
+      'Marketing': 'social',
+      'Community': 'social',
+      'Finance': 'mental',
+      'Leadership': 'mental',
+      'Advisory': 'mental'
+    };
     var byMember = {};
     all.forEach(function(a){
       var key = a.member_id || 'unknown';
@@ -262,32 +327,57 @@
       var pct = total ? Math.round(done / total * 100) : 0;
       return { id: id, name: m.name, pct: pct, done: done, total: total, inProgress: inProgress, blocked: blocked, overdue: overdue };
     });
-    // Sort: most overdue first, then most blocked, then alphabetical
     rows.sort(function(a, b){
       if (b.overdue !== a.overdue) return b.overdue - a.overdue;
       if (b.blocked !== a.blocked) return b.blocked - a.blocked;
       return a.name.localeCompare(b.name);
     });
 
-    el('dash-ap-sub').textContent = totalInProgress + ' in progress \u00b7 ' + totalBlocked + ' blocked \u00b7 ' + totalOverdue + ' overdue';
+    el('dash-ap-sub').textContent = totalInProgress + ' in progress  ·  ' + totalBlocked + ' blocked  ·  ' + totalOverdue + ' overdue';
 
     el('dash-ap-stripe').innerHTML = rows.map(function(r){
-      var pctColor = r.pct >= 60 ? '#39a576' : r.pct >= 30 ? 'var(--vyve-gold)' : 'var(--text-muted)';
+      var pctColor = r.pct >= 60 ? 'var(--success)' : r.pct >= 30 ? 'var(--vyve-gold)' : 'var(--text-muted)';
+      var initial = (r.name || '?').charAt(0).toUpperCase();
       var badges = '';
-      if (r.overdue) badges += '<span class="badge" style="background:#e0606022;color:#e06060">' + r.overdue + ' overdue</span>';
-      if (r.blocked) badges += '<span class="badge" style="background:#e0606022;color:#e06060">' + r.blocked + ' blocked</span>';
-      if (r.inProgress) badges += '<span class="badge" style="background:rgba(77,170,170,.18);color:var(--vyve-teal-light)">' + r.inProgress + ' active</span>';
-      return '<div class="list-row" data-route="#/action-plans" style="cursor:pointer">' +
-        '<div class="list-row-main">' +
-          '<div class="list-row-title">' + r.name + '</div>' +
-          '<div class="list-row-sub">' + r.done + ' of ' + r.total + ' complete</div>' +
+      if (r.overdue) badges += '<span class="badge badge-red">' + r.overdue + ' overdue</span>';
+      if (r.blocked) badges += '<span class="badge badge-red">' + r.blocked + ' blocked</span>';
+      if (r.inProgress) badges += '<span class="badge badge-teal">' + r.inProgress + ' active</span>';
+      return '<div class="list-row" data-route="#/action-plans">' +
+        '<div class="list-row-main" style="display:flex;align-items:center;gap:12px">' +
+          '<span class="ap-avatar" style="width:32px;height:32px;font-size:13px;flex-shrink:0">' + initial + '</span>' +
+          '<div>' +
+            '<div class="list-row-title">' + r.name + '</div>' +
+            '<div class="list-row-sub">' + r.done + ' of ' + r.total + ' complete</div>' +
+          '</div>' +
         '</div>' +
         '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">' +
           badges +
-          '<span style="font-family:var(--font-head);font-weight:600;color:' + pctColor + ';min-width:42px;text-align:right">' + r.pct + '%</span>' +
+          '<span style="font-family:var(--font-head);font-weight:600;color:' + pctColor + ';min-width:46px;text-align:right;font-size:var(--fs-md)">' + r.pct + '%</span>' +
         '</div>' +
       '</div>';
     }).join('');
+  }
+
+  function renderActivity(){
+    var items = D.activity(8);
+    if (!items.length) { el('dash-activity').innerHTML = '<div class="empty" style="padding:14px 0">No activity yet — start adding entries across the hub.</div>'; return; }
+    el('dash-activity').innerHTML = items.map(function(i){
+      return '<div class="list-row">' +
+        '<div class="list-row-main">' +
+          '<div class="list-row-title">' + i.title + '</div>' +
+          '<div class="list-row-sub">' + i.type + '  ·  ' + D.relTime(i.date) + '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  function wireRowClicks(){
+    document.querySelectorAll('#page-dashboard [data-route]').forEach(function(c){
+      c.addEventListener('click', function(){
+        var route = c.getAttribute('data-route');
+        if (route) window.location.hash = route;
+      });
+    });
   }
 
   function renderAll(){
