@@ -4,6 +4,45 @@ All notable changes documented commit-by-commit. Each entry links to the GitHub 
 
 ## 2026-05-14 (continued)
 
+### Commit 55 - Real content on hub pages
+*Commit: [`09e132`](https://github.com/VYVEHealth/vyve-command-centre/commit/09e132123ebf3557fc288a3a20c77f0a706a3df5)*
+
+Five hub pages went from skeleton tile grids to fully usable surfaces. The biggest rebuild was **Investors**: full KPI strip (pipeline count, round target, committed, runway with ACL redaction for non-leads), pipeline kanban with proper edit modal, MRR trend sparkline (also ACL-gated), active conversations panel (surfaces investors with a "next step" set), and a board updates log (add monthly updates, history persists in localStorage). Investors now has a real add-investor modal that previously didn't exist — the button on the old page was a dead end.
+
+Four hub pages got "below the tiles" body sections with live data:
+- **Marketing** — "This week's content" list (pulls scheduled content for the next 7 days, sorted by publish date) + "Channel reach (30d)" horizontal bar chart with growth deltas per platform
+- **Delivery** — "Sessions this week" with pillar-colour stripes (Physical/Mental/Social) + "Active clients" list pulling from clients in "live" stage
+- **Org** — Team roster with action-plan health stripes: per-member done/total counts, blocked badge, completion % bar coloured by threshold (green ≥60%, amber ≥30%, red below)
+- **Knowledge** — Recently updated entries (combined docs + knowledge base, sorted by updated_at) + categories grid showing entry counts per category
+
+All five pages also now register `VYVE_PAGE_SHORTCUTS.onNew` so the global `n` shortcut adds a new record on the right page.
+
+### Commit 54 - Keyboard shortcuts + bulk select
+*Commit: [`c96213`](https://github.com/VYVEHealth/vyve-command-centre/commit/c96213de7e42ad2b59a57070ae791bd0410a8217)*
+
+Global shortcut layer: `?` opens a help overlay listing every shortcut, `/` focuses Cmd+K, `g` followed by another key navigates (`g b` Brief, `g i` Inbox, `g d` Dashboard, `g c` CRM, `g t` Tasks, `g a` Action Plans, `g s` Sessions, `g f` Finance, `g x` Activity, `g r` reload). Page-scoped shortcuts: `n` calls `window.VYVE_PAGE_SHORTCUTS.onNew()` (wired on 10 list pages: tasks, crm, sessions, compliance, content, clients, partners, invoicing, podcast, intel, competitors). `e` calls `onEdit()` (wired on Tasks). `x` toggles bulk selection on the focused row. Shortcuts ignored when typing in inputs or when a modal/Cmd+K is open.
+
+**Bulk select primitive** (`VYVE_BULK`): pages opt in via `VYVE_BULK.enable({selector, idAttr, actions, onAction})`. Selected rows get a 2px teal outline; a black floating action bar appears at the bottom of the viewport showing "N selected" + action buttons. Tasks is the first page wired up: shift-click toggles selection on a kanban card, and the action bar exposes **Mark done** (bulk-updates all selected tasks to `done` status with timestamps) and **Delete** (bulk-removes through `softDelete` so they land in Trash). Esc clears selection.
+
+Topbar got a small question-mark icon next to the bell that opens the shortcut help overlay. The keyboard kbd CSS uses a real keycap look with bottom-shadow.
+
+### Commit 53 - Outbound integrations
+*Commit: [`4e97a5`](https://github.com/VYVEHealth/vyve-command-centre/commit/4e97a52ba319a67b6ee60c0015b25659984da38c)*
+
+New `lib/integrations.js` module: Slack incoming webhooks, Gmail compose (mailto or Gmail-web), Google Calendar event URLs. All client-side, no backend required.
+
+**Slack daily digest**: builder pulls today's hub state into a Slack-formatted message — overdue actions, overdue tasks, due-today counts, sessions today, compliance due in 7d, deals closing this month with weighted value. Auto-send mode (off by default) checks once per page-load after 6am local: if today's digest hasn't been sent yet and the webhook is configured, it fires. Manual "Send now" + "Preview" buttons in Settings.
+
+**Settings → Outbound** tab (new, between People & Roles and Integrations): paste your Slack webhook URL, toggle auto-send, preview the digest text, send now, see "last sent" timestamp. Sub-card for Gmail web vs default mail client preference.
+
+**CRM "Email contact" button** on each deal modal: pre-fills a draft email using the deal name, value, notes, and signs off as Lewis. Opens in Gmail web or default mail client based on user preference.
+
+**Sessions "Add to calendar" button** on each upcoming session card: builds a Google Calendar event URL with title, start/end times (uses session duration_minutes or defaults to 60min), location, and notes. Opens in new tab.
+
+The Slack send uses `mode: 'no-cors'` because Slack webhooks don't return CORS headers — we can't read the response but we can detect transport failure. Suitable for a daily fire-and-forget pattern.
+
+## 2026-05-14 (continued)
+
 ### Commit 51 - Permissions & role gates
 *Commit: [`20c69e`](https://github.com/VYVEHealth/vyve-command-centre/commit/20c69e60f16da4a53ea6e1e7c2cc5a9f19b94f6d)*
 

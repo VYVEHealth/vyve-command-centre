@@ -67,6 +67,8 @@ On top of the data layer sits an **enterprise hub layer**: a central entity regi
 │   ├── views-ui.js             # mountable filter chip bar + saved views row
 │   ├── widgets.js              # commentsPanel, historyPanel, recordModal
 │   ├── acl.js                  # roles, page gates, field redaction
+│   ├── integrations.js         # Slack daily digest, Gmail compose, Google Calendar
+│   ├── shortcuts.js            # global keyboard shortcuts + bulk select primitive
 │   └── quick-search.js         # Cmd+K — fuzzy match across pages + records
 └── pages/                      # one HTML partial per route
     ├── brief.html              # Morning Brief — daily synthesis
