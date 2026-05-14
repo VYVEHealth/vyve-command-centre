@@ -248,7 +248,14 @@
     if (meta.length){
       html += '<div style="font-size:11px;margin-top:6px;display:flex;gap:14px;flex-wrap:wrap">' + meta.join('') + '</div>';
     }
-    html += '</div></div>';
+    html += '</div>'; // close flex:1 inner div
+    var ccount = (window.VYVE_COMMENTS ? window.VYVE_COMMENTS.count('action', action.id) : 0);
+    html += '<button type="button" class="ap-discuss-btn" data-discuss="' + action.id + '" title="Comments &amp; history" ' +
+            'style="flex-shrink:0;padding:5px 10px;border-radius:999px;background:' + (ccount ? 'var(--vyve-teal-pale)' : 'transparent') + ';color:' + (ccount ? 'var(--vyve-teal)' : 'var(--text-muted)') + ';font-size:11px;font-weight:600;border:0;cursor:pointer;display:inline-flex;align-items:center;gap:5px;align-self:flex-start;margin-top:1px">' +
+            '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' +
+            (ccount || 'Discuss') +
+            '</button>';
+    html += '</div>';
     return html;
   }
 
@@ -263,8 +270,20 @@
     });
     document.querySelectorAll('[data-action]').forEach(function(el){
       el.addEventListener('click', function(e){
+        // If they clicked the discuss button, don't open the edit modal
+        if (e.target.closest && e.target.closest('[data-discuss]')) return;
         e.stopPropagation();
         openEditModal(el.getAttribute('data-action'));
+      });
+    });
+    // Discuss button -> open record modal with Comments + History tabs
+    document.querySelectorAll('[data-discuss]').forEach(function(btn){
+      btn.addEventListener('click', function(e){
+        e.stopPropagation();
+        var id = btn.getAttribute('data-discuss');
+        if (window.VYVE_WIDGETS && window.VYVE_WIDGETS.recordModal) {
+          window.VYVE_WIDGETS.recordModal('action', id);
+        }
       });
     });
   }

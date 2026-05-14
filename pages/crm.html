@@ -68,10 +68,25 @@
       if (!body) return;
       if (!stages[stage].length){ body.innerHTML = '<div style="padding:16px 10px;text-align:center;font-size:11px;color:var(--text-muted)">Empty</div>'; return; }
       body.innerHTML = stages[stage].map(function(x){
-        return '<div class="kanban-card" data-id="'+x._id+'"><div class="kc-title">'+VYVE_UI.escape(x.name||'(unnamed)')+'</div><div class="kc-meta">'+(x.value?VYVE_UI.fmtMoney(x.value):'')+(x.close_date?' &middot; '+VYVE_UI.fmtDate(x.close_date):'')+'</div></div>';
+        var ccount = (window.VYVE_COMMENTS ? window.VYVE_COMMENTS.count('deal', x._id) : 0);
+        var discussBtn = '<button type="button" class="crm-discuss-btn" data-discuss="'+x._id+'" title="Comments &amp; history" style="position:absolute;top:8px;right:8px;padding:3px 8px;border-radius:999px;background:'+(ccount ? 'var(--vyve-teal-pale)' : 'transparent')+';color:'+(ccount ? 'var(--vyve-teal)' : 'var(--text-muted)')+';font-size:10.5px;font-weight:600;border:0;cursor:pointer;display:inline-flex;align-items:center;gap:4px">'+
+          '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'+
+          (ccount || '0') +
+        '</button>';
+        return '<div class="kanban-card" data-id="'+x._id+'" style="position:relative;padding-right:48px">'+discussBtn+'<div class="kc-title">'+VYVE_UI.escape(x.name||'(unnamed)')+'</div><div class="kc-meta">'+(x.value?VYVE_UI.fmtMoney(x.value):'')+(x.close_date?' &middot; '+VYVE_UI.fmtDate(x.close_date):'')+'</div></div>';
       }).join('');
       body.querySelectorAll('.kanban-card').forEach(function(card){
-        card.addEventListener('click', function(){ edit(card.dataset.id, items); });
+        card.addEventListener('click', function(e){
+          // If they clicked the discuss button, open the record modal instead
+          if (e.target.closest && e.target.closest('[data-discuss]')) {
+            e.stopPropagation();
+            if (window.VYVE_WIDGETS && window.VYVE_WIDGETS.recordModal) {
+              window.VYVE_WIDGETS.recordModal('deal', card.dataset.id);
+            }
+            return;
+          }
+          edit(card.dataset.id, items);
+        });
       });
     });
   }
