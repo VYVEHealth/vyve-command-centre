@@ -207,6 +207,10 @@
     });
   }
 
+  window.VYVE_PAGE_SHORTCUTS = {
+    onNew: function(){ document.getElementById('crm-add').click(); }
+  };
+
   (async function(){
     mountViewsBar();
     allItems = await load();

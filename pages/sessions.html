@@ -143,6 +143,9 @@
   document.getElementById('ss-add').addEventListener('click', function(){
     openModal('New session', {}, async function(u){ await save('ss_'+Date.now(), u); render(await load()); VYVE_UI.toast('Saved','success'); });
   });
+    window.VYVE_PAGE_SHORTCUTS = {
+    onNew: function(){ document.getElementById('ss-add').click(); }
+  };
   (async function(){ render(await load()); })();
 })();
 </script>

@@ -116,5 +116,12 @@
   document.getElementById('inv-search').addEventListener('input', async function(){ render(await load()); });
   document.getElementById('inv-filter').addEventListener('change', async function(){ render(await load()); });
   (async function(){ render(await load()); })();
+  window.VYVE_PAGE_SHORTCUTS = {
+    onNew: function(){
+      var b = document.getElementById('inv-add');
+      if (b) b.click();
+    }
+  };
+
 })();
 </script>

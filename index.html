@@ -90,6 +90,9 @@
 
         <div class="topnav-tools">
           <span class="topnav-role" id="topnav-role" title="Your role" style="display:none"></span>
+          <button class="topnav-bell" id="topnav-help" type="button" aria-label="Keyboard shortcuts (?)" title="Keyboard shortcuts" onclick="window.VYVE_SHORTCUTS && window.VYVE_SHORTCUTS.open()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </button>
           <a class="topnav-bell" id="topnav-bell" href="#/inbox" aria-label="Inbox">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
@@ -171,6 +174,7 @@
   <script src="lib/widgets.js"></script>
   <script src="lib/views-ui.js"></script>
   <script src="lib/integrations.js"></script>
+  <script src="lib/shortcuts.js"></script>
   <script src="lib/supabase.js"></script>
   <script src="lib/make.js"></script>
   <script src="lib/data.js"></script>

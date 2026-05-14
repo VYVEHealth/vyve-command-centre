@@ -96,5 +96,12 @@
   document.getElementById('pt-search').addEventListener('input', async function(){ render(await load()); });
   document.getElementById('pt-type').addEventListener('change', async function(){ render(await load()); });
   (async function(){ render(await load()); })();
+  window.VYVE_PAGE_SHORTCUTS = {
+    onNew: function(){
+      var b = document.getElementById('pt-add');
+      if (b) b.click();
+    }
+  };
+
 })();
 </script>

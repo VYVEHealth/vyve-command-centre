@@ -150,5 +150,12 @@
   document.getElementById('comp-search').addEventListener('input', function(){ load().then(render); });
 
   load().then(render);
+  window.VYVE_PAGE_SHORTCUTS = {
+    onNew: function(){
+      var b = document.getElementById('comp-add');
+      if (b) b.click();
+    }
+  };
+
 })();
 </script>

@@ -116,10 +116,19 @@
             }
             return;
           }
+          if (e.shiftKey && window.VYVE_BULK && window.VYVE_BULK.active()) {
+            e.preventDefault();
+            window.VYVE_BULK.toggle(card.dataset.id);
+            return;
+          }
           edit(card.dataset.id, filtered);
+        });
+        card.addEventListener('mouseenter', function(){
+          if (window.VYVE_BULK) window.VYVE_BULK.focused = card.dataset.id;
         });
       });
     });
+    if (window.VYVE_BULK && window.VYVE_BULK.active()) window.VYVE_BULK.paint();
   }
 
   function edit(id, items){
@@ -174,6 +183,43 @@
   document.getElementById('tk-add').addEventListener('click', function(){
     openModal('Add task', {}, async function(u){ await save('tk_'+Date.now(), u); allItems = await load(); refreshBar(); render(allItems); VYVE_UI.toast('Added','success'); });
   });
+
+  // Register page-scoped keyboard shortcuts
+  window.VYVE_PAGE_SHORTCUTS = {
+    onNew: function(){ document.getElementById('tk-add').click(); },
+    onEdit: function(){
+      if (!window.VYVE_BULK || !window.VYVE_BULK.active()) return;
+      var sel = Array.from(document.querySelectorAll('.kanban-card.bulk-selected'));
+      if (sel.length === 1) edit(sel[0].dataset.id, allItems);
+    }
+  };
+
+  // Enable bulk selection on task cards
+  if (window.VYVE_BULK) {
+    window.VYVE_BULK.enable({
+      selector: '#page-tasks .kanban-card',
+      idAttr: 'data-id',
+      actions: ['mark-done', 'delete'],
+      onAction: async function(action, ids){
+        if (!ids.length) return;
+        if (action === 'delete') {
+          if (!confirm('Delete ' + ids.length + ' task' + (ids.length === 1 ? '' : 's') + '?')) return;
+          for (var i = 0; i < ids.length; i++) await remove(ids[i]);
+          if (window.VYVE_UI && window.VYVE_UI.toast) window.VYVE_UI.toast('Deleted ' + ids.length + ' task' + (ids.length === 1 ? '' : 's'), 'success');
+        } else if (action === 'mark-done') {
+          for (var j = 0; j < ids.length; j++) {
+            var t = allItems.find(function(x){ return x._id === ids[j]; });
+            if (t) await save(ids[j], Object.assign({}, t, { status: 'done', completed_at: new Date().toISOString(), updated_at: new Date().toISOString() }));
+          }
+          if (window.VYVE_UI && window.VYVE_UI.toast) window.VYVE_UI.toast('Marked ' + ids.length + ' done', 'success');
+        }
+        window.VYVE_BULK.clear();
+        allItems = await load();
+        refreshBar();
+        render(allItems);
+      }
+    });
+  }
 
   (async function(){
     mountViewsBar();
