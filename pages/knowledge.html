@@ -6,6 +6,18 @@
   </div>
 
   <div class="hub-tiles" id="hub-knowledge-tiles"></div>
+
+  <!-- Recently updated + quick categories -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px">
+    <div class="card">
+      <div class="card-header"><div class="card-title">Recently updated</div><div class="card-sub">Across documents &amp; knowledge entries</div></div>
+      <div id="kb-recent" class="card-body"></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Categories</div><div class="card-sub">Browse by area</div></div>
+      <div id="kb-categories" class="card-body" style="padding:18px 22px"></div>
+    </div>
+  </div>
 </div>
 
 <style>
@@ -153,5 +165,59 @@
   }
 
   document.getElementById('hub-knowledge-tiles').innerHTML = tiles.map(renderTile).join('');
+
+  function renderRecent(){
+    // Pull documents + knowledge entries, sort by updated_at
+    var docs = (D.documents && D.documents.all) ? D.documents.all() : [];
+    var kb = (D.knowledge && D.knowledge.all) ? D.knowledge.all() : [];
+    var combined = docs.map(function(d){ return Object.assign({}, d, { _type: 'document' }); })
+      .concat(kb.map(function(k){ return Object.assign({}, k, { _type: 'knowledge' }); }));
+    combined.sort(function(a, b){
+      var au = new Date(a.updated_at || a.created_at || 0).getTime();
+      var bu = new Date(b.updated_at || b.created_at || 0).getTime();
+      return bu - au;
+    });
+    var top = combined.slice(0, 6);
+    if (!top.length){
+      document.getElementById('kb-recent').innerHTML = '<div class="empty" style="padding:24px 22px"><h3>No entries yet</h3><p>Add documents or knowledge entries to see them here.</p></div>';
+      return;
+    }
+    document.getElementById('kb-recent').innerHTML = top.map(function(item){
+      var route = item._type === 'document' ? '#/documents' : '#/knowledge';
+      return '<a class="list-row" href="' + route + '" style="padding:12px 22px;border-bottom:1px solid var(--border);text-decoration:none;color:inherit;display:flex;align-items:center;gap:10px">' +
+        '<div class="list-row-main">' +
+          '<div class="list-row-title">' + (item.title || item.name || 'Untitled') + '</div>' +
+          '<div class="list-row-sub">' + (item.category || item.type || item._type) + (item.owner ? ' \u00b7 ' + item.owner : '') + '</div>' +
+        '</div>' +
+        '<div class="list-row-meta" style="font-size:11px;color:var(--text-muted)">' + (item.updated_at ? D.relTime(new Date(item.updated_at)) : '') + '</div>' +
+      '</a>';
+    }).join('');
+  }
+
+  function renderCategories(){
+    var docs = (D.documents && D.documents.all) ? D.documents.all() : [];
+    var kb = (D.knowledge && D.knowledge.all) ? D.knowledge.all() : [];
+    var combined = docs.concat(kb);
+    var byCategory = {};
+    combined.forEach(function(item){
+      var cat = item.category || 'Other';
+      byCategory[cat] = (byCategory[cat] || 0) + 1;
+    });
+    var entries = Object.keys(byCategory).sort();
+    if (!entries.length){
+      document.getElementById('kb-categories').innerHTML = '<div class="empty" style="padding:14px 0"><p>No categories yet. Add documents or knowledge entries with a category to organise here.</p></div>';
+      return;
+    }
+    document.getElementById('kb-categories').innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(140px, 1fr));gap:8px">' + entries.map(function(cat){
+      var n = byCategory[cat];
+      return '<div style="padding:12px 14px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface);cursor:pointer;transition:border-color .15s" onmouseover="this.style.borderColor=\'var(--accent)\'" onmouseout="this.style.borderColor=\'var(--border)\'">' +
+        '<div style="font-weight:600;font-size:13px">' + cat + '</div>' +
+        '<div style="font-size:11px;color:var(--text-muted);margin-top:2px">' + n + ' entr' + (n === 1 ? 'y' : 'ies') + '</div>' +
+      '</div>';
+    }).join('') + '</div>';
+  }
+
+  renderRecent();
+  renderCategories();
 })();
 </script>

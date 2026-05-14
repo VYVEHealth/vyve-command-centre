@@ -6,6 +6,18 @@
   </div>
 
   <div class="hub-tiles" id="hub-marketing-tiles"></div>
+
+  <!-- Live signal: this week's posts + channel reach -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px">
+    <div class="card">
+      <div class="card-header"><div class="card-title">This week’s content</div><div class="card-sub" id="mkt-this-week-sub">Loading…</div></div>
+      <div id="mkt-this-week" class="card-body"></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Channel reach (30d)</div><div class="card-sub">By platform</div></div>
+      <div id="mkt-channels" class="card-body" style="padding:18px 22px"></div>
+    </div>
+  </div>
 </div>
 
 <style>
@@ -153,5 +165,69 @@
   }
 
   document.getElementById('hub-marketing-tiles').innerHTML = tiles.map(renderTile).join('');
+
+  // ---- This week\u2019s content ----
+  function renderThisWeek(){
+    var all = D.content.all();
+    var now = Date.now();
+    var weekEnd = now + 7*86400000;
+    var thisWeek = all.filter(function(c){
+      var p = D.parseDate(c.publish_date || c.scheduled_for);
+      return p && p.getTime() >= now && p.getTime() <= weekEnd;
+    }).sort(function(a,b){
+      return D.parseDate(a.publish_date || a.scheduled_for) - D.parseDate(b.publish_date || b.scheduled_for);
+    });
+    var sub = document.getElementById('mkt-this-week-sub');
+    if (!thisWeek.length){
+      sub.textContent = 'Nothing scheduled';
+      document.getElementById('mkt-this-week').innerHTML = '<div class="empty" style="padding:24px 22px"><h3>Nothing scheduled</h3><p>Add upcoming posts on the Content page. They\u2019ll surface here.</p></div>';
+      return;
+    }
+    sub.textContent = thisWeek.length + ' post' + (thisWeek.length === 1 ? '' : 's') + ' planned';
+    document.getElementById('mkt-this-week').innerHTML = thisWeek.slice(0, 6).map(function(c){
+      var p = D.parseDate(c.publish_date || c.scheduled_for);
+      return '<a class="list-row" href="#/content" style="padding:12px 22px;border-bottom:1px solid var(--border);text-decoration:none;color:inherit;display:flex;align-items:center;gap:10px">' +
+        '<div class="list-row-main">' +
+          '<div class="list-row-title">' + (c.title || c.headline || 'Untitled') + '</div>' +
+          '<div class="list-row-sub">' + (c.channel || '') + (c.owner ? ' \u00b7 ' + c.owner : '') + '</div>' +
+        '</div>' +
+        '<div class="list-row-meta" style="font-size:11px;color:var(--text-muted)">' + (p ? D.fmtDate(p) : '') + '</div>' +
+      '</a>';
+    }).join('');
+  }
+
+  // ---- Channel reach bars ----
+  function renderChannels(){
+    var channels = ['linkedin', 'instagram', 'facebook', 'twitter'];
+    var rows = channels.map(function(ch){
+      var reach = D.performance.latestReachByChannel ? D.performance.latestReachByChannel(ch) : 0;
+      var growth = D.performance.reachGrowth30d ? D.performance.reachGrowth30d(ch) : null;
+      return { channel: ch, reach: reach || 0, growth: growth };
+    });
+    rows.sort(function(a, b){ return b.reach - a.reach; });
+    var max = Math.max.apply(null, rows.map(function(r){ return r.reach; }).concat([1]));
+    if (!rows.some(function(r){ return r.reach > 0; })){
+      document.getElementById('mkt-channels').innerHTML = '<div class="empty" style="padding:14px 0"><p>No reach data yet. Add performance entries to see channel-by-channel reach here.</p></div>';
+      return;
+    }
+    document.getElementById('mkt-channels').innerHTML = rows.map(function(r){
+      var pct = max > 0 ? (r.reach / max) * 100 : 0;
+      var growthLabel = r.growth != null ? ((r.growth >= 0 ? '+' : '') + r.growth + '%') : '';
+      var growthColor = r.growth != null && r.growth >= 0 ? 'var(--success)' : 'var(--danger)';
+      return '<div style="margin-bottom:14px">' +
+        '<div style="display:flex;align-items:baseline;justify-content:space-between;font-size:13px;margin-bottom:4px">' +
+          '<div style="text-transform:capitalize;font-weight:500;color:var(--text)">' + r.channel + '</div>' +
+          '<div style="display:flex;gap:10px;align-items:baseline">' +
+            '<span style="font-weight:600">' + D.fmt(r.reach) + '</span>' +
+            (growthLabel ? '<span style="font-size:11px;color:' + growthColor + ';font-weight:600">' + growthLabel + '</span>' : '') +
+          '</div>' +
+        '</div>' +
+        '<div style="height:6px;background:var(--surface-2);border-radius:3px;overflow:hidden"><div style="width:' + pct.toFixed(1) + '%;height:100%;background:var(--vyve-teal);border-radius:3px"></div></div>' +
+      '</div>';
+    }).join('');
+  }
+
+  renderThisWeek();
+  renderChannels();
 })();
 </script>

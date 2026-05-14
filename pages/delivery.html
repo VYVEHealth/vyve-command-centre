@@ -6,6 +6,18 @@
   </div>
 
   <div class="hub-tiles" id="hub-delivery-tiles"></div>
+
+  <!-- Delivery signal -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px">
+    <div class="card">
+      <div class="card-header"><div class="card-title">Sessions this week</div><div class="card-sub" id="dlv-sess-sub">Loading…</div></div>
+      <div id="dlv-sessions" class="card-body"></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Active clients</div><div class="card-sub" id="dlv-clients-sub">Loading…</div></div>
+      <div id="dlv-clients" class="card-body"></div>
+    </div>
+  </div>
 </div>
 
 <style>
@@ -153,5 +165,61 @@
   }
 
   document.getElementById('hub-delivery-tiles').innerHTML = tiles.map(renderTile).join('');
+
+  function renderSessionsThisWeek(){
+    var all = D.sessions.all();
+    var now = Date.now();
+    var weekEnd = now + 7*86400000;
+    var thisWeek = all.filter(function(s){
+      var p = D.parseDate(s.date);
+      return p && p.getTime() >= now && p.getTime() <= weekEnd;
+    }).sort(function(a,b){
+      return D.parseDate(a.date) - D.parseDate(b.date);
+    });
+    var sub = document.getElementById('dlv-sess-sub');
+    if (!thisWeek.length){
+      sub.textContent = 'None scheduled';
+      document.getElementById('dlv-sessions').innerHTML = '<div class="empty" style="padding:24px 22px"><p>No sessions scheduled in the next 7 days.</p></div>';
+      return;
+    }
+    sub.textContent = thisWeek.length + ' upcoming';
+    document.getElementById('dlv-sessions').innerHTML = thisWeek.slice(0, 7).map(function(s){
+      var p = D.parseDate(s.date);
+      var pillarColor = { 'physical':'var(--vyve-gold)','mental':'var(--vyve-teal)','social':'var(--vyve-coral)' }[(s.pillar||'').toLowerCase()] || 'var(--text-muted)';
+      return '<a class="list-row" href="#/sessions" style="padding:12px 22px;border-bottom:1px solid var(--border);text-decoration:none;color:inherit;display:flex;align-items:center;gap:10px">' +
+        '<div style="width:6px;height:36px;background:' + pillarColor + ';border-radius:3px;flex-shrink:0"></div>' +
+        '<div class="list-row-main">' +
+          '<div class="list-row-title">' + (s.title || 'Session') + '</div>' +
+          '<div class="list-row-sub">' + (s.client || '') + (s.facilitator ? ' \u00b7 ' + s.facilitator : '') + '</div>' +
+        '</div>' +
+        '<div class="list-row-meta" style="font-size:11px;color:var(--text-muted);text-align:right">' +
+          (p ? p.toLocaleDateString('en-GB', { weekday:'short', day:'numeric' }) : '') +
+          (s.time ? '<br>' + s.time : '') +
+        '</div>' +
+      '</a>';
+    }).join('');
+  }
+
+  function renderActiveClients(){
+    var live = D.clients.live ? D.clients.live() : [];
+    var sub = document.getElementById('dlv-clients-sub');
+    if (!live.length){
+      sub.textContent = 'No active clients';
+      document.getElementById('dlv-clients').innerHTML = '<div class="empty" style="padding:24px 22px"><p>No clients in "live" stage. Add or update clients on the Clients page.</p></div>';
+      return;
+    }
+    sub.textContent = live.length + ' live';
+    document.getElementById('dlv-clients').innerHTML = live.slice(0, 7).map(function(c){
+      return '<a class="list-row" href="#/clients" style="padding:12px 22px;border-bottom:1px solid var(--border);text-decoration:none;color:inherit">' +
+        '<div class="list-row-main">' +
+          '<div class="list-row-title">' + (c.name || c.company || 'Client') + '</div>' +
+          '<div class="list-row-sub">' + (c.programme || c.notes || '') + '</div>' +
+        '</div>' +
+      '</a>';
+    }).join('');
+  }
+
+  renderSessionsThisWeek();
+  renderActiveClients();
 })();
 </script>
