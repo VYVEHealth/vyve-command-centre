@@ -138,7 +138,7 @@
 
   function openModal(title, init, onSave, onDel){
     init = init || {};
-    VYVE_UI.modal({ title: title, body:
+    var _modal = VYVE_UI.modal({ title: title, draftKey: 'task:' + (init._id || 'new'), body:
       '<div class="form-row"><div class="form-group"><label>Title</label><input id="t-title" value="'+VYVE_UI.escape(init.title||'')+'"/></div></div>'+
       '<div class="form-row cols-3"><div class="form-group"><label>Owner</label><input id="t-owner" value="'+VYVE_UI.escape(init.owner||'')+'"/></div><div class="form-group"><label>Status</label><select id="t-status"><option value="todo">To do</option><option value="doing">In progress</option><option value="blocked">Blocked</option><option value="done">Done</option></select></div><div class="form-group"><label>Priority</label><select id="t-prio"><option value="normal">Normal</option><option value="high">High</option><option value="low">Low</option></select></div></div>'+
       '<div class="form-row cols-2"><div class="form-group"><label>Due date</label><input id="t-due" type="date" value="'+VYVE_UI.escape((init.due||'').slice(0,10))+'"/></div><div class="form-group"><label>Area</label><input id="t-area" placeholder="e.g. sales, ops, content" value="'+VYVE_UI.escape(init.area||'')+'"/></div></div>'+
@@ -154,6 +154,7 @@
         var s = document.getElementById('t-status').value;
         var u = { title:n, owner:document.getElementById('t-owner').value.trim(), status:s, priority:document.getElementById('t-prio').value, due:document.getElementById('t-due').value, area:document.getElementById('t-area').value.trim(), notes:document.getElementById('t-notes').value.trim(), updated_at:new Date().toISOString(), created_at: init.created_at||new Date().toISOString() };
         if (s === 'done' && !init.completed_at) u.completed_at = new Date().toISOString();
+        if (_modal && _modal.draft) _modal.draft.clear();
         onSave(u);
         document.querySelector('.modal-overlay').classList.remove('open');
       });

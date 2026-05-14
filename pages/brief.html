@@ -232,7 +232,18 @@
   var D = window.VYVE_DATA;
 
   function el(id){ return document.getElementById(id); }
-  function empty(msg){ return '<div class="empty" style="padding:20px 0">' + msg + '</div>'; }
+  function empty(opts){
+    // Backward compat: string message still works.
+    if (typeof opts === 'string') opts = { msg: opts };
+    opts = opts || {};
+    var cta = opts.ctaHref && opts.ctaLabel
+      ? '<a class="empty-cta" href="' + opts.ctaHref + '">' + opts.ctaLabel + ' →</a>'
+      : '';
+    return '<div class="empty" style="padding:20px 0;text-align:center">' +
+      '<p style="margin:0">' + (opts.msg || '') + '</p>' +
+      cta +
+    '</div>';
+  }
 
   function setGreeting(){
     var hour = new Date().getHours();
@@ -284,7 +295,7 @@
   function renderTasks(){
     var items = D.tasks.todayOrOverdue();
     el('brief-task-count').textContent = items.length ? items.length + ' due' : '';
-    if (!items.length) { el('brief-tasks').innerHTML = empty('No tasks due today. Add in Tasks.'); return; }
+    if (!items.length) { el('brief-tasks').innerHTML = empty({ msg: 'No tasks due today.', ctaHref: '#/tasks', ctaLabel: 'Plan today\u2019s tasks' }); return; }
     el('brief-tasks').innerHTML = items.slice(0, 6).map(function(t){
       var d = D.parseDate(t.due);
       var overdue = d && d < D.startOfDay();
@@ -316,7 +327,7 @@
     });
     el('brief-ap-sub').textContent = overdue.length + ' overdue  ·  ' + soon.length + ' due in 14d';
     if (!items.length) {
-      el('brief-actions').innerHTML = empty('No overdue or upcoming actions — add deadlines in Action Plans.');
+      el('brief-actions').innerHTML = empty({ msg: 'No overdue or upcoming actions.', ctaHref: '#/action-plans', ctaLabel: 'Open action plans' });
       return;
     }
     el('brief-actions').innerHTML = items.slice(0, 6).map(function(a){
@@ -344,7 +355,7 @@
   function renderDeals(){
     var items = D.deals.closingSoon();
     el('brief-deal-count').textContent = items.length ? D.fmtGBP(items.reduce(function(s,d){return s+(Number(d.value)||0);},0)) : '';
-    if (!items.length) { el('brief-deals').innerHTML = empty('No deals closing this month. Manage in CRM.'); return; }
+    if (!items.length) { el('brief-deals').innerHTML = empty({ msg: 'No deals closing this month.', ctaHref: '#/crm', ctaLabel: 'Add or update deals' }); return; }
     el('brief-deals').innerHTML = items.slice(0, 5).map(function(d){
       return '<div class="list-row" data-route="#/crm">' +
         '<div class="list-row-main">' +
@@ -359,7 +370,7 @@
   function renderSessions(){
     var items = D.sessions.todayAndTomorrow();
     el('brief-sess-count').textContent = items.length ? items.length + ' upcoming' : '';
-    if (!items.length) { el('brief-sessions').innerHTML = empty('Nothing in the next 48 hours.'); return; }
+    if (!items.length) { el('brief-sessions').innerHTML = empty({ msg: 'No sessions or content in the next 48 hours.', ctaHref: '#/sessions', ctaLabel: 'Schedule something' }); return; }
     el('brief-sessions').innerHTML = items.map(function(s){
       var d = D.parseDate(s.date);
       var time = d ? d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '';
@@ -380,7 +391,7 @@
 
   function renderCompliance(){
     var items = D.compliance.dueSoon(30);
-    if (!items.length) { el('brief-compliance').innerHTML = empty('Nothing due in the next 30 days.'); return; }
+    if (!items.length) { el('brief-compliance').innerHTML = empty({ msg: 'No compliance due in the next 30 days.', ctaHref: '#/compliance', ctaLabel: 'Review compliance' }); return; }
     el('brief-compliance').innerHTML = items.slice(0, 5).map(function(c){
       var d = D.parseDate(c.due);
       var days = d ? Math.ceil((d - Date.now()) / 86400000) : null;
@@ -399,7 +410,7 @@
     var intel = D.intel.recent(3);
     var comp = D.competitors.recent(2);
     var combined = intel.concat(comp).sort(function(a,b){ return new Date(b.created_at||0) - new Date(a.created_at||0); }).slice(0, 5);
-    if (!combined.length) { el('brief-intel').innerHTML = empty('No fresh intel yet.'); return; }
+    if (!combined.length) { el('brief-intel').innerHTML = empty({ msg: 'No fresh intel yet.', ctaHref: '#/intel', ctaLabel: 'Log market intel' }); return; }
     el('brief-intel').innerHTML = combined.map(function(i){
       return '<div class="list-row">' +
         '<div class="list-row-main">' +
@@ -412,7 +423,7 @@
 
   function renderActivity(){
     var items = D.activity(6);
-    if (!items.length) { el('brief-activity').innerHTML = empty('No activity yet.'); return; }
+    if (!items.length) { el('brief-activity').innerHTML = empty({ msg: 'No activity yet across the hub.', ctaHref: '#/activity', ctaLabel: 'Open activity' }); return; }
     el('brief-activity').innerHTML = items.map(function(i){
       return '<div class="list-row">' +
         '<div class="list-row-main">' +

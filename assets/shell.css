@@ -1329,3 +1329,58 @@ kbd {
   outline: 2px solid var(--accent);
   outline-offset: -2px;
 }
+
+/* =====================================================================
+   Draft autosave banner
+   ===================================================================== */
+.draft-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: -8px 0 16px;
+  padding: 10px 14px;
+  background: var(--vyve-teal-pale, rgba(77,170,170,0.1));
+  border: 1px solid rgba(77,170,170,0.3);
+  border-radius: var(--r-md);
+  font-size: 12.5px;
+  color: var(--vyve-teal, #4DAAAA);
+  font-weight: 500;
+}
+.draft-banner svg { flex-shrink: 0; }
+.draft-banner span { flex: 1; }
+.draft-banner .draft-discard {
+  background: none;
+  border: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+  transition: background 0.15s, color 0.15s;
+}
+.draft-banner .draft-discard:hover {
+  background: rgba(77,170,170,0.15);
+  color: var(--text);
+}
+
+/* Empty-state CTA refinement */
+.empty .empty-cta {
+  margin-top: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  background: var(--vyve-teal);
+  color: #fff;
+  border-radius: var(--r-md);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.empty .empty-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+  color: #fff;
+}

@@ -144,7 +144,7 @@
 
   function openModal(title, init, onSave, onDel){
     init = init || {};
-    VYVE_UI.modal({ title: title, body:
+    var _modal = VYVE_UI.modal({ title: title, draftKey: 'deal:' + (init._id || 'new'), body:
       '<div class="form-row cols-2"><div class="form-group"><label>Account / company</label><input id="d-name" value="'+VYVE_UI.escape(init.name||'')+'"/></div><div class="form-group"><label>Stage</label><select id="d-stage"><option value="lead">Lead</option><option value="discovery">Discovery</option><option value="proposal">Proposal</option><option value="negotiation">Negotiation</option><option value="won">Won</option><option value="lost">Lost</option></select></div></div>'+
       '<div class="form-row cols-2"><div class="form-group"><label>Deal value (£)</label><input id="d-val" type="number" min="0" value="'+(init.value||'')+'"/></div><div class="form-group"><label>Expected close</label><input id="d-close" type="date" value="'+VYVE_UI.escape((init.close_date||'').slice(0,10))+'"/></div></div>'+
       '<div class="form-row cols-2"><div class="form-group"><label>Primary contact</label><input id="d-contact" value="'+VYVE_UI.escape(init.contact||'')+'"/></div><div class="form-group"><label>Source</label><input id="d-source" placeholder="e.g. LinkedIn, referral, podcast" value="'+VYVE_UI.escape(init.source||'')+'"/></div></div>'+
@@ -163,6 +163,7 @@
         var n = document.getElementById('d-name').value.trim();
         if (!n){ VYVE_UI.toast('Account required','error'); return; }
         var u = { name:n, stage:document.getElementById('d-stage').value, value:Number(document.getElementById('d-val').value)||0, close_date:document.getElementById('d-close').value, contact:document.getElementById('d-contact').value.trim(), source:document.getElementById('d-source').value.trim(), notes:document.getElementById('d-notes').value.trim(), updated_at:new Date().toISOString(), created_at: init.created_at||new Date().toISOString() };
+        if (_modal && _modal.draft) _modal.draft.clear();
         onSave(u);
         document.querySelector('.modal-overlay').classList.remove('open');
       });
