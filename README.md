@@ -72,6 +72,8 @@ On top of the data layer sits an **enterprise hub layer**: a central entity regi
 │   ├── drafts.js               # modal autosave to localStorage (7d GC)
 │   ├── pdf-export.js           # window.print()-based PDF export + board pack
 │   ├── targets.js              # KPI targets + vs-badge + sparkline target line
+│   ├── supabase-client.js      # Supabase client + admin_users gate + magic-link auth
+│   ├── cc-adapter.js           # localStorage ↔ cc_* schema mapping (flagged off)
 │   └── quick-search.js         # Cmd+K — fuzzy match across pages + records
 └── pages/                      # one HTML partial per route
     ├── brief.html              # Morning Brief — daily synthesis

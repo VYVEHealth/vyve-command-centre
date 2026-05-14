@@ -2,6 +2,35 @@
 
 All notable changes documented commit-by-commit. Each entry links to the GitHub commit.
 
+## 2026-05-14 (continued, part 4) - Supabase integration
+
+### Commit C - CC adapter layer + Settings/Supabase + migration doc
+*Commit: [`9f6ce8`](https://github.com/VYVEHealth/vyve-command-centre/commit/9f6ce8eba898e1f8c5b7dec279287852391f4130)*
+
+New `lib/cc-adapter.js` provides a translation layer between the hub’s localStorage shape and Dean’s `cc_*` table schema. Ten entities mapped: tasks (→ cc_tasks), deals (→ cc_clients, ambiguous), clients (→ cc_clients), sessions (→ cc_sessions), investors (→ cc_investors), finance (→ cc_finance), intel (→ cc_intel), partners (→ cc_partners), content (→ cc_posts), invoices (→ cc_invoices). Each entity has a `fieldMap`, a `missingInCC` array listing hub fields with no destination, and a `ccOnly` array listing cc columns without a hub source. Forward (`toCcRow`) and reverse (`fromCcRow`) helpers do explicit field renaming. Per-entity feature flags via `isEnabled/setEnabled`, stored in `vyve.cc.adapter` localStorage — all OFF by default. **The hub pages do NOT yet call into the adapter.** This is a review artefact for Dean.
+
+**Settings → Supabase tab** (between Targets and Integrations): shows live connection status (initialising/not signed in/not on allowlist/connected as admin), Supabase URL, Sign out and Test connection buttons (Test calls `admin_users.select` to confirm RLS round-trip). Below that: collapsible per-entity flag toggles showing `localStorage ↔ cc_table` plus the count of missing fields. Below that: a full mapping reference with collapsible details per entity showing every hub field → cc field plus the missing fields list. Useful for Dean to scan before agreeing to the migration.
+
+**New `docs/SUPABASE_MIGRATION.md`** documenting: what’s live today, what’s NOT live, the adapter API, per-entity mapping tables, recommended `ALTER TABLE` statements to add missing columns (pillar on sessions, title on cc_posts, etc), recommended migration order (lowest-risk first), auth model, bucket policy, and four open questions for Dean (cc_clients split, schema additions OK, finance source of truth, shared portal/hub session).
+
+### Commit B - Documents page rebuilt with Supabase Storage
+*Commit: [`164ba5`](https://github.com/VYVEHealth/vyve-command-centre/commit/164ba5467f1e5f820a50d51299e0122bcfa5628b)*
+
+Full rebuild of `pages/documents.html` (10.4KB → 21KB). The previous version was a localStorage-backed link library with placeholder copy saying “native uploads pending Dean’s config”. That config is now live, so the page is now a real storage centre: drag-and-drop zone (or click) accepting PDF, Word, Excel, PowerPoint, text, CSV, and images up to 50MB each, uploading binary to the `cc-documents` bucket under path `{user_email}/{timestamp}_{filename}` and inserting a metadata row into `public.cc_documents` (name, file_size, file_type, category, storage_path, created_by default-set by the table).
+
+Each row in the file list has Download (generates a 60-second signed URL since the bucket is private — opens in new tab) and Delete (confirms, removes the storage object AND the metadata row in a single user action). KPIs at the top: total docs, total size, this month’s uploads, distinct categories. Filter by category, search by name. Three gate states: connecting, sign-in, access-denied, content.
+
+### Commit A - Supabase client + Active Users dashboard (read-only)
+*Commit: [`65957c`](https://github.com/VYVEHealth/vyve-command-centre/commit/65957c3a742281ffc4e062f6b6950215badd1f99)*
+
+New `lib/supabase-client.js` wraps `@supabase/supabase-js` v2.45 (loaded from jsdelivr CDN) with hub-specific helpers: `getSession()`, `getCurrentAdmin()` (the critical helper — looks up `admin_users` by current email and caches), `isAdmin()`, magic-link `signInWithEmail()`, `signOut()`, and `list()`/`getOne()` convenience wrappers around the underlying Postgres REST. The anon key is hardcoded in the source (intentional — RLS provides the actual security boundary, the anon key is public by design).
+
+New `/active-users` page reads live member data from the portal database. Three gate states surface clearly: client-not-ready (spinner), session-required (magic-link sign-in form), and authenticated-but-not-admin (clean access-denied panel that names the email). When authenticated as an admin, shows: total members, active 7d, active 30d, average wellbeing score; filterable roster table with name (gradient avatar + first/last), persona, last active relative time, wellbeing score bar (out of 10), engagement score bar (out of 100), and subscription status pill. Filters: All / Active (30d) / Inactive. Search by name or email.
+
+Three queries pulled in parallel from Supabase: `members` (rich profiles), `member_activity_log` (30-day window for activity flags), `weekly_scores` (latest per member, joined client-side). All reads gated by Dean’s `cc_team_only` RLS policy server-side plus the client-side `admin_users` lookup for UX.
+
+Sidebar entry added under Org. Supabase JS loaded from CDN in `index.html`.
+
 ## 2026-05-14 (continued, part 3)
 
 ### Commit 60 - KPI targets & three-pillar attention bar
