@@ -94,3 +94,47 @@ window.VYVE_ICONS = {
   "user":         '<svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
   "settings":     '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>'
 };
+
+// Top-level departments — used by the top nav and the hub pages
+// Each department has:
+//   slug: route slug for its hub page (e.g. 'commercial' -> #/commercial)
+//   label: tab label
+//   icon: SVG icon key
+//   sectionName: the matching section name in VYVE_NAV (so the hub page knows what tiles to show)
+//   description: short subtitle shown on the hub page
+window.VYVE_NAV_TOP = [
+  { slug: 'brief',       label: 'Daily',      icon: 'layers',   sectionName: 'Daily',
+    description: 'Your morning launchpad. Brief, intel, competitor scan, and the full dashboard.' },
+  { slug: 'commercial',  label: 'Commercial', icon: 'trending-up', sectionName: 'Commercial',
+    description: 'Money in, money out. Finance, pipeline, clients, investors, partners, invoicing.' },
+  { slug: 'marketing',   label: 'Marketing',  icon: 'edit',       sectionName: 'Marketing',
+    description: 'Brand, content, social, podcast, performance. The full marketing engine.' },
+  { slug: 'delivery',    label: 'Delivery',   icon: 'check-square', sectionName: 'Delivery',
+    description: 'Sessions, tasks, compliance. The operational backbone.' },
+  { slug: 'knowledge',   label: 'Knowledge',  icon: 'book',       sectionName: 'Knowledge',
+    description: 'Strategy, documents, knowledge base. The source of truth.' },
+  { slug: 'org',         label: 'Org',        icon: 'user',       sectionName: 'Org',
+    description: 'Action plans, team, settings. Run the company.' }
+];
+
+// Route -> top-nav tab slug mapping (used by router to highlight the right tab)
+window.VYVE_ROUTE_TO_TOP = (function(){
+  var m = {};
+  (window.VYVE_NAV || []).forEach(function(section){
+    var topSlug = ({
+      'Daily':      'brief',
+      'Commercial': 'commercial',
+      'Marketing':  'marketing',
+      'Delivery':   'delivery',
+      'Knowledge':  'knowledge',
+      'Org':        'org'
+    })[section.section] || 'brief';
+    section.items.forEach(function(item){
+      if (item.slug) m[item.slug] = topSlug;
+    });
+  });
+  // Hub routes map to themselves
+  ['commercial','marketing','delivery','knowledge','org'].forEach(function(s){ m[s] = s; });
+  m['brief'] = 'brief';
+  return m;
+})();

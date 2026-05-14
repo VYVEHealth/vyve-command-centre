@@ -46,6 +46,7 @@
 
   <!-- App shell -->
   <div id="app">
+    <!-- Slide-in sidebar drawer (secondary) -->
     <aside class="sidebar" id="sidebar">
       <div class="brand">
         <div class="brand-title">VYVE</div>
@@ -55,7 +56,7 @@
       <nav id="sidebar-nav"><!-- populated by lib/router.js --></nav>
       <div class="sidebar-footer">
         <div class="user-block">
-          <div class="user-avatar" id="user-avatar">&mdash;</div>
+          <div class="user-avatar" id="user-avatar-drawer">&mdash;</div>
           <div class="email" id="user-email">&mdash;</div>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
@@ -64,31 +65,72 @@
         </div>
       </div>
     </aside>
-
     <div class="sidebar-overlay" id="sidebar-overlay" aria-hidden="true"></div>
 
-    <main class="main">
-      <div class="topbar">
-        <button id="sidebar-toggle" type="button" aria-label="Toggle navigation" class="sidebar-toggle">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="3" y1="6" x2="21" y2="6"></line>
-            <line x1="3" y1="12" x2="21" y2="12"></line>
-            <line x1="3" y1="18" x2="21" y2="18"></line>
-          </svg>
-        </button>
-        <div class="topbar-greeting">
-          <div class="greet" id="topbar-greet">Good morning</div>
-          <div class="topbar-date" id="topbar-date">&mdash;</div>
+    <!-- Top navigation bar (PRIMARY nav) -->
+    <header class="topnav" id="topnav">
+      <div class="topnav-inner">
+        <div class="topnav-brand">
+          <button class="topnav-menu" id="sidebar-toggle" type="button" aria-label="Open menu">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+          <a href="#/brief" class="topnav-logo">
+            <div class="topnav-wordmark">VYVE</div>
+            <div class="topnav-eyebrow">Command Centre</div>
+          </a>
         </div>
-        <div class="topbar-context">
-          <span class="topbar-sep">/</span>
-          <span class="topbar-page" id="crumb-page">&mdash;</span>
+
+        <nav class="topnav-tabs" id="topnav-tabs">
+          <!-- populated by router from VYVE_NAV_TOP -->
+        </nav>
+
+        <div class="topnav-tools">
+          <button class="topnav-search" id="topnav-search-btn" type="button" aria-label="Search (Cmd+K)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <span class="topnav-search-label">Search</span>
+            <kbd class="topnav-search-kbd">⌘K</kbd>
+          </button>
+          <button class="topnav-user" id="topnav-user-btn" type="button" aria-label="User menu">
+            <span class="user-avatar" id="user-avatar">&mdash;</span>
+          </button>
         </div>
       </div>
+
+      <!-- Breadcrumbs row -->
+      <div class="topnav-crumbs" id="topnav-crumbs"></div>
+    </header>
+
+    <main class="main">
       <div class="content" id="page-slot">
         <div class="empty"><span class="spinner"></span><h3>Loading</h3></div>
       </div>
     </main>
+  </div>
+
+  <!-- Quick-search overlay -->
+  <div class="quick-search" id="quick-search" aria-hidden="true">
+    <div class="quick-search-backdrop"></div>
+    <div class="quick-search-panel" role="dialog" aria-label="Quick navigation">
+      <div class="quick-search-input-wrap">
+        <svg class="quick-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input id="quick-search-input" type="text" placeholder="Jump to a page&hellip;" autocomplete="off"/>
+        <kbd class="quick-search-esc">esc</kbd>
+      </div>
+      <div class="quick-search-results" id="quick-search-results"></div>
+      <div class="quick-search-foot">
+        <span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
+        <span><kbd>↵</kbd> open</span>
+        <span><kbd>esc</kbd> close</span>
+      </div>
+    </div>
   </div>
 
   <!-- Runtime configuration -->
@@ -118,36 +160,20 @@
   <script src="lib/auth.js"></script>
   <script src="assets/seed-data.js"></script>
   <script src="lib/router.js"></script>
-  <script>
-    // Topbar greeting + date (computed once on boot)
-    (function(){
-      function paintTopbar(){
-        var hour = new Date().getHours();
-        var phase = hour < 5 ? 'Working late' :
-                    hour < 12 ? 'Good morning' :
-                    hour < 17 ? 'Good afternoon' :
-                    hour < 22 ? 'Good evening' : 'Working late';
-        var greet = document.getElementById('topbar-greet');
-        if (greet) greet.textContent = phase;
-        var date = document.getElementById('topbar-date');
-        if (date) {
-          var d = new Date();
-          date.textContent = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
-        }
-      }
-      paintTopbar();
-      // Refresh every minute to handle midnight rollover & greeting transitions
-      setInterval(paintTopbar, 60000);
-    })();
+  <script src="lib/quick-search.js"></script>
 
-    // User avatar: first letter from email
+  <script>
+    // User avatar across topnav + drawer
     window.addEventListener('vyve:user', function(e){
       var em = (e.detail && e.detail.email) || '';
-      var av = document.getElementById('user-avatar');
-      if (av) av.textContent = em ? em.charAt(0).toUpperCase() : '—';
+      var letter = em ? em.charAt(0).toUpperCase() : '—';
+      var av1 = document.getElementById('user-avatar');
+      var av2 = document.getElementById('user-avatar-drawer');
+      if (av1) av1.textContent = letter;
+      if (av2) av2.textContent = letter;
     });
 
-    // Mobile sidebar toggle + swipe-to-close gesture
+    // Sidebar drawer (secondary nav) — toggleable from topnav menu button
     (function(){
       function $(s){ return document.querySelector(s); }
       var sb = $('#sidebar');
@@ -161,6 +187,7 @@
       window.addEventListener('vyve:page', close);
       document.addEventListener('keydown', function(e){ if (e.key === 'Escape') close(); });
 
+      // Swipe gestures: left-edge swipe-right opens the drawer; on drawer, swipe-left closes
       var touchStartX = 0, touchStartY = 0, touchTracking = false;
       function isMobile(){ return window.innerWidth <= 900; }
       document.addEventListener('touchstart', function(e){
