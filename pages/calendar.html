@@ -387,17 +387,46 @@
           updated_at: new Date().toISOString()
         };
         try {
-          var res;
+          var res, savedRow;
           if (isEdit) {
-            res = await S.client.from(TABLE).update(record).eq('id', initial.id);
+            res = await S.client.from(TABLE).update(record).eq('id', initial.id).select().maybeSingle();
+            savedRow = res.data;
           } else {
             record.owner_email = state.me;
-            res = await S.client.from(TABLE).insert(record);
+            res = await S.client.from(TABLE).insert(record).select().maybeSingle();
+            savedRow = res.data;
           }
           if (res.error){ alert('Save failed: ' + res.error.message); return; }
           if (modal.draft) modal.draft.clear();
           modal.close();
           if (VYVE_UI && VYVE_UI.toast) VYVE_UI.toast(isEdit ? 'Event updated' : 'Event created', 'success');
+
+          // Fire-and-forget sync to Google Calendar via Make webhook (only for team/shared events)
+          if (savedRow && window.VYVE_INTEGRATIONS && window.VYVE_INTEGRATIONS.isCalendarSyncEnabled()
+              && (savedRow.visibility === 'team' || savedRow.visibility === 'shared')) {
+            window.VYVE_INTEGRATIONS.syncCalendarEvent(isEdit ? 'update' : 'create', {
+              id: savedRow.id,
+              gcal_event_id: savedRow.gcal_event_id || null,
+              title: savedRow.title,
+              description: savedRow.description,
+              start_at: savedRow.start_at,
+              end_at: savedRow.end_at,
+              location: savedRow.location,
+              attendees: savedRow.attendees,
+              visibility: savedRow.visibility
+            }).then(function(syncRes){
+              if (syncRes.ok && syncRes.body) {
+                var update = {};
+                if (syncRes.body.gcal_event_id) update.gcal_event_id = syncRes.body.gcal_event_id;
+                if (syncRes.body.meet_url) update.meet_url = syncRes.body.meet_url;
+                if (Object.keys(update).length){
+                  S.client.from(TABLE).update(update).eq('id', savedRow.id).then(function(){ fetchData().then(renderCurrent); });
+                }
+              }
+              // If sync failed silently, that\u2019s ok \u2014 hub still has the event
+            }).catch(function(e){ console.warn('[calendar] sync failed', e); });
+          }
+
           await fetchData();
           renderCurrent();
         } catch(e){
@@ -408,10 +437,16 @@
       if (delBtn){
         delBtn.addEventListener('click', async function(){
           if (!confirm('Delete this event? This cannot be undone.')) return;
+          var hadGcal = initial.gcal_event_id;
           var res = await S.client.from(TABLE).delete().eq('id', initial.id);
           if (res.error){ alert('Delete failed: ' + res.error.message); return; }
           modal.close();
           if (VYVE_UI && VYVE_UI.toast) VYVE_UI.toast('Event deleted', 'success');
+          // Mirror delete to Google Calendar
+          if (hadGcal && window.VYVE_INTEGRATIONS && window.VYVE_INTEGRATIONS.isCalendarSyncEnabled()) {
+            window.VYVE_INTEGRATIONS.syncCalendarEvent('delete', { id: initial.id, gcal_event_id: hadGcal })
+              .catch(function(e){ console.warn('[calendar] delete-sync failed', e); });
+          }
           await fetchData();
           renderCurrent();
         });

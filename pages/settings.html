@@ -136,6 +136,35 @@
         </div>
       </div>
     </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Calendar sync to Google Calendar</span>
+        <span class="card-sub" id="cal-sync-status">checking…</span>
+      </div>
+      <div style="padding:0 22px 18px;font-size:13px;color:var(--text-muted);line-height:1.55">
+        When enabled, team and shared events created on the hub Calendar page are pushed to a Google Calendar via a Make.com webhook. The webhook also generates real Google Meet links. Default webhook URL is pre-configured for the VYVE Hub Calendar Sync scenario (Make scenario 5789240).
+      </div>
+      <div style="padding:0 22px 22px">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Webhook URL</label>
+            <input id="cal-sync-url" type="text" placeholder="https://hook.eu1.make.com/…" style="font-family:var(--font-mono, monospace);font-size:12px"/>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+            <input type="checkbox" id="cal-sync-enabled"/>
+            <span>Push team and shared calendar events to Google Calendar</span>
+          </label>
+          <div style="margin-left:auto;display:flex;gap:8px">
+            <button class="btn btn-ghost btn-sm" id="cal-sync-test">Test webhook</button>
+            <button class="btn btn-primary btn-sm" id="cal-sync-save">Save</button>
+          </div>
+        </div>
+        <div id="cal-sync-result" style="margin-top:10px;font-size:12px;color:var(--text-muted)"></div>
+      </div>
+    </div>
   </div>
 
   <div id="set-targets" class="tab-panel">
@@ -918,6 +947,67 @@
     renderMapping();
     bindButtons();
     if (S.onReady) S.onReady(refreshConnection);
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else setTimeout(init, 50);
+})();
+</script>
+
+<script>
+// Outbound: Calendar sync settings
+(function(){
+  if (!window.VYVE_INTEGRATIONS) return;
+  var I = window.VYVE_INTEGRATIONS;
+
+  function paint(){
+    var statusEl = document.getElementById('cal-sync-status');
+    if (!statusEl) return;
+    var enabled = I.isCalendarSyncEnabled();
+    if (enabled) { statusEl.textContent = 'Enabled'; statusEl.style.color = 'var(--success)'; }
+    else { statusEl.textContent = 'Disabled'; statusEl.style.color = 'var(--text-muted)'; }
+  }
+
+  function init(){
+    var urlInput = document.getElementById('cal-sync-url');
+    var enabledInput = document.getElementById('cal-sync-enabled');
+    if (!urlInput || !enabledInput) return;
+
+    urlInput.value = I.getCalendarSyncUrl() || '';
+    enabledInput.checked = !!I.isCalendarSyncEnabled();
+
+    document.getElementById('cal-sync-save').addEventListener('click', function(){
+      var url = urlInput.value.trim();
+      if (url) I.set('calendarSyncUrl', url);
+      I.set('calendarSyncEnabled', enabledInput.checked);
+      paint();
+      if (window.VYVE_UI && window.VYVE_UI.toast) window.VYVE_UI.toast('Calendar sync settings saved', 'success');
+    });
+
+    document.getElementById('cal-sync-test').addEventListener('click', async function(){
+      var resultEl = document.getElementById('cal-sync-result');
+      resultEl.textContent = 'Sending test…';
+      var url = urlInput.value.trim() || I.getCalendarSyncUrl();
+      if (!url){ resultEl.textContent = 'No webhook URL set.'; resultEl.style.color = 'var(--danger)'; return; }
+      try {
+        var res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'test',
+            event: { id: 'test-' + Date.now(), title: 'Test from hub Settings panel' }
+          })
+        });
+        var bodyText = await res.text();
+        if (res.ok){ resultEl.textContent = 'OK — webhook responded ' + res.status + '. Body: ' + bodyText.slice(0, 200); resultEl.style.color = 'var(--success)'; }
+        else { resultEl.textContent = 'Failed — ' + res.status + ': ' + bodyText.slice(0, 200); resultEl.style.color = 'var(--danger)'; }
+      } catch(e){
+        resultEl.textContent = 'Network error: ' + (e.message || 'unknown');
+        resultEl.style.color = 'var(--danger)';
+      }
+    });
+
+    paint();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
