@@ -1,231 +1,434 @@
 <div class="page active" id="page-tasks">
-  <div class="page-header">
-    <div class="hdr-row">
-      <div><div class="eyebrow">Delivery</div><h1 class="page-title">Tasks</h1><p class="page-sub">Company-wide task management across the team</p></div>
-      <button class="btn btn-primary" id="tk-add">Add task</button>
+  <div class="page-hero">
+    <div class="eyebrow">Delivery</div>
+    <h1 class="page-title">Tasks</h1>
+    <p class="page-sub">Team task board. Assign owners, track stages, hit deadlines. Backed by Supabase — visible to everyone on the team.</p>
+    <div class="hero-actions">
+      <button class="btn btn-primary" id="tk-add">New task</button>
     </div>
   </div>
 
-  <div class="grid-4" style="margin-bottom:18px">
-    <div class="stat"><div class="stat-label">Open tasks</div><div class="stat-value" id="tk-open">0</div></div>
-    <div class="stat"><div class="stat-label">Due today</div><div class="stat-value" id="tk-today" style="color:var(--warning)">0</div></div>
-    <div class="stat"><div class="stat-label">Overdue</div><div class="stat-value" id="tk-overdue" style="color:var(--danger)">0</div></div>
-    <div class="stat"><div class="stat-label">Completed (7d)</div><div class="stat-value" id="tk-done" style="color:var(--success)">0</div></div>
+  <!-- Gate states -->
+  <div id="tk-gate-notready" class="card" style="display:none;padding:30px 26px;text-align:center"><div style="color:var(--text-muted)">Connecting…</div></div>
+  <div id="tk-gate-signin" class="card" style="display:none;padding:36px 26px">
+    <div style="max-width:420px;margin:0 auto;text-align:center">
+      <div style="font-family:var(--font-head);font-size:20px;font-weight:700;margin-bottom:8px">Sign in</div>
+      <p style="color:var(--text-muted);font-size:13.5px;line-height:1.55;margin-bottom:18px">Tasks are shared across the team. Sign in with your VYVE email.</p>
+      <div style="display:flex;gap:8px;justify-content:center">
+        <input type="email" id="tk-signin-email" placeholder="team@vyvehealth.co.uk" style="flex:1;max-width:280px"/>
+        <button class="btn btn-primary" id="tk-signin-btn">Send magic link</button>
+      </div>
+      <div id="tk-signin-msg" style="margin-top:12px;font-size:12.5px;color:var(--text-muted)"></div>
+    </div>
+  </div>
+  <div id="tk-gate-denied" class="card" style="display:none;padding:36px 26px;text-align:center">
+    <div style="font-family:var(--font-head);font-size:18px;font-weight:700;margin-bottom:8px">Access restricted</div>
+    <p style="color:var(--text-muted);font-size:13px;max-width:420px;margin:0 auto 18px">You’re signed in as <strong id="tk-denied-email"></strong> but this email isn’t on the admin allowlist.</p>
+    <button class="btn btn-ghost btn-sm" id="tk-signout-btn">Sign out</button>
   </div>
 
-  <!-- Saved views & filters bar -->
-  <div id="tk-views-bar"></div>
+  <!-- Main content -->
+  <div id="tk-content" style="display:none">
+    <!-- Top bar: signed-in identity -->
+    <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-bottom:14px;font-size:12.5px;color:var(--text-muted)">
+      <span>Signed in as <strong id="tk-current-email"></strong></span>
+      <span style="opacity:.4">·</span>
+      <a href="#" id="tk-signout-link" style="color:var(--accent)">Sign out</a>
+    </div>
 
-  <div class="kanban">
-    <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">To do</span><span class="kanban-count" data-tk="todo">0</span></div><div class="kanban-body" data-tk="todo"></div></div>
-    <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">In progress</span><span class="kanban-count" data-tk="doing">0</span></div><div class="kanban-body" data-tk="doing"></div></div>
-    <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">Blocked</span><span class="kanban-count" data-tk="blocked">0</span></div><div class="kanban-body" data-tk="blocked"></div></div>
-    <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">Done</span><span class="kanban-count" data-tk="done">0</span></div><div class="kanban-body" data-tk="done"></div></div>
+    <!-- KPI strip -->
+    <div class="grid-4" style="margin-bottom:18px">
+      <div class="stat"><div class="stat-label">Open tasks</div><div class="stat-value" id="tk-kpi-open">—</div><div class="stat-sub">Across the team</div></div>
+      <div class="stat"><div class="stat-label">Mine open</div><div class="stat-value" id="tk-kpi-mine">—</div><div class="stat-sub">Assigned to you</div></div>
+      <div class="stat"><div class="stat-label">Due this week</div><div class="stat-value" id="tk-kpi-week">—</div><div class="stat-sub">Next 7 days</div></div>
+      <div class="stat"><div class="stat-label">Overdue</div><div class="stat-value" id="tk-kpi-overdue">—</div><div class="stat-sub" style="color:var(--danger)">Past due</div></div>
+    </div>
+
+    <!-- Filter bar -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+      <div style="display:inline-flex;background:var(--surface-2);border-radius:var(--r-md);padding:3px">
+        <button class="seg-btn active" data-scope="all">All</button>
+        <button class="seg-btn" data-scope="mine">Mine</button>
+        <button class="seg-btn" data-scope="unassigned">Unassigned</button>
+      </div>
+      <select id="tk-pillar-filter" style="padding:7px 10px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface);color:var(--text);font-size:13px">
+        <option value="">All pillars</option>
+        <option value="physical">Physical</option>
+        <option value="mental">Mental</option>
+        <option value="social">Social</option>
+        <option value="business">Business</option>
+      </select>
+      <input type="search" id="tk-search" placeholder="Search title or notes" style="max-width:260px;font-size:13px"/>
+      <div style="margin-left:auto;display:inline-flex;background:var(--surface-2);border-radius:var(--r-md);padding:3px">
+        <button class="seg-btn active" data-view="board">Board</button>
+        <button class="seg-btn" data-view="list">List</button>
+      </div>
+    </div>
+
+    <!-- Board view -->
+    <div id="tk-board-view">
+      <div class="tk-board">
+        <div class="tk-col" data-stage="todo">
+          <div class="tk-col-header"><span class="tk-col-title">To do</span><span class="tk-col-count" data-count></span></div>
+          <div class="tk-col-body"></div>
+        </div>
+        <div class="tk-col" data-stage="doing">
+          <div class="tk-col-header"><span class="tk-col-title">Doing</span><span class="tk-col-count" data-count></span></div>
+          <div class="tk-col-body"></div>
+        </div>
+        <div class="tk-col" data-stage="blocked">
+          <div class="tk-col-header"><span class="tk-col-title">Blocked</span><span class="tk-col-count" data-count></span></div>
+          <div class="tk-col-body"></div>
+        </div>
+        <div class="tk-col" data-stage="done">
+          <div class="tk-col-header"><span class="tk-col-title">Done</span><span class="tk-col-count" data-count></span></div>
+          <div class="tk-col-body"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- List view -->
+    <div id="tk-list-view" style="display:none">
+      <div class="card">
+        <table class="data-table" style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr>
+              <th class="tk-th">Title</th>
+              <th class="tk-th">Stage</th>
+              <th class="tk-th">Assignee</th>
+              <th class="tk-th">Pillar</th>
+              <th class="tk-th">Priority</th>
+              <th class="tk-th">Due</th>
+              <th class="tk-th"></th>
+            </tr>
+          </thead>
+          <tbody id="tk-list-body"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </div>
 
+<style>
+  .seg-btn { background:transparent;border:0;padding:6px 12px;font-size:12px;font-weight:600;color:var(--text-muted);cursor:pointer;border-radius:calc(var(--r-md) - 3px);transition:background .15s,color .15s; }
+  .seg-btn.active { background:var(--surface);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.06); }
+
+  .tk-board { display:grid;grid-template-columns:repeat(4, 1fr);gap:14px;align-items:start; }
+  .tk-col { background:var(--surface-2);border-radius:var(--r-lg);padding:12px;min-height:200px; }
+  .tk-col-header { display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding:0 4px; }
+  .tk-col-title { font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted); }
+  .tk-col-count { background:var(--surface);color:var(--text-muted);font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:var(--r-pill); }
+  .tk-col[data-stage="doing"] .tk-col-title { color:var(--vyve-teal,#4DAAAA); }
+  .tk-col[data-stage="blocked"] .tk-col-title { color:var(--vyve-coral,#D17F6E); }
+  .tk-col[data-stage="done"] .tk-col-title { color:var(--success,#3a9c3a); }
+
+  .tk-card {
+    background:var(--surface);border-radius:var(--r-md);padding:10px 12px;margin-bottom:8px;
+    cursor:pointer;transition:transform .12s,box-shadow .12s;
+    border-left:3px solid var(--border);
+  }
+  .tk-card:hover { transform:translateY(-1px);box-shadow:0 3px 8px rgba(0,0,0,.08); }
+  .tk-card.priority-high { border-left-color:var(--vyve-coral,#D17F6E); }
+  .tk-card.priority-medium { border-left-color:var(--vyve-gold,#D49B2C); }
+  .tk-card.priority-low { border-left-color:var(--vyve-teal,#4DAAAA); }
+  .tk-card.overdue { background:rgba(224,96,96,.04); }
+
+  .tk-card-title { font-size:13px;font-weight:600;line-height:1.35;margin-bottom:6px; }
+  .tk-card-meta { display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text-muted);flex-wrap:wrap; }
+  .tk-card-meta .pill { padding:1px 6px;border-radius:var(--r-pill);background:var(--surface-2);font-weight:600;font-size:10px;text-transform:capitalize; }
+  .tk-card-meta .pill.pillar-physical { background:rgba(77,170,170,.12);color:var(--vyve-teal,#4DAAAA); }
+  .tk-card-meta .pill.pillar-mental { background:rgba(212,155,44,.12);color:var(--vyve-gold,#D49B2C); }
+  .tk-card-meta .pill.pillar-social { background:rgba(209,127,110,.12);color:var(--vyve-coral,#D17F6E); }
+
+  .tk-card-due { font-variant-numeric:tabular-nums; }
+  .tk-card-due.overdue { color:var(--danger,#d05050);font-weight:700; }
+  .tk-avatar { width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg, var(--vyve-teal,#4DAAAA), var(--vyve-teal-light,#6FB8B8));color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:700;text-transform:uppercase; }
+
+  .tk-th { text-align:left;padding:11px 16px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--text-muted);border-bottom:1px solid var(--border); }
+  .tk-row { transition:background .1s;cursor:pointer; }
+  .tk-row:hover { background:var(--surface-2); }
+  .tk-row td { padding:11px 16px;font-size:13px;border-bottom:1px solid var(--border); }
+  .tk-row td:first-child { font-weight:600; }
+  .tk-empty { padding:30px 12px;text-align:center;color:var(--text-muted);font-size:12px; }
+</style>
+
 <script>
 (function(){
+  if (!window.VYVE_SUPABASE) return;
+  var S = window.VYVE_SUPABASE;
+  var TABLE = 'cc_tasks';
 
-  var LS='vyve_tasks';
-  var allItems = [];
-  var viewsBar = null;
+  var state = {
+    tasks: [],
+    admins: [],          // for assignee dropdown
+    me: null,
+    view: 'board',       // 'board' | 'list'
+    scope: 'all',        // 'all' | 'mine' | 'unassigned'
+    pillar: '',
+    search: ''
+  };
 
-  function lsGet(){ try { var v=localStorage.getItem(LS); return v?JSON.parse(v):[]; } catch(e){ return []; } }
-  function lsSet(v){ try { localStorage.setItem(LS,JSON.stringify(v)); } catch(e){} }
+  function show(id){ document.getElementById(id).style.display = ''; }
+  function hide(id){ document.getElementById(id).style.display = 'none'; }
+  function hideAll(){ ['tk-gate-notready','tk-gate-signin','tk-gate-denied','tk-content'].forEach(hide); }
+  function escape(s){ return (s||'').toString().replace(/[<>&"]/g, function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]; }); }
+  function initial(s){ return (s||'?').toString().trim().charAt(0).toUpperCase(); }
 
-  async function load(){
-    if (window.VYVE_MAKE){ var fm = await VYVE_MAKE.list('tasks',{limit:500}); if (fm&&fm.length) return fm; }
-    return lsGet();
+  function fmtDue(d){
+    if (!d) return '';
+    var date = new Date(d + 'T00:00:00');
+    var today = new Date(); today.setHours(0,0,0,0);
+    var diff = Math.round((date - today) / 86400000);
+    if (diff === 0) return 'Today';
+    if (diff === 1) return 'Tomorrow';
+    if (diff === -1) return 'Yesterday';
+    if (diff < 0) return Math.abs(diff) + 'd late';
+    if (diff < 7) return 'In ' + diff + 'd';
+    return date.toLocaleDateString('en-GB', { day:'numeric', month:'short' });
   }
-  async function save(id, item){
-    var existing = lsGet().find(function(x){return x._id===id;});
-    var op = existing ? 'update' : 'create';
-    var diff = existing && window.VYVE_STORE ? window.VYVE_STORE.diff(existing, Object.assign({}, existing, item)) : null;
-    if (window.VYVE_MAKE){ var r = await VYVE_MAKE.upsert('tasks', id, item); if (r) {
-      if (window.VYVE_STORE) window.VYVE_STORE.logChange('task', id, null, op, diff);
-      return;
-    }}
-    var a = lsGet(); var i = a.findIndex(function(x){return x._id===id;}); var e = Object.assign({_id:id}, item);
-    if (i>=0) a[i]=e; else a.unshift(e); lsSet(a);
-    if (window.VYVE_STORE) window.VYVE_STORE.logChange('task', id, null, op, diff);
-  }
-  async function remove(id){
-    var existing = lsGet().find(function(x){return x._id===id;});
-    if (window.VYVE_STORE && existing) window.VYVE_STORE.softDelete('task', id, existing);
-    if (window.VYVE_MAKE) await VYVE_MAKE.remove('tasks', id);
-    lsSet(lsGet().filter(function(x){return x._id!==id;}));
-  }
-
-  function uniqueOwners(items){
-    return Array.from(new Set(items.map(function(t){return t.owner;}).filter(Boolean))).sort();
-  }
-  function uniqueAreas(items){
-    return Array.from(new Set(items.map(function(t){return t.area;}).filter(Boolean))).sort();
+  function isOverdue(d, stage){
+    if (!d || stage === 'done') return false;
+    var date = new Date(d + 'T00:00:00');
+    var today = new Date(); today.setHours(0,0,0,0);
+    return date < today;
   }
 
-  function applyFilters(items, filters){
-    return VYVE_VIEWS_UI.applyFilters(items, filters, {
-      due: function(t){ return t.due; }
+  // ---------- Fetch ----------
+  async function fetchData(){
+    var res = await S.client.from(TABLE).select('*').order('created_at', { ascending: false });
+    state.tasks = res.error ? [] : (res.data || []);
+
+    var ar = await S.client.from('admin_users').select('email,role,active').eq('active', true).order('email', { ascending: true });
+    state.admins = ar.error ? [] : (ar.data || []);
+  }
+
+  function filtered(){
+    return state.tasks.filter(function(t){
+      if (state.scope === 'mine' && t.assignee !== state.me) return false;
+      if (state.scope === 'unassigned' && t.assignee) return false;
+      if (state.pillar && t.pillar !== state.pillar) return false;
+      if (state.search){
+        var hay = (t.title + ' ' + (t.notes||'')).toLowerCase();
+        if (hay.indexOf(state.search.toLowerCase()) < 0) return false;
+      }
+      return true;
     });
   }
 
-  function render(items){
-    var filters = viewsBar ? viewsBar.getFilters() : {};
-    var filtered = applyFilters(items, filters);
+  // ---------- KPIs ----------
+  function renderKPIs(){
+    var open = state.tasks.filter(function(t){ return t.stage !== 'done'; });
+    var mine = open.filter(function(t){ return t.assignee === state.me; });
+    var today = new Date(); today.setHours(0,0,0,0);
+    var weekEnd = new Date(today); weekEnd.setDate(weekEnd.getDate() + 7);
+    var week = open.filter(function(t){
+      if (!t.due_date) return false;
+      var d = new Date(t.due_date + 'T00:00:00');
+      return d >= today && d <= weekEnd;
+    });
+    var overdue = open.filter(function(t){ return isOverdue(t.due_date, t.stage); });
+    document.getElementById('tk-kpi-open').textContent = open.length;
+    document.getElementById('tk-kpi-mine').textContent = mine.length;
+    document.getElementById('tk-kpi-week').textContent = week.length;
+    document.getElementById('tk-kpi-overdue').textContent = overdue.length;
+  }
 
-    var stages = { todo:[], doing:[], blocked:[], done:[] };
-    filtered.forEach(function(t){ var s = (t.status||'todo').toLowerCase(); if (!stages[s]) s='todo'; stages[s].push(t); });
-
-    var now = new Date(); now.setHours(0,0,0,0);
-    var tomorrow = now.getTime() + 86400000;
-    var weekAgo = Date.now() - 7*86400000;
-    var open = filtered.filter(function(t){return (t.status||'')!=='done';});
-    document.getElementById('tk-open').textContent = open.length;
-    document.getElementById('tk-today').textContent = open.filter(function(t){ return t.due && new Date(t.due).getTime() >= now.getTime() && new Date(t.due).getTime() < tomorrow; }).length;
-    document.getElementById('tk-overdue').textContent = open.filter(function(t){ return t.due && new Date(t.due).getTime() < now.getTime(); }).length;
-    document.getElementById('tk-done').textContent = filtered.filter(function(t){ return t.status==='done' && new Date(t.completed_at||t.updated_at||0).getTime() > weekAgo; }).length;
-
-    Object.keys(stages).forEach(function(stage){
-      var body = document.querySelector('.kanban-body[data-tk="'+stage+'"]');
-      var count = document.querySelector('.kanban-count[data-tk="'+stage+'"]');
-      if (count) count.textContent = stages[stage].length;
-      if (!body) return;
-      if (!stages[stage].length){ body.innerHTML = '<div style="padding:16px 10px;text-align:center;font-size:11px;color:var(--text-muted)">Empty</div>'; return; }
-      stages[stage].sort(function(a,b){ return new Date(a.due||'9999-12-31') - new Date(b.due||'9999-12-31'); });
-      body.innerHTML = stages[stage].map(function(t){
-        var dueColor = '';
-        if (t.due && stage !== 'done'){
-          var diff = new Date(t.due).getTime() - now.getTime();
-          if (diff < 0) dueColor = 'color:var(--danger);font-weight:600';
-          else if (diff < 86400000) dueColor = 'color:var(--warning);font-weight:600';
-        }
-        var prioBadge = '';
-        if (t.priority === 'high') prioBadge = '<span class="badge badge-red" style="margin-right:6px;font-size:9px">HIGH</span>';
-        else if (t.priority === 'low') prioBadge = '<span class="badge badge-grey" style="margin-right:6px;font-size:9px">LOW</span>';
-        var ccount = (window.VYVE_COMMENTS ? window.VYVE_COMMENTS.count('task', t._id) : 0);
-        var discussBtn = '<button type="button" class="task-discuss-btn" data-discuss="'+t._id+'" title="Comments & history" style="position:absolute;top:8px;right:8px;padding:3px 8px;border-radius:999px;background:'+(ccount ? 'var(--vyve-teal-pale)' : 'transparent')+';color:'+(ccount ? 'var(--vyve-teal)' : 'var(--text-muted)')+';font-size:10.5px;font-weight:600;border:0;cursor:pointer">'+(ccount || '✉')+'</button>';
-        return '<div class="kanban-card" data-id="'+t._id+'" style="position:relative;padding-right:42px">'+discussBtn+'<div class="kc-title">'+prioBadge+VYVE_UI.escape(t.title||'')+'</div><div class="kc-meta">'+VYVE_UI.escape(t.owner||'Unassigned')+(t.due?' &middot; <span style="'+dueColor+'">'+VYVE_UI.fmtDate(t.due)+'</span>':'')+'</div></div>';
+  // ---------- Board view ----------
+  function renderBoard(){
+    var rows = filtered();
+    var byStage = { todo: [], doing: [], blocked: [], done: [] };
+    rows.forEach(function(t){
+      var s = (t.stage || 'todo').toLowerCase();
+      if (!byStage[s]) s = 'todo';
+      byStage[s].push(t);
+    });
+    Object.keys(byStage).forEach(function(stage){
+      var col = document.querySelector('#tk-board-view .tk-col[data-stage="' + stage + '"]');
+      if (!col) return;
+      col.querySelector('[data-count]').textContent = byStage[stage].length;
+      var body = col.querySelector('.tk-col-body');
+      if (!byStage[stage].length){
+        body.innerHTML = '<div class="tk-empty">No tasks</div>';
+        return;
+      }
+      body.innerHTML = byStage[stage].map(function(t){
+        var overdue = isOverdue(t.due_date, t.stage);
+        return '<div class="tk-card priority-' + (t.priority || 'medium') + ' ' + (overdue ? 'overdue' : '') + '" data-id="' + t.id + '">' +
+          '<div class="tk-card-title">' + escape(t.title) + '</div>' +
+          '<div class="tk-card-meta">' +
+            (t.pillar ? '<span class="pill pillar-' + t.pillar + '">' + t.pillar + '</span>' : '') +
+            (t.assignee ? '<span class="tk-avatar" title="' + escape(t.assignee) + '">' + initial(t.assignee) + '</span>' : '') +
+            (t.due_date ? '<span class="tk-card-due ' + (overdue ? 'overdue' : '') + '">' + fmtDue(t.due_date) + '</span>' : '') +
+          '</div>' +
+        '</div>';
       }).join('');
-      body.querySelectorAll('.kanban-card').forEach(function(card){
-        card.addEventListener('click', function(e){
-          if (e.target.closest && e.target.closest('[data-discuss]')){
-            e.stopPropagation();
-            if (window.VYVE_WIDGETS && window.VYVE_WIDGETS.recordModal) {
-              window.VYVE_WIDGETS.recordModal('task', card.dataset.id);
-            }
-            return;
-          }
-          if (e.shiftKey && window.VYVE_BULK && window.VYVE_BULK.active()) {
-            e.preventDefault();
-            window.VYVE_BULK.toggle(card.dataset.id);
-            return;
-          }
-          edit(card.dataset.id, filtered);
-        });
-        card.addEventListener('mouseenter', function(){
-          if (window.VYVE_BULK) window.VYVE_BULK.focused = card.dataset.id;
-        });
-      });
     });
-    if (window.VYVE_BULK && window.VYVE_BULK.active()) window.VYVE_BULK.paint();
+    document.querySelectorAll('#tk-board-view .tk-card').forEach(function(c){
+      c.addEventListener('click', function(){ openEditor(c.getAttribute('data-id')); });
+    });
   }
 
-  function edit(id, items){
-    var t = items.find(function(x){return x._id===id;}); if(!t) return;
-    openModal('Edit task', t, async function(u){ await save(id, u); allItems = await load(); refreshBar(); render(allItems); }, async function(){ await remove(id); allItems = await load(); refreshBar(); render(allItems); });
+  // ---------- List view ----------
+  function renderList(){
+    var rows = filtered();
+    var body = document.getElementById('tk-list-body');
+    if (!rows.length){ body.innerHTML = '<tr><td colspan="7" style="padding:30px;text-align:center;color:var(--text-muted)">No tasks match.</td></tr>'; return; }
+    body.innerHTML = rows.map(function(t){
+      var overdue = isOverdue(t.due_date, t.stage);
+      var stageColor = { todo: 'var(--text-muted)', doing: 'var(--vyve-teal,#4DAAAA)', blocked: 'var(--vyve-coral,#D17F6E)', done: 'var(--success,#3a9c3a)' }[t.stage] || 'var(--text-muted)';
+      return '<tr class="tk-row" data-id="' + t.id + '">' +
+        '<td>' + escape(t.title) + '</td>' +
+        '<td><span style="color:' + stageColor + ';font-weight:600;text-transform:capitalize">' + (t.stage || '—') + '</span></td>' +
+        '<td style="color:var(--text-muted)">' + (t.assignee ? '<span class="tk-avatar" style="margin-right:6px">' + initial(t.assignee) + '</span>' + escape(t.assignee) : '<em>Unassigned</em>') + '</td>' +
+        '<td>' + (t.pillar ? '<span class="pill pillar-' + t.pillar + '" style="font-size:10px;padding:2px 7px;border-radius:var(--r-pill);background:rgba(0,0,0,.04);text-transform:capitalize">' + t.pillar + '</span>' : '—') + '</td>' +
+        '<td style="color:var(--text-muted);text-transform:capitalize">' + (t.priority || '—') + '</td>' +
+        '<td' + (overdue ? ' style="color:var(--danger);font-weight:700"' : ' style="color:var(--text-muted)"') + '>' + (t.due_date ? fmtDue(t.due_date) : '—') + '</td>' +
+        '<td></td>' +
+      '</tr>';
+    }).join('');
+    document.querySelectorAll('#tk-list-body .tk-row').forEach(function(r){
+      r.addEventListener('click', function(){ openEditor(r.getAttribute('data-id')); });
+    });
   }
 
-  function openModal(title, init, onSave, onDel){
-    init = init || {};
-    var _modal = VYVE_UI.modal({ title: title, draftKey: 'task:' + (init._id || 'new'), body:
-      '<div class="form-row"><div class="form-group"><label>Title</label><input id="t-title" value="'+VYVE_UI.escape(init.title||'')+'"/></div></div>'+
-      '<div class="form-row cols-3"><div class="form-group"><label>Owner</label><input id="t-owner" value="'+VYVE_UI.escape(init.owner||'')+'"/></div><div class="form-group"><label>Status</label><select id="t-status"><option value="todo">To do</option><option value="doing">In progress</option><option value="blocked">Blocked</option><option value="done">Done</option></select></div><div class="form-group"><label>Priority</label><select id="t-prio"><option value="normal">Normal</option><option value="high">High</option><option value="low">Low</option></select></div></div>'+
-      '<div class="form-row cols-2"><div class="form-group"><label>Due date</label><input id="t-due" type="date" value="'+VYVE_UI.escape((init.due||'').slice(0,10))+'"/></div><div class="form-group"><label>Area</label><input id="t-area" placeholder="e.g. sales, ops, content" value="'+VYVE_UI.escape(init.area||'')+'"/></div></div>'+
-      '<div class="form-row"><div class="form-group"><label>Notes</label><textarea id="t-notes" rows="3">'+VYVE_UI.escape(init.notes||'')+'</textarea></div></div>'+
-      '<div style="display:flex;justify-content:space-between;gap:8px">'+(onDel?'<button class="btn" id="t-del" style="color:var(--danger);border-color:rgba(224,96,96,.3)">Delete</button>':'<span></span>')+'<button class="btn btn-primary" id="t-save">Save</button></div>'
+  function renderCurrent(){
+    document.getElementById('tk-board-view').style.display = state.view === 'board' ? '' : 'none';
+    document.getElementById('tk-list-view').style.display = state.view === 'list' ? '' : 'none';
+    if (state.view === 'board') renderBoard(); else renderList();
+    renderKPIs();
+  }
+
+  // ---------- Editor modal ----------
+  function openEditor(id){
+    var task = id ? state.tasks.find(function(t){ return t.id === id; }) : null;
+    var isEdit = !!task;
+    var t = task || { stage: 'todo', priority: 'medium', assignee: state.me };
+
+    var assigneeOptions = '<option value="">Unassigned</option>' + state.admins.map(function(a){
+      return '<option value="' + escape(a.email) + '"' + (t.assignee === a.email ? ' selected' : '') + '>' + escape(a.email) + '</option>';
+    }).join('');
+
+    var modal = VYVE_UI.modal({
+      title: isEdit ? 'Edit task' : 'New task',
+      draftKey: 'task:' + (id || 'new'),
+      body:
+        '<div class="form-row"><div class="form-group"><label>Title</label><input id="tkf-title" value="' + escape(t.title || '') + '" placeholder="What needs to happen?"/></div></div>' +
+        '<div class="form-row cols-3"><div class="form-group"><label>Stage</label><select id="tkf-stage"><option value="todo">To do</option><option value="doing">Doing</option><option value="blocked">Blocked</option><option value="done">Done</option></select></div><div class="form-group"><label>Priority</label><select id="tkf-priority"><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></div><div class="form-group"><label>Due date</label><input type="date" id="tkf-due" value="' + (t.due_date || '') + '"/></div></div>' +
+        '<div class="form-row cols-2"><div class="form-group"><label>Assignee</label><select id="tkf-assignee">' + assigneeOptions + '</select></div><div class="form-group"><label>Pillar</label><select id="tkf-pillar"><option value="">—</option><option value="physical">Physical</option><option value="mental">Mental</option><option value="social">Social</option><option value="business">Business</option></select></div></div>' +
+        '<div class="form-row"><div class="form-group"><label>Notes</label><textarea id="tkf-notes" rows="4">' + escape(t.notes || '') + '</textarea></div></div>' +
+        '<div style="display:flex;justify-content:space-between;gap:8px">' +
+          (isEdit ? '<button class="btn" id="tkf-del" style="color:var(--danger);border-color:rgba(224,96,96,.3)">Delete</button>' : '<span></span>') +
+          '<button class="btn btn-primary" id="tkf-save">' + (isEdit ? 'Save' : 'Create') + '</button>' +
+        '</div>'
     });
+
     setTimeout(function(){
-      if (init.status) document.getElementById('t-status').value = init.status;
-      if (init.priority) document.getElementById('t-prio').value = init.priority;
-      document.getElementById('t-save').addEventListener('click', function(){
-        var n = document.getElementById('t-title').value.trim();
-        if (!n){ VYVE_UI.toast('Title required','error'); return; }
-        var s = document.getElementById('t-status').value;
-        var u = { title:n, owner:document.getElementById('t-owner').value.trim(), status:s, priority:document.getElementById('t-prio').value, due:document.getElementById('t-due').value, area:document.getElementById('t-area').value.trim(), notes:document.getElementById('t-notes').value.trim(), updated_at:new Date().toISOString(), created_at: init.created_at||new Date().toISOString() };
-        if (s === 'done' && !init.completed_at) u.completed_at = new Date().toISOString();
-        if (_modal && _modal.draft) _modal.draft.clear();
-        onSave(u);
-        document.querySelector('.modal-overlay').classList.remove('open');
+      document.getElementById('tkf-stage').value = t.stage || 'todo';
+      document.getElementById('tkf-priority').value = t.priority || 'medium';
+      if (t.pillar) document.getElementById('tkf-pillar').value = t.pillar;
+
+      document.getElementById('tkf-save').addEventListener('click', async function(){
+        var title = document.getElementById('tkf-title').value.trim();
+        if (!title){ if (VYVE_UI && VYVE_UI.toast) VYVE_UI.toast('Title required', 'error'); return; }
+        var newStage = document.getElementById('tkf-stage').value;
+        var record = {
+          title: title,
+          stage: newStage,
+          priority: document.getElementById('tkf-priority').value,
+          due_date: document.getElementById('tkf-due').value || null,
+          assignee: document.getElementById('tkf-assignee').value || null,
+          pillar: document.getElementById('tkf-pillar').value || null,
+          notes: document.getElementById('tkf-notes').value.trim() || null,
+          updated_at: new Date().toISOString()
+        };
+        if (newStage === 'done' && t.stage !== 'done') record.completed_at = new Date().toISOString();
+        if (newStage !== 'done' && t.stage === 'done') record.completed_at = null;
+        try {
+          var res;
+          if (isEdit) {
+            res = await S.client.from(TABLE).update(record).eq('id', t.id);
+          } else {
+            res = await S.client.from(TABLE).insert(record);
+          }
+          if (res.error){ alert('Save failed: ' + res.error.message); return; }
+          if (modal.draft) modal.draft.clear();
+          modal.close();
+          if (VYVE_UI && VYVE_UI.toast) VYVE_UI.toast(isEdit ? 'Task updated' : 'Task created', 'success');
+          await fetchData();
+          renderCurrent();
+        } catch(e){ alert('Save threw: ' + (e.message || 'unknown')); }
       });
-      if (onDel) document.getElementById('t-del').addEventListener('click', function(){ if (confirm('Delete?')){ onDel(); document.querySelector('.modal-overlay').classList.remove('open'); }});
+      var del = document.getElementById('tkf-del');
+      if (del){
+        del.addEventListener('click', async function(){
+          if (!confirm('Delete this task?')) return;
+          var res = await S.client.from(TABLE).delete().eq('id', t.id);
+          if (res.error){ alert('Delete failed: ' + res.error.message); return; }
+          modal.close();
+          if (VYVE_UI && VYVE_UI.toast) VYVE_UI.toast('Task deleted', 'success');
+          await fetchData();
+          renderCurrent();
+        });
+      }
     }, 50);
   }
 
-  function refreshBar(){
-    if (viewsBar) viewsBar.refresh();
-  }
-
-  function mountViewsBar(){
-    if (!window.VYVE_VIEWS_UI) return;
-    viewsBar = VYVE_VIEWS_UI.mount(document.getElementById('tk-views-bar'), {
-      page: 'tasks',
-      fields: [
-        { key: 'status',   label: 'Status',   type: 'select', options: ['todo','doing','blocked','done'] },
-        { key: 'priority', label: 'Priority', type: 'select', options: ['high','normal','low'] },
-        { key: 'owner',    label: 'Owner',    type: 'select', dynamicOptions: function(){ return uniqueOwners(allItems); } },
-        { key: 'area',     label: 'Area',     type: 'select', dynamicOptions: function(){ return uniqueAreas(allItems); } },
-        { key: 'due',      label: 'Due',      type: 'date-range' }
-      ],
-      onChange: function(){ render(allItems); }
+  // ---------- Wiring ----------
+  function bindControls(){
+    document.querySelectorAll('#page-tasks .seg-btn[data-view]').forEach(function(b){
+      b.addEventListener('click', function(){
+        document.querySelectorAll('#page-tasks .seg-btn[data-view]').forEach(function(x){ x.classList.remove('active'); });
+        b.classList.add('active'); state.view = b.getAttribute('data-view'); renderCurrent();
+      });
     });
+    document.querySelectorAll('#page-tasks .seg-btn[data-scope]').forEach(function(b){
+      b.addEventListener('click', function(){
+        document.querySelectorAll('#page-tasks .seg-btn[data-scope]').forEach(function(x){ x.classList.remove('active'); });
+        b.classList.add('active'); state.scope = b.getAttribute('data-scope'); renderCurrent();
+      });
+    });
+    document.getElementById('tk-pillar-filter').addEventListener('change', function(e){ state.pillar = e.target.value; renderCurrent(); });
+    document.getElementById('tk-search').addEventListener('input', function(e){ state.search = e.target.value; renderCurrent(); });
+    document.getElementById('tk-add').addEventListener('click', function(){ openEditor(null); });
+    document.getElementById('tk-signout-link').addEventListener('click', function(e){ e.preventDefault(); S.signOut().then(boot); });
+    window.VYVE_PAGE_SHORTCUTS = { onNew: function(){ document.getElementById('tk-add').click(); } };
   }
 
-  document.getElementById('tk-add').addEventListener('click', function(){
-    openModal('Add task', {}, async function(u){ await save('tk_'+Date.now(), u); allItems = await load(); refreshBar(); render(allItems); VYVE_UI.toast('Added','success'); });
-  });
+  function bindSignin(){
+    document.getElementById('tk-signin-btn').addEventListener('click', async function(){
+      var email = document.getElementById('tk-signin-email').value.trim();
+      if (!email) return;
+      var msg = document.getElementById('tk-signin-msg');
+      msg.textContent = 'Sending…';
+      try {
+        var res = await S.signInWithEmail(email);
+        if (res.error){ msg.textContent = 'Error: ' + res.error.message; msg.style.color = 'var(--danger)'; }
+        else { msg.textContent = 'Check your inbox.'; msg.style.color = 'var(--success)'; }
+      } catch(e){ msg.textContent = 'Error: ' + (e.message || 'unknown'); }
+    });
+    document.getElementById('tk-signout-btn').addEventListener('click', function(){ S.signOut().then(boot); });
+  }
 
-  // Register page-scoped keyboard shortcuts
-  window.VYVE_PAGE_SHORTCUTS = {
-    onNew: function(){ document.getElementById('tk-add').click(); },
-    onEdit: function(){
-      if (!window.VYVE_BULK || !window.VYVE_BULK.active()) return;
-      var sel = Array.from(document.querySelectorAll('.kanban-card.bulk-selected'));
-      if (sel.length === 1) edit(sel[0].dataset.id, allItems);
+  async function boot(){
+    hideAll();
+    if (!S.isReady()){ show('tk-gate-notready'); S.onReady(boot); return; }
+    var session = await S.getSession();
+    if (!session){ show('tk-gate-signin'); return; }
+    var admin = await S.getCurrentAdmin();
+    if (!admin){
+      document.getElementById('tk-denied-email').textContent = await S.getUserEmail();
+      show('tk-gate-denied');
+      return;
     }
-  };
-
-  // Enable bulk selection on task cards
-  if (window.VYVE_BULK) {
-    window.VYVE_BULK.enable({
-      selector: '#page-tasks .kanban-card',
-      idAttr: 'data-id',
-      actions: ['mark-done', 'delete'],
-      onAction: async function(action, ids){
-        if (!ids.length) return;
-        if (action === 'delete') {
-          if (!confirm('Delete ' + ids.length + ' task' + (ids.length === 1 ? '' : 's') + '?')) return;
-          for (var i = 0; i < ids.length; i++) await remove(ids[i]);
-          if (window.VYVE_UI && window.VYVE_UI.toast) window.VYVE_UI.toast('Deleted ' + ids.length + ' task' + (ids.length === 1 ? '' : 's'), 'success');
-        } else if (action === 'mark-done') {
-          for (var j = 0; j < ids.length; j++) {
-            var t = allItems.find(function(x){ return x._id === ids[j]; });
-            if (t) await save(ids[j], Object.assign({}, t, { status: 'done', completed_at: new Date().toISOString(), updated_at: new Date().toISOString() }));
-          }
-          if (window.VYVE_UI && window.VYVE_UI.toast) window.VYVE_UI.toast('Marked ' + ids.length + ' done', 'success');
-        }
-        window.VYVE_BULK.clear();
-        allItems = await load();
-        refreshBar();
-        render(allItems);
-      }
-    });
+    state.me = admin.email;
+    document.getElementById('tk-current-email').textContent = admin.email;
+    show('tk-content');
+    bindControls();
+    await fetchData();
+    renderCurrent();
   }
 
-  (async function(){
-    mountViewsBar();
-    allItems = await load();
-    render(allItems);
-  })();
+  bindSignin();
+  boot();
 })();
 </script>

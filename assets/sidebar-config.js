@@ -33,7 +33,7 @@ window.VYVE_NAV = [
     items: [
       { slug: "calendar",   label: "Calendar",   icon: "calendar",    status: "live" },
       { slug: "sessions",   label: "Sessions",   icon: "calendar",    status: "skeleton" },
-      { slug: "tasks",      label: "Tasks",      icon: "check-square", status: "skeleton" },
+      { slug: "tasks",      label: "Tasks",      icon: "check-square", status: "live" },
       { slug: "compliance", label: "Compliance", icon: "shield",      status: "stub" }
     ]
   },
