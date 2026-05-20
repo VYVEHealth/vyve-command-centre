@@ -40,7 +40,7 @@ window.VYVE_NAV = [
   {
     section: "Marketing",
     items: [
-      { slug: "content",     label: "Content",     icon: "edit",        status: "stub" },
+      { slug: "content",     label: "Content",     icon: "edit",        status: "live" },
       { slug: "social-blueprint", label: "Social Blueprint", icon: "compass",  status: "live" },
       { href: "https://app.metricool.com/evolution/instagram?blogId=5565297&userId=4317867", label: "Social Media", icon: "share", external: true },
       { slug: "performance", label: "Performance", icon: "bar-chart",   status: "stub" },

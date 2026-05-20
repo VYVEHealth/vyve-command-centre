@@ -1,250 +1,427 @@
 <div class="page active" id="page-content">
-  <div class="page-header">
-    <div class="hdr-row">
-      <div>
-        <div class="eyebrow">Content Pipeline</div><h1 class="page-title">Content</h1><p class="page-sub">Unified content pipeline across LinkedIn, podcast, blog, newsletter</p>
-      </div>
-      <div style="display:flex;gap:8px">
-        <select id="ch-filter" style="padding:7px 12px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface);color:var(--text);font-size:13px">
-          <option value="">All channels</option>
-          <option value="linkedin">LinkedIn</option>
-          <option value="podcast">Podcast</option>
-          <option value="blog">Blog</option>
-          <option value="newsletter">Newsletter</option>
-          <option value="twitter">Twitter / X</option>
-          <option value="instagram">Instagram</option>
-        </select>
-        <button class="btn" id="content-refresh" title="Pull the latest content items from Make">↻ Refresh from Make</button>
-        <span id="content-fresh" style="font-size:11px;color:var(--text-muted);align-self:center;margin-left:-2px"></span>
-        <button class="btn btn-primary" id="content-add">New piece</button>
-      </div>
+  <div class="page-hero">
+    <div class="eyebrow">Marketing</div>
+    <h1 class="page-title">Content</h1>
+    <p class="page-sub">VYVE’s content pipeline — ideas, drafts, scheduled posts, published. Shared across the team in Supabase.</p>
+    <div class="hero-actions">
+      <button class="btn btn-primary" id="ct-add">New post</button>
     </div>
   </div>
 
-  <div class="grid-4" style="margin-bottom:18px">
-    <div class="stat"><div class="stat-label">Ideas</div><div class="stat-value" id="kpi-idea">0</div></div>
-    <div class="stat"><div class="stat-label">Drafted</div><div class="stat-value" id="kpi-draft">0</div></div>
-    <div class="stat"><div class="stat-label">Scheduled</div><div class="stat-value" id="kpi-sched">0</div></div>
-    <div class="stat"><div class="stat-label">Published (30d)</div><div class="stat-value" id="kpi-pub">0</div></div>
+  <!-- Gate states -->
+  <div id="ct-gate-notready" class="card" style="display:none;padding:30px 26px;text-align:center"><div style="color:var(--text-muted)">Connecting…</div></div>
+  <div id="ct-gate-signin" class="card" style="display:none;padding:36px 26px">
+    <div style="max-width:420px;margin:0 auto;text-align:center">
+      <div style="font-family:var(--font-head);font-size:20px;font-weight:700;margin-bottom:8px">Sign in</div>
+      <p style="color:var(--text-muted);font-size:13.5px;line-height:1.55;margin-bottom:18px">Content is shared across the team. Sign in with your VYVE email.</p>
+      <div style="display:flex;gap:8px;justify-content:center">
+        <input type="email" id="ct-signin-email" placeholder="team@vyvehealth.co.uk" style="flex:1;max-width:280px"/>
+        <button class="btn btn-primary" id="ct-signin-btn">Send magic link</button>
+      </div>
+      <div id="ct-signin-msg" style="margin-top:12px;font-size:12.5px;color:var(--text-muted)"></div>
+    </div>
+  </div>
+  <div id="ct-gate-denied" class="card" style="display:none;padding:36px 26px;text-align:center">
+    <div style="font-family:var(--font-head);font-size:18px;font-weight:700;margin-bottom:8px">Access restricted</div>
+    <p style="color:var(--text-muted);font-size:13px;max-width:420px;margin:0 auto 18px">You’re signed in as <strong id="ct-denied-email"></strong> but this email isn’t on the admin allowlist.</p>
+    <button class="btn btn-ghost btn-sm" id="ct-signout-btn">Sign out</button>
   </div>
 
-  <div class="kanban" id="content-kanban">
-    <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">Idea</span><span class="kanban-count" data-stage="idea">0</span></div><div class="kanban-body" data-stage="idea"></div></div>
-    <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">Drafting</span><span class="kanban-count" data-stage="drafting">0</span></div><div class="kanban-body" data-stage="drafting"></div></div>
-    <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">Ready</span><span class="kanban-count" data-stage="ready">0</span></div><div class="kanban-body" data-stage="ready"></div></div>
-    <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">Scheduled</span><span class="kanban-count" data-stage="scheduled">0</span></div><div class="kanban-body" data-stage="scheduled"></div></div>
-    <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">Published</span><span class="kanban-count" data-stage="published">0</span></div><div class="kanban-body" data-stage="published"></div></div>
+  <div id="ct-content" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-bottom:14px;font-size:12.5px;color:var(--text-muted)">
+      <span>Signed in as <strong id="ct-current-email"></strong></span>
+      <span style="opacity:.4">·</span>
+      <a href="#" id="ct-signout-link" style="color:var(--accent)">Sign out</a>
+    </div>
+
+    <!-- KPIs -->
+    <div class="grid-4" style="margin-bottom:18px">
+      <div class="stat"><div class="stat-label">In pipeline</div><div class="stat-value" id="ct-kpi-open">—</div><div class="stat-sub">All draft + scheduled</div></div>
+      <div class="stat"><div class="stat-label">Published this month</div><div class="stat-value" id="ct-kpi-month">—</div></div>
+      <div class="stat"><div class="stat-label">Mine in progress</div><div class="stat-value" id="ct-kpi-mine">—</div></div>
+      <div class="stat"><div class="stat-label">Due this week</div><div class="stat-value" id="ct-kpi-week">—</div></div>
+    </div>
+
+    <!-- Filter bar -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+      <div style="display:inline-flex;background:var(--surface-2);border-radius:var(--r-md);padding:3px">
+        <button class="seg-btn active" data-scope="all">All</button>
+        <button class="seg-btn" data-scope="mine">Mine</button>
+      </div>
+      <select id="ct-platform-filter" style="padding:7px 10px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface);color:var(--text);font-size:13px">
+        <option value="">All platforms</option>
+        <option value="LinkedIn">LinkedIn</option>
+        <option value="Instagram">Instagram</option>
+        <option value="Facebook">Facebook</option>
+        <option value="Twitter">Twitter</option>
+        <option value="TikTok">TikTok</option>
+        <option value="YouTube">YouTube</option>
+        <option value="Newsletter">Newsletter</option>
+        <option value="Blog">Blog</option>
+        <option value="Podcast">Podcast</option>
+      </select>
+      <select id="ct-pillar-filter" style="padding:7px 10px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface);color:var(--text);font-size:13px">
+        <option value="">All pillars</option>
+        <option value="physical">Physical</option>
+        <option value="mental">Mental</option>
+        <option value="social">Social</option>
+        <option value="business">Business</option>
+      </select>
+      <input type="search" id="ct-search" placeholder="Search title, hook, or copy" style="max-width:240px;font-size:13px"/>
+      <div style="margin-left:auto;display:inline-flex;background:var(--surface-2);border-radius:var(--r-md);padding:3px">
+        <button class="seg-btn active" data-view="board">Board</button>
+        <button class="seg-btn" data-view="list">List</button>
+        <button class="seg-btn" data-view="calendar">Calendar</button>
+      </div>
+    </div>
+
+    <!-- Board view -->
+    <div id="ct-board-view">
+      <div class="ct-board">
+        <div class="ct-col" data-status="idea"><div class="ct-col-header"><span class="ct-col-title">Idea</span><span class="ct-col-count" data-count></span></div><div class="ct-col-body"></div></div>
+        <div class="ct-col" data-status="draft"><div class="ct-col-header"><span class="ct-col-title">Draft</span><span class="ct-col-count" data-count></span></div><div class="ct-col-body"></div></div>
+        <div class="ct-col" data-status="scheduled"><div class="ct-col-header"><span class="ct-col-title">Scheduled</span><span class="ct-col-count" data-count></span></div><div class="ct-col-body"></div></div>
+        <div class="ct-col" data-status="published"><div class="ct-col-header"><span class="ct-col-title">Published</span><span class="ct-col-count" data-count></span></div><div class="ct-col-body"></div></div>
+      </div>
+    </div>
+
+    <!-- List view -->
+    <div id="ct-list-view" style="display:none">
+      <div class="card">
+        <table class="data-table" style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr>
+              <th class="ct-th">Title</th>
+              <th class="ct-th">Platform</th>
+              <th class="ct-th">Pillar</th>
+              <th class="ct-th">Status</th>
+              <th class="ct-th">Owner</th>
+              <th class="ct-th">Scheduled</th>
+            </tr>
+          </thead>
+          <tbody id="ct-list-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Calendar view -->
+    <div id="ct-cal-view" style="display:none">
+      <div class="card" style="padding:14px">
+        <div id="ct-cal-grid"></div>
+      </div>
+    </div>
   </div>
 </div>
 
+<style>
+  .seg-btn { background:transparent;border:0;padding:6px 12px;font-size:12px;font-weight:600;color:var(--text-muted);cursor:pointer;border-radius:calc(var(--r-md) - 3px);transition:background .15s,color .15s; }
+  .seg-btn.active { background:var(--surface);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.06); }
+
+  .ct-board { display:grid;grid-template-columns:repeat(4, 1fr);gap:14px;align-items:start; }
+  .ct-col { background:var(--surface-2);border-radius:var(--r-lg);padding:12px;min-height:200px; }
+  .ct-col-header { display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding:0 4px; }
+  .ct-col-title { font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted); }
+  .ct-col-count { background:var(--surface);color:var(--text-muted);font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:var(--r-pill); }
+  .ct-col[data-status="draft"] .ct-col-title { color:var(--vyve-gold,#D49B2C); }
+  .ct-col[data-status="scheduled"] .ct-col-title { color:var(--vyve-teal,#4DAAAA); }
+  .ct-col[data-status="published"] .ct-col-title { color:var(--success,#3a9c3a); }
+
+  .ct-card { background:var(--surface);border-radius:var(--r-md);padding:10px 12px;margin-bottom:8px;cursor:pointer;transition:transform .12s,box-shadow .12s;border-left:3px solid var(--border); }
+  .ct-card:hover { transform:translateY(-1px);box-shadow:0 3px 8px rgba(0,0,0,.08); }
+  .ct-card.pillar-physical { border-left-color:var(--vyve-teal,#4DAAAA); }
+  .ct-card.pillar-mental { border-left-color:var(--vyve-gold,#D49B2C); }
+  .ct-card.pillar-social { border-left-color:var(--vyve-coral,#D17F6E); }
+  .ct-card-title { font-size:13px;font-weight:600;line-height:1.35;margin-bottom:6px; }
+  .ct-card-meta { display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-muted);flex-wrap:wrap; }
+  .ct-card-meta .pill { padding:1px 6px;border-radius:var(--r-pill);background:var(--surface-2);font-weight:600;font-size:10px;text-transform:capitalize; }
+  .ct-card-meta .pill.pillar-physical { background:rgba(77,170,170,.12);color:var(--vyve-teal,#4DAAAA); }
+  .ct-card-meta .pill.pillar-mental { background:rgba(212,155,44,.12);color:var(--vyve-gold,#D49B2C); }
+  .ct-card-meta .pill.pillar-social { background:rgba(209,127,110,.12);color:var(--vyve-coral,#D17F6E); }
+  .ct-avatar { width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg, var(--vyve-teal,#4DAAAA), var(--vyve-teal-light,#6FB8B8));color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:700;text-transform:uppercase; }
+
+  .ct-th { text-align:left;padding:11px 16px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--text-muted);border-bottom:1px solid var(--border); }
+  .ct-row { transition:background .1s;cursor:pointer; }
+  .ct-row:hover { background:var(--surface-2); }
+  .ct-row td { padding:11px 16px;font-size:13px;border-bottom:1px solid var(--border); }
+  .ct-row td:first-child { font-weight:600; }
+  .ct-empty { padding:30px 12px;text-align:center;color:var(--text-muted);font-size:12px; }
+
+  .ct-cal-grid { display:grid;grid-template-columns:repeat(7, 1fr);gap:4px; }
+  .ct-cal-day { background:var(--surface-2);border-radius:var(--r-md);padding:8px;min-height:90px;font-size:11px; }
+  .ct-cal-day-num { font-weight:700;color:var(--text-muted);margin-bottom:4px; }
+  .ct-cal-day.today { background:rgba(77,170,170,.08); }
+  .ct-cal-day-item { background:var(--surface);padding:4px 6px;border-radius:4px;margin-bottom:3px;font-size:10.5px;border-left:2px solid var(--vyve-teal);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+</style>
+
 <script>
 (function(){
-  var LS = 'vyve_content_items';
-  function lsGet(){ try { var v = localStorage.getItem(LS); return v ? JSON.parse(v) : []; } catch(e){ return []; } }
-  function lsSet(v){ try { localStorage.setItem(LS, JSON.stringify(v)); } catch(e){} }
+  if (!window.VYVE_SUPABASE) return;
+  var S = window.VYVE_SUPABASE;
+  var TABLE = 'cc_posts';
 
-  async function load(){
-    if (window.VYVE_MAKE) {
-      var fromMake = await VYVE_MAKE.list('content', { limit: 500 });
-      if (fromMake && fromMake.length) return fromMake;
-    }
-    return lsGet();
-  }
-  async function save(id, item){
-    var ok = false;
-    if (window.VYVE_MAKE) { var r = await VYVE_MAKE.upsert('content', id, item); if (r) ok = true; }
-    if (!ok) {
-      var arr = lsGet();
-      var i = arr.findIndex(function(x){ return x._id === id; });
-      var e = Object.assign({ _id: id }, item);
-      if (i >= 0) arr[i] = e; else arr.unshift(e);
-      lsSet(arr);
-    }
-  }
-  async function remove(id){
-    if (window.VYVE_MAKE) await VYVE_MAKE.remove('content', id);
-    lsSet(lsGet().filter(function(x){ return x._id !== id; }));
+  var state = { posts:[], admins:[], me:null, view:'board', scope:'all', platform:'', pillar:'', search:'' };
+
+  function show(id){ document.getElementById(id).style.display = ''; }
+  function hide(id){ document.getElementById(id).style.display = 'none'; }
+  function hideAll(){ ['ct-gate-notready','ct-gate-signin','ct-gate-denied','ct-content'].forEach(hide); }
+  function escape(s){ return (s||'').toString().replace(/[<>&"]/g, function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]; }); }
+  function initial(s){ return (s||'?').toString().trim().charAt(0).toUpperCase(); }
+  function fmtDate(d){ if (!d) return ''; return new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day:'numeric', month:'short' }); }
+
+  async function fetchData(){
+    var res = await S.client.from(TABLE).select('*').order('updated_at', { ascending: false });
+    state.posts = res.error ? [] : (res.data || []);
+    var ar = await S.client.from('admin_users').select('email').eq('active', true).order('email');
+    state.admins = ar.error ? [] : (ar.data || []);
   }
 
-  var channelColor = { linkedin:'badge-blue', podcast:'badge-gold', blog:'badge-teal', newsletter:'badge-amber', twitter:'badge-grey', instagram:'badge-red' };
-
-  function render(items){
-    var filter = document.getElementById('ch-filter').value;
-    if (filter) items = items.filter(function(i){ return (i.channel||'').toLowerCase() === filter; });
-    var stages = { idea:[], drafting:[], ready:[], scheduled:[], published:[] };
-    items.forEach(function(i){ var s = (i.status||'idea').toLowerCase(); if (!stages[s]) s='idea'; stages[s].push(i); });
-
-    // KPIs
-    document.getElementById('kpi-idea').textContent = stages.idea.length;
-    document.getElementById('kpi-draft').textContent = stages.drafting.length;
-    document.getElementById('kpi-sched').textContent = stages.scheduled.length;
-    var thirtyDaysAgo = Date.now() - 30*86400000;
-    document.getElementById('kpi-pub').textContent = items.filter(function(i){
-      if ((i.status||'').toLowerCase() !== 'published') return false;
-      var t = new Date(i.published_at || i.updated_at || i.created_at || 0).getTime();
-      return t >= thirtyDaysAgo;
-    }).length;
-
-    Object.keys(stages).forEach(function(stage){
-      var body = document.querySelector('.kanban-body[data-stage="'+stage+'"]');
-      var count = document.querySelector('.kanban-count[data-stage="'+stage+'"]');
-      if (count) count.textContent = stages[stage].length;
-      if (!body) return;
-      if (!stages[stage].length) {
-        body.innerHTML = '<div style="padding:16px 10px;text-align:center;font-size:11px;color:var(--text-muted)">Empty</div>';
-        return;
+  function filtered(){
+    return state.posts.filter(function(p){
+      if (state.scope === 'mine' && p.owner !== state.me) return false;
+      if (state.platform && p.platform !== state.platform) return false;
+      if (state.pillar && p.pillar !== state.pillar) return false;
+      if (state.search){
+        var hay = ((p.title||'') + ' ' + (p.hook||'') + ' ' + (p.copy||'')).toLowerCase();
+        if (hay.indexOf(state.search.toLowerCase()) < 0) return false;
       }
-      body.innerHTML = stages[stage].map(function(i){
-        var c = i.channel || 'other';
-        var badge = channelColor[c.toLowerCase()] || 'badge-grey';
-        return '<div class="kanban-card" data-id="'+i._id+'">'+
-          '<div class="kc-title">'+VYVE_UI.escape(i.title||'(untitled)')+'</div>'+
-          '<div class="kc-meta"><span class="badge '+badge+'" style="margin-right:6px">'+VYVE_UI.escape(c)+'</span>'+(i.owner ? VYVE_UI.escape(i.owner)+' &middot; ' : '')+(i.due ? 'due '+VYVE_UI.fmtDate(i.due) : '')+'</div>'+
+      return true;
+    });
+  }
+
+  function renderKPIs(){
+    var inPipeline = state.posts.filter(function(p){ return p.status !== 'published'; });
+    var mine = inPipeline.filter(function(p){ return p.owner === state.me; });
+    var today = new Date(); today.setHours(0,0,0,0);
+    var monthStart = new Date(today); monthStart.setDate(1);
+    var weekEnd = new Date(today); weekEnd.setDate(weekEnd.getDate()+7);
+    var thisMonth = state.posts.filter(function(p){
+      if (p.status !== 'published' || !p.published_at) return false;
+      return new Date(p.published_at) >= monthStart;
+    });
+    var dueWeek = inPipeline.filter(function(p){
+      if (!p.scheduled_date) return false;
+      var d = new Date(p.scheduled_date + 'T00:00:00');
+      return d >= today && d <= weekEnd;
+    });
+    document.getElementById('ct-kpi-open').textContent = inPipeline.length;
+    document.getElementById('ct-kpi-month').textContent = thisMonth.length;
+    document.getElementById('ct-kpi-mine').textContent = mine.length;
+    document.getElementById('ct-kpi-week').textContent = dueWeek.length;
+  }
+
+  function renderBoard(){
+    var rows = filtered();
+    var byStatus = { idea:[], draft:[], scheduled:[], published:[] };
+    rows.forEach(function(p){
+      var s = (p.status || 'idea').toLowerCase();
+      if (!byStatus[s]) s = 'idea';
+      byStatus[s].push(p);
+    });
+    Object.keys(byStatus).forEach(function(status){
+      var col = document.querySelector('#ct-board-view .ct-col[data-status="' + status + '"]');
+      if (!col) return;
+      col.querySelector('[data-count]').textContent = byStatus[status].length;
+      var body = col.querySelector('.ct-col-body');
+      if (!byStatus[status].length){ body.innerHTML = '<div class="ct-empty">None</div>'; return; }
+      body.innerHTML = byStatus[status].map(function(p){
+        return '<div class="ct-card pillar-' + (p.pillar||'') + '" data-id="' + p.id + '">' +
+          '<div class="ct-card-title">' + escape(p.title || p.hook || '(Untitled)') + '</div>' +
+          '<div class="ct-card-meta">' +
+            (p.platform ? '<span class="pill">' + escape(p.platform) + '</span>' : '') +
+            (p.pillar ? '<span class="pill pillar-' + p.pillar + '">' + p.pillar + '</span>' : '') +
+            (p.owner ? '<span class="ct-avatar" title="' + escape(p.owner) + '">' + initial(p.owner) + '</span>' : '') +
+            (p.scheduled_date ? '<span style="margin-left:auto">' + fmtDate(p.scheduled_date) + '</span>' : '') +
+          '</div>' +
         '</div>';
       }).join('');
-      body.querySelectorAll('.kanban-card').forEach(function(card){
-        card.addEventListener('click', function(){ editItem(card.dataset.id, items); });
-      });
+    });
+    document.querySelectorAll('#ct-board-view .ct-card').forEach(function(c){
+      c.addEventListener('click', function(){ openEditor(c.getAttribute('data-id')); });
     });
   }
 
-  function editItem(id, items){
-    var it = items.find(function(x){ return x._id === id; });
-    if (!it) return;
-    openModal('Edit content', it, async function(updated){
-      await save(id, updated);
-      render(await load());
-    }, async function(){
-      await remove(id);
-      render(await load());
-    });
+  function renderList(){
+    var rows = filtered();
+    var body = document.getElementById('ct-list-body');
+    if (!rows.length){ body.innerHTML = '<tr><td colspan="6" style="padding:30px;text-align:center;color:var(--text-muted)">No posts match.</td></tr>'; return; }
+    body.innerHTML = rows.map(function(p){
+      var statusColor = { idea:'var(--text-muted)', draft:'var(--vyve-gold,#D49B2C)', scheduled:'var(--vyve-teal,#4DAAAA)', published:'var(--success,#3a9c3a)' }[p.status] || 'var(--text-muted)';
+      return '<tr class="ct-row" data-id="' + p.id + '">' +
+        '<td>' + escape(p.title || p.hook || '(Untitled)') + '</td>' +
+        '<td style="color:var(--text-muted)">' + escape(p.platform || '—') + '</td>' +
+        '<td>' + (p.pillar ? '<span class="pill pillar-' + p.pillar + '" style="padding:2px 7px;border-radius:var(--r-pill);background:rgba(0,0,0,.04);font-size:10px;text-transform:capitalize">' + p.pillar + '</span>' : '—') + '</td>' +
+        '<td><span style="color:' + statusColor + ';font-weight:600;text-transform:capitalize">' + (p.status || '—') + '</span></td>' +
+        '<td style="color:var(--text-muted)">' + (p.owner ? '<span class="ct-avatar" style="margin-right:6px">' + initial(p.owner) + '</span>' + escape(p.owner) : '<em>Unassigned</em>') + '</td>' +
+        '<td style="color:var(--text-muted)">' + (p.scheduled_date ? fmtDate(p.scheduled_date) : '—') + '</td>' +
+      '</tr>';
+    }).join('');
+    document.querySelectorAll('#ct-list-body .ct-row').forEach(function(r){ r.addEventListener('click', function(){ openEditor(r.getAttribute('data-id')); }); });
   }
 
-  function openModal(title, init, onSave, onDelete){
-    init = init || {};
-    var _modal = VYVE_UI.modal({
-      title: title,
-      draftKey: 'content:' + (init._id || 'new'),
-      body: '<div class="form-row cols-2">'+
-              '<div class="form-group"><label>Title</label><input id="c-title" value="'+VYVE_UI.escape(init.title||'')+'"/></div>'+
-              '<div class="form-group"><label>Channel</label><select id="c-channel"><option value="linkedin">LinkedIn</option><option value="podcast">Podcast</option><option value="blog">Blog</option><option value="newsletter">Newsletter</option><option value="twitter">Twitter / X</option><option value="instagram">Instagram</option></select></div>'+
-            '</div>'+
-            '<div class="form-row cols-2">'+
-              '<div class="form-group"><label>Status</label><select id="c-status"><option value="idea">Idea</option><option value="drafting">Drafting</option><option value="ready">Ready</option><option value="scheduled">Scheduled</option><option value="published">Published</option></select></div>'+
-              '<div class="form-group"><label>Owner</label><input id="c-owner" value="'+VYVE_UI.escape(init.owner||'')+'"/></div>'+
-            '</div>'+
-            '<div class="form-row cols-2">'+
-              '<div class="form-group"><label>Pillar</label><select id="c-pillar"><option value="">—</option><option value="physical">Physical</option><option value="mental">Mental</option><option value="social">Social</option><option value="general">General</option></select></div>'+
-              '<div class="form-group"><label>Due / Publish date</label><input id="c-due" type="date" value="'+VYVE_UI.escape(init.due||'')+'"/></div>'+
-            '</div>'+
-            '<div class="form-row"><div class="form-group"><label>Notes / outline</label><textarea id="c-notes" rows="4">'+VYVE_UI.escape(init.notes||'')+'</textarea></div></div>'+
-            '<div class="form-row"><div class="form-group"><label>Hook / angle</label><textarea id="c-hook" rows="2">'+VYVE_UI.escape(init.hook||'')+'</textarea></div></div>'+
-            '<div style="display:flex;justify-content:space-between;gap:8px">'+
-              (onDelete ? '<button class="btn" id="c-del" style="color:var(--danger);border-color:rgba(224,96,96,.3)">Delete</button>' : '<span></span>')+
-              '<button class="btn btn-primary" id="c-save">Save</button>'+
-            '</div>'
+  function renderCalendar(){
+    var grid = document.getElementById('ct-cal-grid');
+    var today = new Date(); today.setHours(0,0,0,0);
+    var monthStart = new Date(today); monthStart.setDate(1);
+    var weekday = (monthStart.getDay() + 6) % 7;
+    var gridStart = new Date(monthStart); gridStart.setDate(gridStart.getDate() - weekday);
+
+    var html = '<div class="ct-cal-grid">';
+    ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(function(d){ html += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);padding:6px 8px;text-align:center">' + d + '</div>'; });
+
+    var byDate = {};
+    filtered().forEach(function(p){
+      if (p.scheduled_date){ byDate[p.scheduled_date] = byDate[p.scheduled_date] || []; byDate[p.scheduled_date].push(p); }
     });
+
+    for (var i = 0; i < 42; i++){
+      var d = new Date(gridStart); d.setDate(gridStart.getDate() + i);
+      var key = d.toISOString().slice(0, 10);
+      var isThisMonth = d.getMonth() === today.getMonth();
+      var isToday = d.getTime() === today.getTime();
+      var posts = byDate[key] || [];
+      html += '<div class="ct-cal-day' + (isToday ? ' today' : '') + '" style="' + (isThisMonth ? '' : 'opacity:.5;') + '">' +
+        '<div class="ct-cal-day-num">' + d.getDate() + '</div>' +
+        posts.map(function(p){ return '<div class="ct-cal-day-item" data-id="' + p.id + '" title="' + escape(p.title || p.hook || '') + '">' + escape(p.title || p.hook || '—') + '</div>'; }).join('') +
+      '</div>';
+    }
+    html += '</div>';
+    grid.innerHTML = html;
+    grid.querySelectorAll('.ct-cal-day-item').forEach(function(it){ it.addEventListener('click', function(){ openEditor(it.getAttribute('data-id')); }); });
+  }
+
+  function renderCurrent(){
+    document.getElementById('ct-board-view').style.display = state.view === 'board' ? '' : 'none';
+    document.getElementById('ct-list-view').style.display = state.view === 'list' ? '' : 'none';
+    document.getElementById('ct-cal-view').style.display = state.view === 'calendar' ? '' : 'none';
+    if (state.view === 'board') renderBoard();
+    else if (state.view === 'list') renderList();
+    else renderCalendar();
+    renderKPIs();
+  }
+
+  function openEditor(id){
+    var post = id ? state.posts.find(function(p){ return p.id === id; }) : null;
+    var isEdit = !!post;
+    var p = post || { status:'idea', owner:state.me };
+    var ownerOptions = '<option value="">Unassigned</option>' + state.admins.map(function(a){ return '<option value="' + escape(a.email) + '"' + (p.owner === a.email ? ' selected' : '') + '>' + escape(a.email) + '</option>'; }).join('');
+
+    var modal = VYVE_UI.modal({
+      title: isEdit ? 'Edit post' : 'New post',
+      draftKey: 'content:' + (id || 'new'),
+      body:
+        '<div class="form-row"><div class="form-group"><label>Title</label><input id="ctf-title" value="' + escape(p.title || '') + '" placeholder="e.g. The 3-minute morning ritual that changes everything"/></div></div>' +
+        '<div class="form-row cols-3"><div class="form-group"><label>Platform</label><select id="ctf-platform"><option value="">—</option><option>LinkedIn</option><option>Instagram</option><option>Facebook</option><option>Twitter</option><option>TikTok</option><option>YouTube</option><option>Newsletter</option><option>Blog</option><option>Podcast</option></select></div><div class="form-group"><label>Pillar</label><select id="ctf-pillar"><option value="">—</option><option value="physical">Physical</option><option value="mental">Mental</option><option value="social">Social</option><option value="business">Business</option></select></div><div class="form-group"><label>Status</label><select id="ctf-status"><option value="idea">Idea</option><option value="draft">Draft</option><option value="scheduled">Scheduled</option><option value="published">Published</option></select></div></div>' +
+        '<div class="form-row cols-2"><div class="form-group"><label>Owner</label><select id="ctf-owner">' + ownerOptions + '</select></div><div class="form-group"><label>Scheduled date</label><input type="date" id="ctf-scheduled" value="' + (p.scheduled_date || '') + '"/></div></div>' +
+        '<div class="form-row"><div class="form-group"><label>Hook</label><input id="ctf-hook" value="' + escape(p.hook || '') + '" placeholder="The attention-grabbing first line"/></div></div>' +
+        '<div class="form-row"><div class="form-group"><label>Copy</label><textarea id="ctf-copy" rows="6" placeholder="The full post body">' + escape(p.copy || '') + '</textarea></div></div>' +
+        '<div class="form-row"><div class="form-group"><label>Tags (comma-separated)</label><input id="ctf-tags" value="' + escape(p.tags || '') + '" placeholder="wellbeing, mental-health, workplace"/></div></div>' +
+        '<div style="display:flex;justify-content:space-between;gap:8px">' +
+          (isEdit ? '<button class="btn" id="ctf-del" style="color:var(--danger);border-color:rgba(224,96,96,.3)">Delete</button>' : '<span></span>') +
+          '<button class="btn btn-primary" id="ctf-save">' + (isEdit ? 'Save' : 'Create') + '</button>' +
+        '</div>'
+    });
+
     setTimeout(function(){
-      if (init.channel) document.getElementById('c-channel').value = init.channel;
-      if (init.status) document.getElementById('c-status').value = init.status;
-      if (init.pillar) document.getElementById('c-pillar').value = init.pillar;
-      document.getElementById('c-save').addEventListener('click', function(){
-        var t = document.getElementById('c-title').value.trim();
-        if (!t) { VYVE_UI.toast('Title required','error'); return; }
-        var updated = {
-          title: t,
-          channel: document.getElementById('c-channel').value,
-          status: document.getElementById('c-status').value,
-          owner: document.getElementById('c-owner').value.trim(),
-          pillar: document.getElementById('c-pillar').value,
-          due: document.getElementById('c-due').value,
-          notes: document.getElementById('c-notes').value.trim(),
-          hook: document.getElementById('c-hook').value.trim(),
-          updated_at: new Date().toISOString(),
-          created_at: init.created_at || new Date().toISOString()
+      if (p.platform) document.getElementById('ctf-platform').value = p.platform;
+      if (p.pillar) document.getElementById('ctf-pillar').value = p.pillar;
+      document.getElementById('ctf-status').value = p.status || 'idea';
+
+      document.getElementById('ctf-save').addEventListener('click', async function(){
+        var title = document.getElementById('ctf-title').value.trim();
+        var hook = document.getElementById('ctf-hook').value.trim();
+        if (!title && !hook){ if (VYVE_UI && VYVE_UI.toast) VYVE_UI.toast('Title or hook required', 'error'); return; }
+        var newStatus = document.getElementById('ctf-status').value;
+        var record = {
+          title: title || null,
+          hook: hook || null,
+          copy: document.getElementById('ctf-copy').value.trim() || null,
+          platform: document.getElementById('ctf-platform').value || null,
+          pillar: document.getElementById('ctf-pillar').value || null,
+          status: newStatus,
+          owner: document.getElementById('ctf-owner').value || null,
+          scheduled_date: document.getElementById('ctf-scheduled').value || null,
+          tags: document.getElementById('ctf-tags').value.trim() || null,
+          updated_at: new Date().toISOString()
         };
-        if (updated.status === 'published' && !init.published_at) updated.published_at = new Date().toISOString();
-        if (_modal && _modal.draft) _modal.draft.clear();
-        onSave(updated);
-        document.querySelector('.modal-overlay').classList.remove('open');
+        if (newStatus === 'published' && p.status !== 'published') record.published_at = new Date().toISOString();
+        if (newStatus !== 'published' && p.status === 'published') record.published_at = null;
+        try {
+          var res = isEdit
+            ? await S.client.from(TABLE).update(record).eq('id', p.id)
+            : await S.client.from(TABLE).insert(record);
+          if (res.error){ alert('Save failed: ' + res.error.message); return; }
+          if (modal.draft) modal.draft.clear();
+          modal.close();
+          if (VYVE_UI && VYVE_UI.toast) VYVE_UI.toast(isEdit ? 'Post updated' : 'Post created', 'success');
+          await fetchData(); renderCurrent();
+        } catch(e){ alert('Save threw: ' + (e.message || 'unknown')); }
       });
-      if (onDelete && document.getElementById('c-del')) {
-        document.getElementById('c-del').addEventListener('click', function(){
-          if (confirm('Delete this item?')) { onDelete(); document.querySelector('.modal-overlay').classList.remove('open'); }
+      var del = document.getElementById('ctf-del');
+      if (del){
+        del.addEventListener('click', async function(){
+          if (!confirm('Delete this post?')) return;
+          var res = await S.client.from(TABLE).delete().eq('id', p.id);
+          if (res.error){ alert('Delete failed: ' + res.error.message); return; }
+          modal.close();
+          if (VYVE_UI && VYVE_UI.toast) VYVE_UI.toast('Post deleted', 'success');
+          await fetchData(); renderCurrent();
         });
       }
     }, 50);
   }
 
-  document.getElementById('content-add').addEventListener('click', function(){
-    openModal('New content piece', {}, async function(item){
-      await save('content_'+Date.now(), item);
-      render(await load());
-      VYVE_UI.toast('Added', 'success');
-    });
-  });
-  document.getElementById('ch-filter').addEventListener('change', async function(){ render(await load()); });
-
-  (async function(){ render(await load()); })();
-
-  // Freshness + auto-pull
-  (function(){
-    function renderFresh(){
-      var el = document.getElementById('content-fresh');
-      if (!el || !window.VYVE_MAKE || !VYVE_MAKE.lastRefreshedAt) return;
-      var t = VYVE_MAKE.lastRefreshedAt('posts');
-      if (!t){ el.textContent = ''; return; }
-      var diff = Math.floor((Date.now() - t) / 1000);
-      var when = diff < 60 ? 'just now' :
-                 diff < 3600 ? Math.floor(diff/60) + 'm ago' :
-                 diff < 86400 ? Math.floor(diff/3600) + 'h ago' :
-                 Math.floor(diff/86400) + 'd ago';
-      el.textContent = 'refreshed ' + when;
-    }
-    window.__con_renderFresh = renderFresh;
-    renderFresh();
-    if (window.VYVE_MAKE && VYVE_MAKE.autoPullContent){
-      VYVE_MAKE.autoPullContent(3600000).then(function(n){
-        if (n > 0){ renderFresh(); try { if (typeof render === 'function' && typeof load === 'function') load().then(render); else location.reload(); } catch(e){} }
+  function bindControls(){
+    document.querySelectorAll('#page-content .seg-btn[data-view]').forEach(function(b){
+      b.addEventListener('click', function(){
+        document.querySelectorAll('#page-content .seg-btn[data-view]').forEach(function(x){ x.classList.remove('active'); });
+        b.classList.add('active'); state.view = b.getAttribute('data-view'); renderCurrent();
       });
-    }
-  })();
-
-  // Refresh from Make
-  (function(){
-    var btn = document.getElementById('content-refresh');
-    if (!btn) return;
-    btn.addEventListener('click', async function(){
-      if (!window.VYVE_MAKE || !window.VYVE_MAKE.hasToken || !window.VYVE_MAKE.hasToken()){
-        VYVE_UI.toast('Add your Make API token in Settings first', 'error'); return;
-      }
-      if (!window.VYVE_MAKE.storeId || !window.VYVE_MAKE.storeId('posts')){
-        VYVE_UI.toast('Set the posts store ID in Settings → Data Stores', 'error'); return;
-      }
-      btn.disabled = true;
-      var label = btn.textContent;
-      btn.textContent = 'Refreshing...';
-      try {
-        var n = await window.VYVE_MAKE.refreshContent();
-        VYVE_UI.toast('Refreshed: ' + n + ' items', 'success');
-        if (window.__con_renderFresh) window.__con_renderFresh();
-        if (typeof render === 'function' && typeof load === 'function') render(await load());
-        else location.reload();
-      } catch(e){
-        VYVE_UI.toast('Refresh failed — see console', 'error');
-        console.error('[Content refresh]', e);
-      } finally {
-        btn.disabled = false;
-        btn.textContent = label;
-      }
     });
-  })();
-  window.VYVE_PAGE_SHORTCUTS = {
-    onNew: function(){
-      var b = document.getElementById('content-add');
-      if (b) b.click();
-    }
-  };
+    document.querySelectorAll('#page-content .seg-btn[data-scope]').forEach(function(b){
+      b.addEventListener('click', function(){
+        document.querySelectorAll('#page-content .seg-btn[data-scope]').forEach(function(x){ x.classList.remove('active'); });
+        b.classList.add('active'); state.scope = b.getAttribute('data-scope'); renderCurrent();
+      });
+    });
+    document.getElementById('ct-platform-filter').addEventListener('change', function(e){ state.platform = e.target.value; renderCurrent(); });
+    document.getElementById('ct-pillar-filter').addEventListener('change', function(e){ state.pillar = e.target.value; renderCurrent(); });
+    document.getElementById('ct-search').addEventListener('input', function(e){ state.search = e.target.value; renderCurrent(); });
+    document.getElementById('ct-add').addEventListener('click', function(){ openEditor(null); });
+    document.getElementById('ct-signout-link').addEventListener('click', function(e){ e.preventDefault(); S.signOut().then(boot); });
+    window.VYVE_PAGE_SHORTCUTS = { onNew: function(){ document.getElementById('ct-add').click(); } };
+  }
 
+  function bindSignin(){
+    document.getElementById('ct-signin-btn').addEventListener('click', async function(){
+      var email = document.getElementById('ct-signin-email').value.trim();
+      if (!email) return;
+      var msg = document.getElementById('ct-signin-msg');
+      msg.textContent = 'Sending…';
+      try {
+        var res = await S.signInWithEmail(email);
+        if (res.error){ msg.textContent = 'Error: ' + res.error.message; msg.style.color = 'var(--danger)'; }
+        else { msg.textContent = 'Check your inbox.'; msg.style.color = 'var(--success)'; }
+      } catch(e){ msg.textContent = 'Error: ' + (e.message || 'unknown'); }
+    });
+    document.getElementById('ct-signout-btn').addEventListener('click', function(){ S.signOut().then(boot); });
+  }
+
+  async function boot(){
+    hideAll();
+    if (!S.isReady()){ show('ct-gate-notready'); S.onReady(boot); return; }
+    var session = await S.getSession();
+    if (!session){ show('ct-gate-signin'); return; }
+    var admin = await S.getCurrentAdmin();
+    if (!admin){ document.getElementById('ct-denied-email').textContent = await S.getUserEmail(); show('ct-gate-denied'); return; }
+    state.me = admin.email;
+    document.getElementById('ct-current-email').textContent = admin.email;
+    show('ct-content');
+    bindControls();
+    await fetchData();
+    renderCurrent();
+  }
+
+  bindSignin();
+  boot();
 })();
 </script>
