@@ -1,0 +1,445 @@
+<div class="page active" id="page-broadcast">
+  <div class="page-hero">
+    <div class="eyebrow">Engagement</div>
+    <h1 class="page-title">Broadcast push</h1>
+    <p class="page-sub">Send a one-off push notification to members. Hits iOS banner (native), Android in-app, and any registered web subscribers. Recurring schedules live in <code>broadcast_schedules</code> table (no UI yet — edit in Supabase Studio).</p>
+  </div>
+
+  <!-- Gate states -->
+  <div id="bc-gate-notready" class="card" style="display:none;padding:30px 26px;text-align:center">
+    <div style="color:var(--text-muted)">Connecting to Supabase…</div>
+  </div>
+  <div id="bc-gate-signin" class="card" style="display:none;padding:36px 26px">
+    <div style="max-width:420px;margin:0 auto;text-align:center">
+      <div style="font-family:var(--font-head);font-size:20px;font-weight:700;margin-bottom:8px">Sign in to broadcast</div>
+      <p style="color:var(--text-muted);font-size:13.5px;line-height:1.55;margin-bottom:18px">This action requires an admin session.</p>
+    </div>
+  </div>
+  <div id="bc-gate-denied" class="card" style="display:none;padding:36px 26px;text-align:center">
+    <div style="font-family:var(--font-head);font-size:18px;font-weight:700;margin-bottom:8px">Admin only</div>
+    <p style="color:var(--text-muted);font-size:13px;max-width:420px;margin:0 auto">Broadcast sending is restricted to <code>admin_users</code>. Speak to Dean if you should have access.</p>
+  </div>
+
+  <!-- Real content -->
+  <div id="bc-content" style="display:none">
+    <div style="display:grid;grid-template-columns:1fr;gap:20px;max-width:760px">
+
+      <!-- Compose -->
+      <div class="card" style="padding:24px">
+        <div style="font-family:var(--font-head);font-size:16px;font-weight:700;margin-bottom:4px">Compose</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:18px">Title shows as the bold banner line. Body is the preview text. Keep both short — iOS truncates around 4 lines combined.</div>
+
+        <label style="display:block;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:6px">Title <span style="color:var(--vyve-coral,#D17F6E)">*</span></label>
+        <input type="text" id="bc-title" maxlength="80" placeholder="e.g. Morning check-in"
+               style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface);color:var(--text);font-size:14px;margin-bottom:6px"/>
+        <div style="font-size:11px;color:var(--text-muted);text-align:right;margin-bottom:14px"><span id="bc-title-count">0</span>/80</div>
+
+        <label style="display:block;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:6px">Body <span style="color:var(--vyve-coral,#D17F6E)">*</span></label>
+        <textarea id="bc-body" rows="3" maxlength="240" placeholder="e.g. Take 2 minutes today to log how you're feeling."
+                  style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface);color:var(--text);font-size:14px;resize:vertical;margin-bottom:6px;font-family:inherit"></textarea>
+        <div style="font-size:11px;color:var(--text-muted);text-align:right;margin-bottom:14px"><span id="bc-body-count">0</span>/240</div>
+
+        <label style="display:block;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:6px">Deep link (optional)</label>
+        <input type="text" id="bc-route" placeholder="/connect.html  or  /wellbeing-checkin.html"
+               style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface);color:var(--text);font-size:14px;margin-bottom:6px;font-family:var(--font-mono,monospace)"/>
+        <div style="font-size:11.5px;color:var(--text-muted);margin-bottom:14px">Path inside the app the notification opens. Leave blank to land on Home.</div>
+
+        <label style="display:block;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:6px">Notification type tag (optional)</label>
+        <input type="text" id="bc-type" placeholder="broadcast" value="broadcast"
+               style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface);color:var(--text);font-size:13px;margin-bottom:6px;font-family:var(--font-mono,monospace)"/>
+        <div style="font-size:11.5px;color:var(--text-muted)">Used for grouping in <code>member_notifications</code>. Lowercase, no spaces.</div>
+      </div>
+
+      <!-- Audience -->
+      <div class="card" style="padding:24px">
+        <div style="font-family:var(--font-head);font-size:16px;font-weight:700;margin-bottom:4px">Audience</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:18px">Who gets it. Click <strong>Preview count</strong> before sending to confirm the size.</div>
+
+        <div style="display:inline-flex;background:var(--surface-2);border-radius:var(--r-md);padding:3px;margin-bottom:16px;flex-wrap:wrap;gap:0">
+          <button class="bc-aud-btn active" data-aud="all" type="button">All members</button>
+          <button class="bc-aud-btn" data-aud="inactive" type="button">Inactive</button>
+          <button class="bc-aud-btn" data-aud="company" type="button">By company</button>
+          <button class="bc-aud-btn" data-aud="email" type="button">Single member</button>
+        </div>
+
+        <!-- All -->
+        <div class="bc-aud-pane" data-pane="all" style="display:block">
+          <div style="font-size:12.5px;color:var(--text-muted);padding:8px 0">Every member with an email on file.</div>
+        </div>
+
+        <!-- Inactive -->
+        <div class="bc-aud-pane" data-pane="inactive" style="display:none">
+          <label style="display:block;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:6px">Inactive for at least N days</label>
+          <input type="number" id="bc-aud-days" value="7" min="1" max="365"
+                 style="width:120px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface);color:var(--text);font-size:14px"/>
+          <div style="font-size:11.5px;color:var(--text-muted);margin-top:6px">Members whose <code>last_active_at</code> is older than this, plus any who have never been active.</div>
+        </div>
+
+        <!-- Company -->
+        <div class="bc-aud-pane" data-pane="company" style="display:none">
+          <label style="display:block;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:6px">Company</label>
+          <select id="bc-aud-company" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface);color:var(--text);font-size:14px">
+            <option value="">— select company —</option>
+          </select>
+        </div>
+
+        <!-- Email -->
+        <div class="bc-aud-pane" data-pane="email" style="display:none">
+          <label style="display:block;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:6px">Member email</label>
+          <input type="email" id="bc-aud-email" placeholder="member@example.com"
+                 style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface);color:var(--text);font-size:14px;font-family:var(--font-mono,monospace)"/>
+        </div>
+
+        <div style="display:flex;gap:10px;align-items:center;margin-top:20px;flex-wrap:wrap">
+          <button class="btn btn-ghost" id="bc-preview-btn" type="button">Preview count</button>
+          <div id="bc-preview-result" style="font-size:13px;color:var(--text-muted)"></div>
+        </div>
+      </div>
+
+      <!-- Live preview -->
+      <div class="card" style="padding:24px">
+        <div style="font-family:var(--font-head);font-size:16px;font-weight:700;margin-bottom:14px">Preview</div>
+        <div style="background:linear-gradient(180deg,#0d2b2b 0%,#13393a 100%);padding:18px;border-radius:14px">
+          <div style="background:rgba(255,255,255,0.92);border-radius:14px;padding:12px 14px;box-shadow:0 4px 18px rgba(0,0,0,.2);max-width:360px">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+              <div style="width:24px;height:24px;border-radius:6px;background:var(--vyve-teal,#4DAAAA);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:11px">V</div>
+              <div style="font-size:12.5px;font-weight:600;color:#1c1c1e">VYVE Health</div>
+              <div style="margin-left:auto;font-size:11px;color:#8e8e93">now</div>
+            </div>
+            <div style="font-size:13.5px;font-weight:700;color:#1c1c1e;line-height:1.3;margin-bottom:2px" id="bc-preview-title">—</div>
+            <div style="font-size:13px;color:#3c3c43;line-height:1.35;white-space:pre-wrap" id="bc-preview-body">Title and body will appear here as you type.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Send -->
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-primary" id="bc-send-btn" type="button" style="padding:12px 22px;font-size:14px">Send broadcast</button>
+        <div id="bc-send-result" style="font-size:13px;color:var(--text-muted);flex:1;min-width:200px"></div>
+      </div>
+
+      <!-- Recent -->
+      <div class="card" style="padding:24px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div style="font-family:var(--font-head);font-size:16px;font-weight:700">Recent broadcasts</div>
+          <button class="btn btn-ghost btn-sm" id="bc-recent-refresh" type="button">Refresh</button>
+        </div>
+        <div id="bc-recent-list" style="font-size:13px;color:var(--text-muted)">Loading…</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<style>
+  .bc-aud-btn {
+    background:transparent;border:0;padding:8px 14px;font-size:12.5px;font-weight:600;
+    color:var(--text-muted);cursor:pointer;border-radius:calc(var(--r-md) - 3px);
+    transition:background .15s,color .15s;
+  }
+  .bc-aud-btn.active { background:var(--surface);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.06); }
+  .bc-recent-row {
+    display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;
+    padding:10px 0;border-bottom:1px solid var(--border);
+  }
+  .bc-recent-row:last-child { border-bottom:0; }
+  .bc-recent-time { font-family:var(--font-mono,monospace);font-size:11.5px;color:var(--text-muted);white-space:nowrap; }
+  .bc-recent-title { font-weight:600;color:var(--text);font-size:13px; }
+  .bc-recent-meta { font-size:11.5px;color:var(--text-muted);margin-top:2px; }
+  .bc-recent-count { font-weight:700;color:var(--vyve-teal,#4DAAAA);font-size:13px;white-space:nowrap; }
+</style>
+
+<script>
+(function(){
+  'use strict';
+
+  var SUPABASE_URL = 'https://ixjfklpckgxrwjlfsaaz.supabase.co';
+  var els = {};
+  var state = {
+    audType: 'all',
+    booted: false,
+    sending: false
+  };
+
+  function $(id){ return document.getElementById(id); }
+  function show(id){ var e = $(id); if (e) e.style.display = ''; }
+  function hide(id){ var e = $(id); if (e) e.style.display = 'none'; }
+  function setText(id, txt){ var e = $(id); if (e) e.textContent = txt; }
+
+  function showGate(state){
+    hide('bc-gate-notready'); hide('bc-gate-signin'); hide('bc-gate-denied'); hide('bc-content');
+    if (state === 'notready') show('bc-gate-notready');
+    else if (state === 'signin') show('bc-gate-signin');
+    else if (state === 'denied') show('bc-gate-denied');
+    else if (state === 'ready') show('bc-content');
+  }
+
+  async function getSessionToken(){
+    if (!window.VYVE_SUPABASE) return null;
+    try {
+      var sb = window.VYVE_SUPABASE.client();
+      var res = await sb.auth.getSession();
+      return res && res.data && res.data.session ? res.data.session.access_token : null;
+    } catch (e) { return null; }
+  }
+
+  async function checkGate(){
+    showGate('notready');
+    if (!window.VYVE_SUPABASE || window.VYVE_SUPABASE.isStub()){
+      // Open mode — let through (matches calendar.html behaviour)
+      showGate('ready');
+      bootContent();
+      return;
+    }
+    var sb = window.VYVE_SUPABASE.client();
+    var sessionRes = await sb.auth.getSession();
+    var session = sessionRes && sessionRes.data ? sessionRes.data.session : null;
+    if (!session){ showGate('signin'); return; }
+    try {
+      var r = await sb.rpc('is_admin');
+      if (r && r.error){
+        console.warn('[broadcast] is_admin error:', r.error.message);
+        showGate('denied'); return;
+      }
+      if (r && r.data === true){
+        showGate('ready');
+        bootContent();
+      } else {
+        showGate('denied');
+      }
+    } catch (e){
+      console.warn('[broadcast] is_admin threw:', e);
+      showGate('denied');
+    }
+  }
+
+  function buildAudience(){
+    if (state.audType === 'all') return { type: 'all' };
+    if (state.audType === 'inactive'){
+      var n = parseInt($('bc-aud-days').value, 10);
+      return { type: 'inactive', days: (n && n > 0) ? n : 7 };
+    }
+    if (state.audType === 'company'){
+      var c = $('bc-aud-company').value;
+      return { type: 'company', company: c };
+    }
+    if (state.audType === 'email'){
+      var e = ($('bc-aud-email').value || '').trim().toLowerCase();
+      return { type: 'email', email: e };
+    }
+    return { type: 'all' };
+  }
+
+  function setAud(type){
+    state.audType = type;
+    var btns = document.querySelectorAll('.bc-aud-btn');
+    btns.forEach(function(b){
+      if (b.getAttribute('data-aud') === type) b.classList.add('active');
+      else b.classList.remove('active');
+    });
+    var panes = document.querySelectorAll('.bc-aud-pane');
+    panes.forEach(function(p){
+      p.style.display = (p.getAttribute('data-pane') === type) ? 'block' : 'none';
+    });
+    $('bc-preview-result').textContent = '';
+  }
+
+  function fmtCount(n){ return n + (n === 1 ? ' member' : ' members'); }
+
+  async function callBroadcastEf(payload){
+    var token = await getSessionToken();
+    if (!token) throw new Error('Not signed in');
+    var res = await fetch(SUPABASE_URL + '/functions/v1/admin-broadcast-push', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+    var j;
+    try { j = await res.json(); } catch (_) { j = null; }
+    if (!res.ok){
+      var msg = (j && j.error) ? j.error : ('HTTP ' + res.status);
+      throw new Error(msg);
+    }
+    return j;
+  }
+
+  async function doPreview(){
+    var btn = $('bc-preview-btn');
+    btn.disabled = true; btn.textContent = 'Counting…';
+    $('bc-preview-result').textContent = '';
+    try {
+      var r = await callBroadcastEf({ mode: 'preview', audience: buildAudience() });
+      $('bc-preview-result').innerHTML = '<strong style="color:var(--text)">' + fmtCount(r.count) + '</strong>' +
+        (r.sample && r.sample.length ? ' &nbsp;·&nbsp; sample: ' + r.sample.slice(0,3).join(', ') : '');
+    } catch (e){
+      $('bc-preview-result').innerHTML = '<span style="color:var(--vyve-coral,#D17F6E)">' + (e.message || e) + '</span>';
+    }
+    btn.disabled = false; btn.textContent = 'Preview count';
+  }
+
+  async function doSend(){
+    if (state.sending) return;
+    var title = $('bc-title').value.trim();
+    var body = $('bc-body').value.trim();
+    var route = $('bc-route').value.trim();
+    var type = $('bc-type').value.trim() || 'broadcast';
+    if (!title || !body){
+      window.VYVE_UI && window.VYVE_UI.toast && window.VYVE_UI.toast('Title and body required', 'error');
+      return;
+    }
+    var audience = buildAudience();
+
+    // Confirm
+    var previewResult;
+    $('bc-send-result').textContent = 'Resolving audience…';
+    try {
+      previewResult = await callBroadcastEf({ mode: 'preview', audience: audience });
+    } catch (e){
+      $('bc-send-result').innerHTML = '<span style="color:var(--vyve-coral,#D17F6E)">' + (e.message || e) + '</span>';
+      return;
+    }
+    if (!previewResult.count){
+      $('bc-send-result').innerHTML = '<span style="color:var(--vyve-coral,#D17F6E)">Audience resolved to zero members.</span>';
+      return;
+    }
+    var msg = 'Send to ' + fmtCount(previewResult.count) + '? Title: "' + title + '"';
+    if (!confirm(msg)) {
+      $('bc-send-result').textContent = '';
+      return;
+    }
+
+    state.sending = true;
+    var btn = $('bc-send-btn');
+    btn.disabled = true; btn.textContent = 'Sending…';
+    $('bc-send-result').textContent = 'Firing…';
+    try {
+      var r = await callBroadcastEf({
+        mode: 'send',
+        audience: audience,
+        title: title,
+        body: body,
+        route: route || null,
+        push_type: type,
+        dedupe_same_day: false
+      });
+      var s = r.summary || {};
+      $('bc-send-result').innerHTML =
+        '<span style="color:var(--vyve-teal,#4DAAAA);font-weight:600">Sent.</span> ' +
+        s.recipient_count + ' recipients · ' +
+        s.in_app_written + ' in-app · ' +
+        s.native_banners_sent + ' iOS banner · ' +
+        s.web_banners_sent + ' web banner';
+      window.VYVE_UI && window.VYVE_UI.toast && window.VYVE_UI.toast('Broadcast sent to ' + fmtCount(s.recipient_count), 'success');
+      // Refresh recent list
+      loadRecent();
+    } catch (e){
+      $('bc-send-result').innerHTML = '<span style="color:var(--vyve-coral,#D17F6E)">' + (e.message || e) + '</span>';
+    }
+    state.sending = false;
+    btn.disabled = false; btn.textContent = 'Send broadcast';
+  }
+
+  async function loadCompanies(){
+    var sel = $('bc-aud-company');
+    if (!sel) return;
+    try {
+      var sb = window.VYVE_SUPABASE.client();
+      var r = await sb.from('members').select('company').not('company','is',null);
+      if (r.error){ console.warn(r.error); return; }
+      var seen = {};
+      (r.data || []).forEach(function(row){ if (row.company){ seen[row.company] = (seen[row.company]||0)+1; } });
+      var keys = Object.keys(seen).sort();
+      // Clear existing options except placeholder
+      while (sel.options.length > 1) sel.remove(1);
+      keys.forEach(function(k){
+        var opt = document.createElement('option');
+        opt.value = k;
+        opt.textContent = k + ' (' + seen[k] + ')';
+        sel.appendChild(opt);
+      });
+    } catch (e){ console.warn('[broadcast] loadCompanies', e); }
+  }
+
+  async function loadRecent(){
+    var el = $('bc-recent-list');
+    if (!el) return;
+    el.textContent = 'Loading…';
+    try {
+      var sb = window.VYVE_SUPABASE.client();
+      var r = await sb.from('admin_broadcast_log')
+        .select('sent_at,sent_by,source,title,body,push_type,recipient_count,error')
+        .order('sent_at', { ascending: false })
+        .limit(20);
+      if (r.error){ el.textContent = r.error.message; return; }
+      var rows = r.data || [];
+      if (!rows.length){ el.textContent = 'No broadcasts sent yet.'; return; }
+      el.innerHTML = '';
+      rows.forEach(function(row){
+        var when = new Date(row.sent_at);
+        var whenStr = when.toLocaleString('en-GB', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' });
+        var div = document.createElement('div');
+        div.className = 'bc-recent-row';
+        var statusColor = row.error ? 'var(--vyve-coral,#D17F6E)' : 'var(--vyve-teal,#4DAAAA)';
+        div.innerHTML =
+          '<div class="bc-recent-time">' + whenStr + '</div>' +
+          '<div>' +
+            '<div class="bc-recent-title">' + escapeHtml(row.title || '—') + '</div>' +
+            '<div class="bc-recent-meta">' +
+              escapeHtml(row.body || '').slice(0, 80) +
+              ' · <span style="color:' + statusColor + '">' + (row.source || 'manual') + '</span>' +
+              ' · ' + escapeHtml(row.sent_by || '') +
+              (row.error ? ' · <span style="color:var(--vyve-coral,#D17F6E)">err: ' + escapeHtml(row.error.slice(0,40)) + '</span>' : '') +
+            '</div>' +
+          '</div>' +
+          '<div class="bc-recent-count">' + (row.recipient_count || 0) + '</div>';
+        el.appendChild(div);
+      });
+    } catch (e){ el.textContent = String(e); }
+  }
+
+  function escapeHtml(s){
+    if (s === null || s === undefined) return '';
+    return String(s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  function wireCompose(){
+    var t = $('bc-title'), b = $('bc-body');
+    function update(){
+      $('bc-title-count').textContent = t.value.length;
+      $('bc-body-count').textContent = b.value.length;
+      $('bc-preview-title').textContent = t.value || '—';
+      $('bc-preview-body').textContent = b.value || 'Title and body will appear here as you type.';
+    }
+    t.addEventListener('input', update);
+    b.addEventListener('input', update);
+    update();
+  }
+
+  function bootContent(){
+    if (state.booted) return;
+    state.booted = true;
+    wireCompose();
+    document.querySelectorAll('.bc-aud-btn').forEach(function(b){
+      b.addEventListener('click', function(){ setAud(b.getAttribute('data-aud')); });
+    });
+    $('bc-preview-btn').addEventListener('click', doPreview);
+    $('bc-send-btn').addEventListener('click', doSend);
+    $('bc-recent-refresh').addEventListener('click', loadRecent);
+    loadCompanies();
+    loadRecent();
+  }
+
+  // Boot when page is shown
+  function start(){ checkGate(); }
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', start);
+  } else {
+    start();
+  }
+})();
+</script>
