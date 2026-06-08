@@ -590,7 +590,7 @@ h1,h2,h3 { font-family: 'Playfair Display', Georgia, serif; font-weight: 600; }
   <div class="card">
     <div class="card-header">
       <span class="card-title">Slowest pages by first paint</span>
-      <span class="card-meta">from perf_first_paint events</span>
+      <span class="card-meta">LCP from perf_telemetry · last data 13 May</span>
     </div>
     <div id="perf-body">
       <div class="loading-row"></div>
@@ -814,7 +814,7 @@ function renderPerf(data) {
   const el = document.getElementById('perf-body');
   const rows = data?.load_times || [];
   if (!rows.length) {
-    el.innerHTML = '<div class="empty-state">No load time data yet — PostHog key may not be set or no perf events fired</div>';
+    el.innerHTML = '<div class="empty-state">No load time data yet — perf.js may not be collecting data from members</div>';
     return;
   }
   const maxMs = Math.max(...rows.map(r => r.avg_ms), 1);
