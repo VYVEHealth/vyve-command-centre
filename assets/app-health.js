@@ -399,6 +399,7 @@ const SYSTEM_CHECKS = [
       if (age > 7200000) return { status: 'warn', sub: 'Last refresh ' + timeAgo(data.refreshed_at) };
       return { status: 'ok', sub: 'Refreshed ' + timeAgo(data.refreshed_at) };
     }
+  },
   {
     name: 'daily-report cron',
     check: async (sb) => {
