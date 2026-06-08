@@ -34,6 +34,7 @@ window.VYVE_NAV = [
       { slug: "calendar",   label: "Calendar",   icon: "calendar",    status: "live" },
       { slug: "sessions",   label: "Sessions",   icon: "calendar",    status: "skeleton" },
       { slug: "broadcast",  label: "Broadcast",  icon: "share",       status: "live" },
+      { slug: "app-health",  label: "App Health",  icon: "activity",    status: "live" },
       { slug: "tasks",      label: "Tasks",      icon: "check-square", status: "live" },
       { slug: "compliance", label: "Compliance", icon: "shield",      status: "stub" }
     ]
