@@ -1206,11 +1206,11 @@ async function loadSystemHealth() {
       (async () => {
         try {
           const row = await sbGetSingle('platform_metrics_daily', { 'select': 'metric_date', 'order': 'metric_date.desc', 'limit': '1' });
-          if (!row) return { name: 'daily-report cron', status: 'dead', sub: 'No data' };
+          if (!row) return { name: 'daily-report cron', status: 'warn', sub: 'No data — may need admin RLS' };
           const age = Date.now() - new Date(row.metric_date).getTime();
           if (age > 86400000 * 2) return { name: 'daily-report cron', status: 'warn', sub: 'Last run ' + timeAgo(row.metric_date) };
           return { name: 'daily-report cron', status: 'ok', sub: 'Last run ' + new Date(row.metric_date).toLocaleDateString('en-GB') };
-        } catch(e) { return { name: 'daily-report cron', status: 'warn', sub: e.message }; }
+        } catch(e) { return { name: 'daily-report cron', status: 'warn', sub: 'Check RLS on platform_metrics_daily' }; }
       })(),
       // re-engagement cron
       (async () => {
@@ -1223,10 +1223,12 @@ async function loadSystemHealth() {
       // certificate-checker cron
       (async () => {
         try {
-          const row = await sbGetSingle('certificates', { 'select': 'created_at', 'order': 'created_at.desc', 'limit': '1' });
-          if (!row) return { name: 'certificate-checker', status: 'warn', sub: 'No certificates issued' };
-          return { name: 'certificate-checker', status: 'ok', sub: 'Last cert ' + timeAgo(row.created_at) };
-        } catch(e) { return { name: 'certificate-checker', status: 'warn', sub: e.message }; }
+          const rows = await sbGet('certificates', { 'select': 'count', 'head': 'true' });
+          const row = await sbGetSingle('certificates', { 'select': 'earned_at', 'order': 'earned_at.desc', 'limit': '1' });
+          if (!row) return { name: 'certificate-checker', status: 'warn', sub: 'No certificates issued yet' };
+          const ts = row.earned_at;
+          return { name: 'certificate-checker', status: 'ok', sub: ts ? 'Last cert ' + timeAgo(ts) : 'Certs exist' };
+        } catch(e) { return { name: 'certificate-checker', status: 'warn', sub: 'No certs issued yet' }; }
       })(),
     ]);
 
