@@ -412,6 +412,51 @@ h1,h2,h3 { font-family: 'Playfair Display', Georgia, serif; font-weight: 600; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 
+
+/* ── System health checks ──────────────────────────────────────────────────── */
+.health-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+.health-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-alt);
+}
+.health-check.ok    { border-color: rgba(34,197,94,.2);  background: var(--success-pale); }
+.health-check.warn  { border-color: rgba(232,163,74,.2); background: var(--warning-pale); }
+.health-check.dead  { border-color: rgba(232,103,74,.3); background: var(--danger-pale); }
+.hc-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+.health-check.ok   .hc-dot { background: var(--success); }
+.health-check.warn .hc-dot { background: var(--warning); }
+.health-check.dead .hc-dot { background: var(--danger); }
+.hc-body { flex: 1; min-width: 0; }
+.hc-name { font-size: 12px; font-weight: 600; color: var(--text); }
+.health-check.dead .hc-name { color: var(--danger); }
+.hc-sub  { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+
+/* ── Pagination ────────────────────────────────────────────────────────────── */
+.pagination {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 0 0;
+  font-size: 11px; color: var(--text-muted);
+}
+.pagination-btns { display: flex; gap: 6px; }
+.page-btn {
+  padding: 4px 10px; border-radius: 6px; font-size: 11px;
+  border: 1px solid var(--border); background: var(--surface);
+  color: var(--text-muted); cursor: pointer; font-family: inherit;
+}
+.page-btn:hover:not(:disabled) { background: var(--surface-2); color: var(--text); }
+.page-btn:disabled { opacity: .35; cursor: default; }
+
 /* ── Modal ─────────────────────────────────────────────────────────────── */
 .modal-backdrop {
   position: fixed; inset: 0;
@@ -572,6 +617,13 @@ h1,h2,h3 { font-family: 'Playfair Display', Georgia, serif; font-weight: 600; }
     <div id="usage-body">
       <div class="loading-row"></div>
       <div class="loading-row" style="opacity:.6"></div>
+    </div>
+    <div class="pagination" id="usage-pagination" style="display:none">
+      <span id="usage-page-info">—</span>
+      <div class="pagination-btns">
+        <button class="page-btn" id="usage-prev" onclick="usagePage(-1)">← Prev</button>
+        <button class="page-btn" id="usage-next" onclick="usagePage(1)">Next →</button>
+      </div>
     </div>
   </div>
 
@@ -767,6 +819,7 @@ function renderErrors(rows, containerId, isLive) {
           <div class="error-stats">
             <span>Hit <strong>${escHtml(memberLabel)}</strong></span>
             <span>Fired <strong>${escHtml(occLabel)}</strong></span>
+            <span>First seen <strong>${r.first_seen ? timeAgo(r.first_seen) : '—'}</strong></span>
             <span>Last seen <strong>${escHtml(lastSeen)}</strong></span>
             ${r.page ? '<span>Page: <strong>' + escHtml(r.page) + '</strong></span>' : ''}
           </div>
@@ -785,20 +838,13 @@ function renderUsage(data) {
     el.innerHTML = '<div class="empty-state">No page view data yet — PostHog key may not be set</div>';
     return;
   }
-  const maxViews = Math.max(...pages.map(p => p.views), 1);
-  el.innerHTML = '<table class="data-table"><thead><tr>' +
-    '<th>Page</th><th>Opens this week</th><th>Members</th><th style="min-width:120px">Volume</th>' +
-    '</tr></thead><tbody>' +
-    pages.map(p => {
-      const pct = Math.round((p.views / maxViews) * 100);
-      return `<tr>
-        <td class="page-name">${escHtml(p.page || '—')}</td>
-        <td class="num">${escHtml(String(p.views))}</td>
-        <td class="num">${escHtml(String(p.people))}</td>
-        <td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div><span style="font-size:10px;color:var(--text-dim);min-width:28px;text-align:right">${pct}%</span></div></td>
-      </tr>`;
-    }).join('') + '</tbody></table>';
+  _allPages = pages;
+  _usagePage = 0;
+  renderUsagePage();
+  // dead pages handled below — skip old table render
+  if (false) {
 
+  } // end if(false)
   const dead = data?.dead_pages || [];
   const dp = document.getElementById('dead-pages-body');
   if (!dead.length) {
@@ -889,10 +935,11 @@ async function loadErrors() {
     const groups = {};
     (live || []).forEach(r => {
       const fp = r.fingerprint || r.type;
-      if (!groups[fp]) groups[fp] = { fingerprint: fp, type: r.type, severity: r.severity, page: r.page, resolved: r.resolved, occurrences: 0, members: new Set(), last_seen: r.created_at };
+      if (!groups[fp]) groups[fp] = { fingerprint: fp, type: r.type, severity: r.severity, page: r.page, resolved: r.resolved, occurrences: 0, members: new Set(), last_seen: r.created_at, first_seen: r.created_at };
       groups[fp].occurrences++;
       if (r.member_email) groups[fp].members.add(r.member_email);
       if (new Date(r.created_at) > new Date(groups[fp].last_seen)) groups[fp].last_seen = r.created_at;
+      if (new Date(r.created_at) < new Date(groups[fp].first_seen)) groups[fp].first_seen = r.created_at;
     });
     const liveRows = Object.values(groups)
       .map(g => ({ ...g, members_hit: g.members.size }))
@@ -919,10 +966,11 @@ async function loadErrors() {
     const sg = {};
     (settled || []).forEach(r => {
       const fp = r.fingerprint || r.type;
-      if (!sg[fp]) sg[fp] = { fingerprint: fp, type: r.type, severity: r.severity, page: r.page, resolved: r.resolved, occurrences: 0, members: new Set(), last_seen: r.created_at };
+      if (!sg[fp]) sg[fp] = { fingerprint: fp, type: r.type, severity: r.severity, page: r.page, resolved: r.resolved, occurrences: 0, members: new Set(), last_seen: r.created_at, first_seen: r.created_at };
       sg[fp].occurrences++;
       if (r.member_email) sg[fp].members.add(r.member_email);
       if (new Date(r.created_at) > new Date(sg[fp].last_seen)) sg[fp].last_seen = r.created_at;
+      if (new Date(r.created_at) < new Date(sg[fp].first_seen)) sg[fp].first_seen = r.created_at;
     });
     const settledRows = Object.values(sg)
       .map(g => ({ ...g, members_hit: g.members.size }))
@@ -1000,6 +1048,144 @@ async function triggerRefresh() {
   }
 }
 
+
+
+// ── Usage pagination ────────────────────────────────────────────────────────
+let _allPages = [];
+let _usagePage = 0;
+const PAGE_SIZE = 10;
+
+function usagePage(dir) {
+  _usagePage = Math.max(0, Math.min(_usagePage + dir, Math.ceil(_allPages.length / PAGE_SIZE) - 1));
+  renderUsagePage();
+}
+
+function renderUsagePage() {
+  const start = _usagePage * PAGE_SIZE;
+  const slice = _allPages.slice(start, start + PAGE_SIZE);
+  const total = _allPages.length;
+  const maxViews = Math.max(..._allPages.map(p => p.views), 1);
+  const el = document.getElementById('usage-body');
+  const pag = document.getElementById('usage-pagination');
+  const info = document.getElementById('usage-page-info');
+  const prev = document.getElementById('usage-prev');
+  const next = document.getElementById('usage-next');
+
+  el.innerHTML = '<table class="data-table"><thead><tr>' +
+    '<th>Page</th><th>Opens this week</th><th>Members</th><th style="min-width:120px">Volume</th>' +
+    '</tr></thead><tbody>' +
+    slice.map(p => {
+      const pct = Math.round((p.views / maxViews) * 100);
+      return `<tr>
+        <td class="page-name">${escHtml(p.page || '—')}</td>
+        <td class="num">${p.views}</td>
+        <td class="num">${p.people}</td>
+        <td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div><span style="font-size:10px;color:var(--text-dim);min-width:28px;text-align:right">${pct}%</span></div></td>
+      </tr>`;
+    }).join('') + '</tbody></table>';
+
+  if (total > PAGE_SIZE) {
+    pag.style.display = 'flex';
+    info.textContent = (start + 1) + '–' + Math.min(start + PAGE_SIZE, total) + ' of ' + total + ' pages';
+    prev.disabled = _usagePage === 0;
+    next.disabled = _usagePage >= Math.ceil(total / PAGE_SIZE) - 1;
+  } else {
+    pag.style.display = 'none';
+  }
+}
+
+// ── System health checks ────────────────────────────────────────────────────
+const SYSTEM_CHECKS = [
+  {
+    name: 'cc-app-health EF',
+    check: async (sb) => {
+      const { data } = await sb.from('cc_app_health').select('refreshed_at').eq('id', 1).single();
+      if (!data) return { status: 'dead', sub: 'Cache row missing' };
+      const age = Date.now() - new Date(data.refreshed_at).getTime();
+      if (age > 7200000) return { status: 'warn', sub: 'Last refresh ' + timeAgo(data.refreshed_at) };
+      return { status: 'ok', sub: 'Refreshed ' + timeAgo(data.refreshed_at) };
+    }
+  },
+  {
+    name: 'sync-health-data EF',
+    check: async () => {
+      // Known dead since 24 May 2026
+      return { status: 'dead', sub: 'Dead since 24 May 2026' };
+    }
+  },
+  {
+    name: 'log-perf EF',
+    check: async (sb) => {
+      const { data } = await sb.from('perf_telemetry').select('ts').order('ts', { ascending: false }).limit(1).single();
+      if (!data) return { status: 'dead', sub: 'No data ever' };
+      const age = Date.now() - new Date(data.ts).getTime();
+      if (age > 86400000 * 7) return { status: 'dead', sub: 'Last data ' + timeAgo(data.ts) };
+      return { status: 'ok', sub: 'Last data ' + timeAgo(data.ts) };
+    }
+  },
+  {
+    name: 'daily-report cron',
+    check: async (sb) => {
+      // Runs at 08:05 UTC daily — check platform_metrics_daily last row
+      const { data } = await sb.from('platform_metrics_daily').select('metric_date').order('metric_date', { ascending: false }).limit(1).single();
+      if (!data) return { status: 'dead', sub: 'No data' };
+      const age = Date.now() - new Date(data.metric_date).getTime();
+      if (age > 86400000 * 2) return { status: 'warn', sub: 'Last run ' + timeAgo(data.metric_date) };
+      return { status: 'ok', sub: 'Last run ' + new Date(data.metric_date).toLocaleDateString('en-GB') };
+    }
+  },
+  {
+    name: 're-engagement cron',
+    check: async (sb) => {
+      const { data } = await sb.from('engagement_emails').select('created_at').order('created_at', { ascending: false }).limit(1).single();
+      if (!data) return { status: 'warn', sub: 'No emails sent yet' };
+      const age = Date.now() - new Date(data.created_at).getTime();
+      if (age > 86400000 * 3) return { status: 'warn', sub: 'Last email ' + timeAgo(data.created_at) };
+      return { status: 'ok', sub: 'Last email ' + timeAgo(data.created_at) };
+    }
+  },
+  {
+    name: 'certificate-checker cron',
+    check: async (sb) => {
+      const { data } = await sb.from('certificates').select('created_at').order('created_at', { ascending: false }).limit(1).single();
+      if (!data) return { status: 'warn', sub: 'No certificates issued' };
+      return { status: 'ok', sub: 'Last cert ' + timeAgo(data.created_at) };
+    }
+  },
+];
+
+async function loadSystemHealth() {
+  const grid = document.getElementById('health-grid');
+  const meta = document.getElementById('health-meta');
+  try {
+    const jwt = await getJwt();
+    const sb = window.VYVE_SUPABASE ? window.VYVE_SUPABASE.client() : null;
+    if (!sb) {
+      grid.innerHTML = '<div class="empty-state">Supabase client not ready</div>';
+      return;
+    }
+
+    const results = await Promise.all(SYSTEM_CHECKS.map(async c => {
+      try { return { name: c.name, ...(await c.check(sb)) }; }
+      catch(e) { return { name: c.name, status: 'warn', sub: 'Check failed: ' + e.message }; }
+    }));
+
+    const deadCount = results.filter(r => r.status === 'dead').length;
+    const warnCount = results.filter(r => r.status === 'warn').length;
+    meta.textContent = deadCount > 0 ? deadCount + ' down' : warnCount > 0 ? warnCount + ' warnings' : 'All systems ok';
+
+    grid.innerHTML = results.map(r => `
+      <div class="health-check ${escHtml(r.status)}">
+        <div class="hc-dot"></div>
+        <div class="hc-body">
+          <div class="hc-name">${escHtml(r.name)}</div>
+          <div class="hc-sub">${escHtml(r.sub)}</div>
+        </div>
+      </div>`).join('');
+  } catch(e) {
+    grid.innerHTML = '<div class="empty-state">Error: ' + escHtml(e.message) + '</div>';
+  }
+}
 
 // ── Detail modal ────────────────────────────────────────────────────────────
 let _modalFingerprint = null;
@@ -1114,7 +1300,7 @@ async function bulkResolveSettled() {
 // ── Boot ────────────────────────────────────────────────────────────────────
 (async function boot() {
   setEl('refresh-text', 'Loading…');
-  await Promise.all([loadErrors(), loadCache()]);
+  await Promise.all([loadErrors(), loadCache(), loadSystemHealth()]);
 })();
 </script>
 </body>
