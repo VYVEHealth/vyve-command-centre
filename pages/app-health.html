@@ -1119,24 +1119,6 @@ const SYSTEM_CHECKS = [
       if (age > 7200000) return { status: 'warn', sub: 'Last refresh ' + timeAgo(data.refreshed_at) };
       return { status: 'ok', sub: 'Refreshed ' + timeAgo(data.refreshed_at) };
     }
-  },
-  {
-    name: 'sync-health-data EF',
-    check: async () => {
-      // Known dead since 24 May 2026
-      return { status: 'dead', sub: 'Dead since 24 May 2026' };
-    }
-  },
-  {
-    name: 'log-perf EF',
-    check: async (sb) => {
-      const { data } = await sb.from('perf_telemetry').select('ts').order('ts', { ascending: false }).limit(1).single();
-      if (!data) return { status: 'dead', sub: 'No data ever' };
-      const age = Date.now() - new Date(data.ts).getTime();
-      if (age > 86400000 * 7) return { status: 'dead', sub: 'Last data ' + timeAgo(data.ts) };
-      return { status: 'ok', sub: 'Last data ' + timeAgo(data.ts) };
-    }
-  },
   {
     name: 'daily-report cron',
     check: async (sb) => {
@@ -1189,18 +1171,6 @@ async function loadSystemHealth() {
           if (age > 7200000) return { name: 'cc-app-health EF', status: 'warn', sub: 'Last refresh ' + timeAgo(row.refreshed_at) };
           return { name: 'cc-app-health EF', status: 'ok', sub: 'Refreshed ' + timeAgo(row.refreshed_at) };
         } catch(e) { return { name: 'cc-app-health EF', status: 'warn', sub: e.message }; }
-      })(),
-      // sync-health-data — known dead
-      Promise.resolve({ name: 'sync-health-data EF', status: 'dead', sub: 'Dead since 24 May 2026' }),
-      // log-perf — check perf_telemetry last row
-      (async () => {
-        try {
-          const row = await sbGetSingle('perf_telemetry', { 'select': 'ts', 'order': 'ts.desc', 'limit': '1' });
-          if (!row) return { name: 'log-perf EF', status: 'dead', sub: 'No data ever received' };
-          const age = Date.now() - new Date(row.ts).getTime();
-          if (age > 86400000 * 7) return { name: 'log-perf EF', status: 'dead', sub: 'Last data ' + timeAgo(row.ts) };
-          return { name: 'log-perf EF', status: 'ok', sub: 'Last data ' + timeAgo(row.ts) };
-        } catch(e) { return { name: 'log-perf EF', status: 'warn', sub: e.message }; }
       })(),
       // daily-report cron
       (async () => {
