@@ -1,0 +1,918 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>App Health — VYVE Command Centre</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+
+  <style>
+/* ── Dual theme tokens ─────────────────────────────────────────────────── */
+html[data-theme="dark"] {
+  --bg:          #0D2B2B;
+  --bg-alt:      #0A2222;
+  --surface:     #112E2E;
+  --surface-2:   #163535;
+  --border:      rgba(77,170,170,.16);
+  --border-strong: rgba(77,170,170,.28);
+  --text:        #EAF5F5;
+  --text-muted:  rgba(234,245,245,.55);
+  --text-dim:    rgba(234,245,245,.32);
+  --teal:        #1B7878;
+  --teal-lt:     #4DAAAA;
+  --gold:        #C9A84C;
+  --danger:      #e8674a;
+  --danger-pale: rgba(232,103,74,.12);
+  --warning:     #e8a34a;
+  --warning-pale:rgba(232,163,74,.12);
+  --success:     #22c55e;
+  --success-pale:rgba(34,197,94,.12);
+  --settled:     rgba(234,245,245,.16);
+  --settled-pale:rgba(234,245,245,.06);
+  --sidebar-bg:  #0A2222;
+}
+html[data-theme="light"] {
+  --bg:          #f4faf8;
+  --bg-alt:      #edf5f3;
+  --surface:     #ffffff;
+  --surface-2:   #f0f7f5;
+  --border:      #d0e6e0;
+  --border-strong:#a8cfc7;
+  --text:        #0D2B2B;
+  --text-muted:  #567373;
+  --text-dim:    #8AADAD;
+  --teal:        #1B7878;
+  --teal-lt:     #4DAAAA;
+  --gold:        #C9A84C;
+  --danger:      #c9433a;
+  --danger-pale: #fdecea;
+  --warning:     #c97a2a;
+  --warning-pale:#fdf2e3;
+  --success:     #1a9448;
+  --success-pale:#e6f6ec;
+  --settled:     rgba(0,0,0,.06);
+  --settled-pale:rgba(0,0,0,.03);
+  --sidebar-bg:  #0A2222;
+}
+
+/* ── Base ──────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 14px; }
+body {
+  font-family: 'Inter', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  padding: 0;
+}
+h1,h2,h3 { font-family: 'Playfair Display', Georgia, serif; font-weight: 600; }
+
+/* ── Layout ────────────────────────────────────────────────────────────── */
+.page-wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 28px 24px 80px;
+}
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+.page-title {
+  font-size: 22px;
+  color: var(--text);
+}
+.page-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ── Buttons ───────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text-muted);
+  transition: background .15s, color .15s;
+  text-decoration: none;
+}
+.btn:hover { background: var(--surface-2); color: var(--text); }
+.btn-primary {
+  background: var(--teal);
+  color: #fff;
+  border-color: var(--teal);
+}
+.btn-primary:hover { background: #166262; color: #fff; }
+.btn-danger-sm {
+  padding: 4px 10px;
+  font-size: 11px;
+  background: transparent;
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .15s;
+}
+.btn-danger-sm:hover { background: var(--danger-pale); }
+.btn-danger-sm:disabled { opacity: .4; cursor: default; }
+
+/* ── Theme toggle ──────────────────────────────────────────────────────── */
+.theme-toggle {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.theme-toggle:hover { color: var(--text); background: var(--surface-2); }
+
+/* ── Cards ─────────────────────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+.card-meta {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+/* ── Status pill ───────────────────────────────────────────────────────── */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+}
+.pill-live   { background: var(--danger-pale);  color: var(--danger); }
+.pill-warn   { background: var(--warning-pale); color: var(--warning); }
+.pill-ok     { background: var(--success-pale); color: var(--success); }
+.pill-grey   { background: var(--settled-pale); color: var(--text-dim); }
+.pill-dot    { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+/* ── Headline strip ────────────────────────────────────────────────────── */
+.stat-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.stat-cell {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.stat-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.1;
+}
+.stat-sub {
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+/* ── Error rows ────────────────────────────────────────────────────────── */
+.error-list { display: flex; flex-direction: column; gap: 10px; }
+.error-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-alt);
+}
+.error-row.live {
+  border-color: rgba(232,103,74,.3);
+  background: var(--danger-pale);
+}
+.error-row.warning {
+  border-color: rgba(232,163,74,.3);
+  background: var(--warning-pale);
+}
+.error-row.settled {
+  border-color: var(--settled);
+  background: var(--settled-pale);
+  opacity: .8;
+}
+.error-icon {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+  background: rgba(255,255,255,.08);
+}
+.error-row.live .error-icon { background: var(--danger-pale); }
+.error-row.warning .error-icon { background: var(--warning-pale); }
+.error-row.settled .error-icon { background: var(--settled-pale); }
+.error-body { flex: 1; min-width: 0; }
+.error-type {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 2px;
+  word-break: break-word;
+}
+.error-row.settled .error-type { color: var(--text-muted); }
+.error-stats {
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.error-stats strong { color: var(--text); }
+.error-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+/* ── Table ─────────────────────────────────────────────────────────────── */
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-dim);
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.data-table td {
+  padding: 9px 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+}
+.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table tbody tr:hover td { background: var(--surface-2); }
+.data-table td.page-name { color: var(--text); font-weight: 500; font-family: monospace; font-size: 11px; }
+.data-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.bar-cell { display: flex; align-items: center; gap: 8px; }
+.bar-track {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+  overflow: hidden;
+}
+.bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--teal-lt);
+}
+.bar-fill.slow { background: var(--warning); }
+.bar-fill.very-slow { background: var(--danger); }
+
+/* ── Dead pages ────────────────────────────────────────────────────────── */
+.dead-page-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.dead-page-chip {
+  padding: 3px 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 11px;
+  font-family: monospace;
+  color: var(--text-muted);
+}
+
+/* ── Collapsed settled section ─────────────────────────────────────────── */
+.settled-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+  border: none;
+  background: none;
+  font-family: inherit;
+  width: 100%;
+  text-align: left;
+}
+.settled-toggle:hover { color: var(--text); }
+.settled-toggle .chevron { transition: transform .2s; font-size: 10px; }
+.settled-toggle.open .chevron { transform: rotate(90deg); }
+.settled-body { display: none; }
+.settled-body.open { display: block; }
+
+/* ── Coming soon placeholder ───────────────────────────────────────────── */
+.coming-soon-card {
+  border: 1px dashed var(--border-strong);
+  border-radius: 12px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 20px;
+  opacity: .65;
+}
+.coming-soon-icon {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.coming-soon-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.coming-soon-sub {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+/* ── Empty / loading state ─────────────────────────────────────────────── */
+.empty-state {
+  padding: 32px 20px;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+.empty-state .ok-icon { font-size: 28px; margin-bottom: 8px; }
+.loading-row {
+  height: 48px;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--surface) 25%, var(--surface-2) 50%, var(--surface) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  margin-bottom: 10px;
+}
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+/* ── Refresh indicator ─────────────────────────────────────────────────── */
+.refresh-status {
+  font-size: 11px;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.spinning { animation: spin .8s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Toast ─────────────────────────────────────────────────────────────── */
+#toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 12px;
+  color: var(--text);
+  box-shadow: 0 8px 32px rgba(0,0,0,.28);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity .2s, transform .2s;
+  z-index: 9999;
+  pointer-events: none;
+  max-width: 300px;
+}
+#toast.show { opacity: 1; transform: translateY(0); }
+
+/* ── Section divider ───────────────────────────────────────────────────── */
+.section-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--text-dim);
+  margin: 28px 0 12px;
+}
+  </style>
+</head>
+<body>
+
+<div class="page-wrap">
+
+  <!-- Page header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">App Health</h1>
+      <div class="page-sub">Member-facing portal — errors, usage &amp; performance</div>
+    </div>
+    <div class="header-actions">
+      <div class="refresh-status" id="refresh-status">
+        <span id="refresh-text">Loading…</span>
+      </div>
+      <button class="btn" id="btn-refresh" onclick="triggerRefresh()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Refresh now
+      </button>
+      <a class="btn" href="https://eu.posthog.com/project/138491" target="_blank" rel="noopener">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        Full analytics in PostHog
+      </a>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" id="theme-icon-dark">
+          <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" id="theme-icon-light" style="display:none">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── SECTION 1: Live problems ──────────────────────────────────────── -->
+  <div class="section-label">Live problems right now</div>
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Errors hitting members</span>
+      <span class="pill pill-live" id="live-count-pill"><span class="pill-dot"></span> <span id="live-count">—</span> active</span>
+    </div>
+    <div id="live-errors-list" class="error-list">
+      <div class="loading-row"></div>
+      <div class="loading-row" style="opacity:.6"></div>
+      <div class="loading-row" style="opacity:.3"></div>
+    </div>
+  </div>
+
+  <!-- ── SECTION 2: At a glance ─────────────────────────────────────────── -->
+  <div class="section-label">At a glance</div>
+  <div class="stat-strip" id="headline-strip">
+    <div class="stat-cell"><div class="stat-label">Active members (7d)</div><div class="stat-value" id="hl-active">—</div><div class="stat-sub">in the last 7 days</div></div>
+    <div class="stat-cell"><div class="stat-label">Active members (30d)</div><div class="stat-value" id="hl-active30">—</div><div class="stat-sub">in the last 30 days</div></div>
+    <div class="stat-cell"><div class="stat-label">Errors today</div><div class="stat-value" id="hl-errors" style="color:var(--danger)">—</div><div class="stat-sub">high + critical, unresolved</div></div>
+    <div class="stat-cell"><div class="stat-label">Activities logged</div><div class="stat-value" id="hl-activities">—</div><div class="stat-sub">all time</div></div>
+    <div class="stat-cell"><div class="stat-label">Unresolved alerts</div><div class="stat-value" id="hl-alerts">—</div><div class="stat-sub">across all severities</div></div>
+  </div>
+
+  <!-- ── SECTION 3: Page usage ──────────────────────────────────────────── -->
+  <div class="section-label">Page usage — last 7 days</div>
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Most-used pages</span>
+      <span class="card-meta" id="usage-refreshed">—</span>
+    </div>
+    <div id="usage-body">
+      <div class="loading-row"></div>
+      <div class="loading-row" style="opacity:.6"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Pages nobody opened this week</span>
+      <span class="card-meta">zero portal_page_viewed events in 7 days</span>
+    </div>
+    <div id="dead-pages-body">
+      <div class="loading-row"></div>
+    </div>
+  </div>
+
+  <!-- ── SECTION 4: Load times ──────────────────────────────────────────── -->
+  <div class="section-label">Load times — last 7 days</div>
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Slowest pages by first paint</span>
+      <span class="card-meta">from perf_first_paint events</span>
+    </div>
+    <div id="perf-body">
+      <div class="loading-row"></div>
+      <div class="loading-row" style="opacity:.6"></div>
+    </div>
+  </div>
+
+  <!-- ── SECTION 5: Settled errors ─────────────────────────────────────── -->
+  <button class="settled-toggle" id="settled-toggle" onclick="toggleSettled()">
+    <span class="chevron">▶</span>
+    <span>Older / settled errors</span>
+    <span class="pill pill-grey" style="margin-left:4px" id="settled-count-pill">— items</span>
+  </button>
+  <div class="settled-body" id="settled-body">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Settled</span>
+        <span class="card-meta">last seen more than 24h ago, or already resolved</span>
+      </div>
+      <div id="settled-errors-list" class="error-list">
+        <div class="loading-row"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Text alerts placeholder ─────────────────────────────────────────── -->
+  <div class="coming-soon-card">
+    <div class="coming-soon-icon">📲</div>
+    <div>
+      <div class="coming-soon-label">Text alerts — coming soon</div>
+      <div class="coming-soon-sub">Get an SMS the moment a serious error hits real members. Needs Twilio — scoped for a future session.</div>
+    </div>
+  </div>
+
+</div><!-- .page-wrap -->
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ── Config ──────────────────────────────────────────────────────────────────
+const SB_URL = 'https://ixjfklpckgxrwjlfsaaz.supabase.co';
+const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTIxNDk2MzEsImV4cCI6MjAyNzcyNTYzMX0.YSVNEVDrOzPPJqCnJVmTJMJZK8bkbNV3RZYiGRKpKJ8';
+const EF_BASE = SB_URL + '/functions/v1';
+
+// ── Theme ───────────────────────────────────────────────────────────────────
+function applyTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  document.getElementById('theme-icon-dark').style.display = t === 'dark' ? '' : 'none';
+  document.getElementById('theme-icon-light').style.display = t === 'light' ? '' : 'none';
+  localStorage.setItem('vyve_cc_theme', t);
+}
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+  applyTheme(cur === 'dark' ? 'light' : 'dark');
+}
+(function initTheme() {
+  const saved = localStorage.getItem('vyve_cc_theme') || 'dark';
+  applyTheme(saved);
+})();
+
+// ── Toast ───────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+// ── Auth: get JWT from Supabase session ─────────────────────────────────────
+async function getJwt() {
+  // Check localStorage for supabase session
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.includes('supabase') && key.includes('auth')) {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(key));
+        const at = parsed?.access_token || parsed?.data?.session?.access_token;
+        if (at) return at;
+      } catch (_) {}
+    }
+  }
+  return null;
+}
+
+// ── Supabase REST helper ────────────────────────────────────────────────────
+async function sbGet(path, params) {
+  const jwt = await getJwt();
+  const url = new URL(SB_URL + '/rest/v1/' + path);
+  if (params) Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
+  const res = await fetch(url.toString(), {
+    headers: {
+      'apikey': SB_ANON,
+      'Authorization': 'Bearer ' + (jwt || SB_ANON),
+      'Accept': 'application/json',
+    }
+  });
+  if (!res.ok) throw new Error('Supabase error ' + res.status);
+  return res.json();
+}
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
+function escHtml(s) {
+  return String(s || '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+function timeAgo(ts) {
+  const d = Date.now() - new Date(ts).getTime();
+  if (d < 60000) return 'just now';
+  if (d < 3600000) return Math.floor(d/60000) + 'm ago';
+  if (d < 86400000) return Math.floor(d/3600000) + 'h ago';
+  return Math.floor(d/86400000) + 'd ago';
+}
+function setEl(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
+// ── Render functions ────────────────────────────────────────────────────────
+function renderErrors(rows, containerId, isLive) {
+  const el = document.getElementById(containerId);
+  if (!rows || !rows.length) {
+    el.innerHTML = '<div class="empty-state"><div class="ok-icon">✓</div>No ' + 
+      (isLive ? 'active problems right now' : 'settled errors to show') + '</div>';
+    return;
+  }
+
+  el.innerHTML = rows.map(r => {
+    const sev = r.severity || 'high';
+    const rowClass = isLive ? (sev === 'critical' ? 'live' : 'warning') : 'settled';
+    const icon = sev === 'critical' ? '🔴' : sev === 'high' ? '🟡' : '⚪';
+    const lastSeen = r.last_seen ? timeAgo(r.last_seen) : '—';
+    const members = Number(r.members_hit) || 0;
+    const occ = Number(r.occurrences) || 0;
+    const memberLabel = members === 1 ? '1 member' : members + ' members';
+    const occLabel = occ === 1 ? '1 time' : occ + ' times';
+
+    return `
+      <div class="error-row ${escHtml(rowClass)}" data-fingerprint="${escHtml(r.fingerprint)}">
+        <div class="error-icon">${icon}</div>
+        <div class="error-body">
+          <div class="error-type">${escHtml(r.type)}</div>
+          <div class="error-stats">
+            <span>Hit <strong>${escHtml(memberLabel)}</strong></span>
+            <span>Fired <strong>${escHtml(occLabel)}</strong></span>
+            <span>Last seen <strong>${escHtml(lastSeen)}</strong></span>
+            ${r.page ? '<span>Page: <strong>' + escHtml(r.page) + '</strong></span>' : ''}
+          </div>
+        </div>
+        <div class="error-actions">
+          ${!r.resolved ? `<button class="btn-danger-sm" onclick="resolveGroup('${escHtml(r.fingerprint)}',this)">Mark resolved</button>` : '<span class="pill pill-grey" style="font-size:10px">Resolved</span>'}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderUsage(data) {
+  const el = document.getElementById('usage-body');
+  const pages = data?.top_pages || [];
+  if (!pages.length) {
+    el.innerHTML = '<div class="empty-state">No page view data yet — PostHog key may not be set</div>';
+    return;
+  }
+  const maxViews = Math.max(...pages.map(p => p.views), 1);
+  el.innerHTML = '<table class="data-table"><thead><tr>' +
+    '<th>Page</th><th>Opens this week</th><th>Members</th><th style="min-width:120px">Volume</th>' +
+    '</tr></thead><tbody>' +
+    pages.map(p => {
+      const pct = Math.round((p.views / maxViews) * 100);
+      return `<tr>
+        <td class="page-name">${escHtml(p.page || '—')}</td>
+        <td class="num">${escHtml(String(p.views))}</td>
+        <td class="num">${escHtml(String(p.people))}</td>
+        <td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div><span style="font-size:10px;color:var(--text-dim);min-width:28px;text-align:right">${pct}%</span></div></td>
+      </tr>`;
+    }).join('') + '</tbody></table>';
+
+  const dead = data?.dead_pages || [];
+  const dp = document.getElementById('dead-pages-body');
+  if (!dead.length) {
+    dp.innerHTML = '<div class="empty-state" style="padding:16px 0">All known pages have been opened this week.</div>';
+  } else {
+    dp.innerHTML = '<div class="dead-page-list">' + 
+      dead.map(p => `<span class="dead-page-chip">${escHtml(p)}</span>`).join('') + 
+      '</div>';
+  }
+}
+
+function renderPerf(data) {
+  const el = document.getElementById('perf-body');
+  const rows = data?.load_times || [];
+  if (!rows.length) {
+    el.innerHTML = '<div class="empty-state">No load time data yet — PostHog key may not be set or no perf events fired</div>';
+    return;
+  }
+  const maxMs = Math.max(...rows.map(r => r.avg_ms), 1);
+  el.innerHTML = '<table class="data-table"><thead><tr>' +
+    '<th>Page</th><th class="num">Avg load (ms)</th><th class="num">Samples</th><th style="min-width:120px">Speed</th>' +
+    '</tr></thead><tbody>' +
+    rows.map(r => {
+      const pct = Math.round((r.avg_ms / maxMs) * 100);
+      const cls = r.avg_ms > 3000 ? 'very-slow' : r.avg_ms > 1500 ? 'slow' : '';
+      return `<tr>
+        <td class="page-name">${escHtml(r.page || '—')}</td>
+        <td class="num" style="color:${r.avg_ms > 3000 ? 'var(--danger)' : r.avg_ms > 1500 ? 'var(--warning)' : 'var(--success)'}">${r.avg_ms}</td>
+        <td class="num">${r.samples}</td>
+        <td><div class="bar-cell"><div class="bar-track"><div class="bar-fill ${escHtml(cls)}" style="width:${pct}%"></div></div></div></td>
+      </tr>`;
+    }).join('') + '</tbody></table>';
+}
+
+// ── Resolve error group ─────────────────────────────────────────────────────
+async function resolveGroup(fingerprint, btn) {
+  if (!fingerprint) return;
+  btn.disabled = true;
+  btn.textContent = 'Resolving…';
+  try {
+    const jwt = await getJwt();
+    const res = await fetch(SB_URL + '/rest/v1/platform_alerts?fingerprint=eq.' + encodeURIComponent(fingerprint), {
+      method: 'PATCH',
+      headers: {
+        'apikey': SB_ANON,
+        'Authorization': 'Bearer ' + (jwt || SB_ANON),
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal',
+      },
+      body: JSON.stringify({ resolved: true }),
+    });
+    if (!res.ok) throw new Error('PATCH failed ' + res.status);
+    showToast('Marked resolved — refreshing errors…');
+    // Remove the row visually
+    const row = btn.closest('.error-row');
+    if (row) { row.style.transition = 'opacity .3s'; row.style.opacity = '0'; setTimeout(() => row.remove(), 350); }
+    // Refresh the live count
+    setTimeout(loadErrors, 600);
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = 'Mark resolved';
+    showToast('Error resolving: ' + e.message);
+  }
+}
+
+// ── Settled toggle ──────────────────────────────────────────────────────────
+function toggleSettled() {
+  const toggle = document.getElementById('settled-toggle');
+  const body = document.getElementById('settled-body');
+  toggle.classList.toggle('open');
+  body.classList.toggle('open');
+}
+
+// ── Data loaders ────────────────────────────────────────────────────────────
+async function loadErrors() {
+  try {
+    // Live: high/critical, unresolved, last 24h — grouped by fingerprint
+    const live = await sbGet('platform_alerts', {
+      'select': 'fingerprint,type,severity,page,resolved,created_at,member_email',
+      'resolved': 'eq.false',
+      'severity': 'in.(high,critical)',
+      'created_at': 'gte.' + new Date(Date.now() - 86400000).toISOString(),
+      'order': 'created_at.desc',
+      'limit': '500',
+    });
+
+    // Aggregate by fingerprint client-side
+    const groups = {};
+    (live || []).forEach(r => {
+      const fp = r.fingerprint || r.type;
+      if (!groups[fp]) groups[fp] = { fingerprint: fp, type: r.type, severity: r.severity, page: r.page, resolved: r.resolved, occurrences: 0, members: new Set(), last_seen: r.created_at };
+      groups[fp].occurrences++;
+      if (r.member_email) groups[fp].members.add(r.member_email);
+      if (new Date(r.created_at) > new Date(groups[fp].last_seen)) groups[fp].last_seen = r.created_at;
+    });
+    const liveRows = Object.values(groups)
+      .map(g => ({ ...g, members_hit: g.members.size }))
+      .sort((a, b) => b.members_hit - a.members_hit || b.occurrences - a.occurrences);
+
+    setEl('live-count', liveRows.length);
+    if (liveRows.length === 0) {
+      document.getElementById('live-count-pill').className = 'pill pill-ok';
+      document.getElementById('live-count-pill').innerHTML = '<span class="pill-dot"></span> 0 active';
+    } else {
+      document.getElementById('live-count-pill').className = 'pill pill-live';
+      document.getElementById('live-count-pill').innerHTML = '<span class="pill-dot"></span> ' + liveRows.length + ' active';
+    }
+    renderErrors(liveRows, 'live-errors-list', true);
+
+    // Settled: either resolved=true OR older than 24h (unresolved high/critical)
+    const settled = await sbGet('platform_alerts', {
+      'select': 'fingerprint,type,severity,page,resolved,created_at,member_email',
+      'or': '(resolved.eq.true,and(severity.in.(high,critical),created_at.lt.' + new Date(Date.now() - 86400000).toISOString() + '))',
+      'order': 'created_at.desc',
+      'limit': '500',
+    });
+
+    const sg = {};
+    (settled || []).forEach(r => {
+      const fp = r.fingerprint || r.type;
+      if (!sg[fp]) sg[fp] = { fingerprint: fp, type: r.type, severity: r.severity, page: r.page, resolved: r.resolved, occurrences: 0, members: new Set(), last_seen: r.created_at };
+      sg[fp].occurrences++;
+      if (r.member_email) sg[fp].members.add(r.member_email);
+      if (new Date(r.created_at) > new Date(sg[fp].last_seen)) sg[fp].last_seen = r.created_at;
+    });
+    const settledRows = Object.values(sg)
+      .map(g => ({ ...g, members_hit: g.members.size }))
+      .sort((a, b) => b.occurrences - a.occurrences);
+
+    setEl('settled-count-pill', settledRows.length + ' items');
+    document.getElementById('settled-count-pill').textContent = settledRows.length + ' items';
+    renderErrors(settledRows, 'settled-errors-list', false);
+
+    // Update errors-today headline
+    const today = new Date(); today.setHours(0,0,0,0);
+    const todayCount = (live || []).filter(r => new Date(r.created_at) >= today).length;
+    setEl('hl-errors', String(todayCount));
+
+  } catch (e) {
+    console.error('loadErrors:', e);
+    document.getElementById('live-errors-list').innerHTML = '<div class="empty-state">Error loading — ' + escHtml(e.message) + '</div>';
+  }
+}
+
+async function loadCache() {
+  try {
+    const rows = await sbGet('cc_app_health', { 'select': '*', 'id': 'eq.1' });
+    const row = rows && rows[0];
+    if (!row) {
+      document.getElementById('usage-body').innerHTML = '<div class="empty-state">Cache not yet populated — click Refresh now</div>';
+      document.getElementById('perf-body').innerHTML = '<div class="empty-state">Cache not yet populated — click Refresh now</div>';
+      document.getElementById('dead-pages-body').innerHTML = '<div class="empty-state">—</div>';
+      return;
+    }
+
+    // Headline
+    const hl = row.headline_json || {};
+    setEl('hl-active', hl.active_users_7d ?? '—');
+    setEl('hl-active30', hl.active_users_30d ?? '—');
+    setEl('hl-activities', hl.total_activities ?? '—');
+    setEl('hl-alerts', hl.unresolved_alerts ?? '—');
+
+    // Usage
+    const refreshed = row.refreshed_at ? timeAgo(row.refreshed_at) : '—';
+    setEl('usage-refreshed', 'PostHog data from ' + refreshed);
+    renderUsage(row.usage_json);
+    renderPerf(row.perf_json);
+
+    setEl('refresh-text', 'Cache refreshed ' + refreshed);
+
+  } catch (e) {
+    console.error('loadCache:', e);
+    setEl('refresh-text', 'Error loading cache');
+  }
+}
+
+// ── Trigger refresh (invoke EF on-demand) ───────────────────────────────────
+async function triggerRefresh() {
+  const btn = document.getElementById('btn-refresh');
+  const statusEl = document.getElementById('refresh-text');
+  btn.disabled = true;
+  statusEl.innerHTML = '<span class="spinning">↻</span> Refreshing…';
+  try {
+    const jwt = await getJwt();
+    const res = await fetch(EF_BASE + '/cc-app-health', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (jwt || SB_ANON) },
+      body: '{}',
+    });
+    if (!res.ok) throw new Error('EF returned ' + res.status);
+    showToast('Cache refreshed');
+    await loadCache();
+    await loadErrors();
+  } catch (e) {
+    showToast('Refresh failed: ' + e.message);
+    statusEl.textContent = 'Refresh failed';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ── Boot ────────────────────────────────────────────────────────────────────
+(async function boot() {
+  setEl('refresh-text', 'Loading…');
+  await Promise.all([loadErrors(), loadCache()]);
+})();
+</script>
+</body>
+</html>
