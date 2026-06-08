@@ -607,7 +607,21 @@ h1,h2,h3 { font-family: 'Playfair Display', Georgia, serif; font-weight: 600; }
     <div class="stat-cell"><div class="stat-label">Unresolved alerts</div><div class="stat-value" id="hl-alerts">—</div><div class="stat-sub">across all severities</div></div>
   </div>
 
-  <!-- ── SECTION 3: Page usage ──────────────────────────────────────────── -->
+  <!-- ── SECTION 2b: System health ─────────────────────────────────────────── -->
+  <div class="section-label">System health</div>
+  <div class="card" style="margin-bottom:20px">
+    <div class="card-header">
+      <span class="card-title">Known services</span>
+      <span class="card-meta" id="health-meta">Checking…</span>
+    </div>
+    <div class="health-grid" id="health-grid">
+      <div class="loading-row" style="height:56px"></div>
+      <div class="loading-row" style="height:56px;opacity:.6"></div>
+      <div class="loading-row" style="height:56px;opacity:.3"></div>
+    </div>
+  </div>
+
+    <!-- ── SECTION 3: Page usage ──────────────────────────────────────────── -->
   <div class="section-label">Page usage — last 7 days</div>
   <div class="card">
     <div class="card-header">
