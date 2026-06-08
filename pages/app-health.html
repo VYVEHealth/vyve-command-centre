@@ -1154,27 +1154,73 @@ const SYSTEM_CHECKS = [
   },
 ];
 
+async function sbGetSingle(path, params) {
+  // Same as sbGet but returns first row or null
+  const rows = await sbGet(path, params);
+  return rows && rows.length ? rows[0] : null;
+}
+
 async function loadSystemHealth() {
   const grid = document.getElementById('health-grid');
   const meta = document.getElementById('health-meta');
   try {
-    const jwt = await getJwt();
-    const sb = window.VYVE_SUPABASE ? window.VYVE_SUPABASE.client() : null;
-    if (!sb) {
-      grid.innerHTML = '<div class="empty-state">Supabase client not ready</div>';
-      return;
-    }
+    // Run all checks in parallel using direct REST calls (no VYVE_SUPABASE dependency)
+    const checks = await Promise.all([
+      // cc-app-health cache freshness
+      (async () => {
+        try {
+          const row = await sbGetSingle('cc_app_health', { 'id': 'eq.1', 'select': 'refreshed_at' });
+          if (!row) return { name: 'cc-app-health EF', status: 'dead', sub: 'Cache row missing' };
+          const age = Date.now() - new Date(row.refreshed_at).getTime();
+          if (age > 7200000) return { name: 'cc-app-health EF', status: 'warn', sub: 'Last refresh ' + timeAgo(row.refreshed_at) };
+          return { name: 'cc-app-health EF', status: 'ok', sub: 'Refreshed ' + timeAgo(row.refreshed_at) };
+        } catch(e) { return { name: 'cc-app-health EF', status: 'warn', sub: e.message }; }
+      })(),
+      // sync-health-data — known dead
+      Promise.resolve({ name: 'sync-health-data EF', status: 'dead', sub: 'Dead since 24 May 2026' }),
+      // log-perf — check perf_telemetry last row
+      (async () => {
+        try {
+          const row = await sbGetSingle('perf_telemetry', { 'select': 'ts', 'order': 'ts.desc', 'limit': '1' });
+          if (!row) return { name: 'log-perf EF', status: 'dead', sub: 'No data ever received' };
+          const age = Date.now() - new Date(row.ts).getTime();
+          if (age > 86400000 * 7) return { name: 'log-perf EF', status: 'dead', sub: 'Last data ' + timeAgo(row.ts) };
+          return { name: 'log-perf EF', status: 'ok', sub: 'Last data ' + timeAgo(row.ts) };
+        } catch(e) { return { name: 'log-perf EF', status: 'warn', sub: e.message }; }
+      })(),
+      // daily-report cron
+      (async () => {
+        try {
+          const row = await sbGetSingle('platform_metrics_daily', { 'select': 'metric_date', 'order': 'metric_date.desc', 'limit': '1' });
+          if (!row) return { name: 'daily-report cron', status: 'dead', sub: 'No data' };
+          const age = Date.now() - new Date(row.metric_date).getTime();
+          if (age > 86400000 * 2) return { name: 'daily-report cron', status: 'warn', sub: 'Last run ' + timeAgo(row.metric_date) };
+          return { name: 'daily-report cron', status: 'ok', sub: 'Last run ' + new Date(row.metric_date).toLocaleDateString('en-GB') };
+        } catch(e) { return { name: 'daily-report cron', status: 'warn', sub: e.message }; }
+      })(),
+      // re-engagement cron
+      (async () => {
+        try {
+          const row = await sbGetSingle('engagement_emails', { 'select': 'created_at', 'order': 'created_at.desc', 'limit': '1' });
+          if (!row) return { name: 're-engagement cron', status: 'warn', sub: 'No emails sent yet' };
+          return { name: 're-engagement cron', status: 'ok', sub: 'Last email ' + timeAgo(row.created_at) };
+        } catch(e) { return { name: 're-engagement cron', status: 'warn', sub: e.message }; }
+      })(),
+      // certificate-checker cron
+      (async () => {
+        try {
+          const row = await sbGetSingle('certificates', { 'select': 'created_at', 'order': 'created_at.desc', 'limit': '1' });
+          if (!row) return { name: 'certificate-checker', status: 'warn', sub: 'No certificates issued' };
+          return { name: 'certificate-checker', status: 'ok', sub: 'Last cert ' + timeAgo(row.created_at) };
+        } catch(e) { return { name: 'certificate-checker', status: 'warn', sub: e.message }; }
+      })(),
+    ]);
 
-    const results = await Promise.all(SYSTEM_CHECKS.map(async c => {
-      try { return { name: c.name, ...(await c.check(sb)) }; }
-      catch(e) { return { name: c.name, status: 'warn', sub: 'Check failed: ' + e.message }; }
-    }));
-
-    const deadCount = results.filter(r => r.status === 'dead').length;
-    const warnCount = results.filter(r => r.status === 'warn').length;
+    const deadCount = checks.filter(r => r.status === 'dead').length;
+    const warnCount = checks.filter(r => r.status === 'warn').length;
     meta.textContent = deadCount > 0 ? deadCount + ' down' : warnCount > 0 ? warnCount + ' warnings' : 'All systems ok';
 
-    grid.innerHTML = results.map(r => `
+    grid.innerHTML = checks.map(r => `
       <div class="health-check ${escHtml(r.status)}">
         <div class="hc-dot"></div>
         <div class="hc-body">
