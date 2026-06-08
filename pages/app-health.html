@@ -571,7 +571,7 @@ h1,h2,h3 { font-family: 'Playfair Display', Georgia, serif; font-weight: 600; }
 <script>
 // ── Config ──────────────────────────────────────────────────────────────────
 const SB_URL = 'https://ixjfklpckgxrwjlfsaaz.supabase.co';
-const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTIxNDk2MzEsImV4cCI6MjAyNzcyNTYzMX0.YSVNEVDrOzPPJqCnJVmTJMJZK8bkbNV3RZYiGRKpKJ8';
+const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg';
 const EF_BASE = SB_URL + '/functions/v1';
 
 // ── Theme ───────────────────────────────────────────────────────────────────
@@ -602,16 +602,23 @@ function showToast(msg) {
 
 // ── Auth: get JWT from Supabase session ─────────────────────────────────────
 async function getJwt() {
-  // Check localStorage for supabase session
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key && key.includes('supabase') && key.includes('auth')) {
-      try {
-        const parsed = JSON.parse(localStorage.getItem(key));
-        const at = parsed?.access_token || parsed?.data?.session?.access_token;
-        if (at) return at;
-      } catch (_) {}
+  // CC uses storageKey 'vyve-cc-supabase-auth'
+  try {
+    const raw = localStorage.getItem('vyve-cc-supabase-auth');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      const at = parsed?.access_token
+        || parsed?.data?.session?.access_token
+        || parsed?.session?.access_token;
+      if (at) return at;
     }
+  } catch (_) {}
+  // Fallback: use VYVE_SUPABASE client if available
+  if (window.VYVE_SUPABASE) {
+    try {
+      const { data } = await window.VYVE_SUPABASE.client().auth.getSession();
+      if (data?.session?.access_token) return data.session.access_token;
+    } catch (_) {}
   }
   return null;
 }
