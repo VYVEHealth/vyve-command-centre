@@ -164,12 +164,13 @@ function retRenderFunnel(f) {
   var meta = document.getElementById('funnel-meta');
   if (meta) meta.textContent = f.total ? f.total + ' members total' : '—';
   var stages = [
-    { label: 'Signed up',            n: f.total || 0,                pct: 100 },
-    { label: 'Onboarding complete',  n: f.onboarding_complete || 0,  pct: retPct(f.onboarding_complete, f.total) },
-    { label: 'PWA / app installed',  n: f.pwa_installed || 0,        pct: retPct(f.pwa_installed, f.total) },
-    { label: 'First activity logged',n: f.ever_active || 0,          pct: retPct(f.ever_active, f.total) },
-    { label: 'Active in first 7d',   n: f.active_first_7d || 0,      pct: retPct(f.active_first_7d, f.total) },
-    { label: 'Active in last 30d',   n: f.active_last_30d || 0,      pct: retPct(f.active_last_30d, f.total) },
+    { label: 'Signed up',              n: f.total || 0,               pct: 100 },
+    { label: 'Onboarding complete',    n: f.onboarding_complete || 0, pct: retPct(f.onboarding_complete, f.total) },
+    { label: 'Consent gate (logged in)',n: f.consent_complete || 0,   pct: retPct(f.consent_complete, f.total) },
+    { label: 'Logged first habit',     n: f.habit_logged || 0,        pct: retPct(f.habit_logged, f.total) },
+    { label: 'Active within day 1',    n: f.active_day1 || 0,         pct: retPct(f.active_day1, f.total) },
+    { label: 'Active within 7 days',   n: f.active_first_7d || 0,     pct: retPct(f.active_first_7d, f.total) },
+    { label: 'Active within 30 days',  n: f.active_first_30d || 0,    pct: retPct(f.active_first_30d, f.total) },
   ];
   var html = '<div class="funnel-wrap">';
   stages.forEach(function(s, i) {
