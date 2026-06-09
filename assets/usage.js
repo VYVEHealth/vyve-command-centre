@@ -343,17 +343,18 @@ function usageRenderCompany(companies) {
 
 // ── Members table ─────────────────────────────────────────────────────────────
 function usageRenderMembers(mem) {
-  _membersAll      = mem || [];
-  _membersFiltered = [..._membersAll];
-  _membersPage     = 0;
-  usageApplySortMembers();
-  usageRenderMembersPage();
+  _membersAll  = mem || [];
+  _membersPage = 0;
+  // Apply filter immediately (respects exclude-test default)
+  usageFilterMembers();
 }
 
 function usageFilterMembers() {
-  const q      = (document.getElementById('member-search')?.value || '').toLowerCase();
-  const filter = document.getElementById('member-filter-risk')?.value || '';
+  const q          = (document.getElementById('member-search')?.value || '').toLowerCase();
+  const filter     = document.getElementById('member-filter-risk')?.value || '';
+  const excTest    = document.getElementById('member-excl-test')?.checked !== false; // default true
   _membersFiltered = _membersAll.filter(m => {
+    if (excTest && m.is_test) return false;
     const matchText = !q || (m.member_email || '').toLowerCase().includes(q);
     const matchFilter = !filter
       || (filter === 'at_risk' && m.at_risk)

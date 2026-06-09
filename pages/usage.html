@@ -293,6 +293,10 @@ h1,h2,h3{font-family:'Playfair Display',Georgia,serif;font-weight:600}
           <option value="active">Active (7d)</option>
           <option value="inactive">Inactive (30d+)</option>
         </select>
+        <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-muted);cursor:pointer;white-space:nowrap">
+          <input type="checkbox" id="member-excl-test" checked onchange="usageFilterMembers()" style="accent-color:var(--teal-lt)"/>
+          Exclude test
+        </label>
         <span id="member-count-label" style="font-size:11px;color:var(--text-dim);white-space:nowrap">— members</span>
       </div>
     </div>
