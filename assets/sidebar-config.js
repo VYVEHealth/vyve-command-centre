@@ -63,7 +63,11 @@ window.VYVE_NAV = [
   {
     section: "Insights",
     items: [
-      { slug: "usage",      label: "Usage Analytics", icon: "bar-chart", status: "live" }
+      { slug: "usage",     label: "Overview & Members", icon: "grid",        status: "live" },
+      { slug: "retention", label: "Retention",           icon: "trending-up", status: "live" },
+      { slug: "activity",  label: "Activity Depth",      icon: "bar-chart",   status: "coming-soon" },
+      { slug: "wellbeing", label: "Wellbeing",            icon: "heart",       status: "coming-soon" },
+      { slug: "platform",  label: "Platform & UX",        icon: "monitor",     status: "coming-soon" }
     ]
   },
   {
