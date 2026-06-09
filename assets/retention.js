@@ -130,6 +130,9 @@ function retRenderAll(row) {
   retRenderHeadline(f, dorm);
   retRenderFunnel(f);
   retRenderDormancy(dorm);
+  retRenderDayN(f.day_n_curves || []);
+  retRenderStreaks(f.streak || {});
+  retRenderCriticalEvents(f.critical_events || {});
   retRenderCohorts(cohorts);
   retRenderAtRisk(atRisk);
 }
@@ -163,14 +166,14 @@ function retRenderFunnel(f) {
   if (!el) return;
   var meta = document.getElementById('funnel-meta');
   if (meta) meta.textContent = f.total ? f.total + ' members total' : '—';
+  // Consent gate removed — signal unreliable (10-min timeout bug means many real users lack the flag)
   var stages = [
-    { label: 'Signed up',              n: f.total || 0,               pct: 100 },
-    { label: 'Onboarding complete',    n: f.onboarding_complete || 0, pct: retPct(f.onboarding_complete, f.total) },
-    { label: 'Consent gate (logged in)',n: f.consent_complete || 0,   pct: retPct(f.consent_complete, f.total) },
-    { label: 'Logged first habit',     n: f.habit_logged || 0,        pct: retPct(f.habit_logged, f.total) },
-    { label: 'Active within day 1',    n: f.active_day1 || 0,         pct: retPct(f.active_day1, f.total) },
-    { label: 'Active within 7 days',   n: f.active_first_7d || 0,     pct: retPct(f.active_first_7d, f.total) },
-    { label: 'Active within 30 days',  n: f.active_first_30d || 0,    pct: retPct(f.active_first_30d, f.total) },
+    { label: 'Signed up',             n: f.total || 0,               pct: 100 },
+    { label: 'Onboarding complete',   n: f.onboarding_complete || 0, pct: retPct(f.onboarding_complete, f.total) },
+    { label: 'Logged first habit',    n: f.habit_logged || 0,        pct: retPct(f.habit_logged, f.total) },
+    { label: 'Active within day 1',   n: f.active_day1 || 0,         pct: retPct(f.active_day1, f.total) },
+    { label: 'Active within 7 days',  n: f.active_first_7d || 0,     pct: retPct(f.active_first_7d, f.total) },
+    { label: 'Active within 30 days', n: f.active_first_30d || 0,    pct: retPct(f.active_first_30d, f.total) },
   ];
   var html = '<div class="funnel-wrap">';
   stages.forEach(function(s, i) {
