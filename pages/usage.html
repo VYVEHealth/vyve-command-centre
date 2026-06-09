@@ -298,6 +298,9 @@ h1,h2,h3{font-family:'Playfair Display',Georgia,serif;font-weight:600}
           Exclude test
         </label>
         <span id="member-count-label" style="font-size:11px;color:var(--text-dim);white-space:nowrap">— members</span>
+        <button class="btn btn-sm" onclick="usageShowNeverActive()" title="Email members who have never logged any activity" style="white-space:nowrap">
+          ✉ Email never-active
+        </button>
       </div>
     </div>
 
@@ -308,6 +311,7 @@ h1,h2,h3{font-family:'Playfair Display',Georgia,serif;font-weight:600}
             <tr>
               <th onclick="usageSortMembers('email')">Member</th>
               <th onclick="usageSortMembers('engagement_score')" class="sorted">Score ↓</th>
+              <th title="Activities logged today (live)">Today</th>
               <th onclick="usageSortMembers('activities_7d')">7d acts</th>
               <th onclick="usageSortMembers('activities_30d')">30d acts</th>
               <th onclick="usageSortMembers('active_days_30d')">Active days</th>
@@ -318,7 +322,7 @@ h1,h2,h3{font-family:'Playfair Display',Georgia,serif;font-weight:600}
             </tr>
           </thead>
           <tbody id="members-tbody">
-            <tr><td colspan="9"><div class="loading-row"></div></td></tr>
+            <tr><td colspan="10"><div class="loading-row"></div></td></tr>
           </tbody>
         </table>
       </div>
@@ -334,6 +338,30 @@ h1,h2,h3{font-family:'Playfair Display',Georgia,serif;font-weight:600}
   </div><!-- #tab-members -->
 
 </div><!-- .page-wrap -->
+
+
+<!-- ── Never-active email modal ──────────────────────────────────────────────── -->
+<div class="modal-backdrop hidden" id="never-active-modal" onclick="usageCloseNeverActive(event)">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:520px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Email never-active members</div>
+        <div class="modal-sub">Sends a personalised re-engagement email via Brevo to each member below</div>
+      </div>
+      <button class="modal-close" onclick="usageCloseNeverActive()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="na-list" style="max-height:300px;overflow-y:auto;margin-bottom:16px"></div>
+      <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:11px;color:var(--text-muted);margin-bottom:16px;line-height:1.6">
+        <strong style="color:var(--text)">Email content:</strong> Subject: "Your VYVE journey is waiting" · Persona-voiced intro · Deep link to app · Unsubscribe footer. Sent from team@vyvehealth.co.uk.
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="btn btn-primary" id="na-send-btn" onclick="usageSendNeverActive()">Send</button>
+        <span id="na-status" style="font-size:12px"></span>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- ── Member 360 modal ───────────────────────────────────────────────── -->
 <div class="modal-backdrop hidden" id="m360-modal" onclick="usageCloseModal(event)">

@@ -14,6 +14,7 @@ let _membersFiltered = [];     // after search/filter
 let _membersSort     = { col: 'engagement_score', dir: -1 };
 let _membersPage     = 0;
 const MEMBERS_PER_PAGE = 25;
+let _todayMap        = {};     // email -> today_acts (live, not from cache)
 
 // ── Theme ────────────────────────────────────────────────────────────────────
 function usageApplyTheme(t) {
@@ -421,7 +422,7 @@ function usageRenderMembersPage() {
   if (countLbl) countLbl.textContent = total + ' member' + (total !== 1 ? 's' : '');
 
   if (!total) {
-    tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state">No members match this filter</div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state">No members match this filter</div></td></tr>';
     if (pg) pg.style.display = 'none';
     return;
   }
@@ -443,6 +444,7 @@ function usageRenderMembersPage() {
       + (m.needs_support ? ' <span class="pill pill-danger" style="font-size:9px">support</span>' : '')
       + '</div></td>'
       + '<td class="num"><div class="score-ring ' + usageScoreClass(score) + '">' + score + '</div></td>'
+      + '<td class="num">' + ((_todayMap[m.member_email] || 0) > 0 ? '<strong style="color:var(--success)">' + _todayMap[m.member_email] + '</strong>' : '<span style="color:var(--text-dim)">0</span>') + '</td>'
       + '<td class="num">' + (m.activities_7d || 0) + '</td>'
       + '<td class="num"><div class="act-bar-wrap"><div class="act-bar-bg"><div class="act-bar-fill" style="width:' + barW + '%"></div></div>' + (m.activities_30d || 0) + '</div></td>'
       + '<td class="num">' + (m.active_days_30d || 0) + '</td>'
@@ -553,7 +555,88 @@ function usageCloseModal(e) {
   }
 }
 
+// ── Never-active email modal ──────────────────────────────────────────────────────────
+function usageShowNeverActive() {
+  const neverActive = _membersAll.filter(m => {
+    const excTest = document.getElementById('member-excl-test')?.checked !== false;
+    if (excTest && m.is_test) return false;
+    return !m.last_activity_at && m.total_activities === 0;
+  });
+
+  const modal   = document.getElementById('never-active-modal');
+  const list    = document.getElementById('na-list');
+  const sendBtn = document.getElementById('na-send-btn');
+  const status  = document.getElementById('na-status');
+  if (!modal) return;
+
+  status.textContent = '';
+  sendBtn.disabled = false;
+  sendBtn.textContent = 'Send re-engagement email to all (' + neverActive.length + ')';
+
+  list.innerHTML = neverActive.length
+    ? neverActive.map(m => {
+        const daysSince = m.joined_at
+          ? Math.floor((Date.now() - new Date(m.joined_at).getTime()) / 86400000)
+          : '?';
+        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">'
+          + '<span style="font-size:12px">' + usageEsc(m.member_email) + '</span>'
+          + '<span style="font-size:11px;color:var(--text-dim)">joined ' + daysSince + 'd ago</span>'
+          + '</div>';
+      }).join('')
+    : '<div class="empty-state">No never-active members matching current filter</div>';
+
+  modal.classList.remove('hidden');
+  window._neverActiveList = neverActive;
+}
+
+function usageCloseNeverActive(e) {
+  if (!e || e.target === document.getElementById('never-active-modal')) {
+    document.getElementById('never-active-modal')?.classList.add('hidden');
+  }
+}
+
+async function usageSendNeverActive() {
+  const list    = window._neverActiveList || [];
+  const sendBtn = document.getElementById('na-send-btn');
+  const status  = document.getElementById('na-status');
+  if (!list.length) return;
+
+  sendBtn.disabled = true;
+  sendBtn.textContent = 'Sending…';
+  status.textContent = '';
+
+  try {
+    const jwt = await usageGetJwt();
+    const res = await fetch(USAGE_EF_BASE + '/cc-usage', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': USAGE_SB_ANON,
+        'Authorization': 'Bearer ' + (jwt || USAGE_SB_ANON),
+      },
+      body: JSON.stringify({ action: 'send_never_active', emails: list.map(m => m.member_email) }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      status.textContent = '✓ Sent to ' + (data.sent || list.length) + ' members';
+      status.style.color = 'var(--success)';
+      sendBtn.textContent = 'Done';
+    } else {
+      status.textContent = 'Error: ' + (data.error || 'unknown');
+      status.style.color = 'var(--danger)';
+      sendBtn.disabled = false;
+      sendBtn.textContent = 'Retry';
+    }
+  } catch (e) {
+    status.textContent = 'Error: ' + e.message;
+    status.style.color = 'var(--danger)';
+    sendBtn.disabled = false;
+    sendBtn.textContent = 'Retry';
+  }
+}
+
 // ── Boot ──────────────────────────────────────────────────────────────────────
 (function usageBoot() {
   usageLoadData();
+  usageLoadToday();
 })();
