@@ -4,697 +4,449 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>App Health — VYVE Command Centre</title>
-
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-
   <style>
-/* ── Dual theme tokens ─────────────────────────────────────────────────── */
+/* ── Dual theme tokens ──────────────────────────────────────────────── */
 html[data-theme="dark"] {
-  --bg:          #0D2B2B;
-  --bg-alt:      #0A2222;
-  --surface:     #112E2E;
-  --surface-2:   #163535;
-  --border:      rgba(77,170,170,.16);
-  --border-strong: rgba(77,170,170,.28);
-  --text:        #EAF5F5;
-  --text-muted:  rgba(234,245,245,.55);
-  --text-dim:    rgba(234,245,245,.32);
-  --teal:        #1B7878;
-  --teal-lt:     #4DAAAA;
-  --gold:        #C9A84C;
-  --danger:      #e8674a;
-  --danger-pale: rgba(232,103,74,.12);
-  --warning:     #e8a34a;
-  --warning-pale:rgba(232,163,74,.12);
-  --success:     #22c55e;
-  --success-pale:rgba(34,197,94,.12);
-  --settled:     rgba(234,245,245,.16);
-  --settled-pale:rgba(234,245,245,.06);
-  --sidebar-bg:  #0A2222;
+  --bg:#0D2B2B;--bg-alt:#0A2222;--surface:#112E2E;--surface-2:#163535;
+  --border:rgba(77,170,170,.16);--border-strong:rgba(77,170,170,.28);
+  --text:#EAF5F5;--text-muted:rgba(234,245,245,.55);--text-dim:rgba(234,245,245,.32);
+  --teal:#1B7878;--teal-lt:#4DAAAA;--gold:#C9A84C;
+  --danger:#e8674a;--danger-pale:rgba(232,103,74,.12);
+  --warning:#e8a34a;--warning-pale:rgba(232,163,74,.12);
+  --success:#22c55e;--success-pale:rgba(34,197,94,.12);
+  --info:#4DAAAA;--info-pale:rgba(77,170,170,.1);
+  --settled:rgba(234,245,245,.16);--settled-pale:rgba(234,245,245,.06);
+  --sidebar-bg:#0A2222;
 }
 html[data-theme="light"] {
-  --bg:          #f4faf8;
-  --bg-alt:      #edf5f3;
-  --surface:     #ffffff;
-  --surface-2:   #f0f7f5;
-  --border:      #d0e6e0;
-  --border-strong:#a8cfc7;
-  --text:        #0D2B2B;
-  --text-muted:  #567373;
-  --text-dim:    #8AADAD;
-  --teal:        #1B7878;
-  --teal-lt:     #4DAAAA;
-  --gold:        #C9A84C;
-  --danger:      #c9433a;
-  --danger-pale: #fdecea;
-  --warning:     #c97a2a;
-  --warning-pale:#fdf2e3;
-  --success:     #1a9448;
-  --success-pale:#e6f6ec;
-  --settled:     rgba(0,0,0,.06);
-  --settled-pale:rgba(0,0,0,.03);
-  --sidebar-bg:  #0A2222;
+  --bg:#f4faf8;--bg-alt:#edf5f3;--surface:#ffffff;--surface-2:#f0f7f5;
+  --border:#d0e6e0;--border-strong:#a8cfc7;
+  --text:#0D2B2B;--text-muted:#567373;--text-dim:#8AADAD;
+  --teal:#1B7878;--teal-lt:#4DAAAA;--gold:#C9A84C;
+  --danger:#c9433a;--danger-pale:#fdecea;
+  --warning:#c97a2a;--warning-pale:#fdf2e3;
+  --success:#1a9448;--success-pale:#e6f6ec;
+  --info:#1B7878;--info-pale:rgba(27,120,120,.08);
+  --settled:rgba(0,0,0,.06);--settled-pale:rgba(0,0,0,.03);
+  --sidebar-bg:#0A2222;
 }
-
-/* ── Base ──────────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { font-size: 14px; }
-body {
-  font-family: 'Inter', -apple-system, sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  line-height: 1.5;
-  padding: 0;
-}
+body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
 h1,h2,h3 { font-family: 'Playfair Display', Georgia, serif; font-weight: 600; }
 
-/* ── Layout ────────────────────────────────────────────────────────────── */
-.page-wrap {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 28px 24px 80px;
-}
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 28px;
-  flex-wrap: wrap;
-}
-.page-title {
-  font-size: 22px;
-  color: var(--text);
-}
-.page-sub {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-top: 2px;
-}
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
+/* ── Layout ──────────────────────────────────────────────────────────── */
+.page-wrap { max-width: 1200px; margin: 0 auto; padding: 24px 24px 80px; }
+.page-header { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:20px; flex-wrap:wrap; }
+.page-title { font-size:22px; color:var(--text); }
+.page-sub { font-size:12px; color:var(--text-muted); margin-top:2px; }
+.header-actions { display:flex; align-items:center; gap:10px; }
 
-/* ── Buttons ───────────────────────────────────────────────────────────── */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 14px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  border: 1px solid var(--border-strong);
-  background: var(--surface);
-  color: var(--text-muted);
-  transition: background .15s, color .15s;
-  text-decoration: none;
-}
-.btn:hover { background: var(--surface-2); color: var(--text); }
-.btn-primary {
-  background: var(--teal);
-  color: #fff;
-  border-color: var(--teal);
-}
-.btn-primary:hover { background: #166262; color: #fff; }
-.btn-danger-sm {
-  padding: 4px 10px;
-  font-size: 11px;
-  background: transparent;
-  border: 1px solid var(--danger);
-  color: var(--danger);
-  border-radius: 6px;
-  cursor: pointer;
-  font-family: inherit;
-  transition: background .15s;
-}
-.btn-danger-sm:hover { background: var(--danger-pale); }
-.btn-danger-sm:disabled { opacity: .4; cursor: default; }
+/* ── Buttons ─────────────────────────────────────────────────────────── */
+.btn { display:inline-flex; align-items:center; gap:6px; padding:7px 14px; border-radius:8px; font-size:12px; font-weight:500; cursor:pointer; border:1px solid var(--border-strong); background:var(--surface); color:var(--text-muted); transition:background .15s,color .15s; text-decoration:none; font-family:inherit; }
+.btn:hover { background:var(--surface-2); color:var(--text); }
+.btn-primary { background:var(--teal); color:#fff; border-color:var(--teal); }
+.btn-primary:hover { background:#166262; color:#fff; }
+.btn-sm { padding:4px 10px; font-size:11px; border-radius:6px; }
+.btn-danger-sm { padding:4px 10px; font-size:11px; background:transparent; border:1px solid var(--danger); color:var(--danger); border-radius:6px; cursor:pointer; font-family:inherit; transition:background .15s; }
+.btn-danger-sm:hover { background:var(--danger-pale); }
+.btn-danger-sm:disabled { opacity:.4; cursor:default; }
+.theme-toggle { width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+.theme-toggle:hover { color:var(--text);background:var(--surface-2); }
 
-/* ── Theme toggle ──────────────────────────────────────────────────────── */
-.theme-toggle {
-  width: 32px; height: 32px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text-muted);
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-}
-.theme-toggle:hover { color: var(--text); background: var(--surface-2); }
+/* ── Tabs ────────────────────────────────────────────────────────────── */
+.tab-bar { display:flex; gap:2px; margin-bottom:20px; border-bottom:1px solid var(--border); padding-bottom:0; overflow-x:auto; }
+.tab-btn { padding:10px 18px; font-size:12px; font-weight:500; color:var(--text-muted); background:none; border:none; border-bottom:2px solid transparent; cursor:pointer; white-space:nowrap; font-family:inherit; transition:color .15s,border-color .15s; display:flex; align-items:center; gap:6px; margin-bottom:-1px; }
+.tab-btn:hover { color:var(--text); }
+.tab-btn.active { color:var(--teal-lt); border-bottom-color:var(--teal-lt); }
+.tab-pane { display:block; }
+.tab-pane.hidden { display:none; }
+.tab-count { display:inline-flex; align-items:center; justify-content:center; min-width:18px; height:18px; padding:0 5px; border-radius:10px; font-size:10px; font-weight:600; background:var(--danger-pale); color:var(--danger); }
+.tab-count.ok { background:var(--success-pale); color:var(--success); }
+.tab-count.warn { background:var(--warning-pale); color:var(--warning); }
+.tab-count.neutral { background:var(--settled-pale); color:var(--text-dim); }
 
-/* ── Cards ─────────────────────────────────────────────────────────────── */
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 20px;
-}
-.card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-.card-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text);
-  letter-spacing: .02em;
-  text-transform: uppercase;
-}
-.card-meta {
-  font-size: 11px;
-  color: var(--text-dim);
-}
+/* ── Cards ───────────────────────────────────────────────────────────── */
+.card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:16px; }
+.card-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; }
+.card-title { font-size:12px; font-weight:600; color:var(--text); letter-spacing:.04em; text-transform:uppercase; }
+.card-meta { font-size:11px; color:var(--text-dim); }
+.section-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--text-dim); margin:24px 0 10px; }
 
-/* ── Status pill ───────────────────────────────────────────────────────── */
-.pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 500;
-}
-.pill-live   { background: var(--danger-pale);  color: var(--danger); }
-.pill-warn   { background: var(--warning-pale); color: var(--warning); }
-.pill-ok     { background: var(--success-pale); color: var(--success); }
-.pill-grey   { background: var(--settled-pale); color: var(--text-dim); }
-.pill-dot    { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+/* ── Stat strip ──────────────────────────────────────────────────────── */
+.stat-strip { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; margin-bottom:16px; }
+.stat-cell { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px 14px; }
+.stat-cell.alert { border-color:rgba(232,103,74,.3); background:var(--danger-pale); }
+.stat-cell.warn { border-color:rgba(232,163,74,.25); background:var(--warning-pale); }
+.stat-cell.ok { border-color:rgba(34,197,94,.2); background:var(--success-pale); }
+.stat-cell.info { border-color:rgba(77,170,170,.2); background:var(--info-pale); }
+.stat-label { font-size:10px; color:var(--text-muted); margin-bottom:4px; }
+.stat-value { font-size:22px; font-weight:700; color:var(--text); line-height:1.1; }
+.stat-cell.alert .stat-value { color:var(--danger); }
+.stat-cell.warn .stat-value { color:var(--warning); }
+.stat-cell.ok .stat-value { color:var(--success); }
+.stat-sub { font-size:10px; color:var(--text-dim); margin-top:2px; }
 
-/* ── Headline strip ────────────────────────────────────────────────────── */
-.stat-strip {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 12px;
-  margin-bottom: 20px;
-}
-.stat-cell {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 14px 16px;
-}
-.stat-label {
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-bottom: 4px;
-}
-.stat-value {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--text);
-  line-height: 1.1;
-}
-.stat-sub {
-  font-size: 10px;
-  color: var(--text-dim);
-  margin-top: 2px;
-}
+/* ── Pills ───────────────────────────────────────────────────────────── */
+.pill { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:500; }
+.pill-live { background:var(--danger-pale); color:var(--danger); }
+.pill-warn { background:var(--warning-pale); color:var(--warning); }
+.pill-ok   { background:var(--success-pale); color:var(--success); }
+.pill-info { background:var(--info-pale); color:var(--info); }
+.pill-grey { background:var(--settled-pale); color:var(--text-dim); }
+.pill-dot  { width:6px;height:6px;border-radius:50%;background:currentColor; }
 
-/* ── Error rows ────────────────────────────────────────────────────────── */
-.error-list { display: flex; flex-direction: column; gap: 10px; }
-.error-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 14px 16px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--bg-alt);
-}
-.error-row.live {
-  border-color: rgba(232,103,74,.3);
-  background: var(--danger-pale);
-}
-.error-row.warning {
-  border-color: rgba(232,163,74,.3);
-  background: var(--warning-pale);
-}
-.error-row.settled {
-  border-color: var(--settled);
-  background: var(--settled-pale);
-  opacity: .8;
-}
-.error-icon {
-  width: 32px; height: 32px;
-  border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 15px;
-  flex-shrink: 0;
-  background: rgba(255,255,255,.08);
-}
-.error-row.live .error-icon { background: var(--danger-pale); }
-.error-row.warning .error-icon { background: var(--warning-pale); }
-.error-row.settled .error-icon { background: var(--settled-pale); }
-.error-body { flex: 1; min-width: 0; }
-.error-type {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text);
-  margin-bottom: 2px;
-  word-break: break-word;
-}
-.error-row.settled .error-type { color: var(--text-muted); }
-.error-stats {
-  font-size: 11px;
-  color: var(--text-muted);
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-.error-stats strong { color: var(--text); }
-.error-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+/* ── Error rows ──────────────────────────────────────────────────────── */
+.error-list { display:flex; flex-direction:column; gap:8px; }
+.error-row { display:flex; align-items:flex-start; gap:12px; padding:12px 14px; border-radius:10px; border:1px solid var(--border); background:var(--bg-alt); cursor:pointer; transition:opacity .15s; }
+.error-row:hover { opacity:.85; }
+.error-row.live   { border-color:rgba(232,103,74,.3); background:var(--danger-pale); }
+.error-row.warn   { border-color:rgba(232,163,74,.3); background:var(--warning-pale); }
+.error-row.settled { border-color:var(--settled); background:var(--settled-pale); opacity:.8; }
+.error-icon { width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;background:rgba(255,255,255,.06); }
+.error-body { flex:1; min-width:0; }
+.error-type { font-size:12px; font-weight:600; color:var(--text); margin-bottom:2px; word-break:break-word; }
+.error-row.settled .error-type { color:var(--text-muted); }
+.error-stats { font-size:11px; color:var(--text-muted); display:flex; gap:10px; flex-wrap:wrap; }
+.error-stats strong { color:var(--text); }
+.error-actions { display:flex; align-items:center; gap:8px; flex-shrink:0; }
 
-/* ── Table ─────────────────────────────────────────────────────────────── */
-.data-table { width: 100%; border-collapse: collapse; }
-.data-table th {
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .06em;
-  color: var(--text-dim);
-  padding: 8px 10px;
-  text-align: left;
-  border-bottom: 1px solid var(--border);
-}
-.data-table td {
-  padding: 9px 10px;
-  font-size: 12px;
-  color: var(--text-muted);
-  border-bottom: 1px solid var(--border);
-}
-.data-table tbody tr:last-child td { border-bottom: none; }
-.data-table tbody tr:hover td { background: var(--surface-2); }
-.data-table td.page-name { color: var(--text); font-weight: 500; font-family: monospace; font-size: 11px; }
-.data-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
-.bar-cell { display: flex; align-items: center; gap: 8px; }
-.bar-track {
-  flex: 1;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--border);
-  overflow: hidden;
-}
-.bar-fill {
-  height: 100%;
-  border-radius: 2px;
-  background: var(--teal-lt);
-}
-.bar-fill.slow { background: var(--warning); }
-.bar-fill.very-slow { background: var(--danger); }
+/* ── Trend chart ─────────────────────────────────────────────────────── */
+.trend-wrap { padding:4px 0 0; }
+.trend-legend { display:flex; gap:14px; margin-top:8px; }
+.trend-legend-item { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--text-muted); }
+.legend-dot { width:8px;height:8px;border-radius:2px; }
 
-/* ── Dead pages ────────────────────────────────────────────────────────── */
-.dead-page-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.dead-page-chip {
-  padding: 3px 8px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  font-size: 11px;
-  font-family: monospace;
-  color: var(--text-muted);
-}
+/* ── Source breakdown table ──────────────────────────────────────────── */
+.source-grid { display:flex; flex-direction:column; gap:6px; }
+.source-row { display:flex; align-items:center; gap:10px; padding:8px 12px; border-radius:8px; background:var(--bg-alt); border:1px solid var(--border); }
+.source-name { flex:1; font-size:12px; font-weight:500; color:var(--text); font-family:monospace; }
+.source-bar-wrap { flex:2; height:6px; background:var(--border); border-radius:3px; overflow:hidden; }
+.source-bar-fill { height:100%; border-radius:3px; background:var(--danger); }
+.source-meta { display:flex; gap:12px; font-size:11px; color:var(--text-muted); flex-shrink:0; }
+.source-meta strong { color:var(--text); }
 
-/* ── Collapsed settled section ─────────────────────────────────────────── */
-.settled-toggle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 0;
-  font-size: 12px;
-  color: var(--text-muted);
-  cursor: pointer;
-  user-select: none;
-  border: none;
-  background: none;
-  font-family: inherit;
-  width: 100%;
-  text-align: left;
-}
-.settled-toggle:hover { color: var(--text); }
-.settled-toggle .chevron { transition: transform .2s; font-size: 10px; }
-.settled-toggle.open .chevron { transform: rotate(90deg); }
-.settled-body { display: none; }
-.settled-body.open { display: block; }
+/* ── Cron table ──────────────────────────────────────────────────────── */
+.cron-summary { display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
+.cron-badge { display:flex; align-items:center; gap:6px; padding:6px 12px; border-radius:8px; font-size:12px; font-weight:600; }
+.cron-badge.ok   { background:var(--success-pale); color:var(--success); }
+.cron-badge.warn { background:var(--warning-pale); color:var(--warning); }
+.cron-badge.dead { background:var(--danger-pale); color:var(--danger); }
+.cron-badge.off  { background:var(--settled-pale); color:var(--text-dim); }
+.cron-dot { width:8px;height:8px;border-radius:50%;background:currentColor; }
+.data-table { width:100%; border-collapse:collapse; }
+.data-table th { font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);padding:8px 10px;text-align:left;border-bottom:1px solid var(--border); }
+.data-table td { padding:8px 10px;font-size:12px;color:var(--text-muted);border-bottom:1px solid var(--border); }
+.data-table tbody tr:last-child td { border-bottom:none; }
+.data-table tbody tr:hover td { background:var(--surface-2); }
+.data-table td.mono { font-family:monospace;font-size:11px; }
+.data-table td.num { text-align:right;font-variant-numeric:tabular-nums; }
+.status-dot { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:500; }
+.dot { width:8px;height:8px;border-radius:50%;flex-shrink:0; }
+.dot-ok   { background:var(--success); }
+.dot-warn { background:var(--warning); }
+.dot-dead { background:var(--danger); }
+.dot-off  { background:var(--text-dim); }
+.cron-group-label { font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);padding:10px 10px 4px;font-weight:700; }
 
-/* ── Coming soon placeholder ───────────────────────────────────────────── */
-.coming-soon-card {
-  border: 1px dashed var(--border-strong);
-  border-radius: 12px;
-  padding: 18px 20px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-top: 20px;
-  opacity: .65;
-}
-.coming-soon-icon {
-  width: 36px; height: 36px;
-  border-radius: 10px;
-  background: var(--surface-2);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px;
-  flex-shrink: 0;
-}
-.coming-soon-label {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-muted);
-}
-.coming-soon-sub {
-  font-size: 11px;
-  color: var(--text-dim);
-  margin-top: 2px;
-}
+/* ── Pipeline cards ──────────────────────────────────────────────────── */
+.pipeline-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
+.pipeline-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; }
+.pipeline-card.ok   { border-color:rgba(34,197,94,.2); }
+.pipeline-card.warn { border-color:rgba(232,163,74,.25); }
+.pipeline-card.dead { border-color:rgba(232,103,74,.3); }
+.pipeline-card-header { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; }
+.pipeline-icon { font-size:18px; }
+.pipeline-title { font-size:12px; font-weight:600; color:var(--text); letter-spacing:.03em; text-transform:uppercase; }
+.pipeline-rows { display:flex; flex-direction:column; gap:5px; }
+.pipeline-row { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:12px; }
+.pipeline-row-label { color:var(--text-muted); }
+.pipeline-row-value { font-weight:600; color:var(--text); font-variant-numeric:tabular-nums; }
+.pipeline-row-value.ok   { color:var(--success); }
+.pipeline-row-value.warn { color:var(--warning); }
+.pipeline-row-value.dead { color:var(--danger); }
+.pipeline-row-value.dim  { color:var(--text-dim); font-weight:400; }
 
-/* ── Empty / loading state ─────────────────────────────────────────────── */
-.empty-state {
-  padding: 32px 20px;
-  text-align: center;
-  color: var(--text-dim);
-  font-size: 13px;
-}
-.empty-state .ok-icon { font-size: 28px; margin-bottom: 8px; }
-.loading-row {
-  height: 48px;
-  border-radius: 10px;
-  background: linear-gradient(90deg, var(--surface) 25%, var(--surface-2) 50%, var(--surface) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.4s infinite;
-  margin-bottom: 10px;
-}
-@keyframes shimmer { to { background-position: -200% 0; } }
+/* ── Perf table ──────────────────────────────────────────────────────── */
+.bar-cell { display:flex; align-items:center; gap:8px; }
+.bar-track { flex:1;height:4px;border-radius:2px;background:var(--border);overflow:hidden; }
+.bar-fill { height:100%;border-radius:2px;background:var(--teal-lt); }
+.bar-fill.slow { background:var(--warning); }
+.bar-fill.very-slow { background:var(--danger); }
+.dead-page-list { display:flex; flex-wrap:wrap; gap:6px; }
+.dead-page-chip { padding:3px 8px; background:var(--surface-2); border:1px solid var(--border); border-radius:6px; font-size:11px; font-family:monospace; color:var(--text-muted); }
 
-/* ── Refresh indicator ─────────────────────────────────────────────────── */
-.refresh-status {
-  font-size: 11px;
-  color: var(--text-dim);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.spinning { animation: spin .8s linear infinite; display: inline-block; }
-@keyframes spin { to { transform: rotate(360deg); } }
+/* ── Pagination ──────────────────────────────────────────────────────── */
+.pagination { display:flex;align-items:center;justify-content:space-between;padding:10px 0 0;font-size:11px;color:var(--text-muted); }
+.pagination-btns { display:flex; gap:6px; }
+.page-btn { padding:4px 10px;border-radius:6px;font-size:11px;border:1px solid var(--border);background:var(--surface);color:var(--text-muted);cursor:pointer;font-family:inherit; }
+.page-btn:hover:not(:disabled) { background:var(--surface-2);color:var(--text); }
+.page-btn:disabled { opacity:.35;cursor:default; }
 
+/* ── Settled toggle ──────────────────────────────────────────────────── */
+.settled-toggle { display:flex;align-items:center;gap:8px;padding:10px 0;font-size:12px;color:var(--text-muted);cursor:pointer;user-select:none;border:none;background:none;font-family:inherit;width:100%;text-align:left; }
+.settled-toggle:hover { color:var(--text); }
+.settled-toggle .chevron { transition:transform .2s; font-size:10px; }
+.settled-toggle.open .chevron { transform:rotate(90deg); }
+.settled-body { display:none; }
+.settled-body.open { display:block; }
 
+/* ── Modal ───────────────────────────────────────────────────────────── */
+.modal-backdrop { position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px; }
+.modal-backdrop.hidden { display:none; }
+.modal { background:var(--surface);border:1px solid var(--border-strong);border-radius:14px;width:100%;max-width:700px;max-height:82vh;display:flex;flex-direction:column;overflow:hidden; }
+.modal-header { padding:16px 20px 12px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:12px; }
+.modal-title { font-size:14px;font-weight:600;color:var(--text);flex:1;word-break:break-word; }
+.modal-sub { font-size:11px;color:var(--text-muted);margin-top:3px; }
+.modal-close { width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:var(--surface-2);color:var(--text-muted);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:inherit; }
+.modal-close:hover { color:var(--text); }
+.modal-body { overflow-y:auto;padding:16px 20px;flex:1; }
+.modal-footer { padding:12px 20px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px; }
+.instance-row { padding:10px 0;border-bottom:1px solid var(--border);font-size:12px; }
+.instance-row:last-child { border-bottom:none; }
+.instance-meta { color:var(--text-muted);display:flex;gap:12px;flex-wrap:wrap;margin-top:3px; }
+.instance-detail { font-size:11px;color:var(--text-dim);background:var(--surface-2);border-radius:6px;padding:6px 10px;margin-top:6px;word-break:break-all;font-family:monospace;max-height:80px;overflow-y:auto; }
 
-/* ── System health checks ──────────────────────────────────────────────────── */
-.health-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 10px;
-}
-.health-check {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--bg-alt);
-}
-.health-check.ok    { border-color: rgba(34,197,94,.2);  background: var(--success-pale); }
-.health-check.warn  { border-color: rgba(232,163,74,.2); background: var(--warning-pale); }
-.health-check.dead  { border-color: rgba(232,103,74,.3); background: var(--danger-pale); }
-.hc-dot {
-  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
-}
-.health-check.ok   .hc-dot { background: var(--success); }
-.health-check.warn .hc-dot { background: var(--warning); }
-.health-check.dead .hc-dot { background: var(--danger); }
-.hc-body { flex: 1; min-width: 0; }
-.hc-name { font-size: 12px; font-weight: 600; color: var(--text); }
-.health-check.dead .hc-name { color: var(--danger); }
-.hc-sub  { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+/* ── Toast ───────────────────────────────────────────────────────────── */
+#toast { position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border-strong);border-radius:10px;padding:12px 16px;font-size:12px;color:var(--text);box-shadow:0 8px 32px rgba(0,0,0,.28);opacity:0;transform:translateY(8px);transition:opacity .2s,transform .2s;z-index:9999;pointer-events:none;max-width:300px; }
+#toast.show { opacity:1;transform:translateY(0); }
 
-/* ── Pagination ────────────────────────────────────────────────────────────── */
-.pagination {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 10px 0 0;
-  font-size: 11px; color: var(--text-muted);
-}
-.pagination-btns { display: flex; gap: 6px; }
-.page-btn {
-  padding: 4px 10px; border-radius: 6px; font-size: 11px;
-  border: 1px solid var(--border); background: var(--surface);
-  color: var(--text-muted); cursor: pointer; font-family: inherit;
-}
-.page-btn:hover:not(:disabled) { background: var(--surface-2); color: var(--text); }
-.page-btn:disabled { opacity: .35; cursor: default; }
-
-/* ── Modal ─────────────────────────────────────────────────────────────── */
-.modal-backdrop {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,.6);
-  z-index: 9000;
-  display: flex; align-items: center; justify-content: center;
-  padding: 20px;
-}
-.modal-backdrop.hidden { display: none; }
-.modal {
-  background: var(--surface);
-  border: 1px solid var(--border-strong);
-  border-radius: 14px;
-  width: 100%; max-width: 680px;
-  max-height: 80vh;
-  display: flex; flex-direction: column;
-  overflow: hidden;
-}
-.modal-header {
-  padding: 18px 20px 14px;
-  border-bottom: 1px solid var(--border);
-  display: flex; align-items: flex-start; gap: 12px;
-}
-.modal-title { font-size: 15px; font-weight: 600; color: var(--text); flex: 1; word-break: break-word; }
-.modal-sub { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
-.modal-close {
-  width: 28px; height: 28px; border-radius: 6px;
-  border: 1px solid var(--border); background: var(--surface-2);
-  color: var(--text-muted); cursor: pointer; font-size: 14px;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0; font-family: inherit;
-}
-.modal-close:hover { color: var(--text); }
-.modal-body { overflow-y: auto; padding: 16px 20px; flex: 1; }
-.modal-footer {
-  padding: 12px 20px;
-  border-top: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
-}
-.instance-row {
-  padding: 10px 0;
-  border-bottom: 1px solid var(--border);
-  font-size: 12px;
-}
-.instance-row:last-child { border-bottom: none; }
-.instance-meta { color: var(--text-muted); display: flex; gap: 12px; flex-wrap: wrap; margin-top: 3px; }
-.instance-detail {
-  font-size: 11px; color: var(--text-dim);
-  background: var(--surface-2); border-radius: 6px;
-  padding: 6px 10px; margin-top: 6px;
-  word-break: break-all; font-family: monospace;
-  max-height: 80px; overflow-y: auto;
-}
-.btn-resolve-all {
-  padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 500;
-  cursor: pointer; border: 1px solid var(--danger); background: transparent;
-  color: var(--danger); font-family: inherit; transition: background .15s;
-}
-.btn-resolve-all:hover { background: var(--danger-pale); }
-.btn-resolve-all:disabled { opacity: .4; cursor: default; }
-
-/* ── Toast ─────────────────────────────────────────────────────────────── */
-#toast {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  background: var(--surface);
-  border: 1px solid var(--border-strong);
-  border-radius: 10px;
-  padding: 12px 16px;
-  font-size: 12px;
-  color: var(--text);
-  box-shadow: 0 8px 32px rgba(0,0,0,.28);
-  opacity: 0;
-  transform: translateY(8px);
-  transition: opacity .2s, transform .2s;
-  z-index: 9999;
-  pointer-events: none;
-  max-width: 300px;
-}
-#toast.show { opacity: 1; transform: translateY(0); }
-
-/* ── Section divider ───────────────────────────────────────────────────── */
-.section-label {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  color: var(--text-dim);
-  margin: 28px 0 12px;
-}
+/* ── Misc ────────────────────────────────────────────────────────────── */
+.empty-state { padding:28px 20px;text-align:center;color:var(--text-dim);font-size:12px; }
+.empty-state .ok-icon { font-size:24px;margin-bottom:8px; }
+.loading-row { height:44px;border-radius:10px;background:linear-gradient(90deg,var(--surface) 25%,var(--surface-2) 50%,var(--surface) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;margin-bottom:8px; }
+@keyframes shimmer { to { background-position:-200% 0; } }
+.spinning { animation:spin .8s linear infinite;display:inline-block; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.refresh-status { font-size:11px;color:var(--text-dim);display:flex;align-items:center;gap:6px; }
+.alert-notice { padding:10px 14px;border-radius:8px;font-size:12px;display:flex;align-items:center;gap:10px;margin-bottom:12px; }
+.alert-notice.warn { background:var(--warning-pale);border:1px solid rgba(232,163,74,.25);color:var(--warning); }
+.alert-notice.info { background:var(--info-pale);border:1px solid rgba(77,170,170,.2);color:var(--text-muted); }
+.two-col { display:grid;grid-template-columns:1fr 1fr;gap:12px; }
+@media (max-width:680px) { .two-col { grid-template-columns:1fr; } }
   </style>
 </head>
 <body>
-
 <div class="page-wrap">
 
-  <!-- Page header -->
+  <!-- Header -->
   <div class="page-header">
     <div>
       <h1 class="page-title">App Health</h1>
-      <div class="page-sub">Member-facing portal — errors, usage &amp; performance</div>
+      <div class="page-sub">Member-facing portal — live monitoring</div>
     </div>
     <div class="header-actions">
-      <div class="refresh-status" id="refresh-status">
+      <div class="refresh-status">
         <span id="refresh-text">Loading…</span>
       </div>
       <button class="btn" id="btn-refresh" onclick="triggerRefresh()">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-        Refresh now
+        Refresh cache
       </button>
-      <a class="btn" href="https://eu.posthog.com/project/138491" target="_blank" rel="noopener">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-        Full analytics in PostHog
-      </a>
-      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" id="theme-icon-dark">
-          <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-        </svg>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" id="theme-icon-light" style="display:none">
-          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-        </svg>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" id="ti-dark"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" id="ti-light" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       </button>
     </div>
   </div>
 
-  <!-- ── SECTION 1: Live problems ──────────────────────────────────────── -->
-  <div class="section-label">Live problems right now</div>
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title">Errors hitting members</span>
-      <span class="pill pill-live" id="live-count-pill"><span class="pill-dot"></span> <span id="live-count">—</span> active</span>
-    </div>
-    <div id="live-errors-list" class="error-list">
-      <div class="loading-row"></div>
-      <div class="loading-row" style="opacity:.6"></div>
-      <div class="loading-row" style="opacity:.3"></div>
-    </div>
+  <!-- Tab bar -->
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="overview" onclick="showTab('overview')">
+      Overview
+      <span class="tab-count" id="tc-overview">—</span>
+    </button>
+    <button class="tab-btn" data-tab="cron" onclick="showTab('cron')">
+      Cron Jobs
+      <span class="tab-count neutral" id="tc-cron">—</span>
+    </button>
+    <button class="tab-btn" data-tab="pipelines" onclick="showTab('pipelines')">Pipelines</button>
+    <button class="tab-btn" data-tab="perf" onclick="showTab('perf')">Performance &amp; Usage</button>
   </div>
 
-  <!-- ── SECTION 2: At a glance ─────────────────────────────────────────── -->
-  <div class="section-label">At a glance</div>
-  <div class="stat-strip" id="headline-strip">
-    <div class="stat-cell"><div class="stat-label">Active members (7d)</div><div class="stat-value" id="hl-active">—</div><div class="stat-sub">in the last 7 days</div></div>
-    <div class="stat-cell"><div class="stat-label">Active members (30d)</div><div class="stat-value" id="hl-active30">—</div><div class="stat-sub">in the last 30 days</div></div>
-    <div class="stat-cell"><div class="stat-label">Errors today</div><div class="stat-value" id="hl-errors" style="color:var(--danger)">—</div><div class="stat-sub">high + critical, unresolved</div></div>
-    <div class="stat-cell"><div class="stat-label">Activities logged</div><div class="stat-value" id="hl-activities">—</div><div class="stat-sub">all time</div></div>
-    <div class="stat-cell"><div class="stat-label">Unresolved alerts</div><div class="stat-value" id="hl-alerts">—</div><div class="stat-sub">across all severities</div></div>
-  </div>
+  <!-- ═══════════════════════════ TAB: OVERVIEW ════════════════════════ -->
+  <div class="tab-pane" data-tab="overview">
 
-  <!-- ── SECTION 2b: System health ─────────────────────────────────────────── -->
-  <div class="section-label">System health</div>
-  <div class="card" style="margin-bottom:20px">
-    <div class="card-header">
-      <span class="card-title">Known services</span>
-      <span class="card-meta" id="health-meta">Checking…</span>
-    </div>
-    <div class="health-grid" id="health-grid">
-      <div class="loading-row" style="height:56px"></div>
-      <div class="loading-row" style="height:56px;opacity:.6"></div>
-      <div class="loading-row" style="height:56px;opacity:.3"></div>
-    </div>
-  </div>
-
-    <!-- ── SECTION 3: Page usage ──────────────────────────────────────────── -->
-  <div class="section-label">Page usage — last 7 days</div>
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title">Most-used pages</span>
-      <span class="card-meta" id="usage-refreshed">—</span>
-    </div>
-    <div id="usage-body">
-      <div class="loading-row"></div>
-      <div class="loading-row" style="opacity:.6"></div>
-    </div>
-    <div class="pagination" id="usage-pagination" style="display:none">
-      <span id="usage-page-info">—</span>
-      <div class="pagination-btns">
-        <button class="page-btn" id="usage-prev" onclick="usagePage(-1)">← Prev</button>
-        <button class="page-btn" id="usage-next" onclick="usagePage(1)">Next →</button>
+    <!-- Headline strip -->
+    <div class="stat-strip" id="hl-strip">
+      <div class="stat-cell" id="hl-errors-cell">
+        <div class="stat-label">Unresolved errors</div>
+        <div class="stat-value" id="hl-errors">—</div>
+        <div class="stat-sub" id="hl-errors-sub">loading…</div>
+      </div>
+      <div class="stat-cell" id="hl-active-cell">
+        <div class="stat-label">Active members (7d)</div>
+        <div class="stat-value" id="hl-active">—</div>
+        <div class="stat-sub" id="hl-active-sub">loading…</div>
+      </div>
+      <div class="stat-cell" id="hl-subs-cell">
+        <div class="stat-label">Active subscriptions</div>
+        <div class="stat-value" id="hl-subs">—</div>
+        <div class="stat-sub" id="hl-subs-sub">loading…</div>
+      </div>
+      <div class="stat-cell" id="hl-push-cell">
+        <div class="stat-label">Push registered</div>
+        <div class="stat-value" id="hl-push">—</div>
+        <div class="stat-sub" id="hl-push-sub">iOS + Android</div>
+      </div>
+      <div class="stat-cell" id="hl-hk-cell">
+        <div class="stat-label">HealthKit connected</div>
+        <div class="stat-value" id="hl-hk">—</div>
+        <div class="stat-sub" id="hl-hk-sub">loading…</div>
+      </div>
+      <div class="stat-cell" id="hl-ai-cell">
+        <div class="stat-label">AI calls (24h)</div>
+        <div class="stat-value" id="hl-ai">—</div>
+        <div class="stat-sub">Anthropic API</div>
       </div>
     </div>
-  </div>
 
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title">Pages nobody opened this week</span>
-      <span class="card-meta">zero portal_page_viewed events in 7 days</span>
-    </div>
-    <div id="dead-pages-body">
-      <div class="loading-row"></div>
-    </div>
-  </div>
-
-  <!-- ── SECTION 4: Load times ──────────────────────────────────────────── -->
-  <div class="section-label">Load times — last 7 days</div>
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title">Slowest pages by first paint</span>
-      <span class="card-meta">LCP from perf_telemetry · last data 13 May</span>
-    </div>
-    <div id="perf-body">
-      <div class="loading-row"></div>
-      <div class="loading-row" style="opacity:.6"></div>
-    </div>
-  </div>
-
-  <!-- ── SECTION 5: Settled errors ─────────────────────────────────────── -->
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:0">
-  <button class="settled-toggle" id="settled-toggle" onclick="toggleSettled()" style="flex:1">
-    <span class="chevron">▶</span>
-    <span>Older / settled errors</span>
-    <span class="pill pill-grey" style="margin-left:4px" id="settled-count-pill">— items</span>
-  </button>
-  <div class="settled-body" id="settled-body">
+    <!-- Error trend chart -->
+    <div class="section-label">Error trend — last 7 days</div>
     <div class="card">
       <div class="card-header">
-        <span class="card-title">Settled</span>
-        <span class="card-meta">last seen more than 24h ago, or already resolved</span>
+        <span class="card-title">Errors by day</span>
+        <div style="display:flex;gap:10px;align-items:center">
+          <span class="card-meta" id="trend-meta">—</span>
+          <button class="btn btn-sm" onclick="bulkResolveOld(this)" title="Resolve alerts older than 7 days">Bulk resolve old</button>
+        </div>
       </div>
-      <div id="settled-errors-list" class="error-list">
-        <div class="loading-row"></div>
+      <div class="trend-wrap" id="trend-chart"><div class="loading-row"></div></div>
+      <div class="trend-legend">
+        <div class="trend-legend-item"><div class="legend-dot" style="background:var(--danger)"></div>Critical</div>
+        <div class="trend-legend-item"><div class="legend-dot" style="background:var(--warning)"></div>High</div>
+        <div class="trend-legend-item"><div class="legend-dot" style="background:var(--settled)"></div>Low/medium</div>
       </div>
     </div>
-  </div>
 
-  <!-- ── Text alerts placeholder ─────────────────────────────────────────── -->
-  <div class="coming-soon-card">
-    <div class="coming-soon-icon">📲</div>
-    <div>
-      <div class="coming-soon-label">Text alerts — coming soon</div>
-      <div class="coming-soon-sub">Get an SMS the moment a serious error hits real members. Needs Twilio — scoped for a future session.</div>
+    <!-- Error breakdown by source (24h) -->
+    <div class="section-label">Error sources — last 24 hours</div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">By source</span>
+        <span class="card-meta">unresolved only</span>
+      </div>
+      <div id="ef-errors-body"><div class="loading-row"></div></div>
     </div>
-  </div>
+
+    <!-- Live problems -->
+    <div class="section-label">Live problems right now</div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Errors hitting members</span>
+        <span class="pill pill-live" id="live-count-pill"><span class="pill-dot"></span> <span id="live-count">—</span> active</span>
+      </div>
+      <div id="live-errors-list" class="error-list">
+        <div class="loading-row"></div><div class="loading-row" style="opacity:.6"></div>
+      </div>
+    </div>
+
+    <!-- Cron quick-status -->
+    <div class="section-label">Cron status overview</div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">All cron jobs</span>
+        <a href="#" onclick="showTab('cron');return false" style="font-size:11px;color:var(--teal-lt);text-decoration:none">View all →</a>
+      </div>
+      <div id="cron-quick" class="cron-summary"><div class="loading-row" style="width:200px;height:32px"></div></div>
+      <div id="cron-problems" style="display:none" class="source-grid"></div>
+    </div>
+
+    <!-- Settled errors -->
+    <button class="settled-toggle" id="settled-toggle" onclick="toggleSettled()">
+      <span class="chevron">▶</span>
+      <span>Older / settled errors</span>
+      <span class="pill pill-grey" style="margin-left:4px" id="settled-count-pill">— items</span>
+    </button>
+    <div class="settled-body" id="settled-body">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Settled</span>
+          <button class="btn btn-sm" onclick="bulkResolveSettled(this)">Resolve all settled</button>
+        </div>
+        <div id="settled-errors-list" class="error-list"><div class="loading-row"></div></div>
+      </div>
+    </div>
+
+  </div><!-- /overview -->
+
+  <!-- ═══════════════════════════ TAB: CRON JOBS ══════════════════════ -->
+  <div class="tab-pane hidden" data-tab="cron">
+
+    <div class="alert-notice info">
+      <span>ℹ</span>
+      <span>Status is based on pg_cron dispatch time. For HTTP-calling jobs, "succeeded" means the HTTP request was queued — not that the Edge Function returned 200. Check platform_alerts for EF-level failures.</span>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">All scheduled jobs</span>
+        <div class="cron-summary" id="cron-summary-tab" style="margin:0"></div>
+      </div>
+      <div id="cron-table-body"><div class="loading-row"></div></div>
+    </div>
+
+  </div><!-- /cron -->
+
+  <!-- ═══════════════════════════ TAB: PIPELINES ══════════════════════ -->
+  <div class="tab-pane hidden" data-tab="pipelines">
+
+    <div class="pipeline-grid" id="pipeline-grid">
+      <div class="loading-row" style="height:160px"></div>
+      <div class="loading-row" style="height:160px;opacity:.7"></div>
+      <div class="loading-row" style="height:160px;opacity:.4"></div>
+    </div>
+
+  </div><!-- /pipelines -->
+
+  <!-- ═══════════════════════════ TAB: PERFORMANCE ════════════════════ -->
+  <div class="tab-pane hidden" data-tab="perf">
+
+    <!-- Load times -->
+    <div class="section-label">Page load times</div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">LCP — slowest pages</span>
+        <span class="card-meta" id="perf-meta">p50 / p75 / p95 from perf_telemetry</span>
+      </div>
+      <div id="perf-body"><div class="loading-row"></div></div>
+    </div>
+
+    <!-- Dead pages -->
+    <div class="section-label">Dead pages — no opens this week</div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Zero views (7d)</span>
+        <span class="card-meta">from PostHog</span>
+      </div>
+      <div id="dead-pages-body"><div class="loading-row"></div></div>
+    </div>
+
+    <!-- Page usage -->
+    <div class="section-label">Page usage — last 7 days</div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Most-used pages</span>
+        <span class="card-meta" id="usage-meta">from PostHog</span>
+      </div>
+      <div id="usage-body"><div class="loading-row"></div></div>
+      <div class="pagination" id="usage-pagination" style="display:none">
+        <span id="usage-page-info">—</span>
+        <div class="pagination-btns">
+          <button class="page-btn" id="usage-prev" onclick="usagePage(-1)">← Prev</button>
+          <button class="page-btn" id="usage-next" onclick="usagePage(1)">Next →</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /perf -->
 
 </div><!-- .page-wrap -->
 
-<!-- Drill-down modal -->
+<!-- Detail modal -->
 <div class="modal-backdrop hidden" id="detail-modal" onclick="closeModal(event)">
   <div class="modal">
     <div class="modal-header">
@@ -704,20 +456,16 @@ h1,h2,h3 { font-family: 'Playfair Display', Georgia, serif; font-weight: 600; }
       </div>
       <button class="modal-close" onclick="closeDetailModal()">✕</button>
     </div>
-    <div class="modal-body" id="modal-body">
-      <div class="loading-row"></div>
-      <div class="loading-row" style="opacity:.6"></div>
-    </div>
+    <div class="modal-body" id="modal-body"><div class="loading-row"></div></div>
     <div class="modal-footer">
       <span class="card-meta" id="modal-count">—</span>
-      <button class="btn-resolve-all" id="modal-resolve-btn" onclick="resolveModalGroup()">Mark all resolved</button>
+      <button class="btn-danger-sm" id="modal-resolve-btn" onclick="resolveModalGroup()">Mark all resolved</button>
     </div>
   </div>
 </div>
 
-<!-- Toast -->
 <div id="toast"></div>
 
-<script src="../assets/app-health.js?v=2026060801"></script>
+<script src="../assets/app-health.js?v=2026060901"></script>
 </body>
 </html>
