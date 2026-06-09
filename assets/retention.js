@@ -255,5 +255,83 @@ function retRenderAtRisk(members) {
   }).join('');
 }
 
+
+// ── Day-N retention curve ─────────────────────────────────────────────────────
+function retRenderDayN(curves) {
+  var el = document.getElementById('dayn-body');
+  if (!el || !curves.length) return;
+  var html = '<div style="display:flex;flex-direction:column;gap:10px">';
+  curves.forEach(function(c) {
+    if (c.pct === null) return;
+    var barColor = c.pct >= (c.benchmark||0)*1.5 ? 'var(--success)' : c.pct >= (c.benchmark||0) ? 'var(--teal)' : 'var(--warning)';
+    var benchLeft = c.benchmark ? c.benchmark : 0;
+    html += '<div style="display:flex;align-items:center;gap:10px">'
+      + '<div style="width:56px;font-size:11px;font-weight:600;color:var(--text);text-align:right;flex-shrink:0">' + retEsc(c.label) + '</div>'
+      + '<div style="flex:1;position:relative;height:26px">'
+      + '<div style="position:absolute;inset:0;background:var(--surface-2);border-radius:4px"></div>'
+      + '<div style="position:absolute;left:0;top:0;height:100%;border-radius:4px;background:' + barColor + ';width:' + c.pct + '%;display:flex;align-items:center;padding:0 8px;min-width:2px">'
+      + (c.pct > 12 ? '<span style="font-size:11px;font-weight:600;color:#fff">' + c.pct + '%</span>' : '')
+      + '</div>'
+      + (c.benchmark ? '<div style="position:absolute;top:-2px;bottom:-2px;width:2px;background:rgba(234,245,245,.25);left:' + benchLeft + '%" title="Industry avg ' + c.benchmark + '%"></div>' : '')
+      + '</div>'
+      + '<div style="width:34px;font-size:11px;font-weight:700;color:var(--text);flex-shrink:0">' + c.pct + '%</div>'
+      + '<div style="width:90px;font-size:10px;color:var(--text-dim);flex-shrink:0">' + retEsc(c.retained + '/' + c.eligible) + ' · avg ' + (c.benchmark||'—') + '%</div>'
+      + '</div>';
+  });
+  html += '</div><div style="margin-top:10px;font-size:10px;color:var(--text-dim)">Faint vertical lines = health app industry average. Window ±2 days either side of each milestone.</div>';
+  el.innerHTML = html;
+}
+
+// ── Streak analytics ──────────────────────────────────────────────────────────
+function retRenderStreaks(s) {
+  var el = document.getElementById('streak-body');
+  if (!el) return;
+  if (!s.active_count) { el.innerHTML = '<div class="empty-state">No streak data yet</div>'; return; }
+  var dist = s.distribution || [];
+  var maxCount = Math.max.apply(null, dist.map(function(d){return d.count;}));
+  if (maxCount < 1) maxCount = 1;
+  var distBars = dist.map(function(d) {
+    var h = d.count > 0 ? Math.max(Math.round(d.count/maxCount*56), 4) : 2;
+    return '<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1">'
+      + '<div style="font-size:10px;font-weight:600;color:var(--text)">' + (d.count||0) + '</div>'
+      + '<div style="width:100%;height:' + h + 'px;background:' + (d.count>0?'var(--teal)':'var(--surface-2)') + ';border-radius:2px 2px 0 0"></div>'
+      + '<div style="font-size:9px;color:var(--text-dim);white-space:nowrap">' + retEsc(d.label) + '</div>'
+      + '</div>';
+  }).join('');
+  el.innerHTML = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">'
+    + '<div class="stat-cell"><div class="stat-label">Avg current streak</div><div class="stat-value">' + (s.avg_current||0) + 'd</div><div class="stat-sub">active members only</div></div>'
+    + '<div class="stat-cell"><div class="stat-label">Avg best ever</div><div class="stat-value">' + (s.avg_best||0) + 'd</div><div class="stat-sub">all members</div></div>'
+    + '<div class="stat-cell"><div class="stat-label">Longest current</div><div class="stat-value">' + (s.max_current||0) + 'd</div><div class="stat-sub">\ud83d\udd25 leading member</div></div>'
+    + '<div class="stat-cell"><div class="stat-label">On 7+ day streak</div><div class="stat-value">' + (s.streak_7plus||0) + '</div><div class="stat-sub">members right now</div></div>'
+    + '</div>'
+    + '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:8px">Best-ever streak distribution (days)</div>'
+    + '<div style="display:flex;align-items:flex-end;gap:6px;height:72px">' + distBars + '</div>';
+}
+
+// ── Critical events (aha moment) ──────────────────────────────────────────────
+function retRenderCriticalEvents(ce) {
+  var el = document.getElementById('critical-body');
+  if (!el) return;
+  var events = ce.events || [];
+  var r = ce.retained_count || 0, c = ce.churned_count || 0;
+  if (!r && !c) { el.innerHTML = '<div class="empty-state">Not enough data yet — need members in both retained and churned groups</div>'; return; }
+  var note = c < 5 ? '<div style="padding:8px 12px;background:var(--warning-pale);border-radius:8px;font-size:11px;color:var(--warning);margin-bottom:12px">Low confidence — only ' + c + ' churned member' + (c!==1?'s':'') + ' in sample. Treat as directional only.</div>' : '';
+  var rows = events.map(function(ev) {
+    var diff = ev.retained - ev.churned;
+    var diffColor = diff > 10 ? 'var(--success)' : diff < -10 ? 'var(--danger)' : 'var(--text-dim)';
+    var diffStr = diff > 0 ? '+' + diff + 'pp' : diff < 0 ? diff + 'pp' : '=';
+    return '<tr>'
+      + '<td style="font-size:12px">' + retEsc(ev.event) + '</td>'
+      + '<td style="text-align:center"><span style="background:var(--success-pale);color:var(--success);border-radius:4px;padding:2px 8px;font-size:12px;font-weight:600">' + ev.retained + '%</span></td>'
+      + '<td style="text-align:center"><span style="background:var(--danger-pale);color:var(--danger);border-radius:4px;padding:2px 8px;font-size:12px;font-weight:600">' + ev.churned + '%</span></td>'
+      + '<td style="text-align:center;font-size:12px;font-weight:700;color:' + diffColor + '">' + diffStr + '</td>'
+      + '</tr>';
+  }).join('');
+  el.innerHTML = note
+    + '<div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">Retained: ' + r + ' members (active last 7d) &nbsp;·&nbsp; Churned: ' + c + ' (had activity, silent 30d+)</div>'
+    + '<div class="table-wrap"><table class="data-table"><thead><tr><th>Week-1 behaviour</th><th style="text-align:center">Retained</th><th style="text-align:center">Churned</th><th style="text-align:center">Diff</th></tr></thead><tbody>' + rows + '</tbody></table></div>'
+    + '<div style="margin-top:8px;font-size:10px;color:var(--text-dim)">pp = percentage points. Higher positive diff = stronger predictor of retention.</div>';
+}
+
 // ── Boot ───────────────────────────────────────────────────────────────────────
 retLoadData();
