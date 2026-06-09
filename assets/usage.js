@@ -500,7 +500,10 @@ function usageOpen360(email) {
 }
 
 async function usageLoadMemberLog(email) {
-  const logSection = document.getElementById('m360-log-section');
+  // Inline to avoid const hoisting/scope issues with router replaceChild
+  var ACT_ICONS  = { habit:'🟢', workout:'💪', cardio:'🏃', session:'📺', replay:'▶️', checkin:'📋', monthly_checkin:'📋', mind:'🧠', default:'·' };
+  var ACT_LABELS = { habit:'Habit', workout:'Workout', cardio:'Cardio', session:'Live session', replay:'Replay', checkin:'Check-in', monthly_checkin:'Monthly check-in', mind:'Mind' };
+  var logSection = document.getElementById('m360-log-section');
   if (!logSection) return;
   try {
     const jwt = await usageGetJwt();
@@ -527,7 +530,17 @@ async function usageLoadMemberLog(email) {
         var icon  = ACT_ICONS[r.activity_type] || ACT_ICONS.default;
         var label = ACT_LABELS[r.activity_type] || r.activity_type;
         var detail = r.activity_label && r.activity_label !== 'Daily habit' ? ' — ' + usageEsc(r.activity_label) : '';
-        var meta  = usageFmtMeta(r.activity_type, r.metadata);
+        var meta  = (function(type, m) {
+          if (!m) return '';
+          var parts = [];
+          if (m.cardio_type) parts.push(m.cardio_type);
+          if (m.duration_minutes) parts.push(m.duration_minutes + ' min');
+          if (m.distance_km) parts.push(m.distance_km + ' km');
+          if (m.watch_seconds) parts.push(Math.round(m.watch_seconds/60) + ' min watched');
+          if (m.pct_watched) parts.push(Math.round(m.pct_watched) + '%');
+          if (m.avg_score) parts.push('score ' + parseFloat(m.avg_score).toFixed(1));
+          return parts.join(' · ');
+        })(r.activity_type, r.metadata);
         var time  = r.logged_at ? new Date(r.logged_at).toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'}) : '';
         html += '<div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)">'
           + '<span style="font-size:13px;flex-shrink:0">' + icon + '</span>'
