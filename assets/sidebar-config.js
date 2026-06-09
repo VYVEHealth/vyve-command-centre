@@ -61,6 +61,12 @@ window.VYVE_NAV = [
     ]
   },
   {
+    section: "Insights",
+    items: [
+      { slug: "usage",      label: "Usage Analytics", icon: "bar-chart", status: "live" }
+    ]
+  },
+  {
     section: "Org",
     items: [
       { slug: "action-plans", label: "Action Plans", icon: "target",   status: "live" },
@@ -120,6 +126,8 @@ window.VYVE_NAV_TOP = [
     description: 'Sessions, tasks, compliance. The operational backbone.' },
   { slug: 'knowledge',   label: 'Knowledge',  icon: 'book',       sectionName: 'Knowledge',
     description: 'Strategy, documents, knowledge base. The source of truth.' },
+  { slug: 'usage',      label: 'Insights',   icon: 'bar-chart',    sectionName: 'Insights',
+    description: 'Member engagement, usage analytics, retention, and platform health.' },
   { slug: 'org',         label: 'Org',        icon: 'user',       sectionName: 'Org',
     description: 'Action plans, team, settings. Run the company.' }
 ];
@@ -133,6 +141,7 @@ window.VYVE_ROUTE_TO_TOP = (function(){
       'Commercial': 'commercial',
       'Marketing':  'marketing',
       'Delivery':   'delivery',
+      'Insights':   'usage',
       'Knowledge':  'knowledge',
       'Org':        'org'
     })[section.section] || 'brief';
@@ -141,7 +150,8 @@ window.VYVE_ROUTE_TO_TOP = (function(){
     });
   });
   // Hub routes map to themselves
-  ['commercial','marketing','delivery','knowledge','org'].forEach(function(s){ m[s] = s; });
+  ['commercial','marketing','delivery','knowledge','org','insights'].forEach(function(s){ m[s] = s; });
   m['brief'] = 'brief';
+  m['usage'] = 'usage';
   return m;
 })();
