@@ -7,6 +7,10 @@ const USAGE_SB_URL  = 'https://ixjfklpckgxrwjlfsaaz.supabase.co';
 const USAGE_SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg';
 const USAGE_EF_BASE = USAGE_SB_URL + '/functions/v1';
 
+// ── Activity constants (window-global so they survive router re-injection) ────────
+window.VYVE_ACT_ICONS  = { habit:'🟢', workout:'💪', cardio:'🏃', session:'📺', replay:'▶️', checkin:'📋', monthly_checkin:'📋', mind:'🧠', default:'·' };
+window.VYVE_ACT_LABELS = { habit:'Habit', workout:'Workout', cardio:'Cardio', session:'Live session', replay:'Replay', checkin:'Check-in', monthly_checkin:'Monthly check-in', mind:'Mind', default:'Activity' };
+
 // ── State ────────────────────────────────────────────────────────────────────
 let _usageData       = null;   // full cache payload
 let _membersAll      = [];     // full member_stats list
@@ -485,12 +489,10 @@ function usageOpen360(email) {
   const m = _membersAll.find(x => x.member_email === email);
   if (!m) return;
 
-  title.textContent = email;
+  var displayName = ((m.first_name || '') + ' ' + (m.last_name || '')).trim();
+  title.textContent = displayName || email;
   sub.textContent   = (m.current_programme || 'No programme') + ' · joined ' + (m.joined_at ? new Date(m.joined_at).toLocaleDateString('en-GB') : '—');
   modal.classList.remove('hidden');
-
-  const score    = m.engagement_score || 0;
-  const scoreCls = usageScoreClass(score);
 
   // Show summary tab immediately from cache, load activity log async
   body.innerHTML = usageBuild360Summary(m) + '<div id="m360-log-section"><div class="loading-row" style="margin-top:16px"></div></div>';
@@ -527,8 +529,8 @@ async function usageLoadMemberLog(email) {
     Object.keys(byDate).sort().reverse().forEach(function(date) {
       html += '<div style="margin-bottom:12px"><div style="font-size:10px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">' + usageEsc(date) + '</div>';
       byDate[date].forEach(function(r) {
-        var icon  = ACT_ICONS[r.activity_type] || ACT_ICONS.default;
-        var label = ACT_LABELS[r.activity_type] || r.activity_type;
+        var icon  = (window.VYVE_ACT_ICONS || {})[r.activity_type] || '·';
+        var label = (window.VYVE_ACT_LABELS || {})[r.activity_type] || r.activity_type;
         var detail = r.activity_label && r.activity_label !== 'Daily habit' ? ' — ' + usageEsc(r.activity_label) : '';
         var meta  = (function(type, m) {
           if (!m) return '';
