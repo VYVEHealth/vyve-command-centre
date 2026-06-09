@@ -11,7 +11,14 @@ const USAGE_EF_BASE = USAGE_SB_URL + '/functions/v1';
 let _usageData       = null;   // full cache payload
 let _membersAll      = [];     // full member_stats list
 let _membersFiltered = [];     // after search/filter
-let _membersSort     = { col: 'engagement_score', dir: -1 };
+// Sort persisted to localStorage
+let _membersSort = (function() {
+  try {
+    var s = localStorage.getItem('vyve_cc_usage_sort');
+    if (s) return JSON.parse(s);
+  } catch(_) {}
+  return { col: 'engagement_score', dir: -1 };
+})();
 let _membersPage     = 0;
 const MEMBERS_PER_PAGE = 25;
 let _todayMap        = {};     // email -> today_acts (live, not from cache)
@@ -383,6 +390,7 @@ function usageSortMembers(col) {
   const ths = document.querySelectorAll('#members-table th');
   if (ths[idx]) ths[idx].classList.add('sorted');
   _membersPage = 0;
+  try { localStorage.setItem('vyve_cc_usage_sort', JSON.stringify(_membersSort)); } catch(_) {}
   usageApplySortMembers();
   usageRenderMembersPage();
 }
@@ -432,17 +440,17 @@ function usageRenderMembersPage() {
     const persona  = m.persona || '—';
     const prog     = m.current_programme ? m.current_programme.replace(/\s*\(.*\)/, '') : '—';
     const email    = m.member_email || '—';
-    const initials = email.slice(0, 2).toUpperCase();
+    const fullName = ((m.first_name || '') + ' ' + (m.last_name || '')).trim();
+    const initials = fullName ? (fullName.split(' ').map(function(n){return n[0]||'';}).join('').toUpperCase().slice(0,2)) : email.slice(0,2).toUpperCase();
     const maxActs  = Math.max(..._membersAll.map(x => x.activities_30d || 0), 1);
     const barW     = usagePct(m.activities_30d || 0, maxActs);
 
     return '<tr style="cursor:pointer" onclick="usageOpen360(\'' + usageEsc(email) + '\')">'
       + '<td><div style="display:flex;align-items:center;gap:8px">'
-      + '<div style="width:28px;height:28px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0">' + usageEsc(initials) + '</div>'
-      + '<span style="font-size:12px;word-break:break-all">' + usageEsc(email) + '</span>'
-      + (m.at_risk ? ' <span class="pill pill-warn" style="font-size:9px">risk</span>' : '')
-      + (m.needs_support ? ' <span class="pill pill-danger" style="font-size:9px">support</span>' : '')
-      + '</div></td>'
+      + '<div style="width:32px;height:32px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0">' + usageEsc(initials) + '</div>'
+      + '<div><div style="font-size:12px;font-weight:600;color:var(--text)">' + (fullName ? usageEsc(fullName) : '<span style=\'color:var(--text-muted)\'>' + usageEsc(email) + '</span>') + (m.at_risk ? ' <span class=\'pill pill-warn\' style=\'font-size:9px\'>risk</span>' : '') + (m.needs_support ? ' <span class=\'pill pill-danger\' style=\'font-size:9px\'>support</span>' : '') + '</div>'
+      + (fullName ? '<div style="font-size:10px;color:var(--text-dim)">' + usageEsc(email) + '</div>' : '')
+      + '</div></div></td>'
       + '<td class="num"><div class="score-ring ' + usageScoreClass(score) + '">' + score + '</div></td>'
       + '<td class="num">' + ((_todayMap[m.member_email] || 0) > 0 ? '<strong style="color:var(--success)">' + _todayMap[m.member_email] + '</strong>' : '<span style="color:var(--text-dim)">0</span>') + '</td>'
       + '<td class="num">' + (m.activities_7d || 0) + '</td>'
@@ -484,7 +492,64 @@ function usageOpen360(email) {
   const score    = m.engagement_score || 0;
   const scoreCls = usageScoreClass(score);
 
-  body.innerHTML = '<div class="modal-section">'
+  // Show summary tab immediately from cache, load activity log async
+  body.innerHTML = usageBuild360Summary(m) + '<div id="m360-log-section"><div class="loading-row" style="margin-top:16px"></div></div>';
+
+  // Fetch activity log async
+  usageLoadMemberLog(email);
+}
+
+async function usageLoadMemberLog(email) {
+  const logSection = document.getElementById('m360-log-section');
+  if (!logSection) return;
+  try {
+    const jwt = await usageGetJwt();
+    const res = await fetch(USAGE_EF_BASE + '/cc-usage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': USAGE_SB_ANON, 'Authorization': 'Bearer ' + (jwt || USAGE_SB_ANON) },
+      body: JSON.stringify({ action: 'member_detail', email: email })
+    });
+    const data = await res.json();
+    if (!data.ok) { logSection.innerHTML = '<div class="empty-state">Could not load activity log</div>'; return; }
+    const log = data.log || [];
+    if (!log.length) { logSection.innerHTML = '<div class="empty-state" style="margin-top:16px">No activity logged yet</div>'; return; }
+    // Group by date
+    const byDate = {};
+    log.forEach(function(r) {
+      var d = r.activity_date || r.logged_at?.slice(0,10) || '—';
+      if (!byDate[d]) byDate[d] = [];
+      byDate[d].push(r);
+    });
+    var html = '<div class="modal-section" style="margin-top:16px"><div class="modal-section-title">Activity log — last 60</div>';
+    Object.keys(byDate).sort().reverse().forEach(function(date) {
+      html += '<div style="margin-bottom:12px"><div style="font-size:10px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">' + usageEsc(date) + '</div>';
+      byDate[date].forEach(function(r) {
+        var icon  = ACT_ICONS[r.activity_type] || ACT_ICONS.default;
+        var label = ACT_LABELS[r.activity_type] || r.activity_type;
+        var detail = r.activity_label && r.activity_label !== 'Daily habit' ? ' — ' + usageEsc(r.activity_label) : '';
+        var meta  = usageFmtMeta(r.activity_type, r.metadata);
+        var time  = r.logged_at ? new Date(r.logged_at).toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'}) : '';
+        html += '<div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)">'
+          + '<span style="font-size:13px;flex-shrink:0">' + icon + '</span>'
+          + '<div style="flex:1;min-width:0"><span style="font-size:12px;font-weight:500;color:var(--text)">' + usageEsc(label) + usageEsc(detail) + '</span>'
+          + (meta ? '<span style="font-size:11px;color:var(--text-dim);margin-left:6px">' + usageEsc(meta) + '</span>' : '')
+          + '</div>'
+          + '<span style="font-size:10px;color:var(--text-dim);flex-shrink:0">' + usageEsc(time) + '</span>'
+          + '</div>';
+      });
+      html += '</div>';
+    });
+    html += '</div>';
+    logSection.innerHTML = html;
+  } catch(e) {
+    if (logSection) logSection.innerHTML = '<div class="empty-state">Error loading log: ' + usageEsc(e.message) + '</div>';
+  }
+}
+
+function usageBuild360Summary(m) {
+  var score    = m.engagement_score || 0;
+  var scoreCls = usageScoreClass(score);
+  return '<div class="modal-section">'
     + '<div class="modal-section-title">Profile</div>'
     + '<div class="meta-grid">'
     + '<div class="meta-row"><div class="meta-label">Persona</div><div class="meta-value"><span class="persona-badge persona-' + usageEsc(m.persona || '') + '">' + usageEsc(m.persona || '—') + '</span></div></div>'
