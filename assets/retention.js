@@ -143,8 +143,17 @@ function retRenderHeadline(f, dorm) {
   var a7 = (dorm.active || 0);
   retSetEl('hl-active7', a7);
   retSetEl('hl-active7-pct', retPct(a7, total) + '% active this week');
-  var ttf = f.avg_hours_to_first;
-  retSetEl('hl-ttf', ttf != null ? (ttf < 24 ? Math.round(ttf) + 'h' : Math.round(ttf/24) + 'd') : '—');
+  var med = f.median_hours_to_first;
+  var ttfDisplay = med != null ? (med < 1 ? '<1h' : med < 24 ? Math.round(med) + 'h' : Math.round(med/24) + 'd') : '—';
+  retSetEl('hl-ttf', ttfDisplay);
+  // Update sub label to clarify it's median and show same-day count
+  var subEl = document.querySelector('#hl-ttf')?.closest('.stat-cell')?.querySelector('.stat-sub');
+  if (subEl) {
+    var sdc = f.same_day_count || 0;
+    var avg = f.avg_hours_to_first;
+    var avgDisp = avg != null ? (avg < 24 ? Math.round(avg)+'h' : Math.round(avg/24)+'d') : '—';
+    subEl.textContent = 'median · ' + sdc + ' same-day · mean ' + avgDisp;
+  }
   retSetEl('hl-atrisk', dorm.at_risk || 0);
   retSetEl('hl-never', f.never_active || 0);
 }
