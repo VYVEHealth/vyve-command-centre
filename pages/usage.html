@@ -213,10 +213,10 @@ h1,h2,h3{font-family:'Playfair Display',Georgia,serif;font-weight:600}
   <!-- ── Headline strip ───────────────────────────────────────────────── -->
   <div class="stat-strip" id="headline-strip">
     <div class="stat-cell"><div class="stat-label">Total members</div><div class="stat-value" id="hl-total">—</div><div class="stat-sub" id="hl-total-sub">—</div></div>
-    <div class="stat-cell"><div class="stat-label">Active 7d</div><div class="stat-value" id="hl-active7">—</div><div class="stat-sub">logged activity</div></div>
+    <div class="stat-cell"><div class="stat-label">Active 7d</div><div class="stat-value" id="hl-active7">—</div><div class="stat-sub" id="hl-active7-delta">logged activity</div></div>
     <div class="stat-cell"><div class="stat-label">Active 30d</div><div class="stat-value" id="hl-active30">—</div><div class="stat-sub">logged activity</div></div>
     <div class="stat-cell"><div class="stat-label">DAU/MAU</div><div class="stat-value" id="hl-stickiness">—</div><div class="stat-sub">stickiness ratio</div></div>
-    <div class="stat-cell"><div class="stat-label">Activities 7d</div><div class="stat-value" id="hl-acts7">—</div><div class="stat-sub">across all types</div></div>
+    <div class="stat-cell"><div class="stat-label">Activities 7d</div><div class="stat-value" id="hl-acts7">—</div><div class="stat-sub" id="hl-acts7-delta">across all types</div></div>
     <div class="stat-cell"><div class="stat-label">At risk</div><div class="stat-value" id="hl-atrisk">—</div><div class="stat-sub">inactive &gt;7 days</div></div>
   </div>
 
@@ -318,11 +318,12 @@ h1,h2,h3{font-family:'Playfair Display',Georgia,serif;font-weight:600}
               <th onclick="usageSortMembers('last_activity_at')">Last active</th>
               <th onclick="usageSortMembers('current_programme')">Programme</th>
               <th>Persona</th>
+              <th>Account</th>
               <th>Status</th>
             </tr>
           </thead>
           <tbody id="members-tbody">
-            <tr><td colspan="10"><div class="loading-row"></div></td></tr>
+            <tr><td colspan="11"><div class="loading-row"></div></td></tr>
           </tbody>
         </table>
       </div>

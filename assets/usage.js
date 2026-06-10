@@ -105,6 +105,14 @@ function usageTimeAgo(ts) {
   if (d < 86400000) return Math.floor(d / 3600000) + 'h ago';
   return Math.floor(d / 86400000) + 'd ago';
 }
+function usageAccountPill(type, status) {
+  if (!type) return '<span class="pill pill-grey">—</span>';
+  var cls = type === 'paid' ? 'pill-ok' : type === 'enterprise' ? 'pill-teal' : type === 'trial' ? 'pill-gold' : type === 'comp' ? 'pill-grey' : 'pill-warn';
+  var label = type === 'paid' ? 'Paid' : type === 'enterprise' ? 'Enterprise' : type === 'trial' ? 'Trial' : type === 'comp' ? 'Comp' : type;
+  if (status === 'expired') { cls = 'pill-danger'; label = 'Expired'; }
+  return '<span class="pill ' + cls + '">' + label + '</span>';
+}
+
 function usageSetEl(id, val) {
   const el = document.getElementById(id);
   if (el) el.textContent = val;
@@ -242,6 +250,25 @@ function usageRenderHeadline(hl, ov, mem) {
     usageSetEl('hl-acts7', '—');
   }
 
+  // Week-over-week deltas
+  if (series.length >= 14) {
+    const last7  = series.slice(-7);
+    const prev7  = series.slice(-14, -7);
+    const acts7  = last7.reduce((s, r) => s + (r.total || 0), 0);
+    const acts7p = prev7.reduce((s, r) => s + (r.total || 0), 0);
+    const actDelta = acts7 - acts7p;
+    const actSign  = actDelta > 0 ? String.fromCharCode(8593) : actDelta < 0 ? String.fromCharCode(8595) : String.fromCharCode(8594);
+    const actColor = actDelta > 0 ? 'var(--success)' : actDelta < 0 ? 'var(--danger)' : 'var(--text-dim)';
+    const actEl = document.getElementById('hl-acts7-delta');
+    if (actEl) actEl.innerHTML = '<span style="color:'+actColor+'">'+actSign+' '+(actDelta>0?'+':'')+actDelta+' vs prior 7d</span>';
+    const dauLast = last7.reduce((s, r) => s + (r.dau || 0), 0);
+    const dauPrev = prev7.reduce((s, r) => s + (r.dau || 0), 0);
+    const dauDelta = dauLast - dauPrev;
+    const dauSign  = dauDelta > 0 ? String.fromCharCode(8593) : dauDelta < 0 ? String.fromCharCode(8595) : String.fromCharCode(8594);
+    const dauColor = dauDelta > 0 ? 'var(--success)' : dauDelta < 0 ? 'var(--danger)' : 'var(--text-dim)';
+    const dauEl = document.getElementById('hl-active7-delta');
+    if (dauEl) dauEl.innerHTML = '<span style="color:'+dauColor+'">'+dauSign+' '+(dauDelta>0?'+':'')+dauDelta+' DAU pts vs prior week</span>';
+  }
   // At risk count from member_stats
   const atRisk = mem.filter(m => m.at_risk).length;
   usageSetEl('hl-atrisk', atRisk);
@@ -463,6 +490,7 @@ function usageRenderMembersPage() {
       + '<td class="muted">' + usageTimeAgo(m.last_activity_at) + '</td>'
       + '<td class="dim">' + usageEsc(prog) + '</td>'
       + '<td><span class="persona-badge persona-' + usageEsc(persona) + '">' + usageEsc(persona) + '</span></td>'
+      + '<td>' + usageAccountPill(m.account_type, m.subscription_status) + '</td>'
       + '<td>' + usageDormancyStatus(m.last_activity_at) + '</td>'
       + '</tr>';
   }).join('');
