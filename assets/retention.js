@@ -135,6 +135,7 @@ function retRenderAll(row) {
   retRenderCriticalEvents(f.critical_events || {});
   retRenderCohorts(cohorts);
   retRenderAtRisk(atRisk);
+  retRenderReengage(row.reengage_json || null);
 }
 
 function retRenderHeadline(f, dorm) {
@@ -260,26 +261,83 @@ function retRenderAtRisk(members) {
 function retRenderDayN(curves) {
   var el = document.getElementById('dayn-body');
   if (!el || !curves.length) return;
-  var html = '<div style="display:flex;flex-direction:column;gap:10px">';
-  curves.forEach(function(c) {
-    if (c.pct === null) return;
-    var barColor = c.pct >= (c.benchmark||0)*1.5 ? 'var(--success)' : c.pct >= (c.benchmark||0) ? 'var(--teal)' : 'var(--warning)';
-    var benchLeft = c.benchmark ? c.benchmark : 0;
-    html += '<div style="display:flex;align-items:center;gap:10px">'
-      + '<div style="width:56px;font-size:11px;font-weight:600;color:var(--text);text-align:right;flex-shrink:0">' + retEsc(c.label) + '</div>'
-      + '<div style="flex:1;position:relative;height:26px">'
-      + '<div style="position:absolute;inset:0;background:var(--surface-2);border-radius:4px"></div>'
-      + '<div style="position:absolute;left:0;top:0;height:100%;border-radius:4px;background:' + barColor + ';width:' + c.pct + '%;display:flex;align-items:center;padding:0 8px;min-width:2px">'
-      + (c.pct > 12 ? '<span style="font-size:11px;font-weight:600;color:#fff">' + c.pct + '%</span>' : '')
-      + '</div>'
-      + (c.benchmark ? '<div style="position:absolute;top:-2px;bottom:-2px;width:2px;background:rgba(234,245,245,.25);left:' + benchLeft + '%" title="Industry avg ' + c.benchmark + '%"></div>' : '')
-      + '</div>'
-      + '<div style="width:34px;font-size:11px;font-weight:700;color:var(--text);flex-shrink:0">' + c.pct + '%</div>'
-      + '<div style="width:90px;font-size:10px;color:var(--text-dim);flex-shrink:0">' + retEsc(c.retained + '/' + c.eligible) + ' · avg ' + (c.benchmark||'—') + '%</div>'
-      + '</div>';
+  var valid = curves.filter(function(c){ return c.pct !== null; });
+  if (!valid.length) { el.innerHTML = '<div class="empty-state">Not enough data — members need to reach each milestone day to generate this curve.</div>'; return; }
+
+  // SVG line chart
+  var W=560, H=180, PAD={t:16,r:16,b:36,l:44};
+  var cW=W-PAD.l-PAD.r, cH=H-PAD.t-PAD.b;
+  var maxY=100, pts=valid.length;
+  var xStep=pts>1?cW/(pts-1):cW;
+
+  function xOf(i){ return PAD.l+(pts>1?i*xStep:cW/2); }
+  function yOf(v){ return PAD.t+cH-(v/maxY*cH); }
+
+  // Grid lines at 0, 25, 50, 75, 100
+  var grid='';
+  [0,25,50,75,100].forEach(function(v){
+    var y=yOf(v);
+    grid+='<line x1="'+PAD.l+'" x2="'+(W-PAD.r)+'" y1="'+y+'" y2="'+y+'" stroke="rgba(77,170,170,.12)" stroke-width="1"/>';
+    grid+='<text x="'+(PAD.l-4)+'" y="'+(y+4)+'" text-anchor="end" font-size="9" fill="var(--text-dim)">'+v+'%</text>';
   });
-  html += '</div><div style="margin-top:10px;font-size:10px;color:var(--text-dim)">Faint vertical lines = health app industry average. Window ±2 days either side of each milestone.</div>';
-  el.innerHTML = html;
+
+  // Benchmark dashed line
+  var benchLine='', benchPts=valid.filter(function(c){return c.benchmark!=null;});
+  if(benchPts.length>1){
+    var bPath='M';
+    benchPts.forEach(function(c,i){
+      var idx=valid.indexOf(c);
+      bPath+=(i===0?'':' L')+xOf(idx).toFixed(1)+','+yOf(c.benchmark).toFixed(1);
+    });
+    benchLine='<path d="'+bPath+'" fill="none" stroke="rgba(234,245,245,.3)" stroke-width="1.5" stroke-dasharray="4 3"/>';
+  }
+
+  // VYVE line
+  var linePath='', dots='', labels='';
+  valid.forEach(function(c,i){
+    var x=xOf(i).toFixed(1), y=yOf(c.pct).toFixed(1);
+    linePath+=(i===0?'M':'L')+x+','+y+' ';
+    var above=c.benchmark!=null&&c.pct>=c.benchmark;
+    var clr=above?'var(--success)':'var(--warning)';
+    dots+='<circle cx="'+x+'" cy="'+y+'" r="5" fill="'+clr+'" stroke="var(--bg)" stroke-width="2"><title>'+c.label+': VYVE '+c.pct+'% vs benchmark '+(c.benchmark||'?')+'% ('+c.retained+'/'+c.eligible+' eligible)</title></circle>';
+    labels+='<text x="'+x+'" y="'+(parseFloat(y)-10)+'" text-anchor="middle" font-size="10" font-weight="600" fill="'+clr+'">'+c.pct+'%</text>';
+    labels+='<text x="'+x+'" y="'+(PAD.t+cH+18)+'" text-anchor="middle" font-size="9" fill="var(--text-dim)">'+retEsc(c.label)+'</text>';
+  });
+
+  var svg='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:'+W+'px;display:block">'
+    +grid+benchLine
+    +'<path d="'+linePath+'" fill="none" stroke="var(--teal-lt)" stroke-width="2"/>'
+    +dots+labels
+    +'</svg>';
+
+  // Data table below chart
+  var table='<div class="table-wrap" style="margin-top:12px"><table class="data-table"><thead><tr>'
+    +'<th>Milestone</th><th class="num">VYVE</th><th class="num">Benchmark</th><th class="num">vs benchmark</th><th class="num">Eligible</th><th class="num">Retained</th>'
+    +'</tr></thead><tbody>';
+  valid.forEach(function(c){
+    var diff=c.benchmark!=null?c.pct-c.benchmark:null;
+    var diffStr=diff==null?'—':(diff>=0?'<span style="color:var(--success)">+'+diff+'pp</span>':'<span style="color:var(--danger)">'+diff+'pp</span>');
+    var lowConf=c.eligible<10?'<span title="Low confidence: n='+c.eligible+'" style="color:var(--warning)"> ⚠</span>':'';
+    table+='<tr>'
+      +'<td style="font-weight:600">'+retEsc(c.label)+'</td>'
+      +'<td class="num" style="font-weight:700;color:'+(c.pct>=(c.benchmark||0)?'var(--success)':'var(--warning)')+'">'+c.pct+'%</td>'
+      +'<td class="num" style="color:var(--text-dim)">'+(c.benchmark!=null?c.benchmark+'%':'—')+'</td>'
+      +'<td class="num">'+diffStr+'</td>'
+      +'<td class="num" style="color:var(--text-dim)">'+c.eligible+lowConf+'</td>'
+      +'<td class="num">'+c.retained+'</td>'
+      +'</tr>';
+  });
+  table+='</tbody></table></div>';
+
+  // Legend
+  var legend='<div style="display:flex;gap:16px;margin-top:10px;font-size:10px;color:var(--text-dim)">'
+    +'<span>&#9632; <span style="color:var(--teal-lt)">VYVE retention</span></span>'
+    +'<span>- - - <span style="color:rgba(234,245,245,.5)">Health app benchmark</span></span>'
+    +'<span>&#9679; <span style="color:var(--success)">above benchmark</span> &nbsp; &#9679; <span style="color:var(--warning)">below benchmark</span></span>'
+    +'</div>'
+    +'<div style="margin-top:4px;font-size:10px;color:var(--text-dim)">Window ±2 days either side of each milestone. ⚠ = low confidence (n&lt;10).</div>';
+
+  el.innerHTML = svg + table + legend;
 }
 
 // ── Streak analytics ──────────────────────────────────────────────────────────
@@ -335,3 +393,36 @@ function retRenderCriticalEvents(ce) {
 
 // ── Boot ───────────────────────────────────────────────────────────────────────
 retLoadData();
+
+
+// ── Re-engagement effectiveness ────────────────────────────────────────────────
+function retRenderReengage(data) {
+  var el = document.getElementById('reengage-body');
+  if (!el || !data) return;
+  if (!data.total_sent) { el.innerHTML = '<div class="empty-state">No re-engagement emails sent yet.</div>'; return; }
+  var streams = data.by_stream || [];
+  var html = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">'
+    + '<div class="stat-cell"><div class="stat-label">Emails sent (all time)</div><div class="stat-value">' + retFmt(data.total_sent) + '</div><div class="stat-sub">re-engagement streams</div></div>'
+    + '<div class="stat-cell"><div class="stat-label">Returned within 7 days</div><div class="stat-value ok">' + retFmt(data.total_returned) + '</div><div class="stat-sub">logged at least 1 activity</div></div>'
+    + '<div class="stat-cell"><div class="stat-label">Overall return rate</div><div class="stat-value ' + (data.overall_return_pct>=40?'ok':data.overall_return_pct>=20?'warn':'danger') + '">' + data.overall_return_pct + '%</div><div class="stat-sub">of all contacted members</div></div>'
+    + '</div>';
+  if (streams.length) {
+    html += '<table class="data-table"><thead><tr><th>Stream</th><th class="num">Sent</th><th class="num">Returned (7d)</th><th class="num">Return rate</th><th>Reading</th></tr></thead><tbody>';
+    streams.forEach(function(s) {
+      var reading = s.return_pct >= 50 ? '<span class="pill pill-ok">Effective</span>'
+        : s.return_pct >= 25 ? '<span class="pill pill-warn">Moderate</span>'
+        : '<span class="pill pill-danger">Low</span>';
+      html += '<tr>'
+        + '<td style="font-weight:500">' + retEsc(s.label) + '</td>'
+        + '<td class="num">' + s.sent + '</td>'
+        + '<td class="num ok">' + s.returned + '</td>'
+        + '<td class="num"><strong>' + s.return_pct + '%</strong></td>'
+        + '<td>' + reading + '</td>'
+        + '</tr>';
+    });
+    html += '</tbody></table>';
+  }
+  html += '<div style="margin-top:8px;font-size:10px;color:var(--text-dim)">Return = member had activity in the 7 days following the email. Stream A = inactive 7+ days. Stream B = inactive 30+ days.</div>';
+  el.innerHTML = html;
+}
+function retFmt(n) { return n == null ? '—' : Number(n).toLocaleString(); }
