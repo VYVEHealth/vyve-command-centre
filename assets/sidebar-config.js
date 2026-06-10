@@ -68,7 +68,8 @@ window.VYVE_NAV = [
       { slug: "activity-depth", label: "Activity Depth", icon: "bar-chart",   status: "live"        },
       { slug: "wellbeing", label: "Wellbeing",            icon: "heart",       status: "live"        },
       { slug: "platform",  label: "Platform & UX",        icon: "monitor",     status: "live"        },
-      { slug: "revenue",   label: "Revenue",              icon: "trending-up", status: "live"        }
+      { slug: "revenue",   label: "Revenue",              icon: "trending-up", status: "live"        },
+      { slug: "ai-usage",  label: "AI Usage",             icon: "cpu",         status: "live"        }
     ]
   },
   {

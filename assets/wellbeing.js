@@ -166,6 +166,7 @@
     wbRenderMembers(row.members_json);
     wbRenderDist(row.distribution_json);
     wbRenderBaseline(row.baseline_json);
+    wbRenderCorrelation(row.correlation_json || []);
     wbStatus('Updated '+relTime(row.refreshed_at));
     var s=$('wb-sub');
     if(s&&row.refreshed_at) s.textContent='Last refreshed '+new Date(row.refreshed_at).toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'});
@@ -207,4 +208,53 @@
   };
 
   if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',wbLoad);}else{wbLoad();}
+
+  // ── Wellbeing × Activity correlation ─────────────────────────────────────────
+  function wbRenderCorrelation(rows) {
+    var el = $('wb-correlation-body'); if (!el) return;
+    if (!rows || !rows.length) { el.innerHTML = '<div class="empty-state">Not enough data yet — members need both check-ins and logged activity. More data will appear as the cohort grows.</div>'; return; }
+    // Simple sortable table + scatter hint
+    var html = '<p style="font-size:11px;color:var(--text-dim);margin-bottom:12px">Only members with both activity data and at least one check-in are shown. Pearson correlation grows more meaningful above n=20.</p>';
+    html += '<div class="table-wrap"><table class="data-table"><thead><tr>'
+      + '<th>Member</th><th class="num">Avg wellbeing</th><th class="num">Check-ins</th><th class="num">Total activities</th><th>Trend</th>'
+      + '</tr></thead><tbody>';
+    // Compute rough correlation direction
+    var sorted = rows.slice().sort(function(a,b){return (b.total_acts||0)-(a.total_acts||0);});
+    sorted.forEach(function(r) {
+      var wbColor = r.avg_wb >= 8 ? 'var(--success)' : r.avg_wb >= 6 ? 'var(--gold)' : r.avg_wb >= 4 ? 'var(--warning)' : 'var(--danger)';
+      // Render initials or redacted name (email only for privacy)
+      var email = r.member_email || '';
+      var disp = email.length > 20 ? email.slice(0,3)+'***'+email.slice(email.indexOf('@')) : email;
+      html += '<tr>'
+        + '<td style="font-size:11px;color:var(--text-dim)">' + esc(disp) + '</td>'
+        + '<td class="num"><span style="font-weight:700;color:' + wbColor + '">' + (r.avg_wb||'—') + '</span></td>'
+        + '<td class="num">' + (r.checkins||0) + '</td>'
+        + '<td class="num">' + fmt(r.total_acts) + '</td>'
+        + '<td>' + actBadge(r.total_acts) + '</td>'
+        + '</tr>';
+    });
+    html += '</tbody></table></div>';
+    // Simple correlation note
+    if (rows.length >= 3) {
+      // Sort by acts, check if wb correlates
+      var top3 = sorted.slice(0,3), bot = sorted.slice(-Math.min(3,sorted.length));
+      var topAvgWb = top3.reduce(function(s,r){return s+(r.avg_wb||0);},0) / top3.length;
+      var botAvgWb = bot.reduce(function(s,r){return s+(r.avg_wb||0);},0) / bot.length;
+      var diff = Math.round((topAvgWb - botAvgWb) * 10) / 10;
+      html += '<div style="margin-top:10px;padding:10px 14px;background:var(--surface-2);border-radius:8px;font-size:11px;color:var(--text-muted)">';
+      if (diff > 0) html += '<strong style="color:var(--success)">Positive signal:</strong> The 3 most active members average wellbeing ' + topAvgWb.toFixed(1) + ' vs ' + botAvgWb.toFixed(1) + ' for the least active — a +' + diff + ' difference. Small sample (n=' + rows.length + '), but directionally consistent with the VYVE hypothesis.';
+      else if (diff < 0) html += '<strong style="color:var(--warning)">No positive signal yet:</strong> Most active members don't show higher wellbeing scores yet. Sample is small (n=' + rows.length + ') — this may reverse as more members check in.';
+      else html += 'No clear correlation direction yet — need more data (n=' + rows.length + ').';
+      html += '</div>';
+    }
+    el.innerHTML = html;
+  }
+  function actBadge(n) {
+    if (n > 200) return '<span class="pill pill-ok">High</span>';
+    if (n > 50)  return '<span class="pill" style="background:rgba(201,168,76,.12);color:var(--gold)">Active</span>';
+    if (n > 10)  return '<span class="pill pill-grey">Low</span>';
+    return '<span class="pill pill-grey">Minimal</span>';
+  }
+  function fmt(n){ return n==null?'—':Number(n).toLocaleString(); }
+
 })();
