@@ -1,4 +1,4 @@
-// PM-569 v1 — Usage Analytics: cc-usage cache reader
+// PM-595 v1 — add phone to 360 modal + never-active outreach list
 // External file — required by §23.101 (router injectPage re-executes scripts;
 // inline JS with template literals breaks on replaceChild)
 
@@ -600,6 +600,7 @@ function usageBuild360Summary(m) {
     + '<div class="meta-row"><div class="meta-label">Programme week</div><div class="meta-value">' + (m.programme_week || '—') + (m.programme_active ? '' : ' <span class="pill pill-grey">paused</span>') + '</div></div>'
     + '<div class="meta-row"><div class="meta-label">At risk</div><div class="meta-value">' + (m.at_risk ? '<span class="pill pill-warn">Yes</span>' : '<span class="pill pill-ok">No</span>') + '</div></div>'
     + '<div class="meta-row"><div class="meta-label">Needs support</div><div class="meta-value">' + (m.needs_support ? '<span class="pill pill-danger">Yes</span>' : '<span class="pill pill-ok">No</span>') + '</div></div>'
+    + '<div class="meta-row"><div class="meta-label">Phone</div><div class="meta-value">' + (m.phone ? '<a href="tel:' + usageEsc(m.phone) + '" style="color:var(--teal-lt);text-decoration:none">' + usageEsc(m.phone) + '</a>' : '<span style="color:var(--text-dim)">\u2014</span>') + '</div></div>'
     + '<div class="meta-row"><div class="meta-label">Certs earned</div><div class="meta-value">' + (m.cert_count || 0) + '</div></div>'
     + '</div></div>'
 
@@ -686,9 +687,14 @@ function usageShowNeverActive() {
         const daysSince = m.joined_at
           ? Math.floor((Date.now() - new Date(m.joined_at).getTime()) / 86400000)
           : '?';
+        var fullName = ((m.first_name || '') + ' ' + (m.last_name || '')).trim();
         return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">'
-          + '<span style="font-size:12px">' + usageEsc(m.member_email) + '</span>'
-          + '<span style="font-size:11px;color:var(--text-dim)">joined ' + daysSince + 'd ago</span>'
+          + '<div>'
+          + '<div style="font-size:12px;font-weight:600;color:var(--text)">' + usageEsc(fullName || m.member_email) + '</div>'
+          + (fullName ? '<div style="font-size:11px;color:var(--text-dim)">' + usageEsc(m.member_email) + '</div>' : '')
+          + (m.phone ? '<div style="font-size:11px;color:var(--teal-lt)">' + usageEsc(m.phone) + '</div>' : '')
+          + '</div>'
+          + '<span style="font-size:11px;color:var(--text-dim);margin-left:8px;white-space:nowrap">joined ' + daysSince + 'd ago</span>'
           + '</div>';
       }).join('')
     : '<div class="empty-state">No never-active members matching current filter</div>';
