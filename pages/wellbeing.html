@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Wellbeing — VYVE Command Centre</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+html[data-theme="dark"]{--bg:#0D2B2B;--bg-alt:#0A2222;--surface:#112E2E;--surface-2:#163535;--border:rgba(77,170,170,.16);--border-strong:rgba(77,170,170,.28);--text:#EAF5F5;--text-muted:rgba(234,245,245,.55);--text-dim:rgba(234,245,245,.32);--teal:#1B7878;--teal-lt:#4DAAAA;--gold:#C9A84C;--danger:#e8674a;--danger-pale:rgba(232,103,74,.12);--warning:#e8a34a;--warning-pale:rgba(232,163,74,.12);--success:#22c55e;--success-pale:rgba(34,197,94,.12);--settled:rgba(234,245,245,.16);--settled-pale:rgba(234,245,245,.06)}
+html[data-theme="light"]{--bg:#f4faf8;--bg-alt:#edf5f3;--surface:#ffffff;--surface-2:#f0f7f5;--border:#d0e6e0;--border-strong:#a8cfc7;--text:#0D2B2B;--text-muted:#567373;--text-dim:#8AADAD;--teal:#1B7878;--teal-lt:#4DAAAA;--gold:#C9A84C;--danger:#c9433a;--danger-pale:#fdecea;--warning:#c97a2a;--warning-pale:#fdf2e3;--success:#1a9448;--success-pale:#e6f6ec;--settled:rgba(0,0,0,.06);--settled-pale:rgba(0,0,0,.03)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px}
+body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
+h1,h2,h3{font-family:'Playfair Display',Georgia,serif;font-weight:600}
+.page-wrap{max-width:1200px;margin:0 auto;padding:28px 24px 80px}
+.page-header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+.page-title{font-size:22px;color:var(--text)}
+.page-sub{font-size:12px;color:var(--text-muted);margin-top:2px}
+.header-actions{display:flex;align-items:center;gap:10px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border-strong);background:var(--surface);color:var(--text-muted);transition:background .15s,color .15s;font-family:inherit}
+.btn:hover{background:var(--surface-2);color:var(--text)}
+.btn-sm{padding:4px 10px;font-size:11px}
+.theme-toggle{width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.theme-toggle:hover{color:var(--text);background:var(--surface-2)}
+.stat-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px}
+.stat-cell{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.stat-label{font-size:11px;color:var(--text-muted);margin-bottom:4px}
+.stat-value{font-size:22px;font-weight:700;color:var(--text);line-height:1.1}
+.stat-sub{font-size:10px;color:var(--text-dim);margin-top:2px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px}
+.card-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.card-title{font-size:13px;font-weight:600;color:var(--text);letter-spacing:.02em;text-transform:uppercase}
+.card-meta{font-size:11px;color:var(--text-dim)}
+.section-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim);margin:28px 0 12px}
+.data-table{width:100%;border-collapse:collapse;font-size:12px}
+.data-table th{text-align:left;padding:8px 12px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);border-bottom:1px solid var(--border);white-space:nowrap}
+.data-table td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:hover td{background:var(--surface-2)}
+.data-table td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.table-wrap{overflow-x:auto}
+.pill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:500}
+.pill-ok{background:var(--success-pale);color:var(--success)}
+.pill-warn{background:var(--warning-pale);color:var(--warning)}
+.pill-danger{background:var(--danger-pale);color:var(--danger)}
+.pill-grey{background:var(--settled-pale);color:var(--text-dim)}
+.pill-teal{background:rgba(77,170,170,.12);color:var(--teal-lt)}
+.persona-badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;letter-spacing:.04em}
+.persona-NOVA{background:rgba(201,168,76,.15);color:var(--gold)}
+.persona-RIVER{background:rgba(77,170,170,.15);color:var(--teal-lt)}
+.persona-SPARK{background:rgba(232,163,74,.15);color:var(--warning)}
+.persona-SAGE{background:rgba(34,197,94,.12);color:var(--success)}
+.persona-HAVEN{background:rgba(232,103,74,.12);color:var(--danger)}
+.empty-state{padding:24px;text-align:center;color:var(--text-dim);font-size:12px}
+.loading-row{height:40px;background:var(--surface-2);border-radius:8px;margin-bottom:8px;animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
+.refresh-status{font-size:11px;color:var(--text-dim);display:flex;align-items:center;gap:6px}
+
+/* ── Score trend chart ── */
+.trend-wrap{display:flex;align-items:flex-end;gap:4px;height:100px;margin-bottom:6px}
+.trend-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:default}
+.trend-bar{width:100%;border-radius:3px 3px 0 0;transition:height .3s ease;min-height:3px;position:relative}
+.trend-bar-val{position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:700;white-space:nowrap;color:var(--text)}
+.trend-label{font-size:9px;color:var(--text-dim);margin-top:4px;text-align:center;writing-mode:initial}
+.trend-axis{display:flex;gap:4px;margin-top:2px}
+.trend-sub{font-size:9px;color:var(--text-dim);text-align:center}
+
+/* ── Score distribution ── */
+.dist-wrap{display:flex;align-items:flex-end;gap:6px;height:80px;margin-bottom:8px}
+.dist-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px}
+.dist-bar{width:100%;border-radius:3px 3px 0 0;min-height:3px;transition:height .3s ease}
+.dist-bar.danger{background:var(--danger)}
+.dist-bar.warning{background:var(--warning)}
+.dist-bar.moderate{background:var(--gold)}
+.dist-bar.good{background:var(--teal)}
+.dist-bar.great{background:var(--success)}
+.dist-label{font-size:9px;color:var(--text-dim);margin-top:3px}
+.dist-count{font-size:9px;font-weight:700;color:var(--text-muted)}
+
+/* ── Baseline dimensions ── */
+.baseline-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.baseline-label{width:90px;font-size:11px;color:var(--text-muted);text-align:right;flex-shrink:0}
+.baseline-bar-bg{flex:1;height:20px;background:var(--surface-2);border-radius:4px;overflow:hidden;position:relative}
+.baseline-bar-fill{height:100%;border-radius:4px;transition:width .4s ease;display:flex;align-items:center;padding:0 6px;min-width:2px}
+.baseline-bar-text{font-size:10px;font-weight:600;color:#fff;white-space:nowrap}
+.baseline-val{width:36px;font-size:11px;font-weight:700;color:var(--text);text-align:right;flex-shrink:0}
+
+/* ── Trend arrows ── */
+.trend-up{color:var(--success);font-weight:700}
+.trend-dn{color:var(--danger);font-weight:700}
+.trend-fl{color:var(--text-dim)}
+
+/* ── Toast ── */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(8px);background:var(--surface);border:1px solid var(--border-strong);color:var(--text);padding:10px 18px;border-radius:10px;font-size:12px;font-weight:500;box-shadow:0 8px 32px rgba(0,0,0,.28);opacity:0;transition:opacity .2s,transform .2s;z-index:9999;pointer-events:none;max-width:300px}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  </style>
+</head>
+<body>
+<div class="page-wrap">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Wellbeing</h1>
+      <div class="page-sub" id="wb-sub">Score trajectory · member scores · 8-dimension baselines · participation</div>
+    </div>
+    <div class="header-actions">
+      <div class="refresh-status"><span id="wb-refresh-text">Loading…</span></div>
+      <button class="btn btn-sm" id="wb-btn-refresh" onclick="wbRefresh()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Refresh
+      </button>
+      <button class="theme-toggle" onclick="wbToggleTheme()">
+        <svg id="wb-theme-dark" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        <svg id="wb-theme-light" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="stat-strip">
+    <div class="stat-cell"><div class="stat-label">Avg wellbeing</div><div class="stat-value" id="wb-avg">—</div><div class="stat-sub">all check-ins / 10</div></div>
+    <div class="stat-cell"><div class="stat-label">Checked in</div><div class="stat-value" id="wb-checked">—</div><div class="stat-sub" id="wb-checked-pct">of members</div></div>
+    <div class="stat-cell"><div class="stat-label">Total check-ins</div><div class="stat-value" id="wb-total">—</div><div class="stat-sub">submissions logged</div></div>
+    <div class="stat-cell"><div class="stat-label">At risk</div><div class="stat-value" id="wb-atrisk" style="color:var(--danger)">—</div><div class="stat-sub">score ≤ 3</div></div>
+    <div class="stat-cell"><div class="stat-label">Improving</div><div class="stat-value" id="wb-improving" style="color:var(--success)">—</div><div class="stat-sub" id="wb-declining-sub">vs baseline</div></div>
+    <div class="stat-cell"><div class="stat-label">Participation</div><div class="stat-value" id="wb-pct">—</div><div class="stat-sub">% of real members</div></div>
+  </div>
+
+  <div class="section-label">Weekly score trend — avg wellbeing score per week (1–10 scale)</div>
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Score trajectory</span>
+      <span class="card-meta">Weekly average · bar height = score · label = avg · hover for submissions</span>
+    </div>
+    <div id="wb-trend-body"><div class="loading-row"></div></div>
+  </div>
+
+  <div class="section-label">Member wellbeing — latest score, baseline, and trend</div>
+  <div class="card" style="padding:0;overflow:hidden">
+    <div class="table-wrap">
+      <table class="data-table" id="wb-members-table">
+        <thead><tr>
+          <th>Member</th><th>Persona</th><th class="num">Baseline</th>
+          <th class="num">Latest</th><th class="num">Delta</th>
+          <th>Trend</th><th>Status</th><th class="num">Check-ins</th><th>Last</th>
+        </tr></thead>
+        <tbody id="wb-members-body"><tr><td colspan="9"><div class="loading-row"></div></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+    <div>
+      <div class="section-label" style="margin-top:0">Score distribution — latest score per member</div>
+      <div class="card" style="margin-bottom:0">
+        <div class="card-header"><span class="card-title">Distribution</span><span class="card-meta">1 = struggling · 10 = couldn't be better</span></div>
+        <div id="wb-dist-body"><div class="loading-row"></div></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-label" style="margin-top:0">8-dimension baselines — onboarding self-assessment averages</div>
+      <div class="card" style="margin-bottom:0">
+        <div class="card-header"><span class="card-title">Baseline profile</span><span class="card-meta">From onboarding · not live check-in data</span></div>
+        <div id="wb-baseline-body"><div class="loading-row"></div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div id="toast"></div>
+<script src="../assets/wellbeing.js?v=PM-590-v1"></script>
+</body>
+</html>
