@@ -1337,8 +1337,10 @@ function openInviteModal(){
   document.getElementById('inv-fit').value='med';
   document.getElementById('inv-rs').value='30';
   document.getElementById('inv-err').textContent='';
+  // Move overlay to body to escape any stacking context
   const ov=document.getElementById('invite-overlay');
-  ov.style.cssText='display:flex;position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100vh;background:rgba(5,8,12,.7);backdrop-filter:blur(4px);z-index:9999;align-items:center;justify-content:center';
+  document.body.appendChild(ov);
+  ov.style.cssText='display:flex;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(5,8,12,.7);backdrop-filter:blur(4px);z-index:99999;align-items:center;justify-content:center';
   setTimeout(()=>document.getElementById('inv-name').focus(),80);
   setIcons(document.getElementById('invite-modal'));
 }
