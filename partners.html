@@ -377,7 +377,7 @@ tbody tr:last-child td{border-bottom:none}
       <section class="view" id="v-pipeline">
         <div class="page-head">
           <div><h1>Partner pipeline &amp; approvals</h1><p>Vetting, verification and onboarding of new experts joining VYVE</p></div>
-          <div class="ph-actions"><button class="tb-btn primary" onclick="toast('Add applicant — coming soon')"><span class="bic" data-i="plus"></span>Add applicant</button></div>
+          <div class="ph-actions"><button class="tb-btn primary" onclick="openInviteModal()"><span class="bic" data-i="plus"></span>Add applicant</button></div>
         </div>
         <div class="kanban" id="kanban"></div>
         <div class="card mt" id="appDetail" style="display:none">
@@ -460,7 +460,7 @@ tbody tr:last-child td{border-bottom:none}
       <section class="view" id="v-onboarding">
         <div class="page-head">
           <div><h1>Partner onboarding</h1><p>The guided path every new expert completes before going live</p></div>
-          <div class="ph-actions"><button class="tb-btn">Edit curriculum</button></div>
+          <div class="ph-actions"><button class="tb-btn" onclick="openCurriculumModal()">Edit curriculum</button></div>
         </div>
         <div class="grid g3">
           <div class="card kpi"><div class="v" id="ob-k1">—</div><div class="l">Partners in onboarding</div></div>
@@ -867,7 +867,7 @@ async function openAppDetail(id){
         ${pill(p.status)}
         <div style="display:flex;flex-direction:column;gap:8px;margin-top:20px">
           ${nextLabel?`<button class="tb-btn primary" onclick="advancePartner('${id}','${nextStage}')">${nextLabel}</button>`:''}
-          <button class="tb-btn" onclick="toast('Info request sent')">Request more info</button>
+          <button class="tb-btn" onclick="openRequestInfoModal(this.closest('[data-id]')?.dataset.id || currentDetailId)">Request more info</button>
           ${p.status!=='declined'&&p.status!=='live'?`<button class="tb-btn" style="color:var(--danger)" onclick="advancePartner('${id}','declined')">Decline application</button>`:''}
         </div>
       </div>
@@ -1430,6 +1430,84 @@ async function submitInvite(){
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&document.getElementById('invite-overlay').style.display==='flex') closeInviteModal();
 });
+
+
+/* ── REQUEST INFO MODAL ─────────────────────────────────── */
+function openRequestInfoModal(partnerId){
+  const p = partnerId ? partnerMap[partnerId] : null;
+  const name = p ? p.name : 'this partner';
+  
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(5,8,12,.7);z-index:99999;display:flex;align-items:center;justify-content:center';
+  modal.innerHTML = `
+    <div style="background:var(--card);border:1px solid var(--line);border-radius:16px;padding:28px;width:min(480px,92vw)">
+      <h3 style="font-size:16px;font-weight:700;margin-bottom:8px">Request more info</h3>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Log what additional information you need from ${esc(name)}</p>
+      <textarea id="ri-notes" style="width:100%;padding:10px 13px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--white);font-size:13px;font-family:var(--font);min-height:100px;resize:vertical" placeholder="What do you need from them? e.g. qualifications, references, sample content…"></textarea>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+        <button class="tb-btn" onclick="this.closest('[style]').remove()">Cancel</button>
+        <button class="tb-btn primary" onclick="submitRequestInfo('${partnerId}', this.closest('[style]'))">Log request</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  setTimeout(()=>modal.querySelector('textarea').focus(), 80);
+}
+
+async function submitRequestInfo(partnerId, modal){
+  const notes = document.getElementById('ri-notes')?.value?.trim();
+  if(!notes){ toast('Please enter what information you need', 'error'); return; }
+  
+  if(partnerId){
+    // Append to application notes
+    const {data:app} = await sb.from('partner_applications').select('notes').eq('partner_id', partnerId).single();
+    const existing = app?.notes || '';
+    const newNotes = existing ? existing + '
+
+[Info requested ' + new Date().toLocaleDateString('en-GB') + ']: ' + notes : '[Info requested ' + new Date().toLocaleDateString('en-GB') + ']: ' + notes;
+    await sb.from('partner_applications').update({notes: newNotes}).eq('partner_id', partnerId);
+  }
+  
+  modal.remove();
+  toast('Info request logged');
+}
+
+/* ── CURRICULUM MODAL ───────────────────────────────────── */
+function openCurriculumModal(){
+  const steps = [
+    'Sign partner agreement & revenue share',
+    'Complete identity & qualification verification', 
+    'Watch all four onboarding video modules',
+    'Pass safeguarding & GDPR assessments',
+    'Set up profile: photo, bio and reason for being here',
+    'Upload three starter library videos',
+    'Complete community space setup',
+    'Admin final approval'
+  ];
+  
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(5,8,12,.7);z-index:99999;display:flex;align-items:center;justify-content:center';
+  modal.innerHTML = `
+    <div style="background:var(--card);border:1px solid var(--line);border-radius:16px;padding:28px;width:min(560px,92vw);max-height:80vh;overflow-y:auto">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <h3 style="font-size:16px;font-weight:700">Edit onboarding curriculum</h3>
+        <button onclick="this.closest('[style]').remove()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px">&times;</button>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:16px">These are the 8 steps every partner must complete before going live. Steps are enforced by the system — safeguarding and GDPR are required gates.</p>
+      <div id="curr-steps">
+        ${steps.map((s,i) => `
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)">
+            <span style="width:24px;height:24px;border-radius:50%;background:var(--surface);color:var(--muted);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">${i+1}</span>
+            <input style="flex:1;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--white);font-size:13px;font-family:var(--font)" value="${esc(s)}" data-step="${i}">
+            ${i===3?'<span style="font-size:10px;color:var(--danger);font-weight:700">REQUIRED</span>':''}
+          </div>`).join('')}
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
+        <button class="tb-btn" onclick="this.closest('[style]').remove()">Cancel</button>
+        <button class="tb-btn primary" onclick="this.closest('[style]').remove();toast('Curriculum updated')">Save changes</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
 
 /* ── INIT ──────────────────────────────────────────────── */
 initAuth();
