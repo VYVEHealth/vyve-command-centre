@@ -332,7 +332,7 @@ tbody tr:last-child td{border-bottom:none}
       <button class="tb-btn" onclick="openPreview()">
         <span class="bic" data-i="phone"></span>Preview app
       </button>
-      <button class="tb-btn primary" id="invite-partner-btn">
+      <button class="tb-btn primary" id="invite-partner-btn" onclick="openInviteModal()">
         <span class="bic" data-i="plus"></span>Invite partner
       </button>
     </div>
@@ -1338,8 +1338,7 @@ function openInviteModal(){
   document.getElementById('inv-rs').value='30';
   document.getElementById('inv-err').textContent='';
   const ov=document.getElementById('invite-overlay');
-  ov.style.display='flex';
-  ov.style.zIndex='9999';
+  ov.style.cssText='display:flex;position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100vh;background:rgba(5,8,12,.7);backdrop-filter:blur(4px);z-index:9999;align-items:center;justify-content:center';
   setTimeout(()=>document.getElementById('inv-name').focus(),80);
   setIcons(document.getElementById('invite-modal'));
 }
@@ -1437,7 +1436,7 @@ initAuth();
 
 
 <!-- ── INVITE MODAL ──────────────────────────────────────── -->
-<div id="invite-overlay" style="display:none;position:fixed;inset:0;background:rgba(5,8,12,.7);backdrop-filter:blur(4px);z-index:9999;align-items:center;justify-content:center" onclick="if(event.target===this)closeInviteModal()">
+<div id="invite-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(5,8,12,.7);backdrop-filter:blur(4px);z-index:9999;align-items:center;justify-content:center;width:100vw;height:100vh" onclick="if(event.target===this)closeInviteModal()">
   <div id="invite-modal" style="background:var(--card);border:1px solid var(--line);border-radius:20px;width:min(620px,95vw);max-height:90vh;overflow-y:auto;animation:slidein .25s ease">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:22px 24px 16px;border-bottom:1px solid var(--line)">
       <div>
