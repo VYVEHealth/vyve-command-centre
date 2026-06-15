@@ -218,6 +218,8 @@ h1,h2,h3{font-family:'Playfair Display',Georgia,serif;font-weight:600}
     <div class="stat-cell"><div class="stat-label">DAU/MAU</div><div class="stat-value" id="hl-stickiness">—</div><div class="stat-sub">stickiness ratio</div></div>
     <div class="stat-cell"><div class="stat-label">Activities 7d</div><div class="stat-value" id="hl-acts7">—</div><div class="stat-sub" id="hl-acts7-delta">across all types</div></div>
     <div class="stat-cell"><div class="stat-label">At risk</div><div class="stat-value" id="hl-atrisk">—</div><div class="stat-sub">inactive &gt;7 days</div></div>
+    <div class="stat-cell"><div class="stat-label">Installed</div><div class="stat-value" id="hl-installed">—</div><div class="stat-sub">opened native app</div></div>
+    <div class="stat-cell"><div class="stat-label">Never signed in</div><div class="stat-value" id="hl-never">—</div><div class="stat-sub">no login ever</div></div>
   </div>
 
   <!-- ── Tabs ─────────────────────────────────────────────────────────── -->
@@ -292,6 +294,11 @@ h1,h2,h3{font-family:'Playfair Display',Georgia,serif;font-weight:600}
           <option value="needs_support">Needs support</option>
           <option value="active">Active (7d)</option>
           <option value="inactive">Inactive (30d+)</option>
+          <option value="inapp">In app (installed/active)</option>
+          <option value="installed">Installed, no activity</option>
+          <option value="consented">Consented, no activity</option>
+          <option value="signedin">Signed in only</option>
+          <option value="neversignin">Never signed in</option>
         </select>
         <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-muted);cursor:pointer;white-space:nowrap">
           <input type="checkbox" id="member-excl-test" checked onchange="usageFilterMembers()" style="accent-color:var(--teal-lt)"/>
@@ -383,6 +390,6 @@ h1,h2,h3{font-family:'Playfair Display',Georgia,serif;font-weight:600}
 <!-- ── Toast ─────────────────────────────────────────────────────────── -->
 <div id="toast"></div>
 
-<script src="../assets/usage.js?v=PM-595-v1"></script>
+<script src="../assets/usage.js?v=PM-612-v1"></script>
 </body>
 </html>

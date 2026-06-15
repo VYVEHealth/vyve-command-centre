@@ -1,3 +1,4 @@
+// PM-612 — lifecycle status pill + install/consent/login filters + headline counts
 // PM-595 v1 — add phone to 360 modal + never-active outreach list
 // External file — required by §23.101 (router injectPage re-executes scripts;
 // inline JS with template literals breaks on replaceChild)
@@ -128,6 +129,16 @@ function usageDormancyStatus(lastAt) {
   if (days <= 7)  return '<span class="pill pill-ok">Active</span>';
   if (days <= 30) return '<span class="pill pill-warn">Quiet</span>';
   return '<span class="pill pill-danger">Inactive</span>';
+}
+// PM-612 — lifecycle-aware status pill (consent/install/login). Falls back to dormancy for pre-PM-612 cache.
+function usageLifecyclePill(m) {
+  const lc = m.lifecycle;
+  if (!lc) return usageDormancyStatus(m.last_activity_at);
+  if (lc === 'active')    return usageDormancyStatus(m.last_activity_at);
+  if (lc === 'installed') return '<span class="pill pill-teal">Installed</span>';
+  if (lc === 'consented') return '<span class="pill pill-warn">Consented</span>';
+  if (lc === 'signed_in') return '<span class="pill pill-grey">Signed in</span>';
+  return '<span class="pill pill-danger">Never signed in</span>';
 }
 function usagePct(val, total) {
   if (!total) return 0;
@@ -272,6 +283,10 @@ function usageRenderHeadline(hl, ov, mem) {
   // At risk count from member_stats
   const atRisk = mem.filter(m => m.at_risk).length;
   usageSetEl('hl-atrisk', atRisk);
+  // PM-612 lifecycle headline counts (exclude test)
+  const _real = (mem || []).filter(x => !x.is_test);
+  usageSetEl('hl-installed', _real.filter(x => x.installed).length);
+  usageSetEl('hl-never', _real.filter(x => x.lifecycle === 'never').length);
 }
 
 // ── Overview chart (30-day bar chart) ────────────────────────────────────────
@@ -399,7 +414,12 @@ function usageFilterMembers() {
       || (filter === 'at_risk' && m.at_risk)
       || (filter === 'needs_support' && m.needs_support)
       || (filter === 'active' && m.activities_7d > 0)
-      || (filter === 'inactive' && (!m.last_activity_at || (Date.now() - new Date(m.last_activity_at).getTime()) > 30 * 86400000));
+      || (filter === 'inactive' && (!m.last_activity_at || (Date.now() - new Date(m.last_activity_at).getTime()) > 30 * 86400000))
+      || (filter === 'inapp' && (m.lifecycle === 'active' || m.lifecycle === 'installed'))
+      || (filter === 'installed' && m.lifecycle === 'installed')
+      || (filter === 'consented' && m.lifecycle === 'consented')
+      || (filter === 'signedin' && m.lifecycle === 'signed_in')
+      || (filter === 'neversignin' && m.lifecycle === 'never');
     return matchText && matchFilter;
   });
   _membersPage = 0;
@@ -491,7 +511,7 @@ function usageRenderMembersPage() {
       + '<td class="dim">' + usageEsc(prog) + '</td>'
       + '<td><span class="persona-badge persona-' + usageEsc(persona) + '">' + usageEsc(persona) + '</span></td>'
       + '<td>' + usageAccountPill(m.account_type, m.subscription_status) + '</td>'
-      + '<td>' + usageDormancyStatus(m.last_activity_at) + '</td>'
+      + '<td>' + usageLifecyclePill(m) + '</td>'
       + '</tr>';
   }).join('');
 
