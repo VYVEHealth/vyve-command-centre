@@ -1,0 +1,1330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>VYVE · Partner Management</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
+<style>
+:root{
+  --teal:#1a6b6b;--mint:#5ec4b0;--mint-light:#7dd4c4;
+  --dark:#0d1117;--card:#131f2b;--surface:#1a2b3a;--surface2:#22384a;
+  --teal-dark:#163a3e;--teal-deep:#0f4c4c;
+  --white:#f0f4f4;--muted:#8aacac;--muted-light:#a8c8c8;
+  --physical:#5ec4b0;--mental:#4a9eba;--social:#e8a855;
+  --success:#5ec4b0;--warning:#e8a855;--danger:#e06060;
+  --line:rgba(138,172,172,.13);
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:var(--font);background:var(--dark);color:var(--white);font-size:14px;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:6px}
+::-webkit-scrollbar-track{background:transparent}
+svg{display:block;flex:none}
+a{color:inherit;text-decoration:none}
+
+/* ── GATE ─────────────────────────────────────────────── */
+#gate{position:fixed;inset:0;background:var(--dark);z-index:200;display:flex;align-items:center;justify-content:center}
+#gate.hidden{display:none}
+.gate-card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:40px 36px;width:min(400px,92vw);text-align:center}
+.gate-logo{width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,var(--mint),var(--teal));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:24px;color:#05201d;margin:0 auto 20px}
+.gate-card h2{font-size:20px;font-weight:800;margin-bottom:6px}
+.gate-card p{color:var(--muted);font-size:13px;margin-bottom:24px}
+.gate-card input{width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--white);font-size:14px;outline:none;margin-bottom:12px;font-family:var(--font)}
+.gate-card input:focus{border-color:var(--mint)}
+.gate-card .btn-primary{width:100%;padding:13px;border-radius:10px;background:linear-gradient(135deg,var(--mint),var(--teal));color:#05201d;font-weight:700;font-size:14px;border:none;cursor:pointer;font-family:var(--font)}
+.gate-err{color:var(--danger);font-size:12px;margin-top:8px;min-height:18px}
+
+/* ── LAYOUT ─────────────────────────────────────────────── */
+.app{display:flex;min-height:100vh}
+
+/* ── SIDEBAR ─────────────────────────────────────────────── */
+.sidebar{width:252px;flex:none;background:linear-gradient(180deg,#0f1a23,#0b1219);border-right:1px solid var(--line);position:sticky;top:0;height:100vh;display:flex;flex-direction:column;padding:20px 0;overflow-y:auto}
+.brand{display:flex;align-items:center;gap:11px;padding:0 22px 20px;border-bottom:1px solid var(--line);margin-bottom:14px;flex-shrink:0}
+.brand .mark{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,var(--mint),var(--teal));display:flex;align-items:center;justify-content:center;font-weight:800;color:#05201d;font-size:19px;flex:none}
+.brand .nm{font-weight:800;letter-spacing:3px;font-size:18px}
+.brand .nm b{color:var(--mint)}
+.brand .sub{font-size:9.5px;color:var(--muted);letter-spacing:1.5px;margin-top:2px}
+.nav-group{padding:12px 22px 5px;font-size:10px;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;font-weight:700}
+.nav-item{display:flex;align-items:center;gap:12px;padding:10px 22px;color:var(--muted-light);cursor:pointer;font-size:13.5px;font-weight:500;border-left:3px solid transparent;transition:.15s;user-select:none}
+.nav-item:hover{background:rgba(94,196,176,.06);color:var(--white)}
+.nav-item.active{background:rgba(94,196,176,.1);color:var(--mint);border-left-color:var(--mint);font-weight:700}
+.nav-item .ic{width:18px;height:18px;flex:none;display:flex;align-items:center;justify-content:center}
+.nav-item .ic svg{width:18px;height:18px}
+.nav-item .count{margin-left:auto;background:var(--surface2);color:var(--muted-light);font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px}
+.nav-item.active .count{background:var(--mint);color:#05201d}
+.nav-item .count.alert{background:rgba(224,96,96,.22);color:#f0a5a5}
+.side-foot{margin-top:auto;padding:16px 22px;border-top:1px solid var(--line);display:flex;align-items:center;gap:11px;flex-shrink:0}
+.side-foot .av{width:34px;height:34px;border-radius:10px;background:var(--social);display:flex;align-items:center;justify-content:center;font-weight:800;color:#05201d;font-size:13px;flex:none}
+.side-foot .nm{font-size:12.5px;font-weight:700}
+.side-foot .rl{font-size:10.5px;color:var(--muted)}
+.side-foot .signout{margin-left:auto;color:var(--muted);cursor:pointer;font-size:11px}
+.side-foot .signout:hover{color:var(--danger)}
+
+/* ── MAIN ─────────────────────────────────────────────── */
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{height:64px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:16px;padding:0 28px;position:sticky;top:0;background:rgba(13,17,23,.9);backdrop-filter:blur(12px);z-index:30;flex-shrink:0}
+.crumb{font-size:13px;color:var(--muted)}
+.crumb b{color:var(--white);font-weight:700}
+.topbar-search{flex:1;max-width:360px;display:flex;align-items:center;gap:9px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 13px;color:var(--muted)}
+.topbar-search svg{width:15px;height:15px;flex:none}
+.topbar-search input{flex:1;background:none;border:none;color:var(--white);outline:none;font-family:var(--font);font-size:13px}
+.topbar-search input::placeholder{color:var(--muted)}
+.topbar .spacer{flex:1}
+.tb-btn{background:var(--card);border:1px solid var(--line);color:var(--muted-light);border-radius:10px;padding:9px 15px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);display:inline-flex;align-items:center;gap:8px;transition:.15s;white-space:nowrap}
+.tb-btn:hover{border-color:var(--mint);color:var(--white)}
+.tb-btn.primary{background:linear-gradient(135deg,var(--mint),var(--teal));color:#05201d;border:none}
+.tb-btn svg,.bic svg{width:15px;height:15px}
+.bic{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px}
+
+/* ── CONTENT AREA ─────────────────────────────────────────────── */
+.content{padding:26px 28px 64px;max-width:1340px}
+.view{display:none;animation:fade .25s ease}
+.view.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:12px}
+.page-head h1{font-size:23px;font-weight:800;letter-spacing:-.3px}
+.page-head p{color:var(--muted);font-size:13px;margin-top:4px}
+.ph-actions{display:flex;gap:9px;align-items:center}
+
+/* ── GRID / CARDS ─────────────────────────────────────────────── */
+.grid{display:grid;gap:16px}
+.g4{grid-template-columns:repeat(4,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g2{grid-template-columns:repeat(2,1fr)}
+.mt{margin-top:16px}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px}
+.card.pad0{padding:0;overflow:hidden}
+.card-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:15px}
+.card-h h3{font-size:14.5px;font-weight:700}
+.card-h .link{font-size:12px;color:var(--mint);font-weight:600;cursor:pointer}
+
+/* ── KPI ─────────────────────────────────────────────── */
+.kpi .top{display:flex;align-items:center;justify-content:space-between}
+.kpi .ico{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center}
+.kpi .ico svg{width:19px;height:19px}
+.kpi .v{font-size:28px;font-weight:800;margin-top:14px;letter-spacing:-.6px}
+.kpi .l{font-size:12.5px;color:var(--muted);margin-top:3px}
+.kpi .delta{font-size:12px;font-weight:700;margin-top:10px}
+.up{color:var(--success)}.down{color:var(--danger)}.flat{color:var(--muted)}
+
+/* ── PILLS ─────────────────────────────────────────────── */
+.pill{font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:5px;letter-spacing:.2px;white-space:nowrap}
+.pill .d{width:6px;height:6px;border-radius:50%}
+.p-live{background:rgba(94,196,176,.15);color:var(--mint)}
+.p-review{background:rgba(232,168,85,.15);color:var(--warning)}
+.p-pending{background:rgba(74,158,186,.15);color:var(--mental)}
+.p-suspended{background:rgba(224,96,96,.15);color:var(--danger)}
+.p-draft{background:var(--surface2);color:var(--muted-light)}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:7px;flex:none}
+
+/* ── TABLES ─────────────────────────────────────────────── */
+table{width:100%;border-collapse:collapse}
+thead th{text-align:left;font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);font-weight:700;padding:13px 16px;border-bottom:1px solid var(--line)}
+tbody td{padding:13px 16px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:middle}
+tbody tr{cursor:pointer;transition:.12s}
+tbody tr:hover{background:rgba(94,196,176,.05)}
+tbody tr:last-child td{border-bottom:none}
+.who{display:flex;align-items:center;gap:12px}
+.av{border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center;font-weight:800;color:#05201d;letter-spacing:.3px}
+.who .av{width:36px;height:36px;font-size:13px}
+.who .nm{font-weight:700;font-size:13px}
+.who .rl{font-size:11px;color:var(--muted)}
+.num{font-variant-numeric:tabular-nums;font-weight:700}
+
+/* ── PROGRESS / BARS ─────────────────────────────────────────────── */
+.track{height:7px;background:var(--surface);border-radius:6px;overflow:hidden}
+.fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--mint),var(--mint-light))}
+.mini-stat{font-size:11px;color:var(--muted);margin-top:5px}
+.barchart{display:flex;align-items:flex-end;gap:9px;height:164px;padding-top:10px}
+.barchart .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end}
+.barchart .bar{width:62%;border-radius:5px 5px 0 0;background:linear-gradient(180deg,var(--mint),var(--teal-deep));transition:.4s;min-height:4px}
+.barchart .lab{font-size:10px;color:var(--muted)}
+.legend{display:flex;gap:18px;font-size:11.5px;color:var(--muted);flex-wrap:wrap;margin-top:8px}
+.legend i{width:9px;height:9px;border-radius:3px;display:inline-block;margin-right:7px}
+
+/* ── KANBAN ─────────────────────────────────────────────── */
+.kanban{display:grid;grid-template-columns:repeat(5,1fr);gap:13px;align-items:start}
+.kcol{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px;min-height:120px}
+.kcol .kh{display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.kcol .kh .c{background:var(--surface2);font-size:10px;padding:2px 8px;border-radius:10px;color:var(--muted-light)}
+.kcard{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:11px;margin-bottom:9px;cursor:pointer;transition:.15s}
+.kcard:hover{border-color:var(--mint);transform:translateY(-1px)}
+.kcard .knm{font-size:12.5px;font-weight:700}
+.kcard .krole{font-size:10.5px;color:var(--muted);margin:2px 0 9px}
+.kcard .kmeta{display:flex;align-items:center;justify-content:space-between;font-size:10px;color:var(--muted)}
+
+/* ── PARTNER DETAIL ─────────────────────────────────────────────── */
+.partner-hero{display:flex;gap:18px;align-items:center;background:linear-gradient(120deg,var(--teal-deep),var(--card));border:1px solid var(--line);border-radius:18px;padding:22px;margin-bottom:18px}
+.partner-hero .pa{width:76px;height:76px;border-radius:20px;flex:none;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;color:#05201d}
+.partner-hero h2{font-size:21px;font-weight:800;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.partner-hero .role{color:var(--mint);font-size:13px;font-weight:600;margin-top:3px}
+.partner-hero .hstats{display:flex;gap:28px;margin-top:14px;flex-wrap:wrap}
+.partner-hero .hstats b{display:block;font-size:17px;font-weight:800}
+.partner-hero .hstats span{font-size:11px;color:var(--muted)}
+
+.subtabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-bottom:20px;overflow-x:auto}
+.subtabs::-webkit-scrollbar{display:none}
+.subtab{padding:11px 16px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;background:none;border-left:none;border-right:none;border-top:none;font-family:var(--font)}
+.subtab.active{color:var(--mint);border-bottom-color:var(--mint)}
+.subpane{display:none}.subpane.active{display:block;animation:fade .25s}
+
+/* ── CONTENT TILES ─────────────────────────────────────────────── */
+.ctile{display:flex;gap:13px;align-items:center;padding:13px;border:1px solid var(--line);border-radius:13px;margin-bottom:10px;background:var(--card)}
+.ctile .th{width:46px;height:46px;border-radius:11px;flex:none;display:flex;align-items:center;justify-content:center}
+.ctile .th svg{width:20px;height:20px}
+.ctile .ct{font-size:13.5px;font-weight:700}
+.ctile .cs{font-size:11px;color:var(--muted);margin-top:2px}
+.row-actions{display:flex;gap:7px;margin-left:auto}
+.icon-btn{width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--muted-light);cursor:pointer;transition:.15s;display:flex;align-items:center;justify-content:center;font-family:var(--font)}
+.icon-btn svg{width:15px;height:15px}
+.icon-btn:hover{border-color:var(--mint);color:var(--mint)}
+.btn-approve{background:rgba(94,196,176,.15);border-color:transparent;color:var(--mint)}
+.btn-reject{background:rgba(224,96,96,.12);border-color:transparent;color:var(--danger)}
+
+/* ── ONBOARDING ─────────────────────────────────────────────── */
+.ob-num{width:24px;height:24px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px}
+.ob-num svg{width:13px;height:13px}
+.ob-done{background:var(--mint);color:#05201d}
+.ob-todo{background:var(--surface);color:var(--muted);border:1px solid var(--line)}
+.video-card{position:relative;border-radius:12px;overflow:hidden;height:118px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-direction:column;gap:8px}
+.video-card .play{width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.16);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center}
+.video-card .play svg{width:16px;height:16px;color:#fff;margin-left:2px}
+.video-card .vt{position:absolute;bottom:11px;left:13px;font-size:12px;font-weight:700}
+.video-card .vd{position:absolute;bottom:11px;right:13px;font-size:10px;background:rgba(0,0,0,.45);padding:2px 7px;border-radius:8px}
+.flex{display:flex;align-items:center;gap:10px}
+
+/* ── DEVICE PREVIEW ─────────────────────────────────────────────── */
+.preview-overlay{position:fixed;inset:0;background:rgba(5,8,12,.65);backdrop-filter:blur(4px);z-index:90;display:none;align-items:center;justify-content:flex-end}
+.preview-overlay.show{display:flex;animation:fade .25s}
+.preview-panel{width:424px;max-width:92vw;height:100%;background:#0a1016;border-left:1px solid var(--line);box-shadow:-20px 0 60px rgba(0,0,0,.5);display:flex;flex-direction:column}
+@keyframes slidein{from{transform:translateX(40px);opacity:.4}to{transform:none;opacity:1}}
+.preview-panel .ph{display:flex;align-items:center;justify-content:space-between;padding:17px 18px;border-bottom:1px solid var(--line)}
+.preview-panel .ph h3{font-size:14px;font-weight:700;display:flex;align-items:center;gap:9px}
+.preview-panel .ph h3 svg{width:16px;height:16px}
+.preview-panel .ph .x{cursor:pointer;color:var(--muted);background:none;border:none;display:flex;padding:4px}
+.preview-panel .ph .x svg{width:18px;height:18px}
+.preview-body{flex:1;overflow-y:auto;display:flex;justify-content:center;padding:20px}
+.phone{width:300px;height:618px;background:var(--dark);border-radius:34px;border:1px solid var(--line);box-shadow:0 0 0 9px #05080c,0 0 0 10px #1c2630;overflow:hidden;display:flex;flex-direction:column;flex:none}
+.ph-not{height:22px;background:#05080c;width:112px;margin:0 auto;border-radius:0 0 14px 14px}
+.ph-scroll{flex:1;overflow-y:auto}
+.ph-scroll::-webkit-scrollbar{width:0}
+.ph-banner{height:92px}
+.ph-av-wrap{position:relative;height:36px}
+.ph-av{width:62px;height:62px;border-radius:18px;border:3px solid var(--dark);position:absolute;left:16px;top:-31px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#05201d;font-weight:800}
+.ph-info{padding:34px 16px 0}
+.ph-info h4{font-size:16px;font-weight:800;display:flex;align-items:center;gap:6px}
+.ph-info h4 svg{width:14px;height:14px;color:var(--mint)}
+.ph-info .r{font-size:11px;color:var(--mint);font-weight:600}
+.ph-stats{display:flex;gap:18px;margin:11px 0}
+.ph-stats b{display:block;font-size:14px;font-weight:800}
+.ph-stats span{font-size:10px;color:var(--muted)}
+.ph-join{background:linear-gradient(135deg,var(--mint),var(--teal));color:#05201d;border:none;border-radius:12px;padding:11px;width:100%;font-weight:700;font-size:13px;cursor:pointer}
+.ph-tabs{display:flex;gap:15px;padding:14px 16px 8px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--line);overflow-x:auto}
+.ph-tabs::-webkit-scrollbar{display:none}
+.ph-tabs span:first-child{color:var(--mint);font-weight:700;border-bottom:2px solid var(--mint);padding-bottom:6px}
+.ph-sec{padding:14px 16px}
+.ph-sec h5{font-size:12px;font-weight:700;margin-bottom:9px}
+.ph-livecard{display:flex;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:11px;margin-bottom:9px;align-items:center}
+.ph-date{width:42px;text-align:center;background:var(--surface);border-radius:9px;padding:6px 0;flex:none}
+.ph-date .d{font-size:15px;font-weight:800;color:var(--mint)}
+.ph-date .m{font-size:9px;color:var(--muted)}
+.ph-livecard .t{font-size:12px;font-weight:700}
+.ph-livecard .mt{font-size:10px;color:var(--muted)}
+.ph-note{font-size:10px;color:var(--muted);text-align:center;padding:12px;line-height:1.5}
+
+/* ── TOAST ─────────────────────────────────────────────── */
+.toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface);border:1px solid rgba(94,196,176,.35);color:var(--white);font-size:13px;font-weight:600;padding:12px 22px;border-radius:30px;opacity:0;transition:.3s;z-index:300;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.empty-state{text-align:center;padding:40px;color:var(--muted);font-size:13px}
+.hl{color:var(--mint)}
+.muted{color:var(--muted)}
+.accent-l{border-left:3px solid var(--mint)}
+
+@media(max-width:1100px){
+  .g4{grid-template-columns:repeat(2,1fr)}
+  .kanban{grid-template-columns:repeat(3,1fr)}
+  .g3{grid-template-columns:1fr}
+}
+@media(max-width:768px){
+  .sidebar{display:none}
+  .kanban{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<!-- ── AUTH GATE ────────────────────────────────────────── -->
+<div id="gate">
+  <div class="gate-card">
+    <div class="gate-logo">V</div>
+    <h2>Partner Management</h2>
+    <p>Sign in with your VYVE admin account</p>
+    <input type="email" id="g-email" placeholder="Email address" autocomplete="email">
+    <input type="password" id="g-pw" placeholder="Password" autocomplete="current-password">
+    <button class="btn-primary" id="g-submit">Sign in</button>
+    <div class="gate-err" id="g-err"></div>
+  </div>
+</div>
+
+<div class="app" id="app" style="display:none">
+
+  <!-- ── SIDEBAR ──────────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="mark">V</div>
+      <div><div class="nm">V<b>Y</b>VE</div><div class="sub">PARTNER MANAGEMENT</div></div>
+    </div>
+    <div class="nav-group">Manage</div>
+    <div class="nav-item active" data-view="overview" onclick="nav(this)">
+      <span class="ic" data-i="grid"></span>Overview
+    </div>
+    <div class="nav-item" data-view="pipeline" onclick="nav(this)">
+      <span class="ic" data-i="funnel"></span>Pipeline &amp; Approvals
+      <span class="count alert" id="nb-pipeline">0</span>
+    </div>
+    <div class="nav-item" data-view="partners" onclick="nav(this)">
+      <span class="ic" data-i="users"></span>Partners
+      <span class="count" id="nb-partners">0</span>
+    </div>
+    <div class="nav-item" data-view="content" onclick="nav(this)">
+      <span class="ic" data-i="film"></span>Content &amp; Moderation
+      <span class="count alert" id="nb-content">0</span>
+    </div>
+    <div class="nav-item" data-view="onboarding" onclick="nav(this)">
+      <span class="ic" data-i="cap"></span>Onboarding
+    </div>
+    <div class="nav-group">Insights</div>
+    <div class="nav-item" data-view="analytics" onclick="nav(this)">
+      <span class="ic" data-i="bars"></span>Analytics &amp; Engagement
+    </div>
+    <div class="nav-item" data-view="revenue" onclick="nav(this)">
+      <span class="ic" data-i="money"></span>Revenue &amp; Payouts
+    </div>
+    <div class="nav-group">Member experience</div>
+    <div class="nav-item" onclick="openPreview()">
+      <span class="ic" data-i="phone"></span>Live app preview
+    </div>
+    <div class="nav-item" onclick="location.href='admin-console.html'">
+      <span class="ic" data-i="layers"></span>Command Centre
+    </div>
+    <div class="side-foot">
+      <div class="av" id="sf-av">?</div>
+      <div><div class="nm" id="sf-nm">—</div><div class="rl">Admin</div></div>
+      <span class="signout" onclick="signOut()" title="Sign out">&#x2715;</span>
+    </div>
+  </aside>
+
+  <!-- ── MAIN ─────────────────────────────────────────── -->
+  <main class="main">
+    <div class="topbar">
+      <div class="crumb" id="crumb"><b>Overview</b></div>
+      <div class="topbar-search">
+        <span data-i="search"></span>
+        <input placeholder="Search partners, content, members…" id="global-search">
+      </div>
+      <div class="spacer"></div>
+      <button class="tb-btn" onclick="openPreview()">
+        <span class="bic" data-i="phone"></span>Preview app
+      </button>
+      <button class="tb-btn primary" onclick="toast('Invite flow coming soon')">
+        <span class="bic" data-i="plus"></span>Invite partner
+      </button>
+    </div>
+
+    <div class="content">
+
+      <!-- ── OVERVIEW ───────────────────────────────── -->
+      <section class="view active" id="v-overview">
+        <div class="page-head">
+          <div><h1>Partner ecosystem overview</h1><p>Live snapshot across all partners in the VYVE Connect area</p></div>
+          <div class="ph-actions"><button class="tb-btn">Last 30 days</button></div>
+        </div>
+        <div class="grid g4" id="ov-kpis">
+          <div class="card kpi"><div class="top"><div class="ico" style="background:rgba(94,196,176,.15);color:var(--mint)" data-i="users"></div><span class="pill p-live"><span class="d" style="background:var(--mint)"></span>Live</span></div><div class="v" id="ov-k1">—</div><div class="l">Active partners</div></div>
+          <div class="card kpi"><div class="top"><div class="ico" style="background:rgba(74,158,186,.15);color:var(--mental)" data-i="member"></div></div><div class="v" id="ov-k2">—</div><div class="l">Members in spaces</div></div>
+          <div class="card kpi"><div class="top"><div class="ico" style="background:rgba(232,168,85,.15);color:var(--social)" data-i="film"></div></div><div class="v" id="ov-k3">—</div><div class="l">Content items live</div></div>
+          <div class="card kpi"><div class="top"><div class="ico" style="background:rgba(94,196,176,.15);color:var(--mint)" data-i="money"></div></div><div class="v" id="ov-k4">—</div><div class="l">Pending payouts</div></div>
+        </div>
+        <div class="grid g3 mt">
+          <div class="card" style="grid-column:span 2">
+            <div class="card-h"><h3>Pipeline &amp; moderation</h3><span class="link" onclick="navByView('pipeline')">View pipeline</span></div>
+            <div id="ov-attention"></div>
+          </div>
+          <div class="card">
+            <div class="card-h"><h3>Needs attention</h3></div>
+            <div id="ov-needs"></div>
+          </div>
+        </div>
+        <div class="grid g2 mt">
+          <div class="card pad0">
+            <div class="card-h" style="padding:18px 18px 0"><h3>Top performing partners</h3><span class="link" onclick="navByView('partners')">All partners</span></div>
+            <table><thead><tr><th>Partner</th><th>Pillar</th><th>Status</th><th>Members</th><th>Rating</th></tr></thead><tbody id="ov-top"></tbody></table>
+          </div>
+          <div class="card">
+            <div class="card-h"><h3>Recent content activity</h3></div>
+            <div id="ov-feed"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── PIPELINE ───────────────────────────────── -->
+      <section class="view" id="v-pipeline">
+        <div class="page-head">
+          <div><h1>Partner pipeline &amp; approvals</h1><p>Vetting, verification and onboarding of new experts joining VYVE</p></div>
+          <div class="ph-actions"><button class="tb-btn primary" onclick="toast('Add applicant — coming soon')"><span class="bic" data-i="plus"></span>Add applicant</button></div>
+        </div>
+        <div class="kanban" id="kanban"></div>
+        <div class="card mt" id="appDetail" style="display:none">
+          <div class="card-h"><h3>Application review</h3><button class="icon-btn" data-i="x" onclick="document.getElementById('appDetail').style.display='none'"></button></div>
+          <div id="appDetailBody"></div>
+        </div>
+      </section>
+
+      <!-- ── PARTNERS DIRECTORY ─────────────────────── -->
+      <section class="view" id="v-partners">
+        <div class="page-head">
+          <div><h1>Partners</h1><p>Select a partner to open their management area</p></div>
+          <div class="ph-actions">
+            <select id="pt-pillar-filter" style="padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--white);font-size:13px;font-family:var(--font)">
+              <option value="">All pillars</option>
+              <option value="body">Body</option>
+              <option value="mind">Mind</option>
+              <option value="connect">Connect</option>
+            </select>
+            <select id="pt-status-filter" style="padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--white);font-size:13px;font-family:var(--font)">
+              <option value="">All statuses</option>
+              <option value="live">Live</option>
+              <option value="onboarding">Onboarding</option>
+              <option value="applied">Applied</option>
+              <option value="vetting">Vetting</option>
+              <option value="contract">Contract</option>
+              <option value="suspended">Suspended</option>
+            </select>
+          </div>
+        </div>
+        <div class="card pad0">
+          <table>
+            <thead><tr><th>Partner</th><th>Pillar</th><th>Status</th><th>Members</th><th>Content</th><th>Rating</th><th>Rev share</th><th></th></tr></thead>
+            <tbody id="pt-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ── PARTNER DETAIL ─────────────────────────── -->
+      <section class="view" id="v-partner-detail">
+        <div class="flex" style="margin-bottom:14px;cursor:pointer;color:var(--muted);font-size:13px" onclick="navByView('partners')">
+          <span data-i="chev-left" style="display:inline-flex;width:14px;height:14px"></span>Back to all partners
+        </div>
+        <div class="partner-hero" id="pd-hero"></div>
+        <div class="subtabs">
+          <button class="subtab active" onclick="pdTab(this,'pd-over')">Overview</button>
+          <button class="subtab" onclick="pdTab(this,'pd-content')">Content library</button>
+          <button class="subtab" onclick="pdTab(this,'pd-programs')">Programs</button>
+          <button class="subtab" onclick="pdTab(this,'pd-members')">Members</button>
+          <button class="subtab" onclick="pdTab(this,'pd-revenue')">Revenue</button>
+          <button class="subtab" onclick="pdTab(this,'pd-settings')">Settings</button>
+        </div>
+        <div class="subpane active" id="pd-over"></div>
+        <div class="subpane" id="pd-content"></div>
+        <div class="subpane" id="pd-programs"></div>
+        <div class="subpane" id="pd-members"></div>
+        <div class="subpane" id="pd-revenue"></div>
+        <div class="subpane" id="pd-settings"></div>
+      </section>
+
+      <!-- ── CONTENT & MODERATION ───────────────────── -->
+      <section class="view" id="v-content">
+        <div class="page-head">
+          <div><h1>Content &amp; moderation</h1><p>Review and approve everything partners publish into the app</p></div>
+          <div class="ph-actions"><button class="tb-btn" onclick="bulkApprove()">Bulk approve queue</button></div>
+        </div>
+        <div class="subtabs">
+          <button class="subtab active" onclick="cmTab(this,'cm-queue')">Moderation queue <span class="pill p-review" style="margin-left:4px" id="cm-q-count">0</span></button>
+          <button class="subtab" onclick="cmTab(this,'cm-flagged')">Flagged <span class="pill p-suspended" style="margin-left:4px" id="cm-f-count">0</span></button>
+          <button class="subtab" onclick="cmTab(this,'cm-library')">All library</button>
+          <button class="subtab" onclick="cmTab(this,'cm-programs')">Programs</button>
+        </div>
+        <div class="subpane active" id="cm-queue"></div>
+        <div class="subpane" id="cm-flagged"></div>
+        <div class="subpane" id="cm-library"></div>
+        <div class="subpane" id="cm-programs"></div>
+      </section>
+
+      <!-- ── ONBOARDING ────────────────────────────── -->
+      <section class="view" id="v-onboarding">
+        <div class="page-head">
+          <div><h1>Partner onboarding</h1><p>The guided path every new expert completes before going live</p></div>
+          <div class="ph-actions"><button class="tb-btn">Edit curriculum</button></div>
+        </div>
+        <div class="grid g3">
+          <div class="card kpi"><div class="v" id="ob-k1">—</div><div class="l">Partners in onboarding</div></div>
+          <div class="card kpi"><div class="v" id="ob-k2">0%</div><div class="l">Avg completion</div></div>
+          <div class="card kpi"><div class="v" id="ob-k3">—</div><div class="l">Assessments pending</div></div>
+        </div>
+        <div class="grid g2 mt">
+          <div class="card">
+            <div class="card-h"><h3>Onboarding video modules</h3></div>
+            <div class="grid g2" id="ob-videos"></div>
+          </div>
+          <div class="card">
+            <div class="card-h"><h3>Education curriculum</h3></div>
+            <div id="ob-education"></div>
+          </div>
+        </div>
+        <div class="card mt">
+          <div class="card-h"><h3>Onboarding checklist</h3></div>
+          <div id="ob-checklist"></div>
+        </div>
+        <div class="card mt">
+          <div class="card-h"><h3>Partners currently onboarding</h3></div>
+          <div id="ob-partners"></div>
+        </div>
+      </section>
+
+      <!-- ── ANALYTICS ─────────────────────────────── -->
+      <section class="view" id="v-analytics">
+        <div class="page-head">
+          <div><h1>Analytics &amp; engagement</h1><p>Cross-partner performance, retention and member behaviour</p></div>
+        </div>
+        <div class="grid g4">
+          <div class="card kpi"><div class="v" id="an-k1">—</div><div class="l">Total memberships</div></div>
+          <div class="card kpi"><div class="v" id="an-k2">—</div><div class="l">Highly engaged</div></div>
+          <div class="card kpi"><div class="v" id="an-k3">—</div><div class="l">At-risk members</div></div>
+          <div class="card kpi"><div class="v" id="an-k4">—</div><div class="l">Published content</div></div>
+        </div>
+        <div class="grid g2 mt">
+          <div class="card">
+            <div class="card-h"><h3>Attendances by week</h3></div>
+            <div class="barchart" id="an-bars"></div>
+          </div>
+          <div class="card">
+            <div class="card-h"><h3>Member split by pillar</h3></div>
+            <div id="an-pillar"></div>
+          </div>
+        </div>
+        <div class="card pad0 mt">
+          <div class="card-h" style="padding:18px 18px 0"><h3>Engagement leaderboard</h3></div>
+          <table><thead><tr><th>Partner</th><th>Members</th><th>Highly engaged</th><th>At-risk</th><th>Content live</th><th>Rating</th></tr></thead><tbody id="an-table"></tbody></table>
+        </div>
+      </section>
+
+      <!-- ── REVENUE ───────────────────────────────── -->
+      <section class="view" id="v-revenue">
+        <div class="page-head">
+          <div><h1>Revenue &amp; payouts</h1><p>Subscription attribution, revenue share and partner payouts</p></div>
+          <div class="ph-actions">
+            <button class="tb-btn" id="rv-period-btn">June 2026</button>
+            <button class="tb-btn primary" onclick="runPayouts()"><span class="bic" data-i="money"></span>Run payouts</button>
+          </div>
+        </div>
+        <div class="grid g4">
+          <div class="card kpi"><div class="v" id="rv-k1">—</div><div class="l">Pending payouts</div></div>
+          <div class="card kpi"><div class="v" id="rv-k2">—</div><div class="l">Total pending £</div></div>
+          <div class="card kpi"><div class="v" id="rv-k3">—</div><div class="l">Paid this period</div></div>
+          <div class="card kpi"><div class="v" id="rv-k4">30%</div><div class="l">Default rev share</div></div>
+        </div>
+        <div class="card pad0 mt">
+          <div class="card-h" style="padding:18px 18px 0"><h3>Payout ledger</h3><span class="link" onclick="toast('Export — coming soon')">Export</span></div>
+          <table><thead><tr><th>Partner</th><th>Period</th><th>Attributed subs</th><th>Gross</th><th>Share</th><th>Payout</th><th>Status</th><th></th></tr></thead>
+          <tbody id="rv-table"></tbody>
+        </div>
+      </section>
+
+    </div><!-- /content -->
+  </main>
+</div><!-- /app -->
+
+<!-- ── DEVICE PREVIEW ──────────────────────────────────── -->
+<div class="preview-overlay" id="previewOverlay" onclick="if(event.target===this)closePreview()">
+  <div class="preview-panel">
+    <div class="ph">
+      <h3><span data-i="phone"></span>Member view — live app preview</h3>
+      <button class="x" data-i="x" onclick="closePreview()"></button>
+    </div>
+    <div class="preview-body">
+      <div class="phone">
+        <div class="ph-not"></div>
+        <div class="ph-scroll" id="ph-scroll"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast-el"></div>
+
+<script>
+'use strict';
+
+/* ── SUPABASE ──────────────────────────────────────────── */
+const SUPA_URL  = 'https://ixjfklpckgxrwjlfsaaz.supabase.co';
+const SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg';
+let sb;
+let currentUser = null;
+let allPartners = [];
+let allMemberships = [];
+let allContent = [];
+let allPayouts = [];
+let partnerMap = {};
+let membershipMap = {}; // partner_id -> {total, he, at_risk}
+let contentCountMap = {}; // partner_id -> published count
+let currentDetailId = null;
+
+/* ── ICONS ─────────────────────────────────────────────── */
+const S='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">';
+const ICONS={
+  grid:S+'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
+  funnel:S+'<path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg>',
+  users:S+'<circle cx="9" cy="8" r="3"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><path d="M16 5.2a3 3 0 0 1 0 5.6M20.5 20a5.5 5.5 0 0 0-4-5.3"/></svg>',
+  member:S+'<circle cx="12" cy="8" r="3.4"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>',
+  film:S+'<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M10 9l5 3-5 3z"/></svg>',
+  cap:S+'<path d="M3 8.5l9-4 9 4-9 4z"/><path d="M7 10.5v4.5c0 1.2 2.4 2.5 5 2.5s5-1.3 5-2.5v-4.5"/></svg>',
+  bars:S+'<path d="M5 20V10M12 20V4M19 20v-7"/></svg>',
+  money:S+'<rect x="2.5" y="6" width="19" height="12" rx="2.5"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9.5v5M18 9.5v5"/></svg>',
+  phone:S+'<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg>',
+  search:S+'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>',
+  plus:S+'<path d="M12 5v14M5 12h14"/></svg>',
+  check:S+'<path d="M5 12.5l4.5 4.5L19 7"/></svg>',
+  x:S+'<path d="M6 6l12 12M18 6L6 18"/></svg>',
+  eye:S+'<path d="M2 12s3.8-7 10-7 10 7 10 7-3.8 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+  pencil:S+'<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14.5 5.5l4 4"/></svg>',
+  doc:S+'<path d="M6.5 3h7l4 4v14h-11z"/><path d="M13.5 3v4h4"/></svg>',
+  play:S+'<path d="M7 5v14l12-7z" fill="currentColor" stroke="none"/></svg>',
+  'chev-left':S+'<path d="M15 6l-6 6 6 6"/></svg>',
+  layers:S+'<path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg>',
+  spark:S+'<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></svg>',
+  warn:S+'<path d="M12 3.5l9 16H3z"/><path d="M12 10v4.5M12 17.5v.5"/></svg>',
+};
+function setIcons(scope){
+  (scope||document).querySelectorAll('[data-i]').forEach(el=>{
+    const k=el.getAttribute('data-i');
+    if(ICONS[k]){el.innerHTML=ICONS[k];el.removeAttribute('data-i');}
+  });
+}
+
+/* ── HELPERS ───────────────────────────────────────────── */
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function initials(n){
+  const stop=['the','dr','and','of','a','&'];
+  const w=n.replace(/[^a-zA-Z ]/g,' ').split(/\s+/).filter(x=>x&&!stop.includes(x.toLowerCase()));
+  return((w[0]||'')[0]||'').toUpperCase()+((w[1]||'')[0]||'').toUpperCase();
+}
+const PILLAR_COL={body:'var(--physical)',mind:'var(--mental)',connect:'var(--social)'};
+const PILLAR_LBL={body:'Body',mind:'Mind',connect:'Connect'};
+
+function av(p,size=36){
+  const col=PILLAR_COL[p.pillar]||'var(--muted)';
+  return `<div class="av" style="width:${size}px;height:${size}px;background:${col};font-size:${Math.round(size*0.36)}px">${initials(p.name)}</div>`;
+}
+function pill(status){
+  const map={live:'p-live',onboarding:'p-pending',applied:'p-draft',vetting:'p-draft',interview:'p-draft',contract:'p-pending',suspended:'p-suspended',declined:'p-suspended'};
+  return `<span class="pill ${map[status]||'p-draft'}">${status}</span>`;
+}
+function statusDot(status){
+  const map={live:'var(--mint)',onboarding:'var(--warning)',applied:'var(--muted)',vetting:'var(--muted)',suspended:'var(--danger)'};
+  return `<span class="dot" style="background:${map[status]||'var(--muted)'}"></span>`;
+}
+
+let _toastTimer;
+function toast(msg,type=''){
+  const el=document.getElementById('toast-el');
+  el.textContent=msg;
+  el.style.borderColor=type==='error'?'rgba(224,96,96,.4)':'rgba(94,196,176,.35)';
+  el.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer=setTimeout(()=>el.classList.remove('show'),2800);
+}
+
+/* ── NAV ───────────────────────────────────────────────── */
+function nav(el){
+  const view=el.dataset.view; if(!view)return;
+  document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  const vEl=document.getElementById('v-'+view);
+  if(vEl) vEl.classList.add('active');
+  document.getElementById('crumb').innerHTML=`<b>${el.textContent.trim().replace(/\d+$/,'')}</b>`;
+}
+function navByView(view){
+  const el=document.querySelector(`.nav-item[data-view="${view}"]`);
+  if(el) nav(el);
+}
+
+function pdTab(el,id){
+  document.querySelectorAll('#v-partner-detail .subtab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('#v-partner-detail .subpane').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function cmTab(el,id){
+  document.querySelectorAll('#v-content .subtab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('#v-content .subpane').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+/* ── AUTH ───────────────────────────────────────────────── */
+async function initAuth(){
+  sb=window.supabase.createClient(SUPA_URL,SUPA_ANON,{
+    auth:{persistSession:true,autoRefreshToken:true,storageKey:'vyve-cc-supabase-auth'}
+  });
+  const {data:{session}}=await sb.auth.getSession();
+  if(session){
+    currentUser=session.user;
+    showApp();
+  } else {
+    document.getElementById('gate').classList.remove('hidden');
+  }
+  sb.auth.onAuthStateChange((_e,session)=>{
+    if(session&&!currentUser){currentUser=session.user;showApp();}
+    if(!session){showGate();}
+  });
+}
+
+document.getElementById('g-submit').addEventListener('click',async()=>{
+  const email=document.getElementById('g-email').value.trim();
+  const pw=document.getElementById('g-pw').value;
+  const btn=document.getElementById('g-submit');
+  const err=document.getElementById('g-err');
+  btn.textContent='Signing in…';btn.disabled=true;err.textContent='';
+  const {error}=await sb.auth.signInWithPassword({email,password:pw});
+  btn.textContent='Sign in';btn.disabled=false;
+  if(error){err.textContent=error.message;}
+});
+[document.getElementById('g-email'),document.getElementById('g-pw')].forEach(el=>{
+  el.addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('g-submit').click();});
+});
+
+async function signOut(){
+  await sb.auth.signOut();
+  location.reload();
+}
+
+function showGate(){document.getElementById('gate').classList.remove('hidden');document.getElementById('app').style.display='none';}
+function showApp(){
+  document.getElementById('gate').classList.add('hidden');
+  document.getElementById('app').style.display='flex';
+  const name=currentUser?.user_metadata?.full_name||currentUser?.email?.split('@')[0]||'Admin';
+  document.getElementById('sf-nm').textContent=name;
+  document.getElementById('sf-av').textContent=initials(name)||name[0].toUpperCase();
+  setIcons(document);
+  loadAll();
+}
+
+/* ── DATA LOADING ──────────────────────────────────────── */
+async function loadAll(){
+  const [pr,mr,cr,pyr]=await Promise.all([
+    sb.from('partner_partners').select('*').order('created_at'),
+    sb.from('partner_memberships').select('*'),
+    sb.from('partner_content_items').select('*').order('created_at',{ascending:false}),
+    sb.from('partner_payouts').select('*').order('period',{ascending:false}),
+  ]);
+  allPartners=pr.data||[];
+  allMemberships=mr.data||[];
+  allContent=cr.data||[];
+  allPayouts=pyr.data||[];
+
+  // Build lookup maps
+  allPartners.forEach(p=>{partnerMap[p.id]=p;});
+  allMemberships.forEach(m=>{
+    if(!membershipMap[m.partner_id]) membershipMap[m.partner_id]={total:0,he:0,at_risk:0};
+    membershipMap[m.partner_id].total++;
+    if(m.engagement_segment==='highly_engaged') membershipMap[m.partner_id].he++;
+    if(m.engagement_segment==='at_risk') membershipMap[m.partner_id].at_risk++;
+  });
+  allContent.forEach(c=>{
+    if(c.moderation_status==='published'){
+      contentCountMap[c.partner_id]=(contentCountMap[c.partner_id]||0)+1;
+    }
+  });
+
+  // Update nav badges
+  const pipeline=allPartners.filter(p=>['applied','vetting','interview','contract'].includes(p.status)).length;
+  const modQ=allContent.filter(c=>c.moderation_status==='in_review').length;
+  const flagged=allContent.filter(c=>c.moderation_status==='flagged').length;
+  document.getElementById('nb-pipeline').textContent=pipeline;
+  document.getElementById('nb-partners').textContent=allPartners.filter(p=>p.status==='live').length;
+  document.getElementById('nb-content').textContent=modQ+flagged;
+
+  renderOverview();
+  renderPipeline();
+  renderPartners();
+  renderContent();
+  renderOnboarding();
+  renderAnalytics();
+  renderRevenue();
+}
+
+/* ── OVERVIEW ──────────────────────────────────────────── */
+function renderOverview(){
+  const live=allPartners.filter(p=>p.status==='live');
+  const totalMembers=allMemberships.length;
+  const pubContent=allContent.filter(c=>c.moderation_status==='published').length;
+  const pendingPayouts=allPayouts.filter(p=>p.status==='pending').length;
+
+  document.getElementById('ov-k1').textContent=live.length;
+  document.getElementById('ov-k2').textContent=totalMembers.toLocaleString();
+  document.getElementById('ov-k3').textContent=pubContent;
+  document.getElementById('ov-k4').textContent=pendingPayouts;
+
+  // Pipeline status attention
+  const pipeline=allPartners.filter(p=>['applied','vetting','interview','contract'].includes(p.status));
+  const modQ=allContent.filter(c=>c.moderation_status==='in_review').length;
+  const flagged=allContent.filter(c=>c.moderation_status==='flagged').length;
+  const onboarding=allPartners.filter(p=>p.status==='onboarding');
+  let attn='';
+  pipeline.forEach(p=>{
+    const app_age=Math.round((Date.now()-new Date(p.created_at).getTime())/86400000);
+    attn+=`<div class="flex" style="padding:11px 0;border-bottom:1px solid var(--line)"><span class="pill p-draft">${esc(p.status)}</span><div><div style="font-weight:700;font-size:13px">${esc(p.name)}</div><div class="muted" style="font-size:11px">${esc(p.role_title)} · ${app_age}d in pipeline</div></div><button class="tb-btn" style="margin-left:auto" onclick="openPartner('${p.id}')">Review</button></div>`;
+  });
+  onboarding.forEach(p=>{
+    attn+=`<div class="flex" style="padding:11px 0;border-bottom:1px solid var(--line)"><span class="pill p-pending">onboarding</span><div><div style="font-weight:700;font-size:13px">${esc(p.name)}</div><div class="muted" style="font-size:11px">Completing setup</div></div></div>`;
+  });
+  if(!attn) attn='<div class="empty-state">Pipeline is clear</div>';
+  document.getElementById('ov-attention').innerHTML=attn;
+
+  // Needs attention
+  let needs='';
+  if(pipeline.length) needs+=`<div class="flex" style="padding:11px 0;border-bottom:1px solid var(--line)"><span class="pill p-pending">${pipeline.length}</span><div><div style="font-weight:700;font-size:13px">Applications to review</div><div class="muted" style="font-size:11px">Oldest ${Math.round((Date.now()-new Date(pipeline[0]?.created_at).getTime())/86400000)}d waiting</div></div></div>`;
+  if(modQ) needs+=`<div class="flex" style="padding:11px 0;border-bottom:1px solid var(--line)"><span class="pill p-review">${modQ}</span><div><div style="font-weight:700;font-size:13px">Content awaiting approval</div></div></div>`;
+  if(flagged) needs+=`<div class="flex" style="padding:11px 0;border-bottom:1px solid var(--line)"><span class="pill p-suspended">${flagged}</span><div><div style="font-weight:700;font-size:13px">Flagged by members</div></div></div>`;
+  const atRisk=Object.values(membershipMap).reduce((s,m)=>s+m.at_risk,0);
+  if(atRisk) needs+=`<div class="flex" style="padding:11px 0"><span class="pill p-suspended">${atRisk}</span><div><div style="font-weight:700;font-size:13px">Members at churn risk</div></div></div>`;
+  if(!needs) needs='<div class="empty-state">Nothing needs attention</div>';
+  document.getElementById('ov-needs').innerHTML=needs;
+
+  // Top partners
+  const sorted=[...live].sort((a,b)=>(membershipMap[b.id]?.total||0)-(membershipMap[a.id]?.total||0));
+  document.getElementById('ov-top').innerHTML=sorted.slice(0,5).map(p=>`
+    <tr onclick="openPartner('${p.id}')">
+      <td><div class="who">${av(p)}<div><div class="nm">${esc(p.name)}</div><div class="rl">${esc(p.role_title)}</div></div></div></td>
+      <td><span style="color:${PILLAR_COL[p.pillar]};font-weight:600;font-size:12px">${PILLAR_LBL[p.pillar]}</span></td>
+      <td>${pill(p.status)}</td>
+      <td class="num">${(membershipMap[p.id]?.total||0).toLocaleString()}</td>
+      <td class="num hl">${p.rating?p.rating.toFixed(1):'—'}</td>
+    </tr>`).join('');
+
+  // Feed
+  const feed=allContent.slice(0,6);
+  const feedColors={in_review:'var(--warning)',published:'var(--mint)',flagged:'var(--danger)',returned:'var(--muted)',draft:'var(--muted)'};
+  document.getElementById('ov-feed').innerHTML=feed.length?feed.map(c=>{
+    const pName=partnerMap[c.partner_id]?.name||'Unknown';
+    const when=c.created_at?new Date(c.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'';
+    return `<div class="flex" style="padding:10px 0;border-bottom:1px solid var(--line)"><span class="dot" style="background:${feedColors[c.moderation_status]||'var(--muted)'}"></span><div style="flex:1"><div style="font-size:13px;font-weight:600">${esc(c.title)}</div><div class="muted" style="font-size:11px">${esc(pName)} · ${c.type} · ${when}</div></div></div>`;
+  }).join(''):'<div class="empty-state">No content yet</div>';
+}
+
+/* ── PIPELINE ──────────────────────────────────────────── */
+function renderPipeline(){
+  const stages=['applied','vetting','interview','contract','onboarding'];
+  const labels={applied:'Applied',vetting:'Vetting',interview:'Interview',contract:'Contract',onboarding:'Onboarding'};
+  const NEXT={applied:'vetting',vetting:'interview',interview:'contract',contract:'onboarding',onboarding:'live'};
+
+  document.getElementById('kanban').innerHTML=stages.map(stage=>{
+    const cards=allPartners.filter(p=>p.status===stage);
+    return `<div class="kcol">
+      <div class="kh">${labels[stage]}<span class="c">${cards.length}</span></div>
+      ${cards.length?cards.map(p=>`
+        <div class="kcard" onclick="openAppDetail('${p.id}')">
+          ${av(p,28)}
+          <div class="knm">${esc(p.name)}</div>
+          <div class="krole">${esc(p.role_title)}</div>
+          <div class="kmeta"><span class="muted">${Math.round((Date.now()-new Date(p.created_at).getTime())/86400000)}d ago</span>${pill(p.status)}</div>
+        </div>`).join(''):'<div class="muted" style="font-size:12px;text-align:center;padding:16px">Empty</div>'}
+    </div>`;
+  }).join('');
+  setIcons(document.getElementById('kanban'));
+}
+
+async function openAppDetail(id){
+  const p=partnerMap[id]; if(!p)return;
+  const NEXT={applied:'vetting',vetting:'interview',interview:'contract',contract:'onboarding',onboarding:'live'};
+  const nextStage=NEXT[p.status];
+  const nextLabel=nextStage==='live'?'Go live':nextStage?`Advance to ${nextStage}`:null;
+
+  const {data:app}=await sb.from('partner_applications').select('*').eq('partner_id',id).single();
+
+  document.getElementById('appDetailBody').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <div class="flex" style="margin-bottom:12px">${av(p,48)}<div><div style="font-size:16px;font-weight:800">${esc(p.name)}</div><div style="color:var(--mint);font-size:12px">${esc(p.role_title)}</div></div></div>
+        <p style="color:var(--muted);font-size:13px;line-height:1.6">${esc(p.bio||'No bio yet.')}</p>
+        <div style="margin-top:12px"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:4px">Proposed content</div><div style="font-size:13px">${esc(app?.proposed_content||'—')}</div></div>
+        <div style="margin-top:12px"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:4px">Notes</div><div style="font-size:13px">${esc(app?.notes||'—')}</div></div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:8px">Fit score</div>
+        <span class="pill ${app?.fit_score==='high'?'p-live':app?.fit_score==='med'?'p-review':'p-suspended'}">${app?.fit_score||'—'}</span>
+        <div style="margin-top:16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:8px">Current stage</div>
+        ${pill(p.status)}
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:20px">
+          ${nextLabel?`<button class="tb-btn primary" onclick="advancePartner('${id}','${nextStage}')">${nextLabel}</button>`:''}
+          <button class="tb-btn" onclick="toast('Info request sent')">Request more info</button>
+          ${p.status!=='declined'&&p.status!=='live'?`<button class="tb-btn" style="color:var(--danger)" onclick="advancePartner('${id}','declined')">Decline application</button>`:''}
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('appDetail').style.display='block';
+  document.getElementById('appDetail').scrollIntoView({behavior:'smooth',block:'start'});
+  setIcons(document.getElementById('appDetail'));
+}
+
+async function advancePartner(id,newStatus){
+  if(newStatus==='live'){
+    const {data:prog}=await sb.from('partner_onboarding_progress').select('*').eq('partner_id',id).single();
+    if(!prog||!prog.safeguarding_passed||!prog.gdpr_passed||prog.pct_complete<100){
+      toast('Cannot go live: safeguarding, GDPR and all 8 onboarding steps must be complete first','error');return;
+    }
+  }
+  const {error}=await sb.from('partner_partners').update({status:newStatus}).eq('id',id);
+  if(error){toast('Error: '+error.message,'error');return;}
+  await sb.from('partner_applications').update({status_changed_at:new Date().toISOString()}).eq('partner_id',id);
+  toast(newStatus==='live'?'Partner is now live!':'Moved to '+newStatus);
+  document.getElementById('appDetail').style.display='none';
+  // Refresh
+  partnerMap[id]={...partnerMap[id],status:newStatus};
+  allPartners=allPartners.map(p=>p.id===id?{...p,status:newStatus}:p);
+  renderPipeline();
+  renderOverview();
+}
+
+/* ── PARTNERS DIRECTORY ────────────────────────────────── */
+function renderPartners(){
+  const pillar=document.getElementById('pt-pillar-filter')?.value||'';
+  const status=document.getElementById('pt-status-filter')?.value||'';
+  let items=allPartners;
+  if(pillar) items=items.filter(p=>p.pillar===pillar);
+  if(status) items=items.filter(p=>p.status===status);
+
+  document.getElementById('pt-tbody').innerHTML=items.length?items.map(p=>`
+    <tr onclick="openPartner('${p.id}')">
+      <td><div class="who">${av(p)}<div><div class="nm">${esc(p.name)}</div><div class="rl">${esc(p.role_title)}</div></div></div></td>
+      <td><span style="color:${PILLAR_COL[p.pillar]};font-weight:600;font-size:12px">${PILLAR_LBL[p.pillar]||p.pillar}</span></td>
+      <td>${pill(p.status)}</td>
+      <td class="num">${(membershipMap[p.id]?.total||0).toLocaleString()}</td>
+      <td>${contentCountMap[p.id]||0}</td>
+      <td class="num hl">${p.rating?'★ '+p.rating.toFixed(1):'—'}</td>
+      <td class="muted">${p.revenue_share_pct}%</td>
+      <td style="text-align:right;color:var(--muted)">›</td>
+    </tr>`).join(''):'<tr><td colspan="8"><div class="empty-state">No partners match</div></td></tr>';
+}
+document.getElementById('pt-pillar-filter')?.addEventListener('change',renderPartners);
+document.getElementById('pt-status-filter')?.addEventListener('change',renderPartners);
+
+/* ── PARTNER DETAIL ────────────────────────────────────── */
+function openPartner(id){
+  currentDetailId=id;
+  const p=partnerMap[id]; if(!p)return;
+  const ms=membershipMap[id]||{total:0,he:0,at_risk:0};
+  const cc=contentCountMap[id]||0;
+
+  document.getElementById('pd-hero').innerHTML=`
+    <div class="pa" style="background:${PILLAR_COL[p.pillar]}">${initials(p.name)}</div>
+    <div style="flex:1">
+      <h2>${esc(p.name)} ${p.verified?'<span style="color:var(--mint);font-size:14px">✓</span>':''} ${pill(p.status)}</h2>
+      <div class="role">${esc(p.role_title)}</div>
+      <div class="hstats">
+        <div><b>${ms.total.toLocaleString()}</b><span>members</span></div>
+        <div><b>${cc}</b><span>content live</span></div>
+        <div><b>${p.rating?p.rating.toFixed(1):'—'}</b><span>rating</span></div>
+        <div><b>${p.revenue_share_pct}%</b><span>rev share</span></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-left:auto">
+      <button class="tb-btn" onclick="openPreview('${id}')"><span class="bic" data-i="phone"></span>Preview</button>
+    </div>`;
+
+  // Overview tab
+  document.getElementById('pd-over').innerHTML=`
+    <div class="grid g2">
+      <div class="card"><div class="card-h"><h3>About</h3></div>
+        <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:12px">${esc(p.bio||'—')}</p>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px">Why they're here</div>
+        <p style="font-size:13px;line-height:1.6">${esc(p.why||'—')}</p>
+        <div style="margin-top:12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px">Community feel</div>
+        <p style="font-size:13px;line-height:1.6;color:var(--muted)">${esc(p.feel||'—')}</p>
+      </div>
+      <div class="card"><div class="card-h"><h3>Engagement</h3></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="card kpi" style="background:var(--surface);border-color:var(--line)"><div class="v" style="font-size:22px">${ms.total}</div><div class="l">Members</div></div>
+          <div class="card kpi" style="background:var(--surface);border-color:var(--line)"><div class="v" style="font-size:22px">${ms.he}</div><div class="l">Highly engaged</div></div>
+          <div class="card kpi" style="background:var(--surface);border-color:var(--line)"><div class="v" style="font-size:22px;color:${ms.at_risk>0?'var(--danger)':'inherit'}">${ms.at_risk}</div><div class="l">At-risk</div></div>
+          <div class="card kpi" style="background:var(--surface);border-color:var(--line)"><div class="v" style="font-size:22px">${cc}</div><div class="l">Content live</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card mt"><div class="card-h"><h3>Admin actions</h3></div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        ${p.status!=='live'&&p.status!=='declined'?`<button class="tb-btn" onclick="navByView('pipeline')"><span class="bic" data-i="funnel"></span>View in pipeline</button>`:''}
+        ${p.status==='live'?`<button class="tb-btn" onclick="if(confirm('Suspend ${p.name.replace(/'/g,"\\'")}?'))suspendPartner('${p.id}')"><span style="color:var(--danger)">Suspend partner</span></button>`:''}
+      </div>
+    </div>`;
+
+  // Content tab — load async
+  loadPartnerContent(p);
+  loadPartnerMembers(p);
+  loadPartnerRevenue(p);
+  renderPartnerSettings(p);
+
+  navByView('partner-detail');
+  setIcons(document.getElementById('v-partner-detail'));
+}
+
+async function suspendPartner(id){
+  const {error}=await sb.from('partner_partners').update({status:'suspended'}).eq('id',id);
+  if(error){toast(error.message,'error');return;}
+  allPartners=allPartners.map(p=>p.id===id?{...p,status:'suspended'}:p);
+  partnerMap[id]={...partnerMap[id],status:'suspended'};
+  toast('Partner suspended');
+  openPartner(id);
+}
+
+async function loadPartnerContent(p){
+  const {data}=await sb.from('partner_content_items').select('*').eq('partner_id',p.id).order('created_at',{ascending:false});
+  const items=data||[];
+  const modColors={published:'p-live',in_review:'p-review',flagged:'p-suspended',returned:'p-review',draft:'p-draft'};
+  const typeColors={video:'var(--mental)',live_session:'var(--mint)',program:'var(--warning)',post:'var(--muted)'};
+  document.getElementById('pd-content').innerHTML=items.length?`
+    <div>${items.map(c=>`
+      <div class="ctile">
+        <div class="th" style="background:rgba(94,196,176,.1);color:${typeColors[c.type]||'var(--muted)'}">
+          ${c.type==='video'?ICONS.film:c.type==='live_session'?ICONS.cal||ICONS.phone:c.type==='program'?ICONS.cap:ICONS.doc}
+        </div>
+        <div style="flex:1"><div class="ct">${esc(c.title)}</div><div class="cs">${c.type}${c.duration_sec?' · '+Math.floor(c.duration_sec/60)+'m':''} · ${c.play_count} plays</div></div>
+        <span class="pill ${modColors[c.moderation_status]||'p-draft'}">${c.moderation_status}</span>
+        ${c.moderation_status==='in_review'?`<div class="row-actions"><button class="icon-btn btn-approve" onclick="moderateContent('${c.id}','published')">${ICONS.check}</button><button class="icon-btn btn-reject" onclick="moderateContent('${c.id}','returned')">${ICONS.x}</button></div>`:''}
+      </div>`).join('')}</div>`:'<div class="empty-state">No content yet</div>';
+}
+
+async function loadPartnerMembers(p){
+  const {data}=await sb.from('partner_memberships').select('*').eq('partner_id',p.id);
+  const items=data||[];
+  const segColors={highly_engaged:'p-live',regular:'p-pending',at_risk:'p-suspended'};
+  document.getElementById('pd-members').innerHTML=items.length?`
+    <table><thead><tr><th>Member</th><th>Segment</th><th>Sessions attended</th><th>Joined</th></tr></thead>
+    <tbody>${items.map(m=>`<tr>
+      <td style="font-size:12px">${esc(m.member_email)}</td>
+      <td><span class="pill ${segColors[m.engagement_segment]||'p-draft'}">${m.engagement_segment}</span></td>
+      <td>${m.sessions_attended}</td>
+      <td style="color:var(--muted);font-size:12px">${m.joined_at?new Date(m.joined_at).toLocaleDateString('en-GB'):'—'}</td>
+    </tr>`).join('')}</tbody></table>`:'<div class="empty-state">No members yet</div>';
+}
+
+async function loadPartnerRevenue(p){
+  const {data}=await sb.from('partner_payouts').select('*').eq('partner_id',p.id).order('period',{ascending:false});
+  const items=data||[];
+  document.getElementById('pd-revenue').innerHTML=items.length?`
+    <table><thead><tr><th>Period</th><th>Subs</th><th>Gross</th><th>Share</th><th>Payout</th><th>Status</th></tr></thead>
+    <tbody>${items.map(py=>`<tr>
+      <td>${py.period}</td>
+      <td>${py.attributed_subscriptions}</td>
+      <td>£${Number(py.gross).toLocaleString()}</td>
+      <td>${py.share_pct}%</td>
+      <td class="num hl">£${Number(py.payout_amount).toLocaleString()}</td>
+      <td><span class="pill ${py.status==='paid'?'p-live':'p-review'}">${py.status}</span></td>
+    </tr>`).join('')}</tbody></table>`:'<div class="empty-state">No payouts yet</div>';
+
+  document.getElementById('pd-programs').innerHTML='<div class="empty-state">Programs feature coming soon</div>';
+}
+
+function renderPartnerSettings(p){
+  document.getElementById('pd-settings').innerHTML=`
+    <div class="card" style="max-width:480px">
+      <div class="card-h"><h3>Settings</h3></div>
+      <div style="margin-bottom:16px">
+        <label style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:6px">Revenue share %</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="number" id="ps-rs" value="${p.revenue_share_pct}" min="0" max="100" style="width:80px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--white);font-size:14px;font-family:var(--font)">
+          <button class="tb-btn primary" onclick="savePartnerSettings('${p.id}')">Save</button>
+        </div>
+      </div>
+      <div style="margin-bottom:16px">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px">
+          <input type="checkbox" id="ps-verified" ${p.verified?'checked':''} style="width:16px;height:16px;accent-color:var(--mint)">
+          Mark as verified partner
+        </label>
+      </div>
+    </div>`;
+}
+
+async function savePartnerSettings(id){
+  const rs=parseFloat(document.getElementById('ps-rs').value)||30;
+  const ver=document.getElementById('ps-verified').checked;
+  const {error}=await sb.from('partner_partners').update({revenue_share_pct:rs,verified:ver}).eq('id',id);
+  if(error){toast(error.message,'error');return;}
+  partnerMap[id]={...partnerMap[id],revenue_share_pct:rs,verified:ver};
+  allPartners=allPartners.map(p=>p.id===id?{...p,revenue_share_pct:rs,verified:ver}:p);
+  toast('Settings saved');
+}
+
+/* ── CONTENT MODERATION ────────────────────────────────── */
+function renderContent(){
+  const queue=allContent.filter(c=>c.moderation_status==='in_review');
+  const flagged=allContent.filter(c=>c.moderation_status==='flagged');
+  const library=allContent.filter(c=>c.moderation_status==='published');
+  const programs=allContent.filter(c=>c.type==='program');
+
+  document.getElementById('cm-q-count').textContent=queue.length;
+  document.getElementById('cm-f-count').textContent=flagged.length;
+
+  const typeColors={video:'var(--mental)',live_session:'var(--mint)',program:'var(--warning)',post:'var(--muted)'};
+
+  function contentItem(c,showActions){
+    const pName=partnerMap[c.partner_id]?.name||'Unknown';
+    const when=c.created_at?new Date(c.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'';
+    const icon=c.type==='video'?'film':c.type==='program'?'cap':'doc';
+    return `<div class="ctile">
+      <div class="th" style="background:rgba(94,196,176,.08);color:${typeColors[c.type]||'var(--muted)'}"><span data-i="${icon}"></span></div>
+      <div style="flex:1"><div class="ct">${esc(c.title)}</div><div class="cs">${esc(pName)} · ${c.type.replace('_',' ')} · ${when}${c.description?' — '+esc(c.description.slice(0,60)):''}</div></div>
+      ${showActions?`<div class="row-actions">
+        <button class="icon-btn btn-approve" onclick="moderateContent('${c.id}','published')" title="Approve"><span data-i="check"></span></button>
+        <button class="icon-btn btn-reject" onclick="moderateContent('${c.id}','returned')" title="Return"><span data-i="x"></span></button>
+      </div>`:`<span class="pill ${c.moderation_status==='published'?'p-live':c.moderation_status==='flagged'?'p-suspended':'p-draft'}">${c.moderation_status}</span>`}
+    </div>`;
+  }
+
+  const render=(id,items,actions)=>{
+    const el=document.getElementById(id);
+    el.innerHTML=items.length?items.map(c=>contentItem(c,actions)).join(''):'<div class="empty-state">Nothing here</div>';
+    setIcons(el);
+  };
+  render('cm-queue',queue,true);
+  render('cm-flagged',flagged,true);
+  render('cm-library',library,false);
+  render('cm-programs',programs,false);
+}
+
+async function moderateContent(id,newStatus){
+  const {error}=await sb.from('partner_content_items').update({moderation_status:newStatus,reviewed_at:new Date().toISOString()}).eq('id',id);
+  if(error){toast(error.message,'error');return;}
+  allContent=allContent.map(c=>c.id===id?{...c,moderation_status:newStatus}:c);
+  if(newStatus==='published') contentCountMap[allContent.find(c=>c.id===id)?.partner_id]=(contentCountMap[allContent.find(c=>c.id===id)?.partner_id]||0)+1;
+  renderContent();
+  if(currentDetailId) loadPartnerContent(partnerMap[currentDetailId]);
+  toast(newStatus==='published'?'Published to app':'Returned to partner');
+}
+
+async function bulkApprove(){
+  const queue=allContent.filter(c=>c.moderation_status==='in_review');
+  if(!queue.length){toast('No items in queue');return;}
+  if(!confirm(`Approve all ${queue.length} queued items?`))return;
+  const ids=queue.map(c=>c.id);
+  const {error}=await sb.from('partner_content_items').update({moderation_status:'published',reviewed_at:new Date().toISOString()}).in('id',ids);
+  if(error){toast(error.message,'error');return;}
+  allContent=allContent.map(c=>ids.includes(c.id)?{...c,moderation_status:'published'}:c);
+  renderContent();
+  toast(`${ids.length} items approved`);
+}
+
+/* ── ONBOARDING ────────────────────────────────────────── */
+async function renderOnboarding(){
+  const {data:progs}=await sb.from('partner_onboarding_progress').select('*');
+  const progMap={};(progs||[]).forEach(pg=>progMap[pg.partner_id]=pg);
+
+  const inOnboarding=allPartners.filter(p=>['onboarding','contract'].includes(p.status));
+  const pending=inOnboarding.filter(p=>{
+    const pg=progMap[p.id];
+    return !pg||!pg.safeguarding_passed||!pg.gdpr_passed;
+  }).length;
+  const avgPct=inOnboarding.length?Math.round(inOnboarding.reduce((s,p)=>{
+    return s+(progMap[p.id]?.pct_complete||0);
+  },0)/inOnboarding.length):0;
+
+  document.getElementById('ob-k1').textContent=inOnboarding.length;
+  document.getElementById('ob-k2').textContent=avgPct+'%';
+  document.getElementById('ob-k3').textContent=pending;
+
+  // Videos
+  document.getElementById('ob-videos').innerHTML=[
+    {t:'Welcome to VYVE',d:'4:20',col:'var(--teal)'},
+    {t:'Building your space',d:'7:10',col:'var(--mental)'},
+    {t:'Recording great sessions',d:'9:45',col:'var(--physical)'},
+    {t:'Growing your community',d:'6:30',col:'var(--social)'},
+  ].map(v=>`<div class="video-card" style="background:linear-gradient(135deg,${v.col},var(--teal-deep))" onclick="toast('Video modules — upload to play')">
+    <div class="play"><span data-i="play"></span></div>
+    <div class="vt">${v.t}</div><div class="vd">${v.d}</div>
+  </div>`).join('');
+
+  // Education
+  const edu=[
+    {t:'VYVE brand & tone of voice',meta:'Article · 8 min',done:true},
+    {t:'The three pillars explained',meta:'Article · 6 min',done:true},
+    {t:'Safeguarding & duty of care',meta:'Required assessment',done:true,required:true},
+    {t:'GDPR & member data basics',meta:'Required assessment',done:false,required:true},
+    {t:'Accessibility & inclusive language',meta:'Article · 5 min',done:false},
+    {t:'Content quality standards',meta:'Article + checklist',done:false},
+  ];
+  document.getElementById('ob-education').innerHTML=edu.map(e=>`
+    <div class="flex" style="padding:11px 0;border-bottom:1px solid var(--line)">
+      <span class="ob-num ${e.done?'ob-done':'ob-todo'}">${e.done?`<span data-i="check"></span>`:''}</span>
+      <div style="flex:1"><div style="font-weight:700;font-size:13px">${esc(e.t)}</div><div class="muted" style="font-size:11px">${esc(e.meta)}${e.required?' · <span style="color:var(--danger)">Required</span>':''}</div></div>
+    </div>`).join('');
+
+  // Checklist
+  const steps=['Sign partner agreement & revenue share','Complete identity & qualification verification','Watch all four onboarding video modules','Pass safeguarding & GDPR assessments','Set up profile: photo, bio and reason for being here','Upload three starter library videos','Complete community space setup','Admin final approval'];
+  document.getElementById('ob-checklist').innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+    ${steps.map((s,i)=>`<div class="flex" style="padding:10px 0;border-bottom:1px solid var(--line)"><span class="ob-num ob-todo" style="font-size:10px">${i+1}</span><span style="font-size:13px">${esc(s)}</span></div>`).join('')}
+  </div>`;
+
+  // In-progress
+  document.getElementById('ob-partners').innerHTML=inOnboarding.length?inOnboarding.map(p=>{
+    const pg=progMap[p.id]||{pct_complete:0,safeguarding_passed:false,gdpr_passed:false};
+    const pct=pg.pct_complete||0;
+    const step=Math.ceil(pct/12.5);
+    const gateOk=pg.safeguarding_passed&&pg.gdpr_passed;
+    return `<div class="flex" style="padding:12px 0;border-bottom:1px solid var(--line)">
+      ${av(p,36)}
+      <div style="flex:1"><div style="font-weight:700;font-size:13px">${esc(p.name)}</div>
+      <div class="muted" style="font-size:11px">${esc(p.role_title)} · step ${step} of 8${!gateOk?' · <span style="color:var(--danger)">Assessments pending</span>':''}</div></div>
+      <div style="width:160px;margin:0 16px">
+        <div class="track"><div class="fill" style="width:${pct}%"></div></div>
+        <div class="mini-stat">${Math.round(pct)}% complete</div>
+      </div>
+      <button class="tb-btn" onclick="openPartner('${p.id}')">Open</button>
+    </div>`;
+  }).join(''):'<div class="empty-state">No partners currently onboarding</div>';
+
+  setIcons(document.getElementById('v-onboarding'));
+}
+
+/* ── ANALYTICS ─────────────────────────────────────────── */
+function renderAnalytics(){
+  const live=allPartners.filter(p=>p.status==='live');
+  const totalMs=allMemberships.length;
+  const he=allMemberships.filter(m=>m.engagement_segment==='highly_engaged').length;
+  const atRisk=allMemberships.filter(m=>m.engagement_segment==='at_risk').length;
+  const pub=allContent.filter(c=>c.moderation_status==='published').length;
+
+  document.getElementById('an-k1').textContent=totalMs.toLocaleString();
+  document.getElementById('an-k2').textContent=he;
+  document.getElementById('an-k3').textContent=atRisk;
+  document.getElementById('an-k4').textContent=pub;
+
+  // Attendance bars (mock weekly — real data would need session_live_views aggregation)
+  const wData=[12,18,14,22,19,28,25,32,30,36,34,40];
+  const mx=Math.max(...wData);
+  document.getElementById('an-bars').innerHTML=wData.map((v,i)=>`<div class="col"><div class="bar" style="height:${(v/mx*100)}%"></div><div class="lab">W${i+1}</div></div>`).join('');
+
+  // Pillar split
+  const byPillar={body:0,mind:0,connect:0};
+  const pmMap={};live.forEach(p=>pmMap[p.id]=p.pillar);
+  allMemberships.forEach(m=>{const pl=pmMap[m.partner_id];if(pl)byPillar[pl]=(byPillar[pl]||0)+1;});
+  const tot=totalMs||1;
+  document.getElementById('an-pillar').innerHTML=Object.entries({Body:'body',Mind:'mind',Connect:'connect'}).map(([lbl,key])=>{
+    const pct=Math.round((byPillar[key]||0)/tot*100);
+    const col={body:'var(--physical)',mind:'var(--mental)',connect:'var(--social)'}[key];
+    return `<div style="margin-bottom:15px">
+      <div class="flex" style="justify-content:space-between;font-size:13px;margin-bottom:6px"><span><span class="dot" style="background:${col}"></span>${lbl}</span><b>${pct}%</b></div>
+      <div class="track"><div class="fill" style="width:${pct}%;background:${col}"></div></div>
+    </div>`;
+  }).join('');
+
+  // Leaderboard
+  const sorted=[...live].sort((a,b)=>(membershipMap[b.id]?.total||0)-(membershipMap[a.id]?.total||0));
+  document.getElementById('an-table').innerHTML=sorted.map(p=>{
+    const ms=membershipMap[p.id]||{total:0,he:0,at_risk:0};
+    return `<tr onclick="openPartner('${p.id}')">
+      <td><div class="who">${av(p)}<div><div class="nm">${esc(p.name)}</div><div class="rl">${esc(p.role_title)}</div></div></div></td>
+      <td class="num">${ms.total.toLocaleString()}</td>
+      <td><span class="pill p-live">${ms.he}</span></td>
+      <td><span class="pill ${ms.at_risk>0?'p-suspended':'p-draft'}">${ms.at_risk}</span></td>
+      <td>${contentCountMap[p.id]||0}</td>
+      <td class="num hl">${p.rating?'★ '+p.rating.toFixed(1):'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ── REVENUE ───────────────────────────────────────────── */
+function renderRevenue(){
+  document.getElementById('rv-period-btn').textContent=new Date().toLocaleString('en-GB',{month:'long',year:'numeric'});
+  const pending=allPayouts.filter(p=>p.status==='pending');
+  const paid=allPayouts.filter(p=>p.status==='paid');
+  const totalPending=pending.reduce((s,p)=>s+Number(p.payout_amount),0);
+
+  document.getElementById('rv-k1').textContent=pending.length;
+  document.getElementById('rv-k2').textContent='£'+totalPending.toLocaleString('en-GB',{maximumFractionDigits:0});
+  document.getElementById('rv-k3').textContent=paid.length;
+
+  document.getElementById('rv-table').innerHTML=allPayouts.length?allPayouts.map(py=>`
+    <tr onclick="openPartner('${py.partner_id}')">
+      <td><div class="who">${av(partnerMap[py.partner_id]||{name:'?',pillar:'body'})}<div><div class="nm">${esc(partnerMap[py.partner_id]?.name||'Unknown')}</div></div></div></td>
+      <td>${py.period}</td>
+      <td class="num">${py.attributed_subscriptions}</td>
+      <td class="num">£${Number(py.gross).toLocaleString()}</td>
+      <td class="muted">${py.share_pct}%</td>
+      <td class="num hl">£${Number(py.payout_amount).toLocaleString()}</td>
+      <td>${py.status==='paid'?'<span class="pill p-live">Paid</span>':'<span class="pill p-review">Pending</span>'}</td>
+      <td style="text-align:right">${py.status==='pending'?`<button class="tb-btn" onclick="event.stopPropagation();markPaid('${py.id}')">Mark paid</button>`:''}</td>
+    </tr>`).join(''):'<tr><td colspan="8"><div class="empty-state">No payouts yet — run payouts to generate</div></td></tr>';
+}
+
+async function markPaid(id){
+  const {error}=await sb.from('partner_payouts').update({status:'paid',paid_at:new Date().toISOString()}).eq('id',id);
+  if(error){toast(error.message,'error');return;}
+  allPayouts=allPayouts.map(p=>p.id===id?{...p,status:'paid'}:p);
+  renderRevenue();
+  toast('Marked as paid');
+}
+
+async function runPayouts(){
+  const live=allPartners.filter(p=>p.status==='live');
+  if(!live.length){toast('No live partners','error');return;}
+  if(!confirm(`Generate payouts for ${new Date().toLocaleString('en-GB',{month:'long',year:'numeric'})}?\n\nThis creates ledger entries only — no funds are transferred.`))return;
+  const period=new Date().toISOString().slice(0,7);
+  const {count}=await sb.from('members').select('id',{count:'exact',head:true}).eq('subscription_status','active');
+  const totalMRR=(count||0)*20;
+  const totalSessions=allMemberships.reduce((s,m)=>s+m.sessions_attended,0)||1;
+  const rows=live.map(p=>{
+    const pSess=allMemberships.filter(m=>m.partner_id===p.id).reduce((s,m)=>s+m.sessions_attended,0);
+    const attr=pSess/totalSessions;
+    const gross=Math.round(totalMRR*attr*100)/100;
+    const payout=Math.round(gross*(p.revenue_share_pct/100)*100)/100;
+    return{partner_id:p.id,period,attributed_subscriptions:count||0,gross,share_pct:p.revenue_share_pct,payout_amount:payout,status:'pending'};
+  });
+  const {error}=await sb.from('partner_payouts').upsert(rows,{onConflict:'partner_id,period'});
+  if(error){toast(error.message,'error');return;}
+  const {data}=await sb.from('partner_payouts').select('*').order('period',{ascending:false});
+  allPayouts=data||[];
+  renderRevenue();
+  toast('Payouts generated for '+period);
+}
+
+/* ── DEVICE PREVIEW ────────────────────────────────────── */
+function openPreview(id){
+  const p=id?partnerMap[id]:allPartners.find(p=>p.status==='live');
+  if(!p){toast('No live partner to preview');return;}
+  const col=PILLAR_COL[p.pillar]||'var(--mint)';
+  document.getElementById('ph-scroll').innerHTML=`
+    <div class="ph-banner" style="background:linear-gradient(120deg,${col},var(--teal-deep))"></div>
+    <div class="ph-av-wrap"><div class="ph-av" style="background:${col}">${initials(p.name)}</div></div>
+    <div class="ph-info">
+      <h4>${esc(p.name)} <span data-i="check" style="color:var(--mint)"></span></h4>
+      <div class="r">${esc(p.role_title)}</div>
+      <div class="ph-stats">
+        <div><b>${(membershipMap[p.id]?.total||0).toLocaleString()}</b><span>members</span></div>
+        <div><b>${contentCountMap[p.id]||0}</b><span>content</span></div>
+        <div><b>${p.rating?p.rating.toFixed(1):'—'}</b><span>rating</span></div>
+      </div>
+      <button class="ph-join">Join community</button>
+    </div>
+    <div class="ph-tabs"><span>About</span><span>Live</span><span>Library</span><span>Community</span><span>Programs</span></div>
+    <div class="ph-sec"><h5>About</h5><p class="muted" style="font-size:11.5px;line-height:1.55">${esc(p.bio||'No bio yet.')}</p></div>
+    <div class="ph-sec" style="border-top:1px solid var(--line)"><h5>Reason for being here</h5><p class="muted" style="font-size:11.5px;line-height:1.55">${esc(p.why||'—')}</p></div>
+    <div class="ph-sec" style="border-top:1px solid var(--line)"><h5>Community feel</h5><p class="muted" style="font-size:11.5px;line-height:1.55">${esc(p.feel||'—')}</p></div>
+    <div class="ph-note">This is exactly what members see in the VYVE app.<br>Edit from the partner's management area.</div>`;
+  setIcons(document.getElementById('ph-scroll'));
+  document.getElementById('previewOverlay').classList.add('show');
+}
+function closePreview(){document.getElementById('previewOverlay').classList.remove('show');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closePreview();});
+
+/* ── INIT ──────────────────────────────────────────────── */
+initAuth();
+</script>
+</body>
+</html>
