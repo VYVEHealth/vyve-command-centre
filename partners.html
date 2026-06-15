@@ -332,7 +332,7 @@ tbody tr:last-child td{border-bottom:none}
       <button class="tb-btn" onclick="openPreview()">
         <span class="bic" data-i="phone"></span>Preview app
       </button>
-      <button class="tb-btn primary" onclick="openInviteModal()">
+      <button class="tb-btn primary" id="invite-partner-btn">
         <span class="bic" data-i="plus"></span>Invite partner
       </button>
     </div>
@@ -715,6 +715,7 @@ function showApp(){
   document.getElementById('sf-nm').textContent=name;
   document.getElementById('sf-av').textContent=initials(name)||name[0].toUpperCase();
   setIcons(document);
+  document.getElementById('invite-partner-btn').addEventListener('click', openInviteModal);
   loadAll();
 }
 
