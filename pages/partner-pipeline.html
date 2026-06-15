@@ -1,0 +1,148 @@
+<div class="page active" id="page-partner-pipeline">
+  <div class="page-header">
+    <div class="hdr-row">
+      <div>
+        <div class="eyebrow">Partner Space</div>
+        <h1 class="page-title">Pipeline &amp; Approvals</h1>
+        <p class="page-sub">Move applicants through the vetting process</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Kanban -->
+  <div id="pp-kanban" style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;align-items:start">
+    <div class="kanban-col"><div class="kanban-col-hdr">Applied</div><div id="pp-col-applied" class="kanban-body"></div></div>
+    <div class="kanban-col"><div class="kanban-col-hdr">Vetting</div><div id="pp-col-vetting" class="kanban-body"></div></div>
+    <div class="kanban-col"><div class="kanban-col-hdr">Interview</div><div id="pp-col-interview" class="kanban-body"></div></div>
+    <div class="kanban-col"><div class="kanban-col-hdr">Contract</div><div id="pp-col-contract" class="kanban-body"></div></div>
+    <div class="kanban-col"><div class="kanban-col-hdr">Onboarding</div><div id="pp-col-onboarding" class="kanban-body"></div></div>
+  </div>
+
+  <!-- Review panel (slide-in) -->
+  <div id="pp-panel" style="display:none;position:fixed;top:0;right:0;width:420px;height:100%;background:var(--surface-1);border-left:1px solid var(--border);z-index:200;overflow-y:auto;box-shadow:-4px 0 24px rgba(0,0,0,.3)">
+    <div style="padding:20px 20px 0">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <h2 id="pp-panel-name" style="font-size:17px;font-weight:700;margin:0">—</h2>
+        <button onclick="document.getElementById('pp-panel').style.display='none'" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:20px;padding:4px">&#x2715;</button>
+      </div>
+      <div id="pp-panel-body"></div>
+    </div>
+  </div>
+  <div id="pp-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:199" onclick="closePpPanel()"></div>
+</div>
+
+<style>
+.kanban-col { background:var(--surface-1);border-radius:10px;padding:12px;min-height:200px }
+.kanban-col-hdr { font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border) }
+.kanban-body { display:flex;flex-direction:column;gap:8px }
+.kanban-card { background:var(--surface-2);border-radius:8px;padding:12px;cursor:pointer;border:1px solid transparent;transition:border-color .15s }
+.kanban-card:hover { border-color:var(--teal) }
+.kanban-card-name { font-size:13px;font-weight:600;margin-bottom:4px }
+.kanban-card-meta { font-size:11px;color:var(--text-muted) }
+.kanban-empty { font-size:12px;color:var(--text-muted);text-align:center;padding:20px 8px }
+.pp-detail-row { margin-bottom:14px }
+.pp-detail-label { font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px }
+.pp-detail-val { font-size:13px;line-height:1.5 }
+.pp-actions { display:flex;flex-direction:column;gap:8px;margin-top:20px;padding:16px 0;border-top:1px solid var(--border) }
+</style>
+
+<script>
+(function(){
+  var sb, allPartners=[], allApps={};
+  function getClient(){ return window.VYVE_CC_SUPABASE||window.ccSupabase; }
+  function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+  function monogram(n){ var p=n.replace(/[^a-zA-Z ]/g,' ').split(/\s+/).filter(Boolean); return ((p[0]||'')[0]||'').toUpperCase()+((p[1]||'')[0]||'').toUpperCase(); }
+  var PILLAR_COLORS={body:'var(--teal)',mind:'#4a9eba',connect:'#e8a855'};
+  var STAGES=['applied','vetting','interview','contract','onboarding'];
+  var NEXT_STAGE={applied:'vetting',vetting:'interview',interview:'contract',contract:'onboarding',onboarding:'live'};
+
+  function daysSince(d){ return Math.round((Date.now()-new Date(d).getTime())/86400000); }
+
+  function fitBadge(f){ var m={high:'badge-green',med:'badge-amber',low:'badge-red'}; return f?'<span class="badge '+(m[f]||'badge-grey')+'">'+f+' fit</span>':''; }
+
+  function renderKanban(){
+    STAGES.forEach(function(stage){
+      var col=document.getElementById('pp-col-'+stage);
+      if(!col) return;
+      var cards=allPartners.filter(function(p){ return p.status===stage; });
+      if(!cards.length){ col.innerHTML='<div class="kanban-empty">Empty</div>'; return; }
+      col.innerHTML=cards.map(function(p){
+        var app=allApps[p.id]||{};
+        var days=app.status_changed_at?daysSince(app.status_changed_at)+'d':'';
+        return '<div class="kanban-card" data-id="'+p.id+'">'
+          +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
+          +'<div style="width:28px;height:28px;border-radius:50%;background:'+PILLAR_COLORS[p.pillar]+';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0">'+monogram(p.name)+'</div>'
+          +'<div class="kanban-card-name">'+esc(p.name)+'</div></div>'
+          +'<div class="kanban-card-meta">'+esc(p.role_title)+'</div>'
+          +'<div style="margin-top:8px;display:flex;align-items:center;gap:6px">'+fitBadge(app.fit_score)
+          +(days?'<span style="font-size:11px;color:var(--text-muted)">'+days+'</span>':'')+'</div>'
+          +'</div>';
+      }).join('');
+      col.querySelectorAll('.kanban-card').forEach(function(card){
+        card.addEventListener('click',function(){ openPanel(card.dataset.id); });
+      });
+    });
+  }
+
+  function openPanel(id){
+    var p=allPartners.find(function(x){return x.id===id;}); if(!p) return;
+    var app=allApps[p.id]||{};
+    document.getElementById('pp-panel-name').textContent=p.name;
+    var next=NEXT_STAGE[p.status];
+    var nextLabel=next==='live'?'Go live':('Advance to '+next.charAt(0).toUpperCase()+next.slice(1));
+    document.getElementById('pp-panel-body').innerHTML=
+      '<div class="pp-detail-row"><div class="pp-detail-label">Role</div><div class="pp-detail-val">'+esc(p.role_title)+'</div></div>'
+      +'<div class="pp-detail-row"><div class="pp-detail-label">Pillar</div><div class="pp-detail-val">'+esc(p.pillar)+'</div></div>'
+      +'<div class="pp-detail-row"><div class="pp-detail-label">Fit score</div><div class="pp-detail-val">'+fitBadge(app.fit_score)+'</div></div>'
+      +'<div class="pp-detail-row"><div class="pp-detail-label">Credentials</div><div class="pp-detail-val">'+(app.credentials?JSON.stringify(app.credentials):esc(p.bio)||'—')+'</div></div>'
+      +'<div class="pp-detail-row"><div class="pp-detail-label">Proposed content</div><div class="pp-detail-val">'+esc(app.proposed_content||'—')+'</div></div>'
+      +'<div class="pp-detail-row"><div class="pp-detail-label">Audience reach</div><div class="pp-detail-val">'+(app.audience_reach?app.audience_reach.toLocaleString():'—')+'</div></div>'
+      +'<div class="pp-detail-row"><div class="pp-detail-label">Notes</div><div class="pp-detail-val">'+esc(app.notes||'—')+'</div></div>'
+      +'<div class="pp-detail-row"><div class="pp-detail-label">Applied</div><div class="pp-detail-val">'+(app.applied_at?new Date(app.applied_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'—')+'</div></div>'
+      +'<div class="pp-actions">'
+      +(next?'<button class="btn btn-primary" id="pp-advance" data-id="'+id+'" data-next="'+next+'">'+nextLabel+'</button>':'')
+      +'<button class="btn" id="pp-request" data-id="'+id+'" style="color:var(--text-muted)">Request more info</button>'
+      +(p.status!=='live'&&p.status!=='declined'?'<button class="btn" id="pp-decline" data-id="'+id+'" style="color:var(--danger);border-color:rgba(224,96,96,.3)">Decline</button>':'')
+      +'</div>';
+
+    setTimeout(function(){
+      var adv=document.getElementById('pp-advance');
+      if(adv) adv.addEventListener('click',function(){ advancePartner(id,adv.dataset.next); });
+      var dec=document.getElementById('pp-decline');
+      if(dec) dec.addEventListener('click',function(){ if(confirm('Decline '+p.name+'?')) advancePartner(id,'declined'); });
+    },50);
+
+    document.getElementById('pp-panel').style.display='block';
+    document.getElementById('pp-overlay').style.display='block';
+  }
+
+  window.closePpPanel=function(){
+    document.getElementById('pp-panel').style.display='none';
+    document.getElementById('pp-overlay').style.display='none';
+  };
+
+  async function advancePartner(id,newStatus){
+    var res=await sb.from('partner_partners').update({status:newStatus}).eq('id',id).select().single();
+    if(res.error){ alert('Error: '+res.error.message); return; }
+    // bump status_changed_at
+    await sb.from('partner_applications').update({status_changed_at:new Date().toISOString()}).eq('partner_id',id);
+    allPartners=allPartners.map(function(p){ return p.id===id?res.data:p; });
+    closePpPanel();
+    renderKanban();
+    if(window.VYVE_UI&&window.VYVE_UI.toast) window.VYVE_UI.toast(newStatus==='live'?'Partner is now live!':'Moved to '+newStatus,'success');
+  }
+
+  async function load(){
+    await new Promise(function(r){ if(getClient()) return r(); var t=setInterval(function(){ if(getClient()){clearInterval(t);r();}},100); });
+    sb=getClient();
+    var [pr,ar]=await Promise.all([
+      sb.from('partner_partners').select('id,slug,name,role_title,pillar,status,bio').order('created_at',{ascending:true}),
+      sb.from('partner_applications').select('*')
+    ]);
+    allPartners=pr.data||[];
+    (ar.data||[]).forEach(function(a){ allApps[a.partner_id]=a; });
+    renderKanban();
+  }
+  load().catch(function(e){ console.error('[partner-pipeline]',e); });
+})();
+</script>

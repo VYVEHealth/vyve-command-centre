@@ -73,6 +73,18 @@ window.VYVE_NAV = [
     ]
   },
   {
+    section: "Partner Space",
+    items: [
+      { slug: "partner-overview",   label: "Overview",        icon: "grid",        status: "live" },
+      { slug: "partner-pipeline",   label: "Pipeline",        icon: "trending-up", status: "live" },
+      { slug: "partner-directory",  label: "Partners",        icon: "users",       status: "live" },
+      { slug: "partner-content",    label: "Content",         icon: "edit",        status: "live" },
+      { slug: "partner-onboarding", label: "Onboarding",      icon: "check-square",status: "live" },
+      { slug: "partner-analytics",  label: "Analytics",       icon: "bar-chart",   status: "live" },
+      { slug: "partner-revenue",    label: "Revenue",         icon: "trending-up", status: "live" }
+    ]
+  },
+  {
     section: "Org",
     items: [
       { slug: "action-plans", label: "Action Plans", icon: "target",   status: "live" },
