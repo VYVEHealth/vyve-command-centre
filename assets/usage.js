@@ -1,3 +1,4 @@
+// PM-614 — simplify status to 3 tiers (Never installed / Installed·no activity / Active·Quiet·Inactive)
 // PM-612 — lifecycle status pill + install/consent/login filters + headline counts
 // PM-595 v1 — add phone to 360 modal + never-active outreach list
 // External file — required by §23.101 (router injectPage re-executes scripts;
@@ -134,11 +135,9 @@ function usageDormancyStatus(lastAt) {
 function usageLifecyclePill(m) {
   const lc = m.lifecycle;
   if (!lc) return usageDormancyStatus(m.last_activity_at);
-  if (lc === 'active')    return usageDormancyStatus(m.last_activity_at);
-  if (lc === 'installed') return '<span class="pill pill-teal">Installed</span>';
-  if (lc === 'consented') return '<span class="pill pill-warn">Consented</span>';
-  if (lc === 'signed_in') return '<span class="pill pill-grey">Signed in</span>';
-  return '<span class="pill pill-danger">Never signed in</span>';
+  if (lc === 'active')    return usageDormancyStatus(m.last_activity_at);   // Active / Quiet / Inactive by recency
+  if (lc === 'installed') return '<span class="pill pill-teal">Installed \u00b7 no activity</span>';
+  return '<span class="pill pill-grey">Never installed</span>';            // never / consented / signed_in collapse
 }
 function usagePct(val, total) {
   if (!total) return 0;
@@ -283,10 +282,10 @@ function usageRenderHeadline(hl, ov, mem) {
   // At risk count from member_stats
   const atRisk = mem.filter(m => m.at_risk).length;
   usageSetEl('hl-atrisk', atRisk);
-  // PM-612 lifecycle headline counts (exclude test)
+  // PM-614 simplified headline tiers (exclude test)
   const _real = (mem || []).filter(x => !x.is_test);
-  usageSetEl('hl-installed', _real.filter(x => x.installed).length);
-  usageSetEl('hl-never', _real.filter(x => x.lifecycle === 'never').length);
+  usageSetEl('hl-installed', _real.filter(x => x.lifecycle === 'installed').length);
+  usageSetEl('hl-never', _real.filter(x => x.lifecycle === 'never' || x.lifecycle === 'consented' || x.lifecycle === 'signed_in').length);
 }
 
 // ── Overview chart (30-day bar chart) ────────────────────────────────────────
@@ -410,16 +409,15 @@ function usageFilterMembers() {
   _membersFiltered = _membersAll.filter(m => {
     if (excTest && m.is_test) return false;
     const matchText = !q || (m.member_email || '').toLowerCase().includes(q);
+    const _ds = m.last_activity_at ? (Date.now() - new Date(m.last_activity_at).getTime()) / 86400000 : null;
     const matchFilter = !filter
-      || (filter === 'at_risk' && m.at_risk)
-      || (filter === 'needs_support' && m.needs_support)
-      || (filter === 'active' && m.activities_7d > 0)
-      || (filter === 'inactive' && (!m.last_activity_at || (Date.now() - new Date(m.last_activity_at).getTime()) > 30 * 86400000))
-      || (filter === 'inapp' && (m.lifecycle === 'active' || m.lifecycle === 'installed'))
+      || (filter === 'active'   && m.lifecycle === 'active' && _ds !== null && _ds <= 7)
+      || (filter === 'quiet'    && m.lifecycle === 'active' && _ds !== null && _ds > 7 && _ds <= 30)
+      || (filter === 'inactive' && m.lifecycle === 'active' && _ds !== null && _ds > 30)
       || (filter === 'installed' && m.lifecycle === 'installed')
-      || (filter === 'consented' && m.lifecycle === 'consented')
-      || (filter === 'signedin' && m.lifecycle === 'signed_in')
-      || (filter === 'neversignin' && m.lifecycle === 'never');
+      || (filter === 'neverinstalled' && (m.lifecycle === 'never' || m.lifecycle === 'consented' || m.lifecycle === 'signed_in'))
+      || (filter === 'at_risk' && m.at_risk)
+      || (filter === 'needs_support' && m.needs_support);
     return matchText && matchFilter;
   });
   _membersPage = 0;
