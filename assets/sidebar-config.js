@@ -75,13 +75,7 @@ window.VYVE_NAV = [
   {
     section: "Partner Space",
     items: [
-      { slug: "partner-overview",   label: "Overview",        icon: "grid",        status: "live" },
-      { slug: "partner-pipeline",   label: "Pipeline",        icon: "trending-up", status: "live" },
-      { slug: "partner-directory",  label: "Partners",        icon: "users",       status: "live" },
-      { slug: "partner-content",    label: "Content",         icon: "edit",        status: "live" },
-      { slug: "partner-onboarding", label: "Onboarding",      icon: "check-square",status: "live" },
-      { slug: "partner-analytics",  label: "Analytics",       icon: "bar-chart",   status: "live" },
-      { slug: "partner-revenue",    label: "Revenue",         icon: "trending-up", status: "live" }
+      { href: "/partners.html", label: "Partner Management", icon: "link", external: false }
     ]
   },
   {
@@ -146,8 +140,6 @@ window.VYVE_NAV_TOP = [
     description: 'Strategy, documents, knowledge base. The source of truth.' },
   { slug: 'usage',      label: 'Insights',   icon: 'bar-chart',    sectionName: 'Insights',
     description: 'Member engagement, usage analytics, retention, and platform health.' },
-  { slug: 'partner-overview', label: 'Partners', icon: 'link', sectionName: 'Partner Space',
-    description: 'Expert partner ecosystem. Pipeline, content, onboarding, analytics and revenue.' },
   { slug: 'org',         label: 'Org',        icon: 'user',       sectionName: 'Org',
     description: 'Action plans, team, settings. Run the company.' }
 ];
@@ -163,8 +155,7 @@ window.VYVE_ROUTE_TO_TOP = (function(){
       'Delivery':   'delivery',
       'Insights':   'usage',
       'Knowledge':  'knowledge',
-      'Org':        'org',
-      'Partner Space': 'partner-overview'
+      'Org':        'org'
     })[section.section] || 'brief';
     section.items.forEach(function(item){
       if (item.slug) m[item.slug] = topSlug;
