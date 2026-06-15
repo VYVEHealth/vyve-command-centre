@@ -146,6 +146,8 @@ window.VYVE_NAV_TOP = [
     description: 'Strategy, documents, knowledge base. The source of truth.' },
   { slug: 'usage',      label: 'Insights',   icon: 'bar-chart',    sectionName: 'Insights',
     description: 'Member engagement, usage analytics, retention, and platform health.' },
+  { slug: 'partner-overview', label: 'Partners', icon: 'link', sectionName: 'Partner Space',
+    description: 'Expert partner ecosystem. Pipeline, content, onboarding, analytics and revenue.' },
   { slug: 'org',         label: 'Org',        icon: 'user',       sectionName: 'Org',
     description: 'Action plans, team, settings. Run the company.' }
 ];
@@ -161,7 +163,8 @@ window.VYVE_ROUTE_TO_TOP = (function(){
       'Delivery':   'delivery',
       'Insights':   'usage',
       'Knowledge':  'knowledge',
-      'Org':        'org'
+      'Org':        'org',
+      'Partner Space': 'partner-overview'
     })[section.section] || 'brief';
     section.items.forEach(function(item){
       if (item.slug) m[item.slug] = topSlug;
