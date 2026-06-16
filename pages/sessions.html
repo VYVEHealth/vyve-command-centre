@@ -1,152 +1,395 @@
 <div class="page active" id="page-sessions">
-  <div class="page-header">
-    <div class="hdr-row">
-      <div><div class="eyebrow">Delivery</div><h1 class="page-title">Sessions</h1><p class="page-sub">Wellness sessions, workshops and programme delivery</p></div>
-      <button class="btn btn-primary" id="ss-add">New session</button>
+  <div class="page-hero">
+    <div class="eyebrow">Delivery</div>
+    <h1 class="page-title">Sessions</h1>
+    <p class="page-sub">Schedule member-facing live sessions. New sessions appear on the member portal immediately.</p>
+    <div class="hero-actions">
+      <button class="btn btn-primary" id="ss-add" style="display:none">Schedule session</button>
     </div>
   </div>
 
   <div class="grid-4" style="margin-bottom:18px">
-    <div class="stat"><div class="stat-label">Upcoming (30d)</div><div class="stat-value" id="ss-upcoming">0</div></div>
-    <div class="stat"><div class="stat-label">This week</div><div class="stat-value" id="ss-week">0</div></div>
-    <div class="stat"><div class="stat-label">Delivered (30d)</div><div class="stat-value" id="ss-delivered">0</div></div>
-    <div class="stat"><div class="stat-label">Total attendees (30d)</div><div class="stat-value" id="ss-attendees">0</div></div>
+    <div class="stat"><div class="stat-label">Upcoming (30d)</div><div class="stat-value" id="ss-kpi-upcoming">—</div></div>
+    <div class="stat"><div class="stat-label">This week</div><div class="stat-value" id="ss-kpi-week">—</div></div>
+    <div class="stat"><div class="stat-label">Delivered (30d)</div><div class="stat-value" id="ss-kpi-past">—</div></div>
+    <div class="stat"><div class="stat-label">Cancelled</div><div class="stat-value" id="ss-kpi-cancelled">—</div></div>
   </div>
 
   <div class="tab-bar">
-    <button class="tab-btn active" data-tab="ss-upcoming-tab">Upcoming</button>
-    <button class="tab-btn" data-tab="ss-past-tab">Past</button>
+    <button class="tab-btn active" data-tab="ss-tab-upcoming">Upcoming</button>
+    <button class="tab-btn" data-tab="ss-tab-past">Past</button>
+    <button class="tab-btn" data-tab="ss-tab-cancelled">Cancelled</button>
   </div>
 
-  <div id="ss-upcoming-tab" class="tab-panel active">
-    <div class="card"><div id="ss-up-list"><div class="empty"><span class="icon">·</span><h3>No upcoming sessions</h3></div></div></div>
+  <div id="ss-tab-upcoming" class="tab-panel active">
+    <div class="card" style="padding:0"><div id="ss-list-upcoming"><div class="ss-empty">Loading…</div></div></div>
   </div>
-  <div id="ss-past-tab" class="tab-panel">
-    <div class="card"><div id="ss-past-list"><div class="empty"><span class="icon">·</span><h3>No past sessions logged</h3></div></div></div>
+  <div id="ss-tab-past" class="tab-panel">
+    <div class="card" style="padding:0"><div id="ss-list-past"><div class="ss-empty">Loading…</div></div></div>
+  </div>
+  <div id="ss-tab-cancelled" class="tab-panel">
+    <div class="card" style="padding:0"><div id="ss-list-cancelled"><div class="ss-empty">Loading…</div></div></div>
   </div>
 </div>
 
+<style>
+  .ss-empty { padding:40px 20px; text-align:center; color:var(--text-muted); font-size:13px; }
+  .ss-row { display:flex; align-items:flex-start; gap:14px; padding:14px 20px; border-bottom:1px solid var(--border); cursor:pointer; transition:background .1s; }
+  .ss-row:hover { background:var(--surface-2); }
+  .ss-row:last-child { border-bottom:0; }
+  .ss-date-block { text-align:center; min-width:44px; flex-shrink:0; padding-top:2px; }
+  .ss-date-day { font-family:var(--font-head); font-size:22px; font-weight:700; line-height:1; color:var(--text); }
+  .ss-date-mon { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); }
+  .ss-body { flex:1; min-width:0; }
+  .ss-title { font-weight:600; font-size:14px; margin-bottom:3px; }
+  .ss-meta { font-size:12px; color:var(--text-muted); }
+  .ss-badges { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:4px; }
+  .ss-badge { font-size:10px; font-weight:700; padding:2px 7px; border-radius:var(--r-pill); background:var(--surface-2); color:var(--text-muted); text-transform:capitalize; }
+  .ss-badge.live { background:rgba(77,170,170,.12); color:var(--vyve-teal,#4DAAAA); }
+  .ss-badge.cancelled-tag { background:rgba(224,96,96,.1); color:var(--danger,#d05050); }
+  .ss-actions { display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex-shrink:0; }
+  .ss-time { font-size:12px; color:var(--text-muted); font-variant-numeric:tabular-nums; }
+
+  /* confirm banner */
+  .ss-confirm-banner { background:rgba(212,155,44,.08); border:1px solid rgba(212,155,44,.3); border-radius:var(--r-md); padding:14px 16px; margin-bottom:16px; font-size:13px; line-height:1.5; }
+  .ss-confirm-banner strong { color:var(--vyve-gold,#D49B2C); }
+</style>
+
 <script>
 (function(){
+  if (!window.VYVE_SUPABASE) return;
+  var S = window.VYVE_SUPABASE;
+  var TABLE = 'calendar_occurrences';
 
-  var LS='vyve_sessions';
-  function lsGet(){ try { var v=localStorage.getItem(LS); return v?JSON.parse(v):[]; } catch(e){ return []; } }
-  function lsSet(v){ try { localStorage.setItem(LS,JSON.stringify(v)); } catch(e){} }
-  async function load(){
-    if (window.VYVE_MAKE){ var fm = await VYVE_MAKE.list('sessions',{limit:500}); if (fm&&fm.length) return fm; }
-    return lsGet();
-  }
-  async function save(id, item){
-    if (window.VYVE_MAKE){ var r = await VYVE_MAKE.upsert('sessions', id, item); if (r) return; }
-    var a = lsGet(); var i = a.findIndex(function(x){return x._id===id;}); var e = Object.assign({_id:id}, item);
-    if (i>=0) a[i]=e; else a.unshift(e); lsSet(a);
-  }
-  async function remove(id){ if (window.VYVE_MAKE) await VYVE_MAKE.remove('sessions', id); lsSet(lsGet().filter(function(x){return x._id!==id;})); }
+  var state = {
+    upcoming: [],
+    past: [],
+    cancelled: [],
+    catalogue: [],
+    isAdmin: false,
+    me: null
+  };
 
+  // ── Tab wiring ────────────────────────────────────────────────────
   document.querySelectorAll('#page-sessions .tab-btn').forEach(function(b){
     b.addEventListener('click', function(){
-      document.querySelectorAll('#page-sessions .tab-btn').forEach(function(x){x.classList.remove('active');});
-      document.querySelectorAll('#page-sessions .tab-panel').forEach(function(x){x.classList.remove('active');});
-      b.classList.add('active'); document.getElementById(b.dataset.tab).classList.add('active');
+      document.querySelectorAll('#page-sessions .tab-btn').forEach(function(x){ x.classList.remove('active'); });
+      document.querySelectorAll('#page-sessions .tab-panel').forEach(function(x){ x.classList.remove('active'); });
+      b.classList.add('active');
+      document.getElementById(b.dataset.tab).classList.add('active');
     });
   });
 
-  function pillarColor(p){ return { 'physical':'badge-teal','mental':'badge-blue','social':'badge-gold' }[(p||'').toLowerCase()] || 'badge-grey'; }
+  function escape(s){ return (s||'').toString().replace(/[<>&"]/g, function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]; }); }
 
-  function renderList(mountId, items, isPast){
+  function fmtTime(iso){
+    if (!iso) return '';
+    var d = new Date(iso);
+    var h = d.getHours(), m = d.getMinutes();
+    var ampm = h >= 12 ? 'pm' : 'am';
+    h = h % 12 || 12;
+    return h + (m ? ':' + (m<10?'0':'') + m : '') + ampm;
+  }
+
+  function fmtDuration(start, end){
+    if (!start || !end) return '';
+    var mins = Math.round((new Date(end) - new Date(start)) / 60000);
+    if (!mins || mins <= 0) return '';
+    return mins < 60 ? mins + ' min' : Math.floor(mins/60) + 'h' + (mins%60 ? ' ' + mins%60 + 'm' : '');
+  }
+
+  // ── Fetch ─────────────────────────────────────────────────────────
+  async function fetchData(){
+    var now = new Date().toISOString();
+    var thirtyBack = new Date(Date.now() - 30*86400000).toISOString();
+    var thirtyFwd  = new Date(Date.now() + 30*86400000).toISOString();
+
+    // Upcoming: starts_at >= now, active, not cancelled
+    var upRes = await S.client.from(TABLE)
+      .select('*')
+      .gte('starts_at', now)
+      .eq('active', true)
+      .is('cancelled_at', null)
+      .order('starts_at', { ascending: true });
+    state.upcoming = upRes.error ? [] : (upRes.data || []);
+
+    // Past: starts_at < now, not cancelled
+    var paRes = await S.client.from(TABLE)
+      .select('*')
+      .lt('starts_at', now)
+      .is('cancelled_at', null)
+      .order('starts_at', { ascending: false })
+      .limit(100);
+    state.past = paRes.error ? [] : (paRes.data || []);
+
+    // Cancelled
+    var caRes = await S.client.from(TABLE)
+      .select('*')
+      .not('cancelled_at', 'is', null)
+      .order('starts_at', { ascending: false })
+      .limit(50);
+    state.cancelled = caRes.error ? [] : (caRes.data || []);
+
+    // Catalogue for scheduler
+    var catRes = await S.client.from('service_catalogue')
+      .select('id,name,type,category,duration_minutes,default_host_name,default_host_role')
+      .eq('active', true)
+      .eq('type', 'live_session')
+      .order('category', { ascending: true });
+    state.catalogue = catRes.error ? [] : (catRes.data || []);
+  }
+
+  // ── KPIs ──────────────────────────────────────────────────────────
+  function renderKPIs(){
+    var now = Date.now();
+    var weekFwd = now + 7*86400000;
+    var thirtyBack = now - 30*86400000;
+    document.getElementById('ss-kpi-upcoming').textContent = state.upcoming.length;
+    document.getElementById('ss-kpi-week').textContent = state.upcoming.filter(function(s){ return new Date(s.starts_at).getTime() <= weekFwd; }).length;
+    document.getElementById('ss-kpi-past').textContent = state.past.filter(function(s){ return new Date(s.starts_at).getTime() >= thirtyBack; }).length;
+    document.getElementById('ss-kpi-cancelled').textContent = state.cancelled.length;
+  }
+
+  // ── Render list ───────────────────────────────────────────────────
+  function renderList(mountId, rows, emptyMsg){
     var mount = document.getElementById(mountId);
-    if (!items.length){ mount.innerHTML = '<div class="empty"><span class="icon">·</span><h3>'+(isPast?'No past sessions logged':'No upcoming sessions')+'</h3></div>'; return; }
-    items.sort(function(a,b){ return isPast ? (new Date(b.date||0) - new Date(a.date||0)) : (new Date(a.date||0) - new Date(b.date||0)); });
-    mount.innerHTML = items.map(function(s){
-      var calBtn = !isPast ? '<button type="button" class="btn btn-ghost btn-sm session-cal" data-cal-id="'+s._id+'" title="Add to Google Calendar" style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;font-size:11px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Add to calendar</button>' : '';
-      return '<div style="padding:14px 0;border-bottom:1px solid var(--border);cursor:pointer" data-id="'+s._id+'">'+
-        '<div style="display:flex;align-items:flex-start;gap:12px">'+
-          '<div style="flex:1">'+
-            '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'+
-              (s.pillar ? '<span class="badge '+pillarColor(s.pillar)+'">'+VYVE_UI.escape(s.pillar)+'</span>' : '')+
-              '<div style="font-weight:600;color:var(--text);font-size:14px">'+VYVE_UI.escape(s.title||'')+'</div>'+
-            '</div>'+
-            '<div style="font-size:12.5px;color:var(--text-muted)">'+VYVE_UI.escape(s.client||'')+' &middot; '+VYVE_UI.fmtDate(s.date)+(s.time?' at '+VYVE_UI.escape(s.time):'')+(s.facilitator?' &middot; '+VYVE_UI.escape(s.facilitator):'')+'</div>'+
-          '</div>'+
-          '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">'+
-            (s.attendees ? '<div style="font-size:13px;color:var(--vyve-teal);font-weight:600">'+s.attendees+' attended</div>' : '')+
-            calBtn+
-          '</div>'+
-        '</div>'+
+    if (!rows.length){ mount.innerHTML = '<div class="ss-empty">' + emptyMsg + '</div>'; return; }
+    mount.innerHTML = rows.map(function(s){
+      var d = new Date(s.starts_at);
+      var isCancelled = !!s.cancelled_at;
+      var timeStr = fmtTime(s.starts_at) + (s.ends_at ? ' – ' + fmtTime(s.ends_at) : '') + ' · ' + fmtDuration(s.starts_at, s.ends_at);
+      return '<div class="ss-row" data-id="' + s.id + '">' +
+        '<div class="ss-date-block">' +
+          '<div class="ss-date-day">' + d.getDate() + '</div>' +
+          '<div class="ss-date-mon">' + d.toLocaleDateString('en-GB',{month:'short'}) + '</div>' +
+        '</div>' +
+        '<div class="ss-body">' +
+          '<div class="ss-badges">' +
+            (s.category ? '<span class="ss-badge live">' + escape(s.category) + '</span>' : '') +
+            (s.location_online ? '<span class="ss-badge">Online</span>' : (s.location_venue ? '<span class="ss-badge">' + escape(s.location_venue) + '</span>' : '')) +
+            (isCancelled ? '<span class="ss-badge cancelled-tag">Cancelled</span>' : '') +
+          '</div>' +
+          '<div class="ss-title">' + escape(s.session_title || s.name || '—') + '</div>' +
+          '<div class="ss-meta">' + timeStr + (s.host_name ? ' · ' + escape(s.host_name) : '') + '</div>' +
+        '</div>' +
+        (state.isAdmin ? '<div class="ss-actions"><button class="btn btn-ghost btn-sm ss-edit-btn" data-id="' + s.id + '" style="font-size:11px">Edit</button>' + (!isCancelled ? '<button class="btn btn-ghost btn-sm ss-cancel-btn" data-id="' + s.id + '" style="font-size:11px;color:var(--danger)">Cancel</button>' : '') + '</div>' : '') +
       '</div>';
     }).join('');
-    mount.querySelectorAll('[data-id]').forEach(function(row){
+
+    // Row click → edit (admin) or view detail
+    mount.querySelectorAll('.ss-row').forEach(function(row){
       row.addEventListener('click', function(e){
-        if (e.target.closest && e.target.closest('[data-cal-id]')) return;
-        edit(row.dataset.id, items);
+        if (e.target.closest('.ss-edit-btn') || e.target.closest('.ss-cancel-btn')) return;
+        if (!state.isAdmin) return;
+        var id = row.getAttribute('data-id');
+        var all = state.upcoming.concat(state.past).concat(state.cancelled);
+        var s = all.find(function(x){ return x.id === id; });
+        if (s) openScheduler(s);
       });
     });
-    mount.querySelectorAll('[data-cal-id]').forEach(function(btn){
+    mount.querySelectorAll('.ss-edit-btn').forEach(function(btn){
       btn.addEventListener('click', function(e){
         e.stopPropagation();
-        if (!window.VYVE_INTEGRATIONS) return;
-        var id = btn.getAttribute('data-cal-id');
-        var s = items.find(function(x){ return x._id === id; });
+        var id = btn.getAttribute('data-id');
+        var all = state.upcoming.concat(state.past).concat(state.cancelled);
+        var s = all.find(function(x){ return x.id === id; });
+        if (s) openScheduler(s);
+      });
+    });
+    mount.querySelectorAll('.ss-cancel-btn').forEach(function(btn){
+      btn.addEventListener('click', async function(e){
+        e.stopPropagation();
+        var id = btn.getAttribute('data-id');
+        var all = state.upcoming.concat(state.past);
+        var s = all.find(function(x){ return x.id === id; });
         if (!s) return;
-        var url = window.VYVE_INTEGRATIONS.calendarForSession(s);
-        window.open(url, '_blank', 'noopener');
+        if (!confirm('Cancel "' + (s.session_title || s.name) + '"?\n\nThis will mark the session cancelled. Members will no longer see it as upcoming.')) return;
+        var res = await S.client.from(TABLE).update({ cancelled_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', id);
+        if (res.error){ alert('Failed: ' + res.error.message); return; }
+        if (VYVE_UI && VYVE_UI.toast) VYVE_UI.toast('Session cancelled', 'success');
+        await fetchData(); renderAll();
       });
     });
   }
 
-  function render(items){
-    var now = Date.now();
-    var thirty = now + 30*86400000;
-    var thirtyBack = now - 30*86400000;
-    var weekFromNow = now + 7*86400000;
-    var upcoming = items.filter(function(s){ var t = new Date(s.date||0).getTime(); return t >= now; });
-    var past = items.filter(function(s){ var t = new Date(s.date||0).getTime(); return t < now; });
-
-    document.getElementById('ss-upcoming').textContent = upcoming.filter(function(s){ return new Date(s.date).getTime() < thirty; }).length;
-    document.getElementById('ss-week').textContent = upcoming.filter(function(s){ return new Date(s.date).getTime() < weekFromNow; }).length;
-    document.getElementById('ss-delivered').textContent = past.filter(function(s){ return new Date(s.date).getTime() > thirtyBack; }).length;
-    document.getElementById('ss-attendees').textContent = past.filter(function(s){ return new Date(s.date).getTime() > thirtyBack; }).reduce(function(t,s){ return t + (Number(s.attendees)||0); }, 0);
-
-    renderList('ss-up-list', upcoming, false);
-    renderList('ss-past-list', past, true);
+  function renderAll(){
+    renderKPIs();
+    renderList('ss-list-upcoming', state.upcoming, 'No upcoming sessions scheduled.');
+    renderList('ss-list-past', state.past, 'No past sessions yet.');
+    renderList('ss-list-cancelled', state.cancelled, 'No cancelled sessions.');
   }
 
-  function edit(id, items){
-    var s = items.find(function(x){return x._id===id;}); if(!s) return;
-    openModal('Edit session', s, async function(u){ await save(id, u); render(await load()); }, async function(){ await remove(id); render(await load()); });
+  // ── Scheduler modal ───────────────────────────────────────────────
+  function toLocalDT(iso){
+    if (!iso) return '';
+    var d = new Date(iso);
+    var pad = function(n){ return n<10?'0'+n:''+n; };
+    return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());
   }
 
-  function openModal(title, init, onSave, onDel){
-    init = init || {};
-    var _modal = VYVE_UI.modal({ title: title, draftKey: 'session:' + (init._id || 'new'), body:
-      '<div class="form-row"><div class="form-group"><label>Session title</label><input id="s-title" value="'+VYVE_UI.escape(init.title||'')+'"/></div></div>'+
-      '<div class="form-row cols-2"><div class="form-group"><label>Client</label><input id="s-client" value="'+VYVE_UI.escape(init.client||'')+'"/></div><div class="form-group"><label>Pillar</label><select id="s-pillar"><option value="">—</option><option value="physical">Physical</option><option value="mental">Mental</option><option value="social">Social</option></select></div></div>'+
-      '<div class="form-row cols-3"><div class="form-group"><label>Date</label><input id="s-date" type="date" value="'+VYVE_UI.escape((init.date||'').slice(0,10))+'"/></div><div class="form-group"><label>Time</label><input id="s-time" placeholder="e.g. 10:00" value="'+VYVE_UI.escape(init.time||'')+'"/></div><div class="form-group"><label>Facilitator</label><input id="s-fac" value="'+VYVE_UI.escape(init.facilitator||'')+'"/></div></div>'+
-      '<div class="form-row cols-2"><div class="form-group"><label>Format</label><select id="s-format"><option value="in-person">In-person</option><option value="virtual">Virtual</option><option value="hybrid">Hybrid</option></select></div><div class="form-group"><label>Attendees</label><input id="s-att" type="number" min="0" value="'+(init.attendees||'')+'"/></div></div>'+
-      '<div class="form-row"><div class="form-group"><label>Notes</label><textarea id="s-notes" rows="3">'+VYVE_UI.escape(init.notes||'')+'</textarea></div></div>'+
-      '<div style="display:flex;justify-content:space-between;gap:8px">'+(onDel?'<button class="btn" id="s-del" style="color:var(--danger);border-color:rgba(224,96,96,.3)">Delete</button>':'<span></span>')+'<button class="btn btn-primary" id="s-save">Save</button></div>'
+  function openScheduler(existing){
+    var isEdit = !!(existing && existing.id);
+    var s = existing || {};
+
+    // Build catalogue options
+    var catOpts = '<option value="">— Select from catalogue (optional) —</option>' +
+      state.catalogue.map(function(c){
+        return '<option value="' + escape(c.id) + '" data-dur="' + (c.duration_minutes||60) + '" data-host="' + escape(c.default_host_name||'') + '" data-role="' + escape(c.default_host_role||'') + '" data-cat="' + escape(c.category||'') + '" data-type="' + escape(c.type||'') + '">' + escape(c.name) + '</option>';
+      }).join('');
+
+    var confirmWarning = !isEdit
+      ? '<div class="ss-confirm-banner"><strong>⚠ Member-facing publish</strong> — submitting this form will immediately add this session to the member portal sessions list. Double-check the date and time before saving.</div>'
+      : '';
+
+    var modal = VYVE_UI.modal({
+      title: isEdit ? 'Edit session' : 'Schedule session',
+      draftKey: 'session:' + (s.id || 'new'),
+      body:
+        confirmWarning +
+        (!isEdit ? '<div class="form-row"><div class="form-group"><label>From catalogue</label><select id="ss-cat-pick">' + catOpts + '</select></div></div>' : '') +
+        '<div class="form-row"><div class="form-group"><label>Title</label><input id="ss-title" value="' + escape(s.session_title || s.name || '') + '" placeholder="Session title shown to members"/></div></div>' +
+        '<div class="form-row cols-2"><div class="form-group"><label>Category</label><input id="ss-category" value="' + escape(s.category || '') + '" placeholder="e.g. Yoga, Pilates & Stretch"/></div><div class="form-group"><label>Type</label><select id="ss-type"><option value="live_session">Live session</option><option value="replay">Replay</option><option value="workshop">Workshop</option></select></div></div>' +
+        '<div class="form-row cols-2"><div class="form-group"><label>Starts</label><input id="ss-start" type="datetime-local" value="' + toLocalDT(s.starts_at) + '"/></div><div class="form-group"><label>Ends</label><input id="ss-end" type="datetime-local" value="' + toLocalDT(s.ends_at) + '"/></div></div>' +
+        '<div class="form-row cols-2"><div class="form-group"><label>Host name</label><input id="ss-host" value="' + escape(s.host_name || '') + '"/></div><div class="form-group"><label>Host role</label><input id="ss-host-role" value="' + escape(s.host_role || '') + '"/></div></div>' +
+        '<div class="form-row cols-2"><div class="form-group" style="display:flex;align-items:center;gap:8px;padding-top:22px"><input type="checkbox" id="ss-online"' + (s.location_online ? ' checked' : '') + '/><label for="ss-online" style="margin:0">Online</label></div><div class="form-group"><label>Venue / location</label><input id="ss-venue" value="' + escape(s.location_venue || '') + '" placeholder="or leave blank"/></div></div>' +
+        '<div class="form-row"><div class="form-group"><label>Live URL (YouTube / Riverside)</label><input id="ss-live-url" value="' + escape(s.live_url || '') + '" placeholder="https://…"/></div></div>' +
+        '<div class="form-row"><div class="form-group"><label>Description (shown to members)</label><textarea id="ss-desc" rows="3">' + escape(s.session_description || s.description || '') + '</textarea></div></div>' +
+        '<div class="form-row"><div class="form-group"><label>Internal notes</label><textarea id="ss-notes" rows="2">' + escape(s.notes || '') + '</textarea></div></div>' +
+        '<div style="display:flex;justify-content:space-between;gap:8px">' +
+          (isEdit ? '<button class="btn" id="ss-del" style="color:var(--danger);border-color:rgba(224,96,96,.3)">Delete</button>' : '<span></span>') +
+          '<button class="btn btn-primary" id="ss-save">Publish session</button>' +
+        '</div>'
     });
+
     setTimeout(function(){
-      if (init.pillar) document.getElementById('s-pillar').value = init.pillar;
-      if (init.format) document.getElementById('s-format').value = init.format;
-      document.getElementById('s-save').addEventListener('click', function(){
-        var n = document.getElementById('s-title').value.trim();
-        if (!n){ VYVE_UI.toast('Title required','error'); return; }
-        var u = { title:n, client:document.getElementById('s-client').value.trim(), pillar:document.getElementById('s-pillar').value, date:document.getElementById('s-date').value, time:document.getElementById('s-time').value.trim(), facilitator:document.getElementById('s-fac').value.trim(), format:document.getElementById('s-format').value, attendees:Number(document.getElementById('s-att').value)||0, notes:document.getElementById('s-notes').value.trim(), updated_at:new Date().toISOString(), created_at: init.created_at||new Date().toISOString() };
-        if (_modal && _modal.draft) _modal.draft.clear();
-        onSave(u);
-        document.querySelector('.modal-overlay').classList.remove('open');
+      // Set select values
+      if (s.type) document.getElementById('ss-type').value = s.type;
+
+      // Catalogue picker auto-fill (new only)
+      var picker = document.getElementById('ss-cat-pick');
+      if (picker){
+        picker.addEventListener('change', function(){
+          var opt = picker.options[picker.selectedIndex];
+          if (!opt || !opt.value) return;
+          var dur = parseInt(opt.getAttribute('data-dur') || '60', 10);
+          document.getElementById('ss-category').value = opt.getAttribute('data-cat') || '';
+          document.getElementById('ss-type').value = opt.getAttribute('data-type') || 'live_session';
+          document.getElementById('ss-host').value = opt.getAttribute('data-host') || '';
+          document.getElementById('ss-host-role').value = opt.getAttribute('data-role') || '';
+          // If start is set, auto-fill end
+          var startEl = document.getElementById('ss-start');
+          if (startEl.value){
+            var st = new Date(startEl.value);
+            var en = new Date(st.getTime() + dur*60000);
+            var pad = function(n){ return n<10?'0'+n:''+n; };
+            document.getElementById('ss-end').value = en.getFullYear()+'-'+pad(en.getMonth()+1)+'-'+pad(en.getDate())+'T'+pad(en.getHours())+':'+pad(en.getMinutes());
+          }
+        });
+      }
+
+      // Auto-fill end when start changes (30min default if no catalogue selected)
+      document.getElementById('ss-start').addEventListener('change', function(){
+        var endEl = document.getElementById('ss-end');
+        if (endEl.value) return; // don't override if already set
+        var st = new Date(this.value);
+        if (isNaN(st)) return;
+        var dur = 60; // default 60 min
+        if (picker && picker.value){
+          var opt = picker.options[picker.selectedIndex];
+          dur = parseInt(opt.getAttribute('data-dur')||'60',10);
+        }
+        var en = new Date(st.getTime() + dur*60000);
+        var pad = function(n){ return n<10?'0'+n:''+n; };
+        endEl.value = en.getFullYear()+'-'+pad(en.getMonth()+1)+'-'+pad(en.getDate())+'T'+pad(en.getHours())+':'+pad(en.getMinutes());
       });
-      if (onDel) document.getElementById('s-del').addEventListener('click', function(){ if (confirm('Delete?')){ onDel(); document.querySelector('.modal-overlay').classList.remove('open'); }});
+
+      // Save
+      document.getElementById('ss-save').addEventListener('click', async function(){
+        var title = document.getElementById('ss-title').value.trim();
+        var startVal = document.getElementById('ss-start').value;
+        var endVal = document.getElementById('ss-end').value;
+        if (!title){ if (VYVE_UI && VYVE_UI.toast) VYVE_UI.toast('Title required', 'error'); return; }
+        if (!startVal){ if (VYVE_UI && VYVE_UI.toast) VYVE_UI.toast('Start time required', 'error'); return; }
+
+        // Final confirm on new sessions
+        if (!isEdit){
+          var startDisplay = new Date(startVal).toLocaleString('en-GB', { weekday:'short', day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+          if (!confirm('Publish "' + title + '" on ' + startDisplay + '?\n\nThis will appear on the member portal immediately.')) return;
+        }
+
+        var record = {
+          name: title,
+          session_title: title,
+          type: document.getElementById('ss-type').value,
+          category: document.getElementById('ss-category').value.trim() || null,
+          starts_at: new Date(startVal).toISOString(),
+          ends_at: endVal ? new Date(endVal).toISOString() : null,
+          host_name: document.getElementById('ss-host').value.trim() || null,
+          host_role: document.getElementById('ss-host-role').value.trim() || null,
+          location_online: document.getElementById('ss-online').checked,
+          location_venue: document.getElementById('ss-venue').value.trim() || null,
+          live_url: document.getElementById('ss-live-url').value.trim() || null,
+          session_description: document.getElementById('ss-desc').value.trim() || null,
+          notes: document.getElementById('ss-notes').value.trim() || null,
+          active: true,
+          updated_at: new Date().toISOString()
+        };
+
+        // Catalogue link
+        if (!isEdit && picker && picker.value){
+          record.source_catalogue_id = picker.value;
+        }
+
+        try {
+          var res;
+          if (isEdit){
+            res = await S.client.from(TABLE).update(record).eq('id', s.id);
+          } else {
+            res = await S.client.from(TABLE).insert(record);
+          }
+          if (res.error){ alert('Save failed: ' + res.error.message); return; }
+          if (modal.draft) modal.draft.clear();
+          modal.close();
+          if (VYVE_UI && VYVE_UI.toast) VYVE_UI.toast(isEdit ? 'Session updated' : 'Session published to member portal', 'success');
+          await fetchData(); renderAll();
+        } catch(e){
+          alert('Save threw: ' + (e.message||'unknown'));
+        }
+      });
+
+      // Delete (hard delete — only for admins, only use for test data)
+      var delBtn = document.getElementById('ss-del');
+      if (delBtn){
+        delBtn.addEventListener('click', async function(){
+          if (!confirm('Permanently delete this session?\n\nUse "Cancel" on the list instead if you want to keep a record. Delete is for test data only.')) return;
+          var res = await S.client.from(TABLE).delete().eq('id', s.id);
+          if (res.error){ alert('Delete failed: ' + res.error.message); return; }
+          modal.close();
+          if (VYVE_UI && VYVE_UI.toast) VYVE_UI.toast('Session deleted', 'success');
+          await fetchData(); renderAll();
+        });
+      }
     }, 50);
   }
 
-  document.getElementById('ss-add').addEventListener('click', function(){
-    openModal('New session', {}, async function(u){ await save('ss_'+Date.now(), u); render(await load()); VYVE_UI.toast('Saved','success'); });
-  });
-    window.VYVE_PAGE_SHORTCUTS = {
-    onNew: function(){ document.getElementById('ss-add').click(); }
-  };
-  (async function(){ render(await load()); })();
+  // ── Boot ──────────────────────────────────────────────────────────
+  async function boot(){
+    if (!S.isReady()){ S.onReady(boot); return; }
+    var session = await S.getSession();
+    if (!session) return;
+    var admin = await S.getCurrentAdmin();
+    if (!admin) return;
+    state.me = admin.email;
+    state.isAdmin = (window.VYVE_USER && window.VYVE_USER.role === 'admin') || admin.role === 'admin';
+    if (state.isAdmin) document.getElementById('ss-add').style.display = '';
+
+    document.getElementById('ss-add').addEventListener('click', function(){ openScheduler(null); });
+    window.VYVE_PAGE_SHORTCUTS = { onNew: function(){ if (state.isAdmin) document.getElementById('ss-add').click(); } };
+
+    await fetchData();
+    renderAll();
+  }
+
+  boot();
 })();
 </script>
