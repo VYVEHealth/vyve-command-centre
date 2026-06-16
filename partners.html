@@ -1461,9 +1461,7 @@ async function submitRequestInfo(partnerId, modal){
     // Append to application notes
     const {data:app} = await sb.from('partner_applications').select('notes').eq('partner_id', partnerId).single();
     const existing = app?.notes || '';
-    const newNotes = existing ? existing + '
-
-[Info requested ' + new Date().toLocaleDateString('en-GB') + ']: ' + notes : '[Info requested ' + new Date().toLocaleDateString('en-GB') + ']: ' + notes;
+    const newNotes = existing ? existing + '\n\n[Info requested ' + new Date().toLocaleDateString('en-GB') + ']: ' + notes : '[Info requested ' + new Date().toLocaleDateString('en-GB') + ']: ' + notes;
     await sb.from('partner_applications').update({notes: newNotes}).eq('partner_id', partnerId);
   }
   
