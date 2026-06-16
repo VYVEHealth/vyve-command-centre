@@ -4,7 +4,7 @@
     <h1 class="page-title">Tasks</h1>
     <p class="page-sub">Team task board. Assign owners, track stages, hit deadlines. Backed by Supabase — visible to everyone on the team.</p>
     <div class="hero-actions">
-      <button class="btn btn-primary" id="tk-add">New task</button>
+      <button class="btn btn-primary" id="tk-add" style="display:none">New task</button>
     </div>
   </div>
 
@@ -162,6 +162,7 @@
     tasks: [],
     admins: [],          // for assignee dropdown
     me: null,
+    isAdmin: false,      // set in boot() from VYVE_USER.role
     view: 'board',       // 'board' | 'list'
     scope: 'all',        // 'all' | 'mine' | 'unassigned'
     pillar: '',
@@ -316,8 +317,9 @@
         '<div class="form-row cols-3"><div class="form-group"><label>Stage</label><select id="tkf-stage"><option value="todo">To do</option><option value="doing">Doing</option><option value="blocked">Blocked</option><option value="done">Done</option></select></div><div class="form-group"><label>Priority</label><select id="tkf-priority"><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></div><div class="form-group"><label>Due date</label><input type="date" id="tkf-due" value="' + (t.due_date || '') + '"/></div></div>' +
         '<div class="form-row cols-2"><div class="form-group"><label>Assignee</label><select id="tkf-assignee">' + assigneeOptions + '</select></div><div class="form-group"><label>Pillar</label><select id="tkf-pillar"><option value="">—</option><option value="physical">Physical</option><option value="mental">Mental</option><option value="social">Social</option><option value="business">Business</option></select></div></div>' +
         '<div class="form-row"><div class="form-group"><label>Notes</label><textarea id="tkf-notes" rows="4">' + escape(t.notes || '') + '</textarea></div></div>' +
+        (isEdit ? '<div class="form-row"><div class="form-group"><label>Attachments</label><div id="tkf-attachments" style="margin-bottom:8px"><span style="color:var(--text-muted);font-size:12px">Loading…</span></div><div style="display:flex;align-items:center;gap:8px"><input type="file" id="tkf-file-input" style="flex:1;font-size:12px"/><button class="btn btn-sm" id="tkf-upload-btn" type="button">Upload</button></div></div></div>' : '') +
         '<div style="display:flex;justify-content:space-between;gap:8px">' +
-          (isEdit ? '<button class="btn" id="tkf-del" style="color:var(--danger);border-color:rgba(224,96,96,.3)">Delete</button>' : '<span></span>') +
+          (isEdit && state.isAdmin ? '<button class="btn" id="tkf-del" style="color:var(--danger);border-color:rgba(224,96,96,.3)">Delete</button>' : '<span></span>') +
           '<button class="btn btn-primary" id="tkf-save">' + (isEdit ? 'Save' : 'Create') + '</button>' +
         '</div>'
     });
@@ -370,6 +372,107 @@
           renderCurrent();
         });
       }
+
+      // ── Attachments (edit mode only) ──────────────────────────────
+      if (isEdit) {
+        var attachEl = document.getElementById('tkf-attachments');
+        var EF_URL = 'https://ixjfklpckgxrwjlfsaaz.supabase.co/functions/v1/cc-task-docs-url';
+
+        async function getJwt(){
+          var sess = await S.client.auth.getSession();
+          return sess && sess.data && sess.data.session ? sess.data.session.access_token : '';
+        }
+
+        async function loadAttachments(){
+          var res = await S.client.from('cc_task_attachments')
+            .select('id,file_name,storage_path,file_size,mime_type,created_at,uploaded_by')
+            .eq('task_id', t.id)
+            .order('created_at', { ascending: false });
+          var rows = res.error ? [] : (res.data || []);
+          if (!rows.length){
+            attachEl.innerHTML = '<span style="color:var(--text-muted);font-size:12px">No attachments yet.</span>';
+            return;
+          }
+          attachEl.innerHTML = rows.map(function(a){
+            var kb = a.file_size ? Math.round(a.file_size/1024) + ' KB' : '';
+            var canDel = state.isAdmin;
+            return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)">' +
+              '<span style="flex:1;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+escape(a.file_name)+'">'+escape(a.file_name)+'</span>' +
+              (kb ? '<span style="font-size:11px;color:var(--text-muted)">'+kb+'</span>' : '') +
+              '<button class="btn btn-ghost btn-sm" data-dl="'+a.id+'" data-path="'+escape(a.storage_path)+'" style="padding:2px 8px;font-size:11px">↓</button>' +
+              (canDel ? '<button class="btn btn-ghost btn-sm" data-rm="'+a.id+'" data-path="'+escape(a.storage_path)+'" style="padding:2px 8px;font-size:11px;color:var(--danger)">✕</button>' : '') +
+            '</div>';
+          }).join('');
+
+          // Download handler
+          attachEl.querySelectorAll('[data-dl]').forEach(function(btn){
+            btn.addEventListener('click', async function(){
+              var path = btn.getAttribute('data-path');
+              var jwt = await getJwt();
+              var r = await fetch(EF_URL, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt}, body: JSON.stringify({action:'download',storage_path:path}) });
+              var d = await r.json();
+              if (d.download_url){ window.open(d.download_url, '_blank'); }
+              else { alert('Download failed: ' + (d.error||'unknown')); }
+            });
+          });
+
+          // Delete handler (admin only)
+          attachEl.querySelectorAll('[data-rm]').forEach(function(btn){
+            btn.addEventListener('click', async function(){
+              if (!confirm('Delete this attachment?')) return;
+              var path = btn.getAttribute('data-path');
+              var aid = btn.getAttribute('data-rm');
+              var jwt = await getJwt();
+              var r = await fetch(EF_URL, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt}, body: JSON.stringify({action:'delete',storage_path:path,attachment_id:aid}) });
+              var d = await r.json();
+              if (d.ok){ await loadAttachments(); }
+              else { alert('Delete failed: ' + (d.error||'unknown')); }
+            });
+          });
+        }
+
+        loadAttachments();
+
+        // Upload handler
+        var uploadBtn = document.getElementById('tkf-upload-btn');
+        if (uploadBtn){
+          uploadBtn.addEventListener('click', async function(){
+            var fileInput = document.getElementById('tkf-file-input');
+            var file = fileInput && fileInput.files && fileInput.files[0];
+            if (!file){ if (VYVE_UI && VYVE_UI.toast) VYVE_UI.toast('Select a file first','error'); return; }
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = 'Uploading…';
+            try {
+              var jwt = await getJwt();
+              // 1. Get signed upload URL
+              var r1 = await fetch(EF_URL, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt}, body: JSON.stringify({action:'upload',task_id:t.id,file_name:file.name,mime_type:file.type}) });
+              var d1 = await r1.json();
+              if (!d1.upload_url){ throw new Error(d1.error || 'No upload URL'); }
+              // 2. PUT file to signed URL
+              var r2 = await fetch(d1.upload_url, { method:'PUT', headers:{'Content-Type': file.type || 'application/octet-stream', 'x-upsert':'false'}, body: file });
+              if (!r2.ok){ throw new Error('Storage PUT failed: ' + r2.status); }
+              // 3. Insert attachment row
+              var ins = await S.client.from('cc_task_attachments').insert({
+                task_id: t.id,
+                uploaded_by: state.me,
+                file_name: file.name,
+                storage_path: d1.storage_path,
+                file_size: file.size,
+                mime_type: file.type || null
+              });
+              if (ins.error) throw new Error(ins.error.message);
+              if (VYVE_UI && VYVE_UI.toast) VYVE_UI.toast('Uploaded: ' + file.name, 'success');
+              fileInput.value = '';
+              await loadAttachments();
+            } catch(e){
+              alert('Upload failed: ' + (e.message || 'unknown'));
+            } finally {
+              uploadBtn.disabled = false;
+              uploadBtn.textContent = 'Upload';
+            }
+          });
+        }
+      }
     }, 50);
   }
 
@@ -421,7 +524,11 @@
       return;
     }
     state.me = admin.email;
+    // Role from auth.js via window.VYVE_USER (set before vyve:user event fires)
+    state.isAdmin = (window.VYVE_USER && window.VYVE_USER.role === 'admin') || admin.role === 'admin';
     document.getElementById('tk-current-email').textContent = admin.email;
+    // Show New Task button for admins only
+    if (state.isAdmin) document.getElementById('tk-add').style.display = '';
     show('tk-content');
     bindControls();
     await fetchData();
