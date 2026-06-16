@@ -4,7 +4,7 @@
     <h1 class="page-title">Calendar</h1>
     <p class="page-sub">Team events, sessions and meetings in one shared view. Generate Google Meet links and invite attendees.</p>
     <div class="hero-actions">
-      <button class="btn btn-primary" id="cal-add">New event</button>
+      <button class="btn btn-primary" id="cal-add" style="display:none">New event</button>
     </div>
   </div>
 
@@ -61,7 +61,7 @@
 
     <!-- Legend -->
     <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--text-muted);padding:12px 4px">
-      <span style="display:inline-flex;align-items:center;gap:6px"><span class="cal-dot" style="background:var(--vyve-teal,#4DAAAA)"></span>Team event</span>
+      <span style="display:inline-flex;align-items:center;gap:6px"><span class="cal-dot" style="background:var(--vyve-teal,#4DAAAA)"></span>Meeting</span>
       <span style="display:inline-flex;align-items:center;gap:6px"><span class="cal-dot" style="background:var(--vyve-gold,#D49B2C)"></span>Session</span>
       <span style="display:inline-flex;align-items:center;gap:6px"><span class="cal-dot" style="background:var(--vyve-coral,#D17F6E)"></span>Private (yours)</span>
       <span style="display:inline-flex;align-items:center;gap:6px;margin-left:auto"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>Has Meet link</span>
@@ -134,8 +134,9 @@
     scope: 'team',         // 'mine' | 'team' | 'all'
     cursor: new Date(),    // current period anchor
     events: [],
-    sessions: [],
-    me: null               // current admin email
+    sessions: [],          // calendar_occurrences rows
+    me: null,              // current admin email
+    isAdmin: false         // set in boot() from VYVE_USER.role
   };
 
   function show(id){ document.getElementById(id).style.display = ''; }
@@ -166,8 +167,12 @@
     var evRes = await S.client.from(TABLE).select('*').gte('start_at', from).lte('start_at', to).order('start_at', { ascending: true });
     state.events = evRes.error ? [] : (evRes.data || []);
 
-    // Sessions read-only feed
-    var sesRes = await S.client.from('cc_sessions').select('*').gte('session_date', from.slice(0,10)).lte('session_date', to.slice(0,10));
+    // Live sessions from calendar_occurrences (member-facing, read-only)
+    var sesRes = await S.client.from('calendar_occurrences')
+      .select('id,name,session_title,starts_at,ends_at,category,type,location_online,location_venue,live_url,cancelled_at,active')
+      .gte('starts_at', from).lte('starts_at', to)
+      .eq('active', true).is('cancelled_at', null)
+      .order('starts_at', { ascending: true });
     state.sessions = sesRes.error ? [] : (sesRes.data || []);
   }
 
@@ -178,17 +183,21 @@
       return sa.toISOString().slice(0,10) === key && visibilityMatches(e);
     }).map(function(e){ return { kind: 'event', ref: e, start: new Date(e.start_at), end: new Date(e.end_at), title: e.title, meet: e.meet_url, type: e.visibility === 'private' ? 'private' : 'team' }; });
 
-    var fromSessions = state.sessions.filter(function(s){ return s.session_date === key; }).map(function(s){
-      return { kind: 'session', ref: s, start: parseSessionStart(s), end: parseSessionStart(s), title: s.title, type: 'session' };
+    var fromSessions = state.sessions.filter(function(s){
+      var st = s.starts_at ? new Date(s.starts_at) : null;
+      return st && st.toISOString().slice(0,10) === key;
+    }).map(function(s){
+      var st = parseSessionStart(s);
+      var en = s.ends_at ? new Date(s.ends_at) : st;
+      return { kind: 'session', ref: s, start: st, end: en, title: s.session_title || s.name || 'Session', meet: s.live_url, type: 'session' };
     });
 
     return fromEvents.concat(fromSessions).sort(function(a,b){ return a.start - b.start; });
   }
 
   function parseSessionStart(s){
-    // cc_sessions has session_date but no time. Default to 10am.
-    var d = new Date(s.session_date + 'T10:00:00');
-    return d;
+    // calendar_occurrences has full timestamptz starts_at
+    return s.starts_at ? new Date(s.starts_at) : null;
   }
 
   function visibilityMatches(e){
@@ -360,7 +369,7 @@
         '<div class="form-row"><div class="form-group"><label>Google Meet link</label><div style="display:flex;gap:6px"><input id="ev-meet" value="' + escape(initial.meet_url || '') + '" placeholder="meet.google.com/..." style="flex:1"/><button type="button" class="btn btn-ghost btn-sm" id="ev-meet-gen" title="Open meet.google.com/new in a new tab; copy the link back here">Generate</button></div></div></div>' +
         '<div class="form-row"><div class="form-group"><label>Description</label><textarea id="ev-desc" rows="3">' + escape(initial.description || '') + '</textarea></div></div>' +
         '<div style="display:flex;justify-content:space-between;gap:8px">' +
-          (isEdit && initial.owner_email === state.me ? '<button class="btn" id="ev-del" style="color:var(--danger);border-color:rgba(224,96,96,.3)">Delete</button>' : '<span></span>') +
+          (isEdit && state.isAdmin ? '<button class="btn" id="ev-del" style="color:var(--danger);border-color:rgba(224,96,96,.3)">Delete</button>' : '<span></span>') +
           '<button class="btn btn-primary" id="ev-save">Save</button>' +
         '</div>'
     });
@@ -543,7 +552,9 @@
       return;
     }
     state.me = admin.email;
+    state.isAdmin = (window.VYVE_USER && window.VYVE_USER.role === 'admin') || admin.role === 'admin';
     document.getElementById('cal-current-email').textContent = admin.email;
+    if (state.isAdmin) document.getElementById('cal-add').style.display = '';
     show('cal-content');
     bindControls();
     await fetchData();
