@@ -252,8 +252,28 @@ tbody tr:last-child td{border-bottom:none}
   .g3{grid-template-columns:1fr}
 }
 @media(max-width:768px){
-  .sidebar{display:none}
+  .app{flex-direction:column}
+  .sidebar{width:100%;height:auto;position:sticky;top:0;z-index:60;flex-direction:row;align-items:center;gap:4px;padding:8px 10px;border-right:none;border-bottom:1px solid var(--line);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .sidebar::-webkit-scrollbar{display:none}
+  .brand{padding:0 12px 0 4px;margin:0;border-bottom:none;border-right:1px solid var(--line);flex-shrink:0}
+  .brand .sub{display:none}
+  .nav-group{display:none}
+  .nav-item{flex:0 0 auto;padding:9px 12px;border-left:none;border-radius:10px;white-space:nowrap;font-size:12.5px}
+  .nav-item.active{background:rgba(94,196,176,.15)}
+  .nav-item .count{margin-left:6px}
+  .side-foot{margin:0;padding:0 6px 0 10px;border-top:none;border-left:1px solid var(--line);flex-shrink:0}
+  .topbar{height:auto;flex-wrap:wrap;padding:10px 16px;gap:10px;position:static}
+  .topbar-search{order:3;flex:1 1 100%}
+  .spacer{display:none}
+  .content{padding:18px 14px 56px}
   .kanban{grid-template-columns:repeat(2,1fr)}
+  .g4{grid-template-columns:1fr 1fr}
+  table{display:block;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch}
+}
+@media(max-width:560px){
+  .kanban{grid-template-columns:1fr}
+  .g4{grid-template-columns:1fr}
+  .topbar .tb-btn{flex:1 1 auto;justify-content:center}
 }
 </style>
 </head>
