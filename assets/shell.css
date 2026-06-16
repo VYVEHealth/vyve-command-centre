@@ -90,6 +90,7 @@ kbd {
   top: 0;
   z-index: var(--z-topbar);
   box-shadow: var(--shadow-xs);
+  margin-left: 280px; /* clear the persistent sidebar */
 }
 .topnav-inner {
   display: flex;
@@ -97,8 +98,7 @@ kbd {
   gap: 24px;
   padding: 0 28px;
   height: 64px;
-  max-width: var(--content-max);
-  margin: 0 auto;
+  /* Fill full width — tools pushed right by flex */
 }
 
 /* Brand block (left side) */
@@ -202,6 +202,7 @@ kbd {
   align-items: center;
   gap: 10px;
   flex-shrink: 0;
+  margin-left: auto; /* push to far right now that tabs are gone */
 }
 .topnav-search {
   display: inline-flex;
@@ -910,6 +911,7 @@ main.main::-webkit-scrollbar-thumb { background: var(--border-strong); border-ra
 @media (max-width: 900px) {
   .topnav-tabs { display: none; }
   .topnav-menu { display: inline-flex; }
+  .topnav { margin-left: 0; }
   main.main { margin-left: 0; }
   aside.sidebar { transform: translateX(-100%); }
   aside.sidebar.open { transform: translateX(0); box-shadow: 0 0 32px rgba(0,0,0,.32); }
