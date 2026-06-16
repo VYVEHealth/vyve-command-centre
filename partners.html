@@ -596,6 +596,7 @@ const ICONS={
   eye:S+'<path d="M2 12s3.8-7 10-7 10 7 10 7-3.8 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
   pencil:S+'<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14.5 5.5l4 4"/></svg>',
   doc:S+'<path d="M6.5 3h7l4 4v14h-11z"/><path d="M13.5 3v4h4"/></svg>',
+  download:S+'<path d="M12 4v12M7 11l5 5 5-5"/><path d="M5 20h14"/></svg>',
   play:S+'<path d="M7 5v14l12-7z" fill="currentColor" stroke="none"/></svg>',
   'chev-left':S+'<path d="M15 6l-6 6 6 6"/></svg>',
   layers:S+'<path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg>',
@@ -1085,9 +1086,10 @@ function renderContent(){
       <div class="th" style="background:rgba(94,196,176,.08);color:${typeColors[c.type]||'var(--muted)'}"><span data-i="${icon}"></span></div>
       <div style="flex:1"><div class="ct">${esc(c.title)}</div><div class="cs">${esc(pName)} · ${c.type.replace('_',' ')} · ${when}${c.description?' — '+esc(c.description.slice(0,60)):''}</div></div>
       ${showActions?`<div class="row-actions">
+        ${c.media_url?`<button class="icon-btn" onclick="downloadPartnerFile('${c.id}')" title="Download to your Mac"><span data-i="download"></span></button>`:''}
         <button class="icon-btn btn-approve" onclick="moderateContent('${c.id}','published')" title="Approve"><span data-i="check"></span></button>
         <button class="icon-btn btn-reject" onclick="moderateContent('${c.id}','returned')" title="Return"><span data-i="x"></span></button>
-      </div>`:`<span class="pill ${c.moderation_status==='published'?'p-live':c.moderation_status==='flagged'?'p-suspended':'p-draft'}">${c.moderation_status}</span>`}
+      </div>`:`<div class="row-actions">${c.media_url?`<button class="icon-btn" onclick="downloadPartnerFile('${c.id}')" title="Download to your Mac"><span data-i="download"></span></button>`:''}<span class="pill ${c.moderation_status==='published'?'p-live':c.moderation_status==='flagged'?'p-suspended':'p-draft'}">${c.moderation_status}</span></div>`}
     </div>`;
   }
 
@@ -1102,6 +1104,18 @@ function renderContent(){
   render('cm-programs',programs,false);
 }
 
+async function downloadPartnerFile(id){
+  const c=allContent.find(x=>x.id===id);
+  if(!c||!c.media_url){toast('No file attached to this item');return;}
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+    const res=await fetch(`${SUPA_URL}/functions/v1/partner-file-url`,{method:'POST',headers:{'Authorization':`Bearer ${session.access_token}`,'apikey':SUPA_ANON,'Content-Type':'application/json'},body:JSON.stringify({path:c.media_url,bucket:'partner-content'})});
+    const jr=await res.json();
+    if(!res.ok||!jr.signedUrl)throw new Error(jr.error||'request failed');
+    const a=document.createElement('a');a.href=jr.signedUrl;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove();
+    toast('Download starting…');
+  }catch(e){toast('Download failed: '+(e.message||e));}
+}
 async function moderateContent(id,newStatus){
   const {error}=await sb.from('partner_content_items').update({moderation_status:newStatus,reviewed_at:new Date().toISOString()}).eq('id',id);
   if(error){toast(error.message,'error');return;}
