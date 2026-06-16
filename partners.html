@@ -1445,7 +1445,7 @@ function openRequestInfoModal(partnerId){
       <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Log what additional information you need from ${esc(name)}</p>
       <textarea id="ri-notes" style="width:100%;padding:10px 13px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--white);font-size:13px;font-family:var(--font);min-height:100px;resize:vertical" placeholder="What do you need from them? e.g. qualifications, references, sample content…"></textarea>
       <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
-        <button class="tb-btn" onclick="this.closest('[style]').remove()">Cancel</button>
+        <button class="tb-btn" onclick="document.querySelectorAll('body>[style*=fixed]').forEach(e=>e.remove())">Cancel</button>
         <button class="tb-btn primary" onclick="submitRequestInfo('${partnerId}', this.closest('[style]'))">Log request</button>
       </div>
     </div>`;
@@ -1465,7 +1465,7 @@ async function submitRequestInfo(partnerId, modal){
     await sb.from('partner_applications').update({notes: newNotes}).eq('partner_id', partnerId);
   }
   
-  modal.remove();
+  document.querySelectorAll('body>[style*=fixed]').forEach(e=>e.remove());
   toast('Info request logged');
 }
 
@@ -1488,7 +1488,7 @@ function openCurriculumModal(){
     <div style="background:var(--card);border:1px solid var(--line);border-radius:16px;padding:28px;width:min(560px,92vw);max-height:80vh;overflow-y:auto">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
         <h3 style="font-size:16px;font-weight:700">Edit onboarding curriculum</h3>
-        <button onclick="this.closest('[style]').remove()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px">&times;</button>
+        <button onclick="document.querySelectorAll('body>[style*=fixed]').forEach(e=>e.remove())" style="width:34px;height:34px;border-radius:8px;background:var(--surface);border:1px solid var(--line);color:var(--white);cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0">&times;</button>
       </div>
       <p style="font-size:12px;color:var(--muted);margin-bottom:16px">These are the 8 steps every partner must complete before going live. Steps are enforced by the system — safeguarding and GDPR are required gates.</p>
       <div id="curr-steps">
@@ -1500,8 +1500,8 @@ function openCurriculumModal(){
           </div>`).join('')}
       </div>
       <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
-        <button class="tb-btn" onclick="this.closest('[style]').remove()">Cancel</button>
-        <button class="tb-btn primary" onclick="this.closest('[style]').remove();toast('Curriculum updated')">Save changes</button>
+        <button class="tb-btn" onclick="document.querySelectorAll('body>[style*=fixed]').forEach(e=>e.remove())">Cancel</button>
+        <button class="tb-btn primary" onclick="document.querySelectorAll('body>[style*=fixed]').forEach(e=>e.remove());toast('Curriculum updated')">Save changes</button>
       </div>
     </div>`;
   document.body.appendChild(modal);
