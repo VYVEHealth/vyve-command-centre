@@ -175,3 +175,28 @@ html[data-theme="dark"] {
   --pillar-mental-pale:   rgba(77,170,170,.18);
   --pillar-social-pale:   rgba(209,127,110,.18);
 }
+
+
+/* System preference: auto dark when no explicit data-theme set */
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]):not([data-theme="dark"]) {
+    --bg:             #0B1F1F;
+    --bg-alt:         #0E2424;
+    --surface:        #122B2B;
+    --surface-2:      #163333;
+    --surface-3:      #1B3D3C;
+    --surface-sunken: #0D2424;
+    --border:         rgba(255,255,255,.08);
+    --border-strong:  rgba(255,255,255,.16);
+    --text:           #EAF2F2;
+    --text-muted:     #94ADAD;
+    --text-dim:       #5A7575;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.32);
+    --shadow-md: 0 4px 12px rgba(0,0,0,.4);
+    --shadow-lg: 0 24px 64px rgba(0,0,0,.6);
+    --vyve-cream:  #0F2727;
+    --pillar-physical-pale: rgba(212,155,44,.18);
+    --pillar-mental-pale:   rgba(77,170,170,.18);
+    --pillar-social-pale:   rgba(209,127,110,.18);
+  }
+}

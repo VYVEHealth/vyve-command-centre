@@ -18,6 +18,23 @@
 
   <div id="set-general" class="tab-panel active">
     <div class="card">
+      <div class="card-header"><span class="card-title">Appearance</span></div>
+      <div class="card-body">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+          <div>
+            <div style="font-weight:600;font-size:13.5px;margin-bottom:3px">Theme</div>
+            <div style="font-size:12px;color:var(--text-muted)">Follows your system preference by default. Override below.</div>
+          </div>
+          <div style="display:inline-flex;background:var(--surface-2);border-radius:var(--r-md);padding:3px;gap:2px" id="theme-switcher">
+            <button class="seg-btn" data-theme-opt="light" style="padding:6px 14px;font-size:12.5px;font-weight:600;background:transparent;border:0;border-radius:calc(var(--r-md) - 2px);cursor:pointer;color:var(--text-muted);transition:background .15s,color .15s">Light</button>
+            <button class="seg-btn" data-theme-opt="system" style="padding:6px 14px;font-size:12.5px;font-weight:600;background:transparent;border:0;border-radius:calc(var(--r-md) - 2px);cursor:pointer;color:var(--text-muted);transition:background .15s,color .15s">System</button>
+            <button class="seg-btn" data-theme-opt="dark" style="padding:6px 14px;font-size:12.5px;font-weight:600;background:transparent;border:0;border-radius:calc(var(--r-md) - 2px);cursor:pointer;color:var(--text-muted);transition:background .15s,color .15s">Dark</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
       <div class="card-header"><span class="card-title">Company Information</span></div>
       <div class="form-row cols-2">
         <div class="form-group"><label>Company name</label><input id="s-name" value="VYVE Health CIC"/></div>
@@ -1145,4 +1162,27 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else setTimeout(init, 50);
 })();
+
+  // ── Theme switcher ────────────────────────────────────────────────
+  (function(){
+    function paintThemeBtns(mode){
+      document.querySelectorAll('#theme-switcher .seg-btn').forEach(function(b){
+        var active = b.getAttribute('data-theme-opt') === mode;
+        b.style.background = active ? 'var(--surface)' : 'transparent';
+        b.style.color = active ? 'var(--text)' : 'var(--text-muted)';
+        b.style.boxShadow = active ? '0 1px 2px rgba(0,0,0,.06)' : 'none';
+      });
+    }
+    var current = window.VYVE_THEME ? window.VYVE_THEME.get() : (localStorage.getItem('vyve-cc-theme') || 'system');
+    paintThemeBtns(current);
+    document.querySelectorAll('#theme-switcher .seg-btn').forEach(function(b){
+      b.addEventListener('click', function(){
+        var mode = b.getAttribute('data-theme-opt');
+        if (window.VYVE_THEME) window.VYVE_THEME.set(mode);
+        paintThemeBtns(mode);
+      });
+    });
+    window.addEventListener('vyve:theme', function(e){ paintThemeBtns(e.detail.mode); });
+  })();
+
 </script>

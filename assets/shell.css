@@ -77,6 +77,16 @@ kbd {
 }
 #app.ready {
   display: flex;
+  flex-direction: row;
+  min-height: 100vh;
+}
+
+/* App body (topnav + main stacked in a column, right of sidebar) */
+.app-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
   min-height: 100vh;
 }
 
@@ -90,7 +100,7 @@ kbd {
   top: 0;
   z-index: var(--z-topbar);
   box-shadow: var(--shadow-xs);
-  margin-left: 280px; /* clear the persistent sidebar */
+  /* No margin-left needed — topnav lives inside .app-body, right of sidebar */
 }
 .topnav-inner {
   display: flex;
@@ -301,7 +311,7 @@ main.main {
   padding: 0;
   max-width: 100%;
   flex: 1;
-  margin-left: 280px;
+  /* margin-left handled by .app-body flex layout */
 }
 .content {
   padding: var(--content-pad);
@@ -911,7 +921,6 @@ main.main::-webkit-scrollbar-thumb { background: var(--border-strong); border-ra
 @media (max-width: 900px) {
   .topnav-tabs { display: none; }
   .topnav-menu { display: inline-flex; }
-  .topnav { margin-left: 0; }
   main.main { margin-left: 0; }
   aside.sidebar { transform: translateX(-100%); }
   aside.sidebar.open { transform: translateX(0); box-shadow: 0 0 32px rgba(0,0,0,.32); }
