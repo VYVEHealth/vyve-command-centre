@@ -76,7 +76,7 @@ kbd {
   background: var(--bg);
 }
 #app.ready {
-  display: block;
+  display: flex;
   min-height: 100vh;
 }
 
@@ -147,11 +147,7 @@ kbd {
 
 /* Tabs (middle) */
 .topnav-tabs {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  flex: 1;
-  margin-left: 12px;
+  display: none;
 }
 .topnav-tab {
   display: inline-flex;
@@ -303,6 +299,8 @@ main.main {
   min-width: 0;
   padding: 0;
   max-width: 100%;
+  flex: 1;
+  margin-left: 280px;
 }
 .content {
   padding: var(--content-pad);
@@ -326,9 +324,8 @@ aside.sidebar {
   border-right: 1px solid var(--sidebar-border);
   overflow-y: auto;
   z-index: var(--z-drawer);
-  transform: translateX(-100%);
+  transform: translateX(0);
   transition: transform var(--t-base);
-  box-shadow: 0 0 32px rgba(0,0,0,.32);
 }
 aside.sidebar.open { transform: translateX(0); }
 aside.sidebar::-webkit-scrollbar { width: 4px; }
@@ -913,6 +910,9 @@ main.main::-webkit-scrollbar-thumb { background: var(--border-strong); border-ra
 @media (max-width: 900px) {
   .topnav-tabs { display: none; }
   .topnav-menu { display: inline-flex; }
+  main.main { margin-left: 0; }
+  aside.sidebar { transform: translateX(-100%); }
+  aside.sidebar.open { transform: translateX(0); box-shadow: 0 0 32px rgba(0,0,0,.32); }
   .topnav-search { min-width: auto; }
   .topnav-search-kbd { display: none; }
   .topnav-inner { gap: 12px; padding: 0 16px; height: 56px; }
