@@ -904,7 +904,7 @@ async function advancePartner(id,newStatus){
     if(!prog||!prog.safeguarding_passed||!prog.gdpr_passed||prog.pct_complete<100){
       toast('Cannot go live: safeguarding, GDPR and all 8 onboarding steps must be complete first','error');return;
     }
-    if(!confirm('This will make the partner VISIBLE TO ALL MEMBERS. Confirm Phil has signed off on safeguarding and GDPR before proceeding.')){return;}
+    if(!confirm('This will make the partner VISIBLE TO ALL MEMBERS. Confirm Dean and Lewis have both approved this partner before proceeding.')){return;}
   }
   if(newStatus==='onboarding'){
     if(!confirm('This will provision a web login for this partner and email them credentials. Proceed?')){return;}
