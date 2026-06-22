@@ -1,0 +1,879 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+  <meta name="robots" content="noindex,nofollow"/>
+  <meta name="theme-color" content="#0A2222"/>
+  <title>VYVE Partner Portal</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="assets/tokens.css"/>
+
+  <script>
+    (function(){
+      var stored = localStorage.getItem('vyve-cc-theme');
+      if (stored === 'dark') document.documentElement.setAttribute('data-theme','dark');
+      else if (stored === 'light') document.documentElement.setAttribute('data-theme','light');
+    })();
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 14px; line-height: 1.6; }
+
+    /* ── Login ── */
+    #login-overlay {
+      display: none;
+      position: fixed; inset: 0; z-index: 999;
+      background: var(--sidebar-bg);
+      align-items: center; justify-content: center; padding: 20px;
+    }
+    #login-overlay.show { display: flex; }
+    .login-card {
+      background: var(--surface); border-radius: 16px;
+      border: 1px solid var(--border); padding: 40px 36px;
+      width: 100%; max-width: 400px;
+    }
+    .login-logo { font-family: var(--font-head); font-size: 26px; font-weight: 700; color: var(--vyve-teal); margin-bottom: 4px; }
+    .login-sub { font-size: 12px; color: var(--text-muted); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 28px; }
+    .login-card h2 { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+    .login-card p { color: var(--text-muted); font-size: 13px; margin-bottom: 24px; }
+    .login-card label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
+    .login-card input {
+      width: 100%; padding: 10px 14px; border: 1px solid var(--border);
+      border-radius: 8px; background: var(--surface-2); color: var(--text);
+      font-size: 14px; margin-bottom: 16px; outline: none; transition: border .15s;
+    }
+    .login-card input:focus { border-color: var(--vyve-teal); }
+    .btn-primary {
+      width: 100%; padding: 11px 20px; background: var(--vyve-teal);
+      color: #fff; border: none; border-radius: 8px; font-size: 14px;
+      font-weight: 600; cursor: pointer; transition: background .15s;
+    }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+    #login-msg { font-size: 12px; color: var(--text-muted); margin-top: 12px; text-align: center; min-height: 18px; }
+
+    /* ── Shell ── */
+    #shell { display: none; min-height: 100vh; }
+    #shell.ready { display: flex; flex-direction: column; }
+
+    /* Topbar */
+    .pp-topbar {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--sidebar-bg); border-bottom: 1px solid var(--sidebar-border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; height: 60px;
+    }
+    .pp-topbar-brand { display: flex; align-items: center; gap: 12px; }
+    .pp-topbar-logo { font-family: var(--font-head); font-size: 18px; font-weight: 700; color: var(--vyve-teal-light); }
+    .pp-topbar-label { font-size: 11px; color: var(--sidebar-text); letter-spacing: .08em; text-transform: uppercase; }
+    .pp-topbar-right { display: flex; align-items: center; gap: 16px; }
+    .pp-user-pill { font-size: 12px; color: var(--sidebar-text); background: rgba(255,255,255,.07); padding: 5px 12px; border-radius: 20px; }
+    .pp-signout { font-size: 12px; color: var(--sidebar-text); background: none; border: none; cursor: pointer; opacity: .7; }
+    .pp-signout:hover { opacity: 1; }
+
+    /* Status badge */
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em;
+    }
+    .status-badge.live { background: var(--success-pale); color: var(--success); }
+    .status-badge.onboarding { background: var(--info-pale); color: var(--info); }
+    .status-badge.vetting { background: var(--warning-pale); color: var(--warning); }
+    .status-badge.applied { background: var(--surface-3); color: var(--text-muted); }
+
+    /* Tab nav */
+    .pp-tabs { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; gap: 0; overflow-x: auto; }
+    .pp-tab {
+      padding: 14px 18px; font-size: 13px; font-weight: 500; color: var(--text-muted);
+      border-bottom: 2px solid transparent; cursor: pointer; white-space: nowrap;
+      transition: color .15s, border-color .15s; background: none; border-top: none; border-left: none; border-right: none;
+    }
+    .pp-tab:hover { color: var(--text); }
+    .pp-tab.active { color: var(--vyve-teal); border-bottom-color: var(--vyve-teal); font-weight: 600; }
+
+    /* Content area */
+    .pp-content { flex: 1; padding: 28px 24px; max-width: 900px; width: 100%; margin: 0 auto; }
+    .pp-panel { display: none; }
+    .pp-panel.active { display: block; }
+
+    /* Cards */
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 24px; margin-bottom: 16px;
+    }
+    .card-title { font-size: 15px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+    .card-title svg { color: var(--vyve-teal); }
+
+    /* Form fields */
+    .field { margin-bottom: 20px; }
+    .field label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
+    .field input, .field textarea, .field select {
+      width: 100%; padding: 10px 14px; border: 1px solid var(--border);
+      border-radius: 8px; background: var(--surface-2); color: var(--text);
+      font-size: 14px; font-family: var(--font-body); outline: none; transition: border .15s;
+    }
+    .field input:focus, .field textarea:focus, .field select:focus { border-color: var(--vyve-teal); }
+    .field textarea { resize: vertical; min-height: 90px; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .field-hint { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+
+    /* Buttons */
+    .btn { padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s; border: 1px solid transparent; }
+    .btn-teal { background: var(--vyve-teal); color: #fff; }
+    .btn-teal:hover { background: var(--accent-hover); }
+    .btn-ghost { background: none; color: var(--text-muted); border-color: var(--border); }
+    .btn-ghost:hover { background: var(--surface-2); color: var(--text); }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* Empty state */
+    .empty-state { text-align: center; padding: 48px 24px; color: var(--text-muted); }
+    .empty-state-icon { font-size: 36px; margin-bottom: 16px; opacity: .3; }
+    .empty-state h3 { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+    .empty-state p { font-size: 13px; line-height: 1.6; max-width: 340px; margin: 0 auto 20px; }
+
+    /* Content list */
+    .content-item {
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 0; border-bottom: 1px solid var(--border);
+    }
+    .content-item:last-child { border-bottom: none; }
+    .content-thumb {
+      width: 48px; height: 48px; border-radius: 8px;
+      background: var(--surface-2); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-dim);
+    }
+    .content-info { flex: 1; min-width: 0; }
+    .content-info-title { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .content-info-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .content-actions { display: flex; gap: 8px; flex-shrink: 0; }
+    .mod-chip { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+    .mod-draft { background: var(--surface-3); color: var(--text-muted); }
+    .mod-in_review { background: var(--info-pale); color: var(--info); }
+    .mod-published { background: var(--success-pale); color: var(--success); }
+    .mod-flagged { background: var(--danger-pale); color: var(--danger); }
+
+    /* Community post */
+    .post-compose { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+    .post-compose textarea {
+      width: 100%; padding: 14px; border: none; background: var(--surface);
+      color: var(--text); font-size: 14px; font-family: var(--font-body);
+      resize: none; min-height: 80px; outline: none;
+    }
+    .post-compose-footer { background: var(--surface-2); padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; }
+    .post-compose-footer span { font-size: 12px; color: var(--text-dim); }
+
+    .post {
+      padding: 16px 0; border-bottom: 1px solid var(--border);
+    }
+    .post:last-child { border-bottom: none; }
+    .post-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; display: flex; gap: 12px; align-items: center; }
+    .post-body { font-size: 14px; line-height: 1.6; }
+    .post-actions { margin-top: 8px; display: flex; gap: 10px; }
+    .post-action-btn { font-size: 12px; color: var(--text-muted); background: none; border: none; cursor: pointer; padding: 0; }
+    .post-action-btn:hover { color: var(--vyve-teal); }
+
+    /* Stats row */
+    .stats-row { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+    .stat-card { flex: 1; min-width: 100px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; text-align: center; }
+    .stat-val { font-size: 26px; font-weight: 700; color: var(--vyve-teal); font-family: var(--font-head); }
+    .stat-lbl { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; margin-top: 4px; }
+
+    /* Payout row */
+    .payout-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .payout-row:last-child { border-bottom: none; }
+    .payout-amount { font-weight: 600; color: var(--vyve-teal); }
+    .payout-status { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+    .payout-paid { background: var(--success-pale); color: var(--success); }
+    .payout-pending { background: var(--warning-pale); color: var(--warning); }
+
+    /* Gate-B notice */
+    .gate-notice {
+      background: var(--info-pale); border: 1px solid var(--info);
+      border-radius: 10px; padding: 16px 20px; margin-bottom: 20px;
+      display: flex; gap: 12px; align-items: flex-start;
+    }
+    .gate-notice svg { flex-shrink: 0; color: var(--info); margin-top: 2px; }
+    .gate-notice-text h4 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+    .gate-notice-text p { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+
+    /* Upload area */
+    .upload-zone {
+      border: 2px dashed var(--border); border-radius: 10px; padding: 32px;
+      text-align: center; cursor: pointer; transition: border-color .15s, background .15s;
+    }
+    .upload-zone:hover { border-color: var(--vyve-teal); background: var(--accent-pale); }
+    .upload-zone p { font-size: 13px; color: var(--text-muted); margin-top: 8px; }
+    .upload-zone.dragover { border-color: var(--vyve-teal); background: var(--accent-pale); }
+
+    /* Toast */
+    #pp-toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+      background: var(--sidebar-bg); color: #fff; padding: 10px 20px; border-radius: 8px;
+      font-size: 13px; z-index: 9999; transition: transform .25s; pointer-events: none;
+    }
+    #pp-toast.show { transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 600px) {
+      .field-row { grid-template-columns: 1fr; }
+      .pp-content { padding: 16px; }
+      .stats-row { gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Login overlay -->
+<div id="login-overlay">
+  <div class="login-card">
+    <div class="login-logo">VYVE</div>
+    <div class="login-sub">Partner Portal</div>
+    <h2>Welcome back</h2>
+    <p>Enter your partner email and we'll send you a magic link to sign in.</p>
+    <label for="pp-email">Email</label>
+    <input id="pp-email" type="email" placeholder="you@yourdomain.com" autocomplete="email"/>
+    <button class="btn-primary" id="pp-login-btn" type="button">Send magic link</button>
+    <div id="login-msg"></div>
+  </div>
+</div>
+
+<!-- App shell -->
+<div id="shell">
+  <div class="pp-topbar">
+    <div class="pp-topbar-brand">
+      <div class="pp-topbar-logo">VYVE</div>
+      <div class="pp-topbar-label">Partner Portal</div>
+    </div>
+    <div class="pp-topbar-right">
+      <span class="pp-user-pill" id="pp-user-email"></span>
+      <button class="pp-signout" id="pp-signout" type="button">Sign out</button>
+    </div>
+  </div>
+
+  <div class="pp-tabs">
+    <button class="pp-tab active" data-tab="profile" type="button">Profile</button>
+    <button class="pp-tab" data-tab="content" type="button">My Content</button>
+    <button class="pp-tab" data-tab="community" type="button">Community</button>
+    <button class="pp-tab" data-tab="sessions" type="button">Sessions</button>
+    <button class="pp-tab" data-tab="earnings" type="button">Earnings</button>
+  </div>
+
+  <div class="pp-content">
+
+    <!-- ── PROFILE ── -->
+    <div class="pp-panel active" id="panel-profile">
+      <div class="card">
+        <div class="card-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Your Partner Profile
+          <span id="profile-status" class="status-badge" style="margin-left:auto;"></span>
+        </div>
+
+        <div id="gate-b-notice" class="gate-notice" style="display:none">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <div class="gate-notice-text">
+            <h4>Your profile is being reviewed</h4>
+            <p>The VYVE team will complete a safeguarding and GDPR review before your community goes live to members. This usually takes 1–2 business days. You can continue uploading content and drafting sessions in the meantime.</p>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label>Display name</label>
+            <input id="profile-role-title" type="text" placeholder="e.g. Emma Clarke — Yoga"/>
+          </div>
+          <div class="field">
+            <label>Pillar</label>
+            <select id="profile-pillar">
+              <option value="mind">Mind</option>
+              <option value="body">Body</option>
+              <option value="connect">Connect</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Bio (shown to members)</label>
+          <textarea id="profile-bio" placeholder="Tell members who you are and what you bring to the VYVE community…"></textarea>
+        </div>
+        <div class="field">
+          <label>Why VYVE</label>
+          <textarea id="profile-why" placeholder="Why did you choose to partner with VYVE?" style="min-height:70px;"></textarea>
+        </div>
+        <div class="field">
+          <label>Profile photo URL</label>
+          <input id="profile-avatar" type="url" placeholder="https://…"/>
+          <div class="field-hint">Upload your photo to partner-docs storage, then paste the public URL here.</div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-teal" id="save-profile-btn" type="button">Save profile</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CONTENT ── -->
+    <div class="pp-panel" id="panel-content">
+      <div class="card">
+        <div class="card-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+          Upload Content
+        </div>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">Upload videos that will be reviewed by the VYVE team before being made available to members. The first required video is your "Welcome to VYVE" — an introduction to who you are and what your community is about.</p>
+        <div class="upload-zone" id="upload-zone">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+          <p>Click to select a video, or drag and drop here</p>
+          <p style="font-size:11px;margin-top:4px;">MP4, MOV — max 500MB</p>
+          <input type="file" id="upload-file" accept="video/*" style="display:none"/>
+        </div>
+        <div id="upload-meta" style="display:none;margin-top:16px;">
+          <div class="field">
+            <label>Video title</label>
+            <input id="upload-title" type="text" placeholder="e.g. Welcome to VYVE with Emma Clarke"/>
+          </div>
+          <div class="field">
+            <label>Description</label>
+            <textarea id="upload-desc" placeholder="What will members learn or experience?" style="min-height:70px;"></textarea>
+          </div>
+          <div id="upload-progress" style="display:none;margin-bottom:12px;">
+            <div style="background:var(--surface-3);border-radius:4px;height:6px;overflow:hidden;">
+              <div id="upload-bar" style="height:100%;background:var(--vyve-teal);width:0%;transition:width .3s;"></div>
+            </div>
+            <div id="upload-progress-label" style="font-size:12px;color:var(--text-muted);margin-top:6px;"></div>
+          </div>
+          <button class="btn btn-teal" id="upload-submit-btn" type="button">Submit for review</button>
+        </div>
+      </div>
+
+      <div class="card" id="content-list-card">
+        <div class="card-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          Your Content
+        </div>
+        <div id="content-list">
+          <div class="empty-state">
+            <div class="empty-state-icon">🎥</div>
+            <h3>No content yet</h3>
+            <p>Upload your first video above. After review it will be available to your community members.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── COMMUNITY ── -->
+    <div class="pp-panel" id="panel-community">
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-val" id="comm-subscriber-count">—</div><div class="stat-lbl">Members joined</div></div>
+        <div class="stat-card"><div class="stat-val" id="comm-post-count">—</div><div class="stat-lbl">Posts</div></div>
+        <div class="stat-card"><div class="stat-val" id="comm-active-count">—</div><div class="stat-lbl">Active this month</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Post to your community
+        </div>
+        <div class="post-compose">
+          <textarea id="new-post-body" placeholder="Share an update, tip, or motivation with your VYVE community…"></textarea>
+          <div class="post-compose-footer">
+            <span>Posts are visible to members who have joined your community</span>
+            <button class="btn btn-teal" id="post-submit-btn" type="button" style="padding:7px 16px;font-size:12px;">Post</button>
+          </div>
+        </div>
+        <div id="community-feed">
+          <div class="empty-state">
+            <div class="empty-state-icon">💬</div>
+            <h3>No posts yet</h3>
+            <p>Start the conversation — post a welcome message for members who join your community.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SESSIONS ── -->
+    <div class="pp-panel" id="panel-sessions">
+      <div class="gate-notice">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <div class="gate-notice-text">
+          <h4>Sessions are scheduled by the VYVE team</h4>
+          <p>When you're ready to run a session, contact <a href="mailto:team@vyvehealth.co.uk" style="color:var(--vyve-teal);">team@vyvehealth.co.uk</a> with the session title, date, time, and duration. The VYVE team will schedule it and notify your community members. Self-serve scheduling is coming soon.</p>
+        </div>
+      </div>
+
+      <div class="card" id="sessions-list-card">
+        <div class="card-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Your upcoming sessions
+        </div>
+        <div id="sessions-list">
+          <div class="empty-state">
+            <div class="empty-state-icon">📅</div>
+            <h3>No sessions scheduled yet</h3>
+            <p>Contact the VYVE team to schedule your first community session.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── EARNINGS ── -->
+    <div class="pp-panel" id="panel-earnings">
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-val" id="earn-referred">—</div><div class="stat-lbl">Referred members</div></div>
+        <div class="stat-card"><div class="stat-val" id="earn-mrr">—</div><div class="stat-lbl">Est. monthly earnings</div></div>
+        <div class="stat-card"><div class="stat-val" id="earn-total">—</div><div class="stat-lbl">Total paid out</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          Payout history
+        </div>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">You earn 50% of the £20/month subscription for every member you referred who remains active. Payouts are made monthly.</p>
+        <div id="payouts-list">
+          <div class="empty-state">
+            <div class="empty-state-icon">💷</div>
+            <h3>No payouts yet</h3>
+            <p>Payouts begin once you have referred active members. Share your partner referral code to start earning.</p>
+          </div>
+        </div>
+        <div id="promo-code-block" style="display:none;margin-top:16px;background:var(--accent-pale);border-radius:8px;padding:14px 16px;">
+          <div style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Your referral code</div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <code id="promo-code-display" style="font-size:20px;font-weight:700;color:var(--vyve-teal);letter-spacing:.1em;"></code>
+            <button class="btn btn-ghost" id="copy-promo-btn" type="button" style="font-size:12px;">Copy</button>
+          </div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:6px;">Members who sign up using this code are attributed to you automatically.</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /pp-content -->
+</div><!-- /shell -->
+
+<div id="pp-toast"></div>
+
+<script src="lib/supabase.js"></script>
+<script>
+(function(){
+  'use strict';
+
+  // ── Supabase client (reuse CC singleton) ─────────────────────────────────
+  function sb() { return window.VYVE_SUPABASE ? window.VYVE_SUPABASE.client() : null; }
+
+  // ── State ─────────────────────────────────────────────────────────────────
+  var state = {
+    session: null,
+    partnerRow: null,  // from partner_partners
+    partnerId: null,
+    uploadFile: null,
+  };
+
+  // ── Utils ─────────────────────────────────────────────────────────────────
+  function $(id) { return document.getElementById(id); }
+  function toast(msg, dur) {
+    var t = $('pp-toast'); t.textContent = msg; t.classList.add('show');
+    setTimeout(function(){ t.classList.remove('show'); }, dur || 2500);
+  }
+  function fmtDate(iso) {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+  }
+  function fmtGBP(n) { return n == null ? '—' : '£' + Number(n).toFixed(2); }
+
+  // ── Auth ──────────────────────────────────────────────────────────────────
+  async function boot() {
+    var client = sb();
+    if (!client) { setTimeout(boot, 200); return; }
+
+    // Handle magic-link callback
+    var { data: { session } } = await client.auth.getSession();
+
+    client.auth.onAuthStateChange(function(event, sess) {
+      state.session = sess;
+      if (sess) showApp(sess);
+      else showLogin();
+    });
+
+    if (session) {
+      state.session = session;
+      showApp(session);
+    } else {
+      showLogin();
+    }
+  }
+
+  function showLogin() {
+    $('login-overlay').classList.add('show');
+    $('shell').classList.remove('ready');
+  }
+
+  async function showApp(session) {
+    // Verify they are a partner role
+    var client = sb();
+    var { data: isPartner } = await client.rpc('is_partner');
+    if (!isPartner) {
+      $('login-overlay').classList.remove('show');
+      $('shell').classList.remove('ready');
+      document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:var(--bg);font-family:var(--font-body);text-align:center;padding:20px;"><div><div style="font-size:32px;margin-bottom:16px;">🔒</div><h2 style="margin-bottom:8px;color:var(--text);">Access not yet provisioned</h2><p style="color:var(--text-muted);max-width:360px;">Your partner portal access hasn\'t been set up yet. The VYVE team will send you login credentials once your application has been reviewed. Questions? <a href="mailto:team@vyvehealth.co.uk" style="color:#1B7878;">team@vyvehealth.co.uk</a></p></div></div>';
+      return;
+    }
+
+    $('login-overlay').classList.remove('show');
+    $('shell').classList.add('ready');
+    $('pp-user-email').textContent = session.user.email || '';
+
+    await loadPartnerData();
+    await loadContent();
+    await loadCommunity();
+    await loadSessions();
+    await loadEarnings();
+  }
+
+  // ── Load partner profile ──────────────────────────────────────────────────
+  async function loadPartnerData() {
+    var client = sb();
+    var { data, error } = await client.from('partner_partners').select('*').limit(1).single();
+    if (error || !data) return;
+    state.partnerRow = data;
+    state.partnerId = data.id;
+
+    // Status badge
+    var badge = $('profile-status');
+    badge.textContent = data.status;
+    badge.className = 'status-badge ' + (data.status || '');
+
+    // Gate B notice
+    if (data.status !== 'live') $('gate-b-notice').style.display = 'flex';
+
+    // Fill profile fields
+    $('profile-role-title').value = data.role_title || '';
+    $('profile-pillar').value = data.pillar || 'mind';
+    $('profile-bio').value = data.bio || '';
+    $('profile-why').value = data.why || '';
+    $('profile-avatar').value = data.avatar_url || '';
+  }
+
+  // ── Save profile ──────────────────────────────────────────────────────────
+  $('save-profile-btn').addEventListener('click', async function() {
+    if (!state.partnerId) return;
+    var btn = this; btn.disabled = true; btn.textContent = 'Saving…';
+    var client = sb();
+    var { error } = await client.from('partner_partners').update({
+      role_title: $('profile-role-title').value.trim(),
+      pillar: $('profile-pillar').value,
+      bio: $('profile-bio').value.trim(),
+      why: $('profile-why').value.trim(),
+      avatar_url: $('profile-avatar').value.trim() || null,
+    }).eq('id', state.partnerId);
+    btn.disabled = false; btn.textContent = 'Save profile';
+    if (error) toast('Error: ' + error.message);
+    else toast('Profile saved');
+  });
+
+  // ── Content ───────────────────────────────────────────────────────────────
+  async function loadContent() {
+    if (!state.partnerId) return;
+    var client = sb();
+    var { data } = await client.from('partner_content_items')
+      .select('id,title,description,moderation_status,type,created_at')
+      .eq('partner_id', state.partnerId)
+      .order('created_at', { ascending: false });
+    renderContentList(data || []);
+  }
+
+  function renderContentList(items) {
+    var el = $('content-list');
+    if (!items.length) {
+      el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🎥</div><h3>No content yet</h3><p>Upload your first video above. After review it will be available to your community members.</p></div>';
+      return;
+    }
+    el.innerHTML = items.map(function(item) {
+      var modClass = 'mod-' + (item.moderation_status || 'draft');
+      return '<div class="content-item"><div class="content-thumb"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></div><div class="content-info"><div class="content-info-title">'+item.title+'</div><div class="content-info-meta">'+fmtDate(item.created_at)+'</div></div><div class="content-actions"><span class="mod-chip '+modClass+'">'+item.moderation_status+'</span></div></div>';
+    }).join('');
+  }
+
+  // Upload flow
+  $('upload-zone').addEventListener('click', function() { $('upload-file').click(); });
+  $('upload-file').addEventListener('change', function(e) {
+    var file = e.target.files[0]; if (!file) return;
+    state.uploadFile = file;
+    $('upload-meta').style.display = 'block';
+    $('upload-title').value = file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g,' ');
+  });
+
+  $('upload-zone').addEventListener('dragover', function(e){ e.preventDefault(); this.classList.add('dragover'); });
+  $('upload-zone').addEventListener('dragleave', function(){ this.classList.remove('dragover'); });
+  $('upload-zone').addEventListener('drop', function(e){
+    e.preventDefault(); this.classList.remove('dragover');
+    var file = e.dataTransfer.files[0]; if (!file) return;
+    state.uploadFile = file;
+    $('upload-meta').style.display = 'block';
+    $('upload-title').value = file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g,' ');
+  });
+
+  $('upload-submit-btn').addEventListener('click', async function() {
+    if (!state.uploadFile || !state.partnerId) return;
+    var title = $('upload-title').value.trim();
+    if (!title) { toast('Please enter a video title'); return; }
+
+    var btn = this; btn.disabled = true; btn.textContent = 'Uploading…';
+    $('upload-progress').style.display = 'block';
+
+    try {
+      // 1. Get signed upload URL from partner-file-url EF
+      var jwt = state.session.access_token;
+      var urlRes = await fetch(window.VYVE_SUPABASE.url() + '/functions/v1/partner-file-url', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + jwt, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'upload_url',
+          partner_id: state.partnerId,
+          file_name: state.uploadFile.name,
+          bucket: 'partner-content',
+        }),
+      });
+      var urlData = await urlRes.json();
+      if (!urlData.signed_url) throw new Error(urlData.error || 'Could not get upload URL');
+
+      // 2. Upload file via signed URL
+      var xhr = new XMLHttpRequest();
+      xhr.upload.onprogress = function(e) {
+        if (e.lengthComputable) {
+          var pct = Math.round(e.loaded / e.total * 100);
+          $('upload-bar').style.width = pct + '%';
+          $('upload-progress-label').textContent = pct + '% uploaded';
+        }
+      };
+      await new Promise(function(resolve, reject) {
+        xhr.onload = function() { if (xhr.status >= 200 && xhr.status < 300) resolve(); else reject(new Error('Upload failed: ' + xhr.status)); };
+        xhr.onerror = function() { reject(new Error('Network error during upload')); };
+        xhr.open('PUT', urlData.signed_url);
+        xhr.setRequestHeader('Content-Type', state.uploadFile.type || 'video/mp4');
+        xhr.send(state.uploadFile);
+      });
+
+      // 3. Create partner_content_items row at in_review (§23.122)
+      var client = sb();
+      var { error: rowErr } = await client.from('partner_content_items').insert({
+        partner_id: state.partnerId,
+        type: 'video',
+        title: title,
+        description: $('upload-desc').value.trim() || null,
+        media_url: urlData.storage_path,
+        pillar: state.partnerRow ? state.partnerRow.pillar : 'mind',
+        moderation_status: 'in_review',  // §23.122 — must be in_review, not draft
+      });
+      if (rowErr) throw new Error(rowErr.message);
+
+      toast('Uploaded and submitted for review');
+      $('upload-meta').style.display = 'none';
+      $('upload-progress').style.display = 'none';
+      $('upload-bar').style.width = '0%';
+      state.uploadFile = null;
+      $('upload-file').value = '';
+      await loadContent();
+
+    } catch(e) {
+      toast('Upload error: ' + e.message);
+    }
+    btn.disabled = false; btn.textContent = 'Submit for review';
+  });
+
+  // ── Community ─────────────────────────────────────────────────────────────
+  async function loadCommunity() {
+    if (!state.partnerId) return;
+    var client = sb();
+
+    var [subRes, postRes] = await Promise.all([
+      client.from('partner_memberships').select('id,member_email,joined_at,engagement_segment', { count: 'exact' }).eq('partner_id', state.partnerId),
+      client.from('partner_community_posts').select('id,body,created_at,like_count,reply_count').eq('partner_id', state.partnerId).order('created_at', { ascending: false }).limit(20),
+    ]);
+
+    var subs = subRes.data || [];
+    $('comm-subscriber-count').textContent = subs.length;
+    $('comm-post-count').textContent = (postRes.data || []).length;
+    // active this month = joined in last 30d or engagement_segment='active'
+    var activeCount = subs.filter(function(s){ return s.engagement_segment === 'active'; }).length;
+    $('comm-active-count').textContent = activeCount;
+
+    renderFeed(postRes.data || []);
+  }
+
+  function renderFeed(posts) {
+    var el = $('community-feed');
+    if (!posts.length) {
+      el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💬</div><h3>No posts yet</h3><p>Start the conversation — post a welcome message for members who join your community.</p></div>';
+      return;
+    }
+    el.innerHTML = posts.map(function(p) {
+      return '<div class="post"><div class="post-meta"><span>'+fmtDate(p.created_at)+'</span><span>'+p.like_count+' likes · '+p.reply_count+' replies</span></div><div class="post-body">'+escHtml(p.body)+'</div><div class="post-actions"><button class="post-action-btn" data-del="'+p.id+'" type="button">Delete</button></div></div>';
+    }).join('');
+    el.querySelectorAll('[data-del]').forEach(function(btn) {
+      btn.addEventListener('click', function() { deletePost(btn.dataset.del); });
+    });
+  }
+
+  function escHtml(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+  $('post-submit-btn').addEventListener('click', async function() {
+    var body = $('new-post-body').value.trim();
+    if (!body || !state.partnerId) return;
+    var btn = this; btn.disabled = true;
+    var client = sb();
+    var { error } = await client.from('partner_community_posts').insert({
+      partner_id: state.partnerId,
+      author_email: state.session.user.email,
+      author_kind: 'partner',
+      body: body,
+    });
+    btn.disabled = false;
+    if (error) { toast('Error: ' + error.message); return; }
+    $('new-post-body').value = '';
+    toast('Posted');
+    await loadCommunity();
+  });
+
+  async function deletePost(id) {
+    if (!confirm('Delete this post?')) return;
+    var client = sb();
+    var { error } = await client.from('partner_community_posts').delete().eq('id', id);
+    if (error) { toast('Error: ' + error.message); return; }
+    toast('Deleted');
+    await loadCommunity();
+  }
+
+  // ── Sessions ──────────────────────────────────────────────────────────────
+  async function loadSessions() {
+    if (!state.partnerId) return;
+    var client = sb();
+    var { data } = await client.from('calendar_occurrences')
+      .select('id,name,session_title,starts_at,ends_at,visibility,cancelled_at')
+      .eq('partner_id', state.partnerId)
+      .is('cancelled_at', null)
+      .gte('starts_at', new Date().toISOString())
+      .order('starts_at', { ascending: true })
+      .limit(20);
+    renderSessions(data || []);
+  }
+
+  function renderSessions(sessions) {
+    var el = $('sessions-list');
+    if (!sessions.length) {
+      el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📅</div><h3>No sessions scheduled yet</h3><p>Contact the VYVE team to schedule your first community session.</p></div>';
+      return;
+    }
+    el.innerHTML = sessions.map(function(s) {
+      var title = s.session_title || s.name;
+      var dt = new Date(s.starts_at);
+      var dtStr = dt.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}) + ' at ' + dt.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+      var vis = s.visibility === 'community' ? '<span style="font-size:11px;background:var(--accent-pale);color:var(--vyve-teal);padding:2px 7px;border-radius:10px;font-weight:600;">Community</span>' : '<span style="font-size:11px;background:var(--surface-3);color:var(--text-muted);padding:2px 7px;border-radius:10px;">Public</span>';
+      return '<div class="content-item"><div class="content-thumb"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div class="content-info"><div class="content-info-title">'+title+'</div><div class="content-info-meta">'+dtStr+'</div></div><div class="content-actions">'+vis+'</div></div>';
+    }).join('');
+  }
+
+  // ── Earnings ──────────────────────────────────────────────────────────────
+  async function loadEarnings() {
+    if (!state.partnerId) return;
+    var client = sb();
+
+    var [refRes, payRes] = await Promise.all([
+      client.from('partner_memberships')
+        .select('id,subscription_value', { count: 'exact' })
+        .eq('partner_id', state.partnerId)
+        .eq('referred', true)
+        .eq('subscription_status', 'active'),
+      client.from('partner_payouts')
+        .select('id,period,gross_amount,payout_amount,status,paid_at')
+        .eq('partner_id', state.partnerId)
+        .order('period', { ascending: false })
+        .limit(12),
+    ]);
+
+    var refs = refRes.data || [];
+    var revShare = state.partnerRow ? Number(state.partnerRow.revenue_share_pct || 50) / 100 : 0.5;
+    var mrr = refs.reduce(function(sum, r){ return sum + (Number(r.subscription_value) || 20) * revShare; }, 0);
+
+    $('earn-referred').textContent = refs.length;
+    $('earn-mrr').textContent = '£' + mrr.toFixed(0);
+
+    var payouts = payRes.data || [];
+    var totalPaid = payouts.filter(function(p){ return p.status === 'paid'; }).reduce(function(sum, p){ return sum + Number(p.payout_amount || 0); }, 0);
+    $('earn-total').textContent = '£' + totalPaid.toFixed(2);
+
+    // Promo code
+    if (state.partnerRow && state.partnerRow.stripe_promo_code) {
+      $('promo-code-block').style.display = 'block';
+      $('promo-code-display').textContent = state.partnerRow.stripe_promo_code;
+    }
+
+    renderPayouts(payouts);
+  }
+
+  function renderPayouts(payouts) {
+    var el = $('payouts-list');
+    if (!payouts.length) {
+      el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💷</div><h3>No payouts yet</h3><p>Payouts begin once you have referred active members.</p></div>';
+      return;
+    }
+    el.innerHTML = payouts.map(function(p) {
+      var statusCls = p.status === 'paid' ? 'payout-paid' : 'payout-pending';
+      return '<div class="payout-row"><span>'+p.period+'</span><span class="payout-amount">'+fmtGBP(p.payout_amount)+'</span><span class="payout-status '+statusCls+'">'+p.status+'</span><span style="color:var(--text-muted);font-size:12px;">'+( p.paid_at ? fmtDate(p.paid_at) : '—' )+'</span></div>';
+    }).join('');
+  }
+
+  $('copy-promo-btn').addEventListener('click', function() {
+    var code = $('promo-code-display').textContent;
+    navigator.clipboard.writeText(code).then(function(){ toast('Copied'); });
+  });
+
+  // ── Tab switching ─────────────────────────────────────────────────────────
+  document.querySelectorAll('.pp-tab').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      document.querySelectorAll('.pp-tab').forEach(function(t){ t.classList.remove('active'); });
+      document.querySelectorAll('.pp-panel').forEach(function(p){ p.classList.remove('active'); });
+      tab.classList.add('active');
+      var panel = $('panel-' + tab.dataset.tab);
+      if (panel) panel.classList.add('active');
+    });
+  });
+
+  // ── Login form ────────────────────────────────────────────────────────────
+  $('pp-login-btn').addEventListener('click', async function() {
+    var email = $('pp-email').value.trim();
+    if (!email) return;
+    var btn = this; btn.disabled = true; btn.textContent = 'Sending…';
+    $('login-msg').textContent = '';
+    var client = sb();
+    var { error } = await client.auth.signInWithOtp({
+      email: email,
+      options: { emailRedirectTo: window.location.href },
+    });
+    btn.disabled = false; btn.textContent = 'Send magic link';
+    if (error) { $('login-msg').textContent = error.message; return; }
+    $('login-msg').textContent = 'Magic link sent — check your inbox.';
+  });
+
+  $('pp-email').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') $('pp-login-btn').click();
+  });
+
+  // ── Sign out ──────────────────────────────────────────────────────────────
+  $('pp-signout').addEventListener('click', function() {
+    var client = sb();
+    client.auth.signOut().then(showLogin);
+  });
+
+  // ── Boot ──────────────────────────────────────────────────────────────────
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
+})();
+</script>
+</body>
+</html>

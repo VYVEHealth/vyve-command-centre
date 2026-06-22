@@ -904,11 +904,33 @@ async function advancePartner(id,newStatus){
     if(!prog||!prog.safeguarding_passed||!prog.gdpr_passed||prog.pct_complete<100){
       toast('Cannot go live: safeguarding, GDPR and all 8 onboarding steps must be complete first','error');return;
     }
+    if(!confirm('This will make the partner VISIBLE TO ALL MEMBERS. Confirm Phil has signed off on safeguarding and GDPR before proceeding.')){return;}
+  }
+  if(newStatus==='onboarding'){
+    if(!confirm('This will provision a web login for this partner and email them credentials. Proceed?')){return;}
   }
   const {error}=await sb.from('partner_partners').update({status:newStatus}).eq('id',id);
   if(error){toast('Error: '+error.message,'error');return;}
   await sb.from('partner_applications').update({status_changed_at:new Date().toISOString()}).eq('partner_id',id);
-  toast(newStatus==='live'?'Partner is now live!':'Moved to '+newStatus);
+  // Gate A: provision partner web login when advancing to onboarding
+  if(newStatus==='onboarding'){
+    try{
+      const sess=await sb.auth.getSession();
+      const jwt=sess?.data?.session?.access_token;
+      const provRes=await fetch(SUPA_URL+'/functions/v1/partner-provision',{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+jwt,'Content-Type':'application/json'},
+        body:JSON.stringify({action:'provision',partner_id:id}),
+      });
+      const provData=await provRes.json();
+      if(provRes.ok){toast('Partner login provisioned — credentials emailed');}
+      else{toast('Status updated, but login provision failed: '+provData.error,'error');}
+    }catch(e){
+      toast('Status updated, but login provision error: '+e.message,'error');
+    }
+  } else {
+    toast(newStatus==='live'?'Partner is now live!':'Moved to '+newStatus);
+  }
   document.getElementById('appDetail').style.display='none';
   // Refresh
   partnerMap[id]={...partnerMap[id],status:newStatus};
