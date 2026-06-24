@@ -474,13 +474,24 @@
 
 <div id="pp-toast"></div>
 
-<script src="lib/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
+<script>
+  var _SUPA_URL  = 'https://ixjfklpckgxrwjlfsaaz.supabase.co';
+  var _SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg';
+  var _sbClient = null;
+  function _getSB() {
+    if (!_sbClient) _sbClient = window.supabase.createClient(_SUPA_URL, _SUPA_ANON, {
+      auth: { persistSession: true, autoRefreshToken: true, storageKey: 'vyve-partner-portal-auth' }
+    });
+    return _sbClient;
+  }
+</script>
 <script>
 (function(){
   'use strict';
 
   // ── Supabase client (reuse CC singleton) ─────────────────────────────────
-  function sb() { return window.VYVE_SUPABASE ? window.VYVE_SUPABASE.client() : null; }
+  function sb() { return _getSB(); }
 
   // ── State ─────────────────────────────────────────────────────────────────
   var state = {
@@ -645,7 +656,7 @@
     try {
       // 1. Get signed upload URL from partner-file-url EF
       var jwt = state.session.access_token;
-      var urlRes = await fetch(window.VYVE_SUPABASE.url() + '/functions/v1/partner-file-url', {
+      var urlRes = await fetch(_SUPA_URL + '/functions/v1/partner-file-url', {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + jwt, 'Content-Type': 'application/json' },
         body: JSON.stringify({
