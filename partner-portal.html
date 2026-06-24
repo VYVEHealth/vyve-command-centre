@@ -514,7 +514,7 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           Payout history
         </div>
-        <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">You earn 50% of the £20/month subscription for every member you referred who remains active. Payouts are made monthly.</p>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">You earn your agreed share (50%) of what each referred member actually pays each month they remain active. Payouts are made monthly.</p>
         <div id="payouts-list">
           <div class="empty-state">
             <div class="empty-state-icon">💷</div>
@@ -894,15 +894,18 @@
     var hdrs = { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg' };
     var [refRes, payRes] = await Promise.all([
       fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_memberships?partner_id=eq.' + state.partnerId + '&referred=eq.true&subscription_status=eq.active&select=id,subscription_value', { headers: hdrs }),
-      fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_payouts?partner_id=eq.' + state.partnerId + '&order=period.desc&limit=12&select=id,period,gross_amount,payout_amount,status,paid_at', { headers: hdrs }),
+      fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_payouts?partner_id=eq.' + state.partnerId + '&order=period.desc&limit=12&select=id,period,gross,payout_amount,status,paid_at', { headers: hdrs }),
     ]);
 
     var refs = refRes.ok ? await refRes.json() : [];
     var revShare = state.partnerRow ? Number(state.partnerRow.revenue_share_pct || 50) / 100 : 0.5;
-    var mrrPerMember = 20 * revShare;
-    var mrr = refs.length * mrrPerMember;
+    // Earnings = your share of what each referred member ACTUALLY pays (net of their
+    // discount), not the £20 list price. subscription_value holds the net per member.
+    var grossActive = refs.reduce(function(sum, r){ return sum + Number(r.subscription_value || 0); }, 0);
+    var mrr = grossActive * revShare;
+    var pctLabel = Math.round(revShare * 100);
     $('earn-referred').textContent = refs.length;
-    $('earn-mrr').textContent = refs.length ? '£' + mrr.toFixed(0) + '/mo' : '£' + mrrPerMember.toFixed(0) + '/member';
+    $('earn-mrr').textContent = refs.length ? '£' + mrr.toFixed(0) + '/mo' : pctLabel + '% of what each member pays';
 
     var payouts = payRes.ok ? await payRes.json() : [];
     var totalPaid = payouts.filter(function(p){ return p.status === 'paid'; }).reduce(function(sum, p){ return sum + Number(p.payout_amount || 0); }, 0);
