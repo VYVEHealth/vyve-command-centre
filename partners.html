@@ -1082,6 +1082,17 @@ function renderPartnerSettings(p){
   document.getElementById('pd-settings').innerHTML=`
     <div class="card" style="max-width:480px">
       <div class="card-h"><h3>Settings</h3></div>
+
+      <div style="margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--line)">
+        <label style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:6px">Stripe referral code (coupon ID)</label>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">The Stripe coupon ID for this partner. Members who sign up using this code are attributed to them. Create the coupon in Stripe first, then paste the ID here.</p>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="text" id="ps-promo" value="${p.stripe_promo_code||''}" placeholder="e.g. EMMA50" style="flex:1;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--white);font-size:14px;font-family:var(--font);text-transform:uppercase;letter-spacing:.06em">
+          <button class="tb-btn primary" onclick="savePromoCode('${p.id}')">Save</button>
+        </div>
+        ${p.stripe_promo_code ? `<div style="margin-top:8px;font-size:12px;color:var(--mint)">&#10003; Code assigned — partner can share this with prospective members</div>` : `<div style="margin-top:8px;font-size:12px;color:var(--amber)">&#9888; No code assigned yet — earnings cannot be tracked until this is set</div>`}
+      </div>
+
       <div style="margin-bottom:16px">
         <label style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:6px">Revenue share %</label>
         <div style="display:flex;gap:8px;align-items:center">
@@ -1096,6 +1107,17 @@ function renderPartnerSettings(p){
         </label>
       </div>
     </div>`;
+}
+
+async function savePromoCode(id){
+  const raw = (document.getElementById('ps-promo').value || '').trim().toUpperCase();
+  if (!raw) { toast('Enter a Stripe coupon ID', 'error'); return; }
+  const {error} = await sb.from('partner_partners').update({stripe_promo_code: raw}).eq('id', id);
+  if(error){ toast(error.message,'error'); return; }
+  partnerMap[id] = {...partnerMap[id], stripe_promo_code: raw};
+  allPartners = allPartners.map(p => p.id===id ? {...p, stripe_promo_code: raw} : p);
+  toast('Referral code saved — ' + raw);
+  renderPartnerSettings(partnerMap[id]);
 }
 
 async function savePartnerSettings(id){
