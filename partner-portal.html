@@ -523,12 +523,12 @@
           </div>
         </div>
         <div id="promo-code-block" style="display:none;margin-top:16px;background:var(--accent-pale);border-radius:8px;padding:14px 16px;">
-          <div style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Your referral code</div>
-          <div style="display:flex;align-items:center;gap:10px;">
-            <code id="promo-code-display" style="font-size:20px;font-weight:700;color:var(--vyve-teal);letter-spacing:.1em;"></code>
-            <button class="btn btn-ghost" id="copy-promo-btn" type="button" style="font-size:12px;">Copy</button>
+          <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Your referral link (£10 off forever pre-applied)</div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <code id="promo-code-display" style="font-size:13px;font-weight:600;color:var(--vyve-teal-light);word-break:break-all;flex:1;">—</code>
+            <button class="btn btn-ghost" id="copy-promo-btn" type="button" style="font-size:12px;flex-shrink:0;">Copy link</button>
           </div>
-          <div style="font-size:12px;color:var(--text-muted);margin-top:6px;">Members who sign up using this code are attributed to you automatically.</div>
+          <div style="font-size:12px;color:var(--text-dim);margin-top:8px;">Members who click this link get £10 off every month, forever. Their signup is automatically attributed to you.</div>
         </div>
       </div>
     </div>
@@ -908,11 +908,12 @@
     var totalPaid = payouts.filter(function(p){ return p.status === 'paid'; }).reduce(function(sum, p){ return sum + Number(p.payout_amount || 0); }, 0);
     $('earn-total').textContent = '£' + totalPaid.toFixed(2);
 
-    // Promo code
-    if (state.partnerRow && state.partnerRow.stripe_promo_code) {
-      $('promo-code-block').style.display = 'block';
-      $('promo-code-display').textContent = state.partnerRow.stripe_promo_code;
-    }
+    // Payment link (preferred) or coupon code as fallback
+    var shareVal = state.partnerRow && (state.partnerRow.payment_link_url || state.partnerRow.stripe_promo_code);
+    var codeEl = $('promo-code-display');
+    if (codeEl) codeEl.textContent = shareVal || 'Not assigned yet — contact team@vyvehealth.co.uk';
+    var block = $('promo-code-block');
+    if (block) block.style.display = 'block';
 
     renderPayouts(payouts);
   }
@@ -930,8 +931,9 @@
   }
 
   $('copy-promo-btn').addEventListener('click', function() {
-    var code = $('promo-code-display').textContent;
-    navigator.clipboard.writeText(code).then(function(){ toast('Copied'); });
+    var val = $('promo-code-display').textContent;
+    if (!val || val.includes('Not assigned')) return;
+    navigator.clipboard.writeText(val).then(function(){ toast('Link copied!'); });
   });
 
 
