@@ -22,6 +22,33 @@
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* Light / dark theme tokens — matches VYVE portal dual-block pattern */
+    :root,[data-theme="dark"] {
+      --bg: #0A1A1A; --surface: #112222; --surface-2: #1A2E2E; --surface-3: #223838;
+      --border: rgba(255,255,255,.1); --text: #E8F4F4; --text-muted: rgba(232,244,244,.6);
+      --text-dim: rgba(232,244,244,.35); --white: #fff;
+      --vyve-teal: #1B7878; --vyve-teal-light: #4DAAAA; --accent-hover: #1F8A8A;
+      --accent-pale: rgba(77,170,170,.08);
+      --sidebar-bg: #061414; --sidebar-border: rgba(255,255,255,.07); --sidebar-text: #A0C4C4;
+      --success: #4ade80; --success-pale: rgba(74,222,128,.12);
+      --warning: #f59e0b; --warning-pale: rgba(245,158,11,.12);
+      --danger: #f87171; --danger-pale: rgba(248,113,113,.12);
+      --info: #60a5fa; --info-pale: rgba(96,165,250,.12);
+    }
+    [data-theme="light"] {
+      --bg: #F4F7F7; --surface: #FFFFFF; --surface-2: #EEF3F3; --surface-3: #E4ECEC;
+      --border: rgba(0,0,0,.1); --text: #0D2B2B; --text-muted: #4A6B6B;
+      --text-dim: #8AABAB; --white: #fff;
+      --vyve-teal: #1B7878; --vyve-teal-light: #1B7878; --accent-hover: #156060;
+      --accent-pale: rgba(27,120,120,.07);
+      --sidebar-bg: #0D2B2B; --sidebar-border: rgba(255,255,255,.08); --sidebar-text: #9ABFBF;
+      --success: #16a34a; --success-pale: rgba(22,163,74,.1);
+      --warning: #d97706; --warning-pale: rgba(217,119,6,.1);
+      --danger: #dc2626; --danger-pale: rgba(220,38,38,.1);
+      --info: #2563eb; --info-pale: rgba(37,99,235,.1);
+    }
+
     html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 14px; line-height: 1.6; }
 
     /* ── Login ── */
@@ -228,6 +255,12 @@
     .notify-panel { background: var(--accent-pale); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; margin-bottom: 16px; }
     .notify-result { font-size: 12px; margin-top: 8px; color: var(--text-muted); min-height: 18px; }
   </style>
+<script>
+  (function(){
+    var t = localStorage.getItem('vyve-partner-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
 </head>
 <body>
 
@@ -254,6 +287,7 @@
     </div>
     <div class="pp-topbar-right">
       <span class="pp-user-pill" id="pp-user-email"></span>
+      <button class="pp-theme-toggle" id="pp-theme-toggle" type="button" title="Toggle theme" style="background:none;border:none;cursor:pointer;color:var(--sidebar-text);font-size:16px;padding:4px 8px;opacity:.7;">&#9790;</button>
       <button class="pp-signout" id="pp-signout" type="button">Sign out</button>
     </div>
   </div>
@@ -380,13 +414,23 @@
           Notify community
         </div>
         <div class="notify-panel">
-          <div class="field"><label>Push title</label><input id="notify-title" type="text" placeholder="e.g. New session this Friday!"/></div>
-          <div class="field" style="margin-bottom:0"><label>Message</label><input id="notify-body" type="text" placeholder="e.g. Morning flow at 8am — see you there"/></div>
+          <div class="field"><label>Title</label><input id="notify-title" type="text" placeholder="e.g. New session dropping Friday!"/></div>
+          <div class="field"><label>Message</label><input id="notify-body" type="text" placeholder="e.g. Morning flow at 8am — see you there"/></div>
+          <div class="field-row">
+            <div class="field" style="margin-bottom:0"><label>Send date</label><input id="notify-date" type="date"/></div>
+            <div class="field" style="margin-bottom:0"><label>Send time</label><input id="notify-time" type="time" value="09:00"/></div>
+          </div>
+          <p style="font-size:11px;color:var(--text-dim);margin-top:6px;">Goes only to members subscribed to your community. Delivered within 15 minutes of the scheduled time.</p>
           <div style="display:flex;align-items:center;gap:10px;margin-top:12px;">
             <button class="btn btn-ghost" id="notify-preview-btn" type="button">Preview audience</button>
-            <button class="btn btn-teal" id="notify-send-btn" type="button">Send push</button>
+            <button class="btn btn-teal" id="notify-send-btn" type="button">Schedule push</button>
           </div>
           <div class="notify-result" id="notify-result"></div>
+        </div>
+
+        <div style="margin-top:16px;" id="push-queue-wrap">
+          <div style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">Scheduled queue</div>
+          <div id="push-queue-list"><div style="font-size:13px;color:var(--text-dim);">Loading…</div></div>
         </div>
       </div>
 
@@ -414,25 +458,45 @@
 
     <!-- ── SESSIONS ── -->
     <div class="pp-panel" id="panel-sessions">
-      <div class="gate-notice">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        <div class="gate-notice-text">
-          <h4>Sessions are scheduled by the VYVE team</h4>
-          <p>When you're ready to run a session, contact <a href="mailto:team@vyvehealth.co.uk" style="color:var(--vyve-teal);">team@vyvehealth.co.uk</a> with the session title, date, time, and duration. The VYVE team will schedule it and notify your community members. Self-serve scheduling is coming soon.</p>
+      <div class="card">
+        <div class="card-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Schedule a session
+        </div>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">Sessions must be scheduled at least 48 hours in advance. They'll be visible to your community members in the app.</p>
+        <div class="field"><label>Session title</label><input id="sess-title" type="text" placeholder="e.g. Morning Flow — Week 3"/></div>
+        <div class="field-row">
+          <div class="field"><label>Date</label><input id="sess-date" type="date"/></div>
+          <div class="field"><label>Time</label><input id="sess-time" type="time" value="08:00"/></div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Duration</label>
+            <select id="sess-duration">
+              <option value="30">30 min</option>
+              <option value="45" selected>45 min</option>
+              <option value="60">60 min</option>
+              <option value="90">90 min</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Stream / YouTube URL</label>
+            <input id="sess-url" type="url" placeholder="https://youtube.com/watch?v=…"/>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <button class="btn btn-teal" id="sess-save-btn" type="button">Schedule session</button>
+          <span id="sess-result" style="font-size:12px;color:var(--text-muted);"></span>
         </div>
       </div>
 
-      <div class="card" id="sessions-list-card">
+      <div class="card">
         <div class="card-title">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          Your upcoming sessions
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Upcoming sessions
         </div>
         <div id="sessions-list">
-          <div class="empty-state">
-            <div class="empty-state-icon">📅</div>
-            <h3>No sessions scheduled yet</h3>
-            <p>Contact the VYVE team to schedule your first community session.</p>
-          </div>
+          <div class="empty-state"><div class="empty-state-icon">📅</div><h3>No sessions yet</h3><p>Schedule your first session above.</p></div>
         </div>
       </div>
     </div>
@@ -803,16 +867,22 @@
     renderSessions(res.ok ? await res.json() : []);
   }
 
+  function fmtDT(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    return d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}) +
+           ' · ' + d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  }
   function renderSessions(sessions) {
     var el = $('sessions-list');
     if (!sessions.length) {
-      el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📅</div><h3>No sessions scheduled yet</h3><p>Contact the VYVE team to schedule your first community session.</p></div>';
+      el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📅</div><h3>No sessions yet</h3><p>Schedule your first session above.</p></div>';
       return;
     }
     el.innerHTML = sessions.map(function(s) {
       var title = s.session_title || s.name;
       var dt = new Date(s.starts_at);
-      var dtStr = dt.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}) + ' at ' + dt.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+      var dtStr = fmtDT(s.starts_at);
       var vis = s.visibility === 'community' ? '<span style="font-size:11px;background:var(--accent-pale);color:var(--vyve-teal);padding:2px 7px;border-radius:10px;font-weight:600;">Community</span>' : '<span style="font-size:11px;background:var(--surface-3);color:var(--text-muted);padding:2px 7px;border-radius:10px;">Public</span>';
       return '<div class="content-item"><div class="content-thumb"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div class="content-info"><div class="content-info-title">'+title+'</div><div class="content-info-meta">'+dtStr+'</div></div><div class="content-actions">'+vis+'</div></div>';
     }).join('');
@@ -829,10 +899,10 @@
 
     var refs = refRes.ok ? await refRes.json() : [];
     var revShare = state.partnerRow ? Number(state.partnerRow.revenue_share_pct || 50) / 100 : 0.5;
-    var mrr = refs.reduce(function(sum, r){ return sum + (Number(r.subscription_value) || 20) * revShare; }, 0);
-
+    var mrrPerMember = 20 * revShare;
+    var mrr = refs.length * mrrPerMember;
     $('earn-referred').textContent = refs.length;
-    $('earn-mrr').textContent = '£' + mrr.toFixed(0);
+    $('earn-mrr').textContent = refs.length ? '£' + mrr.toFixed(0) + '/mo' : '£' + mrrPerMember.toFixed(0) + '/member';
 
     var payouts = payRes.ok ? await payRes.json() : [];
     var totalPaid = payouts.filter(function(p){ return p.status === 'paid'; }).reduce(function(sum, p){ return sum + Number(p.payout_amount || 0); }, 0);
@@ -864,47 +934,151 @@
     navigator.clipboard.writeText(code).then(function(){ toast('Copied'); });
   });
 
+
+  // ── Theme toggle ──────────────────────────────────────────────
+  $('pp-theme-toggle').addEventListener('click', function() {
+    var cur = document.documentElement.getAttribute('data-theme') || 'dark';
+    var next = cur === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('vyve-partner-theme', next);
+    this.textContent = next === 'dark' ? '☾' : '☀️';
+  });
+  (function(){
+    var t = document.documentElement.getAttribute('data-theme') || 'dark';
+    var btn = $('pp-theme-toggle');
+    if (btn) btn.textContent = t === 'dark' ? '☾' : '☀️';
+  })();
+
   // ── Notify community ──────────────────────────────────────────────
   async function callNotify(mode) {
-    var title = $('notify-title').value.trim();
-    var body  = $('notify-body').value.trim();
-    var result = $('notify-result');
-    if (!title || !body) { result.textContent = 'Title and message are both required.'; return; }
-    if (!state.partnerId) return;
+    var title   = $('notify-title').value.trim();
+    var body    = $('notify-body').value.trim();
+    var dateVal = $('notify-date').value;
+    var timeVal = $('notify-time').value || '09:00';
+    var result  = $('notify-result');
+    if (!title || !body) { result.textContent = 'Title and message required.'; return; }
+    if (mode === 'send' && !dateVal) { result.textContent = 'Pick a send date.'; return; }
     var btn = mode === 'preview' ? $('notify-preview-btn') : $('notify-send-btn');
     btn.disabled = true;
-    result.textContent = mode === 'preview' ? 'Checking…' : 'Sending…';
-    var client = sb();
-    var sess = await client.auth.getSession();
-    var jwt = sess && sess.data && sess.data.session && sess.data.session.access_token;
-    if (!jwt) { result.textContent = 'Not authenticated.'; btn.disabled = false; return; }
+    result.textContent = mode === 'preview' ? 'Checking…' : 'Scheduling…';
+
+    if (mode === 'preview') {
+      try {
+        var rr = await fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/rpc/resolve_broadcast_audience', {
+          method: 'POST',
+          headers: { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg', 'Content-Type': 'application/json' },
+          body: JSON.stringify({ criteria: { type: 'partner_subscribers', partner_id: state.partnerId } }),
+        });
+        var rows = rr.ok ? await rr.json() : [];
+        result.textContent = 'Audience: ' + rows.length + ' member' + (rows.length !== 1 ? 's' : '') + ' subscribed to your community.';
+      } catch(e) { result.textContent = 'Error: ' + e.message; }
+      btn.disabled = false; return;
+    }
+
+    var sendAt = new Date(dateVal + 'T' + timeVal + ':00').toISOString();
+    if (new Date(sendAt) <= new Date()) { result.textContent = 'Send time must be in the future.'; btn.disabled = false; return; }
     try {
-      var res = await fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/functions/v1/admin-broadcast-push', {
+      var res = await fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_scheduled_pushes', {
         method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + jwt, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          mode: mode,
-          audience: { type: 'partner_subscribers', partner_id: state.partnerId },
-          title: title, body: body,
-          route: '/partner-profile.html?id=' + state.partnerId,
-          push_type: 'partner_community', dedupe_same_day: false,
-        }),
+        headers: { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg', 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ partner_id: state.partnerId, title: title, body: body, send_at: sendAt }),
       });
-      var data = await res.json();
-      if (mode === 'preview') {
-        result.textContent = 'Audience: ' + (data.count || 0) + ' member' + (data.count !== 1 ? 's' : '') + ' would receive this.';
-      } else if (data.ok) {
-        var s = data.summary || {};
-        result.textContent = 'Sent to ' + (s.recipient_count || 0) + ' members. ' + (s.native_banners_sent || 0) + ' push banners.';
-        $('notify-title').value = ''; $('notify-body').value = '';
-      } else { result.textContent = 'Error: ' + (data.error || 'unknown'); }
+      if (res.ok || res.status === 201) {
+        result.textContent = 'Scheduled ✓ — ' + new Date(sendAt).toLocaleString('en-GB', { dateStyle:'medium', timeStyle:'short' });
+        $('notify-title').value = ''; $('notify-body').value = ''; $('notify-date').value = '';
+        loadPushQueue();
+      } else { result.textContent = 'Error scheduling — try again.'; }
     } catch(e) { result.textContent = 'Error: ' + e.message; }
     btn.disabled = false;
   }
   $('notify-preview-btn').addEventListener('click', function(){ callNotify('preview'); });
   $('notify-send-btn').addEventListener('click', function(){
-    if (!confirm('Send push notification to all community members?')) return;
+    if (!$('notify-date').value) { $('notify-result').textContent = 'Pick a send date first.'; return; }
     callNotify('send');
+  });
+
+  async function loadPushQueue() {
+    var el = $('push-queue-list');
+    if (!el || !state.partnerId) return;
+    var res = await fetch(
+      'https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_scheduled_pushes?partner_id=eq.' + state.partnerId +
+      '&order=send_at.asc&limit=20&select=id,title,body,send_at,sent_at,cancelled_at,recipient_count,error',
+      { headers: { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg' } }
+    );
+    var rows = res.ok ? await res.json() : [];
+    if (!rows.length) { el.innerHTML = '<div style="font-size:13px;color:var(--text-dim);">No scheduled pushes yet.</div>'; return; }
+    el.innerHTML = rows.map(function(r) {
+      var when = new Date(r.send_at).toLocaleString('en-GB', { dateStyle:'medium', timeStyle:'short' });
+      var status = r.cancelled_at ? '<span style="color:var(--text-dim);">Cancelled</span>'
+        : r.sent_at ? '<span style="color:var(--success);">Sent (' + (r.recipient_count || 0) + ')</span>'
+        : '<span style="color:var(--warning);">Pending — ' + when + '</span>';
+      var cancelBtn = (!r.sent_at && !r.cancelled_at)
+        ? '<button class="btn btn-ghost" style="padding:3px 10px;font-size:11px;" onclick="cancelPush('' + r.id + '')">Cancel</button>' : '';
+      return '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);">'
+        + '<div style="flex:1;min-width:0;">'
+        + '<div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(r.title) + '</div>'
+        + '<div style="font-size:12px;color:var(--text-muted);margin-top:2px;">' + status + '</div>'
+        + (r.error ? '<div style="font-size:11px;color:var(--danger);margin-top:2px;">' + esc(r.error) + '</div>' : '')
+        + '</div>' + cancelBtn + '</div>';
+    }).join('');
+  }
+
+  window.cancelPush = async function(id) {
+    if (!confirm('Cancel this scheduled push?')) return;
+    await fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_scheduled_pushes?id=eq.' + id, {
+      method: 'PATCH',
+      headers: { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg', 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ cancelled_at: new Date().toISOString() }),
+    });
+    loadPushQueue();
+  };
+
+  // ── Session scheduling ─────────────────────────────────────────
+  (function() {
+    var minDate = new Date(Date.now() + 48 * 3600 * 1000);
+    var dateEl = $('sess-date');
+    if (dateEl) dateEl.min = minDate.toISOString().slice(0, 10);
+  })();
+
+  $('sess-save-btn').addEventListener('click', async function() {
+    var title    = $('sess-title').value.trim();
+    var dateVal  = $('sess-date').value;
+    var timeVal  = $('sess-time').value || '09:00';
+    var duration = parseInt($('sess-duration').value) || 45;
+    var url      = $('sess-url').value.trim() || null;
+    var result   = $('sess-result');
+    if (!title) { result.textContent = 'Title required.'; return; }
+    if (!dateVal) { result.textContent = 'Date required.'; return; }
+    var startsAt = new Date(dateVal + 'T' + timeVal + ':00');
+    var endsAt   = new Date(startsAt.getTime() + duration * 60000);
+    if (startsAt.getTime() - Date.now() < 48 * 3600 * 1000) {
+      result.textContent = 'Must be at least 48 hours from now.'; return;
+    }
+    var btn = this; btn.disabled = true; result.textContent = 'Saving…';
+    var res = await fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/calendar_occurrences', {
+      method: 'POST',
+      headers: { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg', 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify({
+        partner_id:     state.partnerId,
+        visibility:     'community',
+        session_title:  title,
+        name:           title,
+        starts_at:      startsAt.toISOString(),
+        ends_at:        endsAt.toISOString(),
+        live_url:       url,
+        host_name:      state.partnerRow ? (state.partnerRow.role_title || state.partnerRow.name) : '',
+        host_photo_url: state.partnerRow ? (state.partnerRow.avatar_url || null) : null,
+      }),
+    });
+    if (res.ok || res.status === 201) {
+      result.textContent = 'Session scheduled ✓';
+      $('sess-title').value = ''; $('sess-date').value = ''; $('sess-url').value = '';
+      loadSessions();
+    } else {
+      var errText = await res.text().catch(function(){ return ''; });
+      result.textContent = errText.includes('48 hours') ? 'Must be 48+ hours in advance.' : 'Error — try again.';
+    }
+    btn.disabled = false;
   });
 
   // ── Tab switching ─────────────────────────────────────────────────────────
@@ -938,6 +1112,7 @@
       loadPartnerData();
       loadContent();
       loadCommunity();
+      loadPushQueue();
       loadSessions();
       loadEarnings();
     } else {
@@ -965,6 +1140,7 @@
       loadPartnerData();
       loadContent();
       loadCommunity();
+      loadPushQueue();
       loadSessions();
       loadEarnings();
     } else {
