@@ -1013,7 +1013,7 @@
         : r.sent_at ? '<span style="color:var(--success);">Sent (' + (r.recipient_count || 0) + ')</span>'
         : '<span style="color:var(--warning);">Pending — ' + when + '</span>';
       var cancelBtn = (!r.sent_at && !r.cancelled_at)
-        ? '<button class="btn btn-ghost" style="padding:3px 10px;font-size:11px;" onclick="cancelPush('' + r.id + '')">Cancel</button>' : '';
+        ? '<button class="btn btn-ghost" style="padding:3px 10px;font-size:11px;" onclick="cancelPush(\'' + r.id + '\')">Cancel</button>' : '';
       return '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);">'
         + '<div style="flex:1;min-width:0;">'
         + '<div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(r.title) + '</div>'
