@@ -231,16 +231,16 @@
 </head>
 <body>
 
-<!-- Login overlay -->
+<!-- Password gate -->
 <div id="login-overlay">
   <div class="login-card">
     <div class="login-logo">VYVE</div>
     <div class="login-sub">Partner Portal</div>
     <h2>Welcome back</h2>
-    <p>Enter your partner email and we'll send you a magic link to sign in.</p>
-    <label for="pp-email">Email</label>
-    <input id="pp-email" type="email" placeholder="you@yourdomain.com" autocomplete="email"/>
-    <button class="btn-primary" id="pp-login-btn" type="button">Send magic link</button>
+    <p>Enter the portal password to continue.</p>
+    <label for="pp-password">Password</label>
+    <input id="pp-password" type="password" placeholder="Password" autocomplete="current-password"/>
+    <button class="btn-primary" id="pp-login-btn" type="button">Enter</button>
     <div id="login-msg"></div>
   </div>
 </div>
@@ -563,10 +563,16 @@
   }
 
   // ── Load partner profile ──────────────────────────────────────────────────
+  var DEMO_PARTNER_ID = '4867d2c2-53bd-4139-8289-19df0132d71e';
   async function loadPartnerData() {
-    var client = sb();
-    var { data, error } = await client.from('partner_partners').select('*').limit(1).single();
-    if (error || !data) return;
+    // Demo mode: load partner directly by ID via REST (no session RLS needed for anon read of live partner)
+    var res = await fetch(
+      'https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_partners?id=eq.' + DEMO_PARTNER_ID + '&select=*&limit=1',
+      { headers: { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg', 'Content-Type': 'application/json' } }
+    );
+    var rows = res.ok ? await res.json() : [];
+    var data = rows[0];
+    if (!data) return;
     state.partnerRow = data;
     state.partnerId = data.id;
 
@@ -591,13 +597,18 @@
     if (!state.partnerId) return;
     var btn = this; btn.disabled = true; btn.textContent = 'Saving…';
     var client = sb();
-    var { error } = await client.from('partner_partners').update({
-      role_title: $('profile-role-title').value.trim(),
-      pillar: $('profile-pillar').value,
-      bio: $('profile-bio').value.trim(),
-      why: $('profile-why').value.trim(),
-      avatar_url: $('profile-avatar').value.trim() || null,
-    }).eq('id', state.partnerId);
+    var res = await fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_partners?id=eq.' + state.partnerId, {
+      method: 'PATCH',
+      headers: { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg', 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify({
+        role_title: $('profile-role-title').value.trim(),
+        pillar: $('profile-pillar').value,
+        bio: $('profile-bio').value.trim(),
+        why: $('profile-why').value.trim(),
+        avatar_url: $('profile-avatar').value.trim() || null,
+      }),
+    });
+    var error = res.ok ? null : { message: 'Save failed (' + res.status + ')' };
     btn.disabled = false; btn.textContent = 'Save profile';
     if (error) toast('Error: ' + error.message);
     else toast('Profile saved');
@@ -606,12 +617,12 @@
   // ── Content ───────────────────────────────────────────────────────────────
   async function loadContent() {
     if (!state.partnerId) return;
-    var client = sb();
-    var { data } = await client.from('partner_content_items')
-      .select('id,title,description,moderation_status,type,created_at')
-      .eq('partner_id', state.partnerId)
-      .order('created_at', { ascending: false });
-    renderContentList(data || []);
+    var res = await fetch(
+      'https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_content_items?partner_id=eq.' + state.partnerId +
+      '&select=id,title,description,moderation_status,type,created_at&order=created_at.desc',
+      { headers: { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg' } }
+    );
+    renderContentList(res.ok ? await res.json() : []);
   }
 
   function renderContentList(items) {
@@ -688,16 +699,18 @@
 
       // 3. Create partner_content_items row at in_review (§23.122)
       var client = sb();
-      var { error: rowErr } = await client.from('partner_content_items').insert({
-        partner_id: state.partnerId,
-        type: 'video',
-        title: title,
-        description: $('upload-desc').value.trim() || null,
-        media_url: urlData.storage_path,
-        pillar: state.partnerRow ? state.partnerRow.pillar : 'mind',
-        moderation_status: 'in_review',  // §23.122 — must be in_review, not draft
+      var insertRes = await fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_content_items', {
+        method: 'POST',
+        headers: { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg', 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify({
+          partner_id: state.partnerId, type: 'video', title: title,
+          description: $('upload-desc').value.trim() || null,
+          media_url: urlData.storage_path,
+          pillar: state.partnerRow ? state.partnerRow.pillar : 'mind',
+          moderation_status: 'in_review',
+        }),
       });
-      if (rowErr) throw new Error(rowErr.message);
+      if (!insertRes.ok) throw new Error('Insert failed: ' + insertRes.status);
 
       toast('Uploaded and submitted for review');
       $('upload-meta').style.display = 'none';
@@ -716,21 +729,20 @@
   // ── Community ─────────────────────────────────────────────────────────────
   async function loadCommunity() {
     if (!state.partnerId) return;
-    var client = sb();
-
+    var hdrs = { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg' };
     var [subRes, postRes] = await Promise.all([
-      client.from('partner_memberships').select('id,member_email,joined_at,engagement_segment', { count: 'exact' }).eq('partner_id', state.partnerId),
-      client.from('partner_community_posts').select('id,body,created_at,like_count,reply_count').eq('partner_id', state.partnerId).order('created_at', { ascending: false }).limit(20),
+      fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_memberships?partner_id=eq.' + state.partnerId + '&select=id,member_email,joined_at,engagement_segment', { headers: hdrs }),
+      fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_community_posts?partner_id=eq.' + state.partnerId + '&order=created_at.desc&limit=20&select=id,body,created_at,like_count,reply_count', { headers: hdrs }),
     ]);
 
-    var subs = subRes.data || [];
+    var subs = subRes.ok ? await subRes.json() : [];
+    var posts = postRes.ok ? await postRes.json() : [];
     $('comm-subscriber-count').textContent = subs.length;
-    $('comm-post-count').textContent = (postRes.data || []).length;
-    // active this month = joined in last 30d or engagement_segment='active'
+    $('comm-post-count').textContent = posts.length;
     var activeCount = subs.filter(function(s){ return s.engagement_segment === 'active'; }).length;
     $('comm-active-count').textContent = activeCount;
 
-    renderFeed(postRes.data || []);
+    renderFeed(posts);
   }
 
   function renderFeed(posts) {
@@ -754,12 +766,12 @@
     if (!body || !state.partnerId) return;
     var btn = this; btn.disabled = true;
     var client = sb();
-    var { error } = await client.from('partner_community_posts').insert({
-      partner_id: state.partnerId,
-      author_email: state.session.user.email,
-      author_kind: 'partner',
-      body: body,
+    var postRes = await fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_community_posts', {
+      method: 'POST',
+      headers: { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg', 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ partner_id: state.partnerId, author_email: state.session.user.email, author_kind: 'partner', body: body }),
     });
+    var error = postRes.ok ? null : { message: 'Post failed' };
     btn.disabled = false;
     if (error) { toast('Error: ' + error.message); return; }
     $('new-post-body').value = '';
@@ -770,7 +782,10 @@
   async function deletePost(id) {
     if (!confirm('Delete this post?')) return;
     var client = sb();
-    var { error } = await client.from('partner_community_posts').delete().eq('id', id);
+    var delRes = await fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_community_posts?id=eq.' + id, {
+      method: 'DELETE', headers: { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg', 'Prefer': 'return=minimal' }
+    });
+    var error = delRes.ok ? null : { message: 'Delete failed' };
     if (error) { toast('Error: ' + error.message); return; }
     toast('Deleted');
     await loadCommunity();
@@ -779,15 +794,13 @@
   // ── Sessions ──────────────────────────────────────────────────────────────
   async function loadSessions() {
     if (!state.partnerId) return;
-    var client = sb();
-    var { data } = await client.from('calendar_occurrences')
-      .select('id,name,session_title,starts_at,ends_at,visibility,cancelled_at')
-      .eq('partner_id', state.partnerId)
-      .is('cancelled_at', null)
-      .gte('starts_at', new Date().toISOString())
-      .order('starts_at', { ascending: true })
-      .limit(20);
-    renderSessions(data || []);
+    var res = await fetch(
+      'https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/calendar_occurrences?partner_id=eq.' + state.partnerId +
+      '&cancelled_at=is.null&starts_at=gte.' + encodeURIComponent(new Date().toISOString()) +
+      '&order=starts_at.asc&limit=20&select=id,name,session_title,starts_at,ends_at,visibility,cancelled_at',
+      { headers: { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg' } }
+    );
+    renderSessions(res.ok ? await res.json() : []);
   }
 
   function renderSessions(sessions) {
@@ -808,29 +821,20 @@
   // ── Earnings ──────────────────────────────────────────────────────────────
   async function loadEarnings() {
     if (!state.partnerId) return;
-    var client = sb();
-
+    var hdrs = { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg' };
     var [refRes, payRes] = await Promise.all([
-      client.from('partner_memberships')
-        .select('id,subscription_value', { count: 'exact' })
-        .eq('partner_id', state.partnerId)
-        .eq('referred', true)
-        .eq('subscription_status', 'active'),
-      client.from('partner_payouts')
-        .select('id,period,gross_amount,payout_amount,status,paid_at')
-        .eq('partner_id', state.partnerId)
-        .order('period', { ascending: false })
-        .limit(12),
+      fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_memberships?partner_id=eq.' + state.partnerId + '&referred=eq.true&subscription_status=eq.active&select=id,subscription_value', { headers: hdrs }),
+      fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_payouts?partner_id=eq.' + state.partnerId + '&order=period.desc&limit=12&select=id,period,gross_amount,payout_amount,status,paid_at', { headers: hdrs }),
     ]);
 
-    var refs = refRes.data || [];
+    var refs = refRes.ok ? await refRes.json() : [];
     var revShare = state.partnerRow ? Number(state.partnerRow.revenue_share_pct || 50) / 100 : 0.5;
     var mrr = refs.reduce(function(sum, r){ return sum + (Number(r.subscription_value) || 20) * revShare; }, 0);
 
     $('earn-referred').textContent = refs.length;
     $('earn-mrr').textContent = '£' + mrr.toFixed(0);
 
-    var payouts = payRes.data || [];
+    var payouts = payRes.ok ? await payRes.json() : [];
     var totalPaid = payouts.filter(function(p){ return p.status === 'paid'; }).reduce(function(sum, p){ return sum + Number(p.payout_amount || 0); }, 0);
     $('earn-total').textContent = '£' + totalPaid.toFixed(2);
 
@@ -914,33 +918,60 @@
     });
   });
 
-  // ── Login form ────────────────────────────────────────────────────────────
-  $('pp-login-btn').addEventListener('click', async function() {
-    var email = $('pp-email').value.trim();
-    if (!email) return;
-    var btn = this; btn.disabled = true; btn.textContent = 'Sending…';
-    $('login-msg').textContent = '';
-    var client = sb();
-    var { error } = await client.auth.signInWithOtp({
-      email: email,
-      options: { emailRedirectTo: window.location.href },
-    });
-    btn.disabled = false; btn.textContent = 'Send magic link';
-    if (error) { $('login-msg').textContent = error.message; return; }
-    $('login-msg').textContent = 'Magic link sent — check your inbox.';
+  // ── Password gate ─────────────────────────────────────────────────────────
+  var PORTAL_PW = 'vyve2026';
+  var ALLOWED_EMAIL = 'deanonbrown@hotmail.com'; // demo: load as this partner
+
+  function checkPassword() {
+    return sessionStorage.getItem('vyve-partner-portal-unlocked') === '1';
+  }
+
+  $('pp-login-btn').addEventListener('click', function() {
+    var val = $('pp-password').value;
+    if (val === PORTAL_PW) {
+      sessionStorage.setItem('vyve-partner-portal-unlocked','1');
+      $('login-overlay').classList.remove('show');
+      $('shell').classList.add('ready');
+      $('pp-user-email').textContent = ALLOWED_EMAIL;
+      // Spoof state.session.user.email so loadPartnerData etc work
+      state.session = { user: { email: ALLOWED_EMAIL } };
+      loadPartnerData();
+      loadContent();
+      loadCommunity();
+      loadSessions();
+      loadEarnings();
+    } else {
+      $('login-msg').textContent = 'Incorrect password.';
+    }
   });
 
-  $('pp-email').addEventListener('keydown', function(e) {
+  $('pp-password').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') $('pp-login-btn').click();
   });
 
   // ── Sign out ──────────────────────────────────────────────────────────────
   $('pp-signout').addEventListener('click', function() {
-    var client = sb();
-    client.auth.signOut().then(showLogin);
+    sessionStorage.removeItem('vyve-partner-portal-unlocked');
+    showLogin();
   });
 
   // ── Boot ──────────────────────────────────────────────────────────────────
+  function boot() {
+    if (checkPassword()) {
+      $('login-overlay').classList.remove('show');
+      $('shell').classList.add('ready');
+      $('pp-user-email').textContent = ALLOWED_EMAIL;
+      state.session = { user: { email: ALLOWED_EMAIL } };
+      loadPartnerData();
+      loadContent();
+      loadCommunity();
+      loadSessions();
+      loadEarnings();
+    } else {
+      showLogin();
+    }
+  }
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', boot);
   } else {
