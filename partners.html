@@ -762,7 +762,7 @@ async function loadAll(){
     if(m.engagement_segment==='at_risk') membershipMap[m.partner_id].at_risk++;
   });
   allContent.forEach(c=>{
-    if(c.moderation_status==='published'){
+    if(c.moderation_status==='approved'){
       contentCountMap[c.partner_id]=(contentCountMap[c.partner_id]||0)+1;
     }
   });
@@ -788,7 +788,7 @@ async function loadAll(){
 function renderOverview(){
   const live=allPartners.filter(p=>p.status==='live');
   const totalMembers=allMemberships.length;
-  const pubContent=allContent.filter(c=>c.moderation_status==='published').length;
+  const pubContent=allContent.filter(c=>c.moderation_status==='approved').length;
   const pendingPayouts=allPayouts.filter(p=>p.status==='pending').length;
 
   document.getElementById('ov-k1').textContent=live.length;
@@ -835,7 +835,7 @@ function renderOverview(){
 
   // Feed
   const feed=allContent.slice(0,6);
-  const feedColors={in_review:'var(--warning)',published:'var(--mint)',flagged:'var(--danger)',returned:'var(--muted)',draft:'var(--muted)'};
+  const feedColors={in_review:'var(--warning)',approved:'var(--mint)',flagged:'var(--danger)',returned:'var(--muted)',draft:'var(--muted)'};
   document.getElementById('ov-feed').innerHTML=feed.length?feed.map(c=>{
     const pName=partnerMap[c.partner_id]?.name||'Unknown';
     const when=c.created_at?new Date(c.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'';
@@ -1033,7 +1033,7 @@ async function suspendPartner(id){
 async function loadPartnerContent(p){
   const {data}=await sb.from('partner_content_items').select('*').eq('partner_id',p.id).order('created_at',{ascending:false});
   const items=data||[];
-  const modColors={published:'p-live',in_review:'p-review',flagged:'p-suspended',returned:'p-review',draft:'p-draft'};
+  const modColors={approved:'p-live',in_review:'p-review',flagged:'p-suspended',returned:'p-review',draft:'p-draft'};
   const typeColors={video:'var(--mental)',live_session:'var(--mint)',program:'var(--warning)',post:'var(--muted)'};
   document.getElementById('pd-content').innerHTML=items.length?`
     <div>${items.map(c=>`
@@ -1043,7 +1043,7 @@ async function loadPartnerContent(p){
         </div>
         <div style="flex:1"><div class="ct">${esc(c.title)}</div><div class="cs">${c.type}${c.duration_sec?' · '+Math.floor(c.duration_sec/60)+'m':''} · ${c.play_count} plays</div></div>
         <span class="pill ${modColors[c.moderation_status]||'p-draft'}">${c.moderation_status}</span>
-        ${c.moderation_status==='in_review'?`<div class="row-actions"><button class="icon-btn btn-approve" onclick="moderateContent('${c.id}','published')">${ICONS.check}</button><button class="icon-btn btn-reject" onclick="moderateContent('${c.id}','returned')">${ICONS.x}</button></div>`:''}
+        ${c.moderation_status==='in_review'?`<div class="row-actions"><button class="icon-btn btn-approve" onclick="moderateContent('${c.id}','approved')">${ICONS.check}</button><button class="icon-btn btn-reject" onclick="moderateContent('${c.id}','returned')">${ICONS.x}</button></div>`:''}
       </div>`).join('')}</div>`:'<div class="empty-state">No content yet</div>';
 }
 
@@ -1154,7 +1154,7 @@ async function savePartnerSettings(id){
 function renderContent(){
   const queue=allContent.filter(c=>c.moderation_status==='in_review');
   const flagged=allContent.filter(c=>c.moderation_status==='flagged');
-  const library=allContent.filter(c=>c.moderation_status==='published');
+  const library=allContent.filter(c=>c.moderation_status==='approved');
   const programs=allContent.filter(c=>c.type==='program');
 
   document.getElementById('cm-q-count').textContent=queue.length;
@@ -1168,12 +1168,12 @@ function renderContent(){
     const icon=c.type==='video'?'film':c.type==='program'?'cap':'doc';
     return `<div class="ctile">
       <div class="th" style="background:rgba(94,196,176,.08);color:${typeColors[c.type]||'var(--muted)'}"><span data-i="${icon}"></span></div>
-      <div style="flex:1"><div class="ct">${esc(c.title)}</div><div class="cs">${esc(pName)} · ${c.type.replace('_',' ')} · ${when}${c.description?' — '+esc(c.description.slice(0,60)):''}</div></div>
+      <div style="flex:1"><div class="ct">${esc(c.title)}</div><div class="cs">${esc(pName)} · ${c.type.replace('_',' ')} · ${when} · goes live ${c.publish_at?new Date(c.publish_at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'—'}${c.description?' — '+esc(c.description.slice(0,60)):''}</div></div>
       ${showActions?`<div class="row-actions">
         ${c.media_url?`<button class="icon-btn" onclick="downloadPartnerFile('${c.id}')" title="Download to your Mac"><span data-i="download"></span></button>`:''}
-        <button class="icon-btn btn-approve" onclick="moderateContent('${c.id}','published')" title="Approve"><span data-i="check"></span></button>
+        <button class="icon-btn btn-approve" onclick="moderateContent('${c.id}','approved')" title="Approve"><span data-i="check"></span></button>
         <button class="icon-btn btn-reject" onclick="moderateContent('${c.id}','returned')" title="Return"><span data-i="x"></span></button>
-      </div>`:`<div class="row-actions">${c.media_url?`<button class="icon-btn" onclick="downloadPartnerFile('${c.id}')" title="Download to your Mac"><span data-i="download"></span></button>`:''}<span class="pill ${c.moderation_status==='published'?'p-live':c.moderation_status==='flagged'?'p-suspended':'p-draft'}">${c.moderation_status}</span></div>`}
+      </div>`:`<div class="row-actions">${c.media_url?`<button class="icon-btn" onclick="downloadPartnerFile('${c.id}')" title="Download to your Mac"><span data-i="download"></span></button>`:''}<span class="pill ${c.moderation_status==='approved'?'p-live':c.moderation_status==='flagged'?'p-suspended':'p-draft'}">${c.moderation_status}</span></div>`}
     </div>`;
   }
 
@@ -1204,10 +1204,10 @@ async function moderateContent(id,newStatus){
   const {error}=await sb.from('partner_content_items').update({moderation_status:newStatus,reviewed_at:new Date().toISOString()}).eq('id',id);
   if(error){toast(error.message,'error');return;}
   allContent=allContent.map(c=>c.id===id?{...c,moderation_status:newStatus}:c);
-  if(newStatus==='published') contentCountMap[allContent.find(c=>c.id===id)?.partner_id]=(contentCountMap[allContent.find(c=>c.id===id)?.partner_id]||0)+1;
+  if(newStatus==='approved') contentCountMap[allContent.find(c=>c.id===id)?.partner_id]=(contentCountMap[allContent.find(c=>c.id===id)?.partner_id]||0)+1;
   renderContent();
   if(currentDetailId) loadPartnerContent(partnerMap[currentDetailId]);
-  toast(newStatus==='published'?'Published to app':'Returned to partner');
+  toast(newStatus==='approved'?'Approved':'Returned to partner');
 }
 
 async function bulkApprove(){
@@ -1215,9 +1215,9 @@ async function bulkApprove(){
   if(!queue.length){toast('No items in queue');return;}
   if(!confirm(`Approve all ${queue.length} queued items?`))return;
   const ids=queue.map(c=>c.id);
-  const {error}=await sb.from('partner_content_items').update({moderation_status:'published',reviewed_at:new Date().toISOString()}).in('id',ids);
+  const {error}=await sb.from('partner_content_items').update({moderation_status:'approved',reviewed_at:new Date().toISOString()}).in('id',ids);
   if(error){toast(error.message,'error');return;}
-  allContent=allContent.map(c=>ids.includes(c.id)?{...c,moderation_status:'published'}:c);
+  allContent=allContent.map(c=>ids.includes(c.id)?{...c,moderation_status:'approved'}:c);
   renderContent();
   toast(`${ids.length} items approved`);
 }
@@ -1299,7 +1299,7 @@ function renderAnalytics(){
   const totalMs=allMemberships.length;
   const he=allMemberships.filter(m=>m.engagement_segment==='highly_engaged').length;
   const atRisk=allMemberships.filter(m=>m.engagement_segment==='at_risk').length;
-  const pub=allContent.filter(c=>c.moderation_status==='published').length;
+  const pub=allContent.filter(c=>c.moderation_status==='approved').length;
 
   document.getElementById('an-k1').textContent=totalMs.toLocaleString();
   document.getElementById('an-k2').textContent=he;
