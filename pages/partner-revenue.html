@@ -91,20 +91,17 @@
     var period=new Date().toISOString().slice(0,7); // YYYY-MM
     var partners=Object.values(partnerMap).filter(function(p){return p.status==='live';});
     if(!partners.length){alert('No live partners to pay.');return;}
-    // Engagement-weighted attribution: fetch memberships + sessions_attended
-    var mr=await sb.from('partner_memberships').select('partner_id,sessions_attended');
+    // Real attributed revenue: each partner's gross = sum of what their REFERRED
+    // members actually pay (partner_memberships.subscription_value). Payout = gross
+    // x revenue share. Matches the partner-facing earnings figure.
+    var mr=await sb.from('partner_memberships').select('partner_id,referred,subscription_value');
     var memberships=mr.data||[];
-    var totalSessions=memberships.reduce(function(s,m){return s+m.sessions_attended;},0)||1;
-    // Assume platform MRR from members table — simplified for now
-    var mCount=await sb.from('members').select('id',{count:'exact',head:true}).eq('subscription_status','active');
-    var totalMRR=(mCount.count||0)*20; // £20/member
 
     var upserts=partners.map(function(p){
-      var partnerSessions=memberships.filter(function(m){return m.partner_id===p.id;}).reduce(function(s,m){return s+m.sessions_attended;},0);
-      var attribution=totalSessions?partnerSessions/totalSessions:1/partners.length;
-      var gross=Math.round(totalMRR*attribution*100)/100;
+      var refs=memberships.filter(function(m){return m.partner_id===p.id&&m.referred;});
+      var gross=Math.round(refs.reduce(function(s,m){return s+(Number(m.subscription_value)||0);},0)*100)/100;
       var payout=Math.round(gross*(p.revenue_share_pct/100)*100)/100;
-      return{partner_id:p.id,period:period,attributed_subscriptions:mCount.count||0,gross:gross,share_pct:p.revenue_share_pct,payout_amount:payout,status:'pending'};
+      return{partner_id:p.id,period:period,attributed_subscriptions:refs.length,gross:gross,share_pct:p.revenue_share_pct,payout_amount:payout,status:'pending'};
     });
     var res=await sb.from('partner_payouts').upsert(upserts,{onConflict:'partner_id,period',ignoreDuplicates:false});
     if(res.error){alert('Error running payouts: '+res.error.message);return;}
