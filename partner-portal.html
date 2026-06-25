@@ -729,16 +729,15 @@
     $('upload-progress').style.display = 'block';
 
     try {
-      // 1. Get signed upload URL from partner-file-url EF
+      // 1. Get signed upload URL from partner-content-upload EF
       var jwt = state.session.access_token;
-      var urlRes = await fetch(_SUPA_URL + '/functions/v1/partner-file-url', {
+      var urlRes = await fetch(_SUPA_URL + '/functions/v1/partner-content-upload', {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + jwt, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'upload_url',
+          action: 'sign',
           partner_id: state.partnerId,
           file_name: state.uploadFile.name,
-          bucket: 'partner-content',
         }),
       });
       var urlData = await urlRes.json();
@@ -761,20 +760,21 @@
         xhr.send(state.uploadFile);
       });
 
-      // 3. Create partner_content_items row at in_review (§23.122)
-      var client = sb();
-      var insertRes = await fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_content_items', {
+      // 3. Create the content row server-side via the EF (service role, RLS-clean).
+      var insertRes = await fetch(_SUPA_URL + '/functions/v1/partner-content-upload', {
         method: 'POST',
-        headers: { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg', 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        headers: { 'Authorization': 'Bearer ' + jwt, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          partner_id: state.partnerId, type: 'video', title: title,
+          action: 'commit',
+          partner_id: state.partnerId,
+          title: title,
           description: $('upload-desc').value.trim() || null,
-          media_url: urlData.storage_path,
+          storage_path: urlData.storage_path,
           pillar: state.partnerRow ? state.partnerRow.pillar : 'mind',
-          moderation_status: 'in_review',
         }),
       });
-      if (!insertRes.ok) throw new Error('Insert failed: ' + insertRes.status);
+      var insData = await insertRes.json().catch(function(){ return {}; });
+      if (!insertRes.ok || insData.error) throw new Error('Insert failed: ' + (insData.error || insertRes.status));
 
       toast('Uploaded and submitted for review');
       $('upload-meta').style.display = 'none';
