@@ -1124,12 +1124,15 @@
       $('pp-user-email').textContent = ALLOWED_EMAIL;
       // Spoof state.session.user.email so loadPartnerData etc work
       state.session = { user: { email: ALLOWED_EMAIL } };
-      loadPartnerData();
-      loadContent();
-      loadCommunity();
-      loadPushQueue();
-      loadSessions();
-      loadEarnings();
+      // loadPartnerData sets state.partnerId; every other loader needs it —
+      // chain, don't race (un-awaited parallel calls made loadContent bail early).
+      loadPartnerData().then(function() {
+        loadContent();
+        loadCommunity();
+        loadPushQueue();
+        loadSessions();
+        loadEarnings();
+      });
     } else {
       $('login-msg').textContent = 'Incorrect password.';
     }
@@ -1152,12 +1155,15 @@
       $('shell').classList.add('ready');
       $('pp-user-email').textContent = ALLOWED_EMAIL;
       state.session = { user: { email: ALLOWED_EMAIL } };
-      loadPartnerData();
-      loadContent();
-      loadCommunity();
-      loadPushQueue();
-      loadSessions();
-      loadEarnings();
+      // loadPartnerData sets state.partnerId; every other loader needs it —
+      // chain, don't race (un-awaited parallel calls made loadContent bail early).
+      loadPartnerData().then(function() {
+        loadContent();
+        loadCommunity();
+        loadPushQueue();
+        loadSessions();
+        loadEarnings();
+      });
     } else {
       showLogin();
     }
