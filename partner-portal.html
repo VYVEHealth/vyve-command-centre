@@ -681,12 +681,16 @@
   // ── Content ───────────────────────────────────────────────────────────────
   async function loadContent() {
     if (!state.partnerId) return;
-    var res = await fetch(
-      'https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_content_items?partner_id=eq.' + state.partnerId +
-      '&select=id,title,description,moderation_status,type,created_at&order=created_at.desc',
-      { headers: { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg' } }
-    );
-    renderContentList(res.ok ? await res.json() : []);
+    // Read via the EF (service role) — anon REST returns 0 rows because
+    // partner_own_content_select USING get_my_partner_id() is NULL for the
+    // demo portal's anon key (§23.132 class). Gate matches sign/commit.
+    var res = await fetch(_SUPA_URL + '/functions/v1/partner-content-upload', {
+      method: 'POST',
+      headers: { 'x-portal-key': 'vyve2026', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'list', partner_id: state.partnerId }),
+    });
+    var data = res.ok ? await res.json() : {};
+    renderContentList(Array.isArray(data.items) ? data.items : []);
   }
 
   function renderContentList(items) {
