@@ -733,7 +733,7 @@
       var jwt = state.session.access_token;
       var urlRes = await fetch(_SUPA_URL + '/functions/v1/partner-content-upload', {
         method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + jwt, 'Content-Type': 'application/json' },
+        headers: { 'x-portal-key': 'vyve2026', 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'sign',
           partner_id: state.partnerId,
@@ -763,7 +763,7 @@
       // 3. Create the content row server-side via the EF (service role, RLS-clean).
       var insertRes = await fetch(_SUPA_URL + '/functions/v1/partner-content-upload', {
         method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + jwt, 'Content-Type': 'application/json' },
+        headers: { 'x-portal-key': 'vyve2026', 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'commit',
           partner_id: state.partnerId,
