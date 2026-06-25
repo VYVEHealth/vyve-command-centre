@@ -363,7 +363,7 @@
         <div class="upload-zone" id="upload-zone">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
           <p>Click to select a video, or drag and drop here</p>
-          <p style="font-size:11px;margin-top:4px;">MP4, MOV — max 500MB</p>
+          <p style="font-size:11px;margin-top:4px;">MP4, MOV — max 2GB</p>
           <input type="file" id="upload-file" accept="video/*" style="display:none"/>
         </div>
         <div id="upload-meta" style="display:none;margin-top:16px;">
@@ -702,22 +702,28 @@
   }
 
   // Upload flow
-  $('upload-zone').addEventListener('click', function() { $('upload-file').click(); });
-  $('upload-file').addEventListener('change', function(e) {
-    var file = e.target.files[0]; if (!file) return;
+  var MAX_UPLOAD_BYTES = 2 * 1024 * 1024 * 1024; // 2GB (matches partner-content bucket)
+  function acceptUpload(file) {
+    if (!file) return false;
+    if (file.size > MAX_UPLOAD_BYTES) {
+      toast('That video is ' + (file.size/1073741824).toFixed(2) + 'GB — the limit is 2GB. Please trim or compress it first.');
+      return false;
+    }
     state.uploadFile = file;
     $('upload-meta').style.display = 'block';
     $('upload-title').value = file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g,' ');
+    return true;
+  }
+  $('upload-zone').addEventListener('click', function() { $('upload-file').click(); });
+  $('upload-file').addEventListener('change', function(e) {
+    acceptUpload(e.target.files[0]);
   });
 
   $('upload-zone').addEventListener('dragover', function(e){ e.preventDefault(); this.classList.add('dragover'); });
   $('upload-zone').addEventListener('dragleave', function(){ this.classList.remove('dragover'); });
   $('upload-zone').addEventListener('drop', function(e){
     e.preventDefault(); this.classList.remove('dragover');
-    var file = e.dataTransfer.files[0]; if (!file) return;
-    state.uploadFile = file;
-    $('upload-meta').style.display = 'block';
-    $('upload-title').value = file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g,' ');
+    acceptUpload(e.dataTransfer.files[0]);
   });
 
   $('upload-submit-btn').addEventListener('click', async function() {
