@@ -200,6 +200,7 @@
     }
     .reschedule-row input:focus { border-color: var(--vyve-teal); }
     .reschedule-row .btn { padding: 7px 14px; font-size: 13px; }
+    .edit-row { padding: 12px 0 4px; border-top: 1px dashed var(--border); margin-top: 8px; }
 
     /* Community post */
     .post-compose { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
@@ -394,7 +395,7 @@
           <div class="field">
             <label>Go-live date &amp; time</label>
             <input id="upload-publish-at" type="datetime-local"/>
-            <div class="field-hint" style="color:var(--vyve-teal-light);">This is when your community will see the video — after the VYVE team has approved it. Required.</div>
+            <div class="field-hint" style="color:var(--vyve-teal-light);">This is when your community will see the video — after the VYVE team has approved it. Must be at least 48 hours from now.</div>
           </div>
           <div id="upload-progress" style="display:none;margin-bottom:12px;">
             <div style="background:var(--surface-3);border-radius:4px;height:6px;overflow:hidden;">
@@ -724,8 +725,13 @@
     var d = new Date(iso), p = function(n){ return String(n).padStart(2,'0'); };
     return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes());
   }
+  // earliest allowed go-live = now + 48h, as a datetime-local string (for min= and validation)
+  function minLeadInput() { return toLocalInput(new Date(Date.now() + 48*60*60*1000).toISOString()); }
+  function tooSoonLocal(localVal) { return new Date(localVal).getTime() < Date.now() + 48*60*60*1000 - 60000; }
+  function escAttr(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
   // Derive lifecycle state from moderation_status + publish_at.
-  // Live = approved AND publish_at <= now (same rule the member feed reads).
+  // Live = approved AND a partner-chosen go-live has passed (same rule the member feed reads).
   function contentState(item) {
     var st = item.moderation_status, pub = item.publish_at ? new Date(item.publish_at) : null;
     var future = pub && pub.getTime() > Date.now();
@@ -736,10 +742,10 @@
       if (future) return { cls:'chip-scheduled', label:'Scheduled · '+fmtDateTime(item.publish_at), meta:'Approved · goes live '+fmtDateTime(item.publish_at), editable:false };
       return { cls:'chip-live', label:'Live', meta:'Live since '+fmtDateTime(item.publish_at)+' · visible to your community', editable:false };
     }
-    // in_review (and any draft) — partner can still amend the go-live time
-    if (!pub) return { cls:'chip-review', label:'In review', meta:'Uploaded '+fmtDate(item.created_at)+' · awaiting approval', editable:true };
-    if (future) return { cls:'chip-review', label:'In review', meta:'Uploaded '+fmtDate(item.created_at)+' · scheduled for '+fmtDateTime(item.publish_at), editable:true };
-    return { cls:'chip-pending', label:'Pending approval', meta:'Go-live time passed — will go live as soon as it\u2019s approved', editable:true };
+    // in_review / draft — always "Pending approval"; partner can still edit until VYVE acts
+    var meta = pub ? ('Uploaded '+fmtDate(item.created_at)+' · scheduled for '+fmtDateTime(item.publish_at))
+                   : ('Uploaded '+fmtDate(item.created_at)+' · go-live not set');
+    return { cls:'chip-review', label:'Pending approval', meta:meta, editable:true };
   }
 
   function renderContentList(items) {
@@ -748,14 +754,22 @@
       el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🎥</div><h3>No content yet</h3><p>Upload your first video above. After review it will be available to your community members.</p></div>';
       return;
     }
-    var thumb = '<div class="content-thumb"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></div>';
+    var filmThumb = '<div class="content-thumb"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></div>';
     var pencil = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
     el.innerHTML = items.map(function(item, i) {
       var s = contentState(item);
       var last = (i === items.length - 1);
-      var editBtn = s.editable ? '<button class="content-edit-btn" title="Change go-live time" data-resched="'+item.id+'" type="button">'+pencil+'</button>' : '';
+      var thumb = item.thumbnail_url
+        ? '<div class="content-thumb" style="background-image:url(\''+escAttr(item.thumbnail_url)+'\');background-size:cover;background-position:center;"></div>'
+        : filmThumb;
+      var editBtn = s.editable ? '<button class="content-edit-btn" title="Edit details" data-edit="'+item.id+'" type="button">'+pencil+'</button>' : '';
       var editor = s.editable
-        ? '<div class="reschedule-row" id="resched-'+item.id+'" style="display:none;"><input type="datetime-local" id="resched-input-'+item.id+'" value="'+toLocalInput(item.publish_at)+'"/><button class="btn btn-teal" data-resched-save="'+item.id+'" type="button">Save</button><button class="btn btn-ghost" data-resched-cancel="'+item.id+'" type="button">Cancel</button></div>'
+        ? '<div class="edit-row" id="edit-'+item.id+'" style="display:none;">'
+          + '<div class="field" style="margin-bottom:10px;"><label>Title</label><input type="text" id="edit-title-'+item.id+'" value="'+escAttr(item.title)+'"/></div>'
+          + '<div class="field" style="margin-bottom:10px;"><label>Description</label><textarea id="edit-desc-'+item.id+'" style="min-height:60px;">'+escHtml(item.description||'')+'</textarea></div>'
+          + '<div class="field" style="margin-bottom:10px;"><label>Go-live date &amp; time</label><input type="datetime-local" id="edit-pub-'+item.id+'" value="'+toLocalInput(item.publish_at)+'" min="'+minLeadInput()+'"/><div class="field-hint">Must be at least 48 hours away.</div></div>'
+          + '<div style="display:flex;gap:8px;"><button class="btn btn-teal" data-edit-save="'+item.id+'" type="button">Save changes</button><button class="btn btn-ghost" data-edit-cancel="'+item.id+'" type="button">Cancel</button></div>'
+          + '</div>'
         : '';
       return '<div style="'+(last?'':'border-bottom:1px solid var(--border);')+'">'
         + '<div class="content-item" style="border-bottom:none;">'+thumb
@@ -763,28 +777,56 @@
         + '<div class="content-actions">'+editBtn+'<span class="mod-chip '+s.cls+'">'+s.label+'</span></div></div>'
         + editor + '</div>';
     }).join('');
-    el.querySelectorAll('[data-resched]').forEach(function(b){ b.addEventListener('click', function(){ var r = $('resched-'+b.getAttribute('data-resched')); r.style.display = (r.style.display === 'none' ? 'flex' : 'none'); }); });
-    el.querySelectorAll('[data-resched-cancel]').forEach(function(b){ b.addEventListener('click', function(){ $('resched-'+b.getAttribute('data-resched-cancel')).style.display = 'none'; }); });
-    el.querySelectorAll('[data-resched-save]').forEach(function(b){ b.addEventListener('click', function(){ saveReschedule(b.getAttribute('data-resched-save')); }); });
+    el.querySelectorAll('[data-edit]').forEach(function(b){ b.addEventListener('click', function(){ var r = $('edit-'+b.getAttribute('data-edit')); r.style.display = (r.style.display === 'none' ? 'block' : 'none'); }); });
+    el.querySelectorAll('[data-edit-cancel]').forEach(function(b){ b.addEventListener('click', function(){ $('edit-'+b.getAttribute('data-edit-cancel')).style.display = 'none'; }); });
+    el.querySelectorAll('[data-edit-save]').forEach(function(b){ b.addEventListener('click', function(){ saveEdit(b.getAttribute('data-edit-save')); }); });
   }
 
-  async function saveReschedule(id) {
-    var inp = $('resched-input-'+id);
-    if (!inp || !inp.value) { toast('Pick a date and time'); return; }
-    var iso = new Date(inp.value).toISOString();
+  async function saveEdit(id) {
+    var title = $('edit-title-'+id).value.trim();
+    var desc = $('edit-desc-'+id).value;
+    var pubVal = $('edit-pub-'+id).value;
+    if (!title) { toast('Title cannot be empty'); return; }
+    if (!pubVal) { toast('Set a go-live date and time'); return; }
+    if (tooSoonLocal(pubVal)) { toast('Go-live must be at least 48 hours away'); return; }
     var res = await fetch(_SUPA_URL + '/functions/v1/partner-content-upload', {
       method: 'POST',
       headers: { 'x-portal-key': 'vyve2026', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'reschedule', partner_id: state.partnerId, id: id, publish_at: iso }),
+      body: JSON.stringify({ action: 'update', partner_id: state.partnerId, id: id, title: title, description: desc, publish_at: new Date(pubVal).toISOString() }),
     });
     var d = await res.json().catch(function(){ return {}; });
-    if (!res.ok || d.error) { toast(d.error || 'Could not reschedule'); return; }
-    toast('Go-live time updated');
+    if (!res.ok || d.error) { toast(d.error || 'Could not save'); return; }
+    toast('Changes saved');
     await loadContent();
   }
 
   // Upload flow
   var MAX_UPLOAD_BYTES = 2 * 1024 * 1024 * 1024; // 2GB (matches partner-content bucket)
+  // Best-effort poster frame from the selected video, drawn to a small JPEG.
+  // Returns a Blob, or null if the codec won't decode in-browser (falls back to the film icon).
+  function captureThumb(file) {
+    return new Promise(function(resolve) {
+      try {
+        var url = URL.createObjectURL(file);
+        var v = document.createElement('video');
+        v.preload = 'metadata'; v.muted = true; v.playsInline = true; v.src = url;
+        var done = false;
+        var finish = function(b){ if (done) return; done = true; try { URL.revokeObjectURL(url); } catch(e){} resolve(b); };
+        v.onloadedmetadata = function(){ try { v.currentTime = Math.min(1, (v.duration || 2) / 2); } catch(e){ finish(null); } };
+        v.onseeked = function(){
+          try {
+            var w = 320, ratio = (v.videoHeight && v.videoWidth) ? v.videoHeight / v.videoWidth : 0.5625;
+            var c = document.createElement('canvas'); c.width = w; c.height = Math.round(w * ratio);
+            c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+            c.toBlob(function(b){ finish(b); }, 'image/jpeg', 0.8);
+          } catch(e){ finish(null); }
+        };
+        v.onerror = function(){ finish(null); };
+        setTimeout(function(){ finish(null); }, 8000); // don't hang the upload if decode stalls
+      } catch(e){ resolve(null); }
+    });
+  }
+
   function acceptUpload(file) {
     if (!file) return false;
     if (file.size > MAX_UPLOAD_BYTES) {
@@ -794,6 +836,7 @@
     state.uploadFile = file;
     $('upload-meta').style.display = 'block';
     $('upload-title').value = file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g,' ');
+    $('upload-publish-at').min = minLeadInput();
     return true;
   }
   $('upload-zone').addEventListener('click', function() { $('upload-file').click(); });
@@ -814,6 +857,7 @@
     if (!title) { toast('Please enter a video title'); return; }
     var publishLocal = $('upload-publish-at').value;
     if (!publishLocal) { toast('Please set a go-live date and time'); return; }
+    if (tooSoonLocal(publishLocal)) { toast('Go-live must be at least 48 hours from now'); return; }
     var publishIso = new Date(publishLocal).toISOString();
 
     var btn = this; btn.disabled = true; btn.textContent = 'Uploading…';
@@ -851,6 +895,24 @@
         xhr.send(state.uploadFile);
       });
 
+      // 2b. Best-effort poster frame -> public thumbnails bucket (ignore failures).
+      var thumbUrl = null;
+      try {
+        var blob = await captureThumb(state.uploadFile);
+        if (blob) {
+          var tRes = await fetch(_SUPA_URL + '/functions/v1/partner-content-upload', {
+            method: 'POST',
+            headers: { 'x-portal-key': 'vyve2026', 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'sign-thumb', partner_id: state.partnerId }),
+          });
+          var tData = await tRes.json();
+          if (tData.signed_url) {
+            var pr = await fetch(tData.signed_url, { method: 'PUT', headers: { 'Content-Type': 'image/jpeg' }, body: blob });
+            if (pr.ok) thumbUrl = tData.public_url;
+          }
+        }
+      } catch (e) { /* thumbnail is best-effort */ }
+
       // 3. Create the content row server-side via the EF (service role, RLS-clean).
       var insertRes = await fetch(_SUPA_URL + '/functions/v1/partner-content-upload', {
         method: 'POST',
@@ -863,6 +925,7 @@
           storage_path: urlData.storage_path,
           pillar: state.partnerRow ? state.partnerRow.pillar : 'mind',
           publish_at: publishIso,
+          thumbnail_url: thumbUrl,
         }),
       });
       var insData = await insertRes.json().catch(function(){ return {}; });
