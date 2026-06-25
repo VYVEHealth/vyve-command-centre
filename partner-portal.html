@@ -190,6 +190,7 @@
     .chip-scheduled { background: var(--accent-pale);  color: var(--vyve-teal-light); border: 1px solid rgba(77,170,170,.25); }
     .chip-live      { background: var(--success-pale); color: var(--success); }
     .chip-returned  { background: var(--danger-pale);  color: var(--danger); }
+    .chip-approved  { background: var(--surface-3);     color: var(--text-muted); }
     .content-edit-btn { background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 4px; border-radius: 6px; display: inline-flex; }
     .content-edit-btn:hover { color: var(--vyve-teal-light); background: var(--accent-pale); }
     .reschedule-row { display: flex; gap: 8px; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
@@ -731,10 +732,12 @@
     if (st === 'returned') return { cls:'chip-returned', label:'Returned', meta:'Returned by VYVE — make changes and resubmit', editable:false };
     if (st === 'flagged')  return { cls:'chip-returned', label:'Flagged',  meta:'Flagged for review by VYVE', editable:false };
     if (st === 'approved') {
+      if (!pub) return { cls:'chip-approved', label:'Approved', meta:'Approved by VYVE — no go-live time set', editable:false };
       if (future) return { cls:'chip-scheduled', label:'Scheduled · '+fmtDateTime(item.publish_at), meta:'Approved · goes live '+fmtDateTime(item.publish_at), editable:false };
       return { cls:'chip-live', label:'Live', meta:'Live since '+fmtDateTime(item.publish_at)+' · visible to your community', editable:false };
     }
     // in_review (and any draft) — partner can still amend the go-live time
+    if (!pub) return { cls:'chip-review', label:'In review', meta:'Uploaded '+fmtDate(item.created_at)+' · awaiting approval', editable:true };
     if (future) return { cls:'chip-review', label:'In review', meta:'Uploaded '+fmtDate(item.created_at)+' · scheduled for '+fmtDateTime(item.publish_at), editable:true };
     return { cls:'chip-pending', label:'Pending approval', meta:'Go-live time passed — will go live as soon as it\u2019s approved', editable:true };
   }
