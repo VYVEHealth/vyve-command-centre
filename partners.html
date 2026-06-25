@@ -1377,15 +1377,15 @@ async function runPayouts(){
   if(!live.length){toast('No live partners','error');return;}
   if(!confirm(`Generate payouts for ${new Date().toLocaleString('en-GB',{month:'long',year:'numeric'})}?\n\nThis creates ledger entries only — no funds are transferred.`))return;
   const period=new Date().toISOString().slice(0,7);
-  const {count}=await sb.from('members').select('id',{count:'exact',head:true}).eq('subscription_status','active');
-  const totalMRR=(count||0)*20;
-  const totalSessions=allMemberships.reduce((s,m)=>s+m.sessions_attended,0)||1;
+  // Real attributed revenue: each partner's gross = the sum of what their REFERRED
+  // members actually pay (partner_memberships.subscription_value, populated by
+  // stripe-webhook / stripe-reconcile). Payout = gross x revenue share. This matches
+  // the partner-facing earnings figure — no MRR estimation, no session weighting.
   const rows=live.map(p=>{
-    const pSess=allMemberships.filter(m=>m.partner_id===p.id).reduce((s,m)=>s+m.sessions_attended,0);
-    const attr=pSess/totalSessions;
-    const gross=Math.round(totalMRR*attr*100)/100;
+    const refs=allMemberships.filter(m=>m.partner_id===p.id&&m.referred);
+    const gross=Math.round(refs.reduce((s,m)=>s+(Number(m.subscription_value)||0),0)*100)/100;
     const payout=Math.round(gross*(p.revenue_share_pct/100)*100)/100;
-    return{partner_id:p.id,period,attributed_subscriptions:count||0,gross,share_pct:p.revenue_share_pct,payout_amount:payout,status:'pending'};
+    return{partner_id:p.id,period,attributed_subscriptions:refs.length,gross,share_pct:p.revenue_share_pct,payout_amount:payout,status:'pending'};
   });
   const {error}=await sb.from('partner_payouts').upsert(rows,{onConflict:'partner_id,period'});
   if(error){toast(error.message,'error');return;}
