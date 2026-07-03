@@ -1,10 +1,12 @@
 // =====================================================================
 // VYVE Command Centre — Sidebar configuration
 // Single source for nav structure. Update here, sidebar re-renders.
-// 'status' is informational only (used by router for empty-state hints).
+// PM-685: 4-domain IA (PM-639 spec) — Run the Business / Analytics /
+// Members / Partners. Old 7-tab hub layer retired.
 // =====================================================================
 
 window.VYVE_NAV = [
+  // ---------- Run the Business ----------
   {
     section: "Daily",
     items: [
@@ -20,35 +22,30 @@ window.VYVE_NAV = [
   {
     section: "Commercial",
     items: [
-      { slug: "finance",   label: "Finance",      icon: "trending-up",  status: "stub" },
-      { slug: "clients",   label: "Clients",      icon: "briefcase",    status: "skeleton" },
-      { slug: "crm",       label: "Sales Pipeline", icon: "users",      status: "skeleton" },
-      { slug: "investor",  label: "Investors",    icon: "target",       status: "live" },
-      { slug: "partners",  label: "Partners",     icon: "link",         status: "skeleton" },
-      { slug: "invoicing", label: "Invoicing",    icon: "file-text",    status: "skeleton" }
-    ]
-  },
-  {
-    section: "Delivery",
-    items: [
-      { slug: "calendar",   label: "Calendar",   icon: "calendar",    status: "live" },
-      { slug: "sessions",   label: "Sessions",   icon: "calendar",    status: "skeleton" },
-      { slug: "broadcast",  label: "Broadcast",  icon: "share",       status: "live" },
-      { slug: "app-health", label: "App Health", icon: "activity", status: "live" },
-      { slug: "tasks",      label: "Tasks",      icon: "check-square", status: "live" },
-      { slug: "compliance", label: "Compliance", icon: "shield",      status: "stub" }
+      { slug: "finance",   label: "Finance",        icon: "trending-up", status: "stub" },
+      { slug: "crm",       label: "Sales Pipeline", icon: "users",       status: "skeleton" },
+      { slug: "clients",   label: "Clients",        icon: "briefcase",   status: "skeleton" },
+      { slug: "investor",  label: "Investors",      icon: "target",      status: "live" },
+      { slug: "invoicing", label: "Invoicing",      icon: "file-text",   status: "skeleton" }
     ]
   },
   {
     section: "Marketing",
     items: [
-      { slug: "content",     label: "Content",     icon: "edit",        status: "live" },
-      { slug: "social-blueprint", label: "Social Blueprint", icon: "compass",  status: "live" },
+      { slug: "content",          label: "Content",          icon: "edit",    status: "live" },
+      { slug: "social-blueprint", label: "Social Blueprint", icon: "compass", status: "live" },
       { href: "https://app.metricool.com/evolution/instagram?blogId=5565297&userId=4317867", label: "Social Media", icon: "share", external: true },
-      { slug: "performance", label: "Performance", icon: "bar-chart",   status: "stub" },
-      { slug: "podcast",     label: "Podcast",     icon: "mic",         status: "stub" },
-      { href: "https://riverside.fm/dashboard/home", label: "Riverside", icon: "video", external: true },
-      { slug: "brand",       label: "Brand",       icon: "droplet",     status: "stub" }
+      { slug: "podcast",          label: "Podcast",          icon: "mic",     status: "stub" },
+      { href: "https://riverside.fm/dashboard/home", label: "Riverside", icon: "video", external: true }
+    ]
+  },
+  {
+    section: "Delivery",
+    items: [
+      { slug: "calendar",   label: "Calendar",   icon: "calendar",     status: "live" },
+      { slug: "sessions",   label: "Sessions",   icon: "calendar",     status: "skeleton" },
+      { slug: "tasks",      label: "Tasks",      icon: "check-square", status: "live" },
+      { slug: "compliance", label: "Compliance", icon: "shield",       status: "stub" }
     ]
   },
   {
@@ -61,31 +58,43 @@ window.VYVE_NAV = [
     ]
   },
   {
-    section: "Insights",
-    items: [
-      { slug: "usage",     label: "Overview & Members", icon: "grid",        status: "live" },
-      { slug: "retention", label: "Retention",           icon: "trending-up", status: "live" },
-      { slug: "activity-depth", label: "Activity Depth", icon: "bar-chart",   status: "live"        },
-      { slug: "wellbeing", label: "Wellbeing",            icon: "heart",       status: "live"        },
-      { slug: "platform",  label: "Platform & UX",        icon: "monitor",     status: "live"        },
-      { slug: "revenue",   label: "Revenue",              icon: "trending-up", status: "live"        },
-      { slug: "ai-usage",  label: "AI Usage",             icon: "cpu",         status: "live"        }
-    ]
-  },
-  {
-    section: "Partner Space",
-    items: [
-      { href: "/partners.html", label: "Partner Management", icon: "link", external: false }
-    ]
-  },
-  {
     section: "Org",
     items: [
       { slug: "action-plans", label: "Action Plans", icon: "target",   status: "live" },
-      { slug: "team",     label: "Team",     icon: "user",     status: "skeleton" },
-      { slug: "active-users", label: "Active Users", icon: "users", status: "live" },
-      { slug: "trash",    label: "Trash",    icon: "folder",   status: "live" },
-      { slug: "settings", label: "Settings", icon: "settings", status: "live" }
+      { slug: "team",         label: "Team",         icon: "user",     status: "skeleton" },
+      { slug: "trash",        label: "Trash",        icon: "folder",   status: "live" },
+      { slug: "settings",     label: "Settings",     icon: "settings", status: "live" }
+    ]
+  },
+  // ---------- Analytics ----------
+  {
+    section: "Analytics",
+    items: [
+      { slug: "app-health",     label: "App Health",         icon: "activity",    status: "live" },
+      { slug: "usage",          label: "Overview & Members", icon: "grid",        status: "live" },
+      { slug: "retention",      label: "Retention",          icon: "trending-up", status: "live" },
+      { slug: "activity-depth", label: "Activity Depth",     icon: "bar-chart",   status: "live" },
+      { slug: "wellbeing",      label: "Wellbeing",          icon: "heart",       status: "live" },
+      { slug: "platform",       label: "Platform & UX",      icon: "monitor",     status: "live" },
+      { slug: "revenue",        label: "Revenue",            icon: "trending-up", status: "live" },
+      { slug: "ai-usage",       label: "AI Usage",           icon: "cpu",         status: "live" }
+    ]
+  },
+  // ---------- Members ----------
+  {
+    section: "Members",
+    items: [
+      { href: "/admin-console.html", label: "Member Admin", icon: "users", external: false },
+      { slug: "broadcast",    label: "Broadcast",    icon: "share", status: "live" },
+      { slug: "active-users", label: "Active Users", icon: "users", status: "live" }
+    ]
+  },
+  // ---------- Partners ----------
+  {
+    section: "Partners",
+    items: [
+      { href: "/partners.html",       label: "Partner Management", icon: "link",  external: false },
+      { href: "/partner-portal.html", label: "Partner Portal",     icon: "video", external: false }
     ]
   }
 ];
@@ -120,28 +129,17 @@ window.VYVE_ICONS = {
   "settings":     '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>'
 };
 
-// Top-level departments — used by the top nav and the hub pages
-// Each department has:
-//   slug: route slug for its hub page (e.g. 'commercial' -> #/commercial)
-//   label: tab label
-//   icon: SVG icon key
-//   sectionName: the matching section name in VYVE_NAV (so the hub page knows what tiles to show)
-//   description: short subtitle shown on the hub page
+// Top-level domains — 4-domain IA per PM-639. 'sectionName' groups the
+// sidebar sections that belong to each domain (informational).
 window.VYVE_NAV_TOP = [
-  { slug: 'brief',       label: 'Daily',      icon: 'layers',   sectionName: 'Daily',
-    description: 'Your morning launchpad. Brief, intel, competitor scan, and the full dashboard.' },
-  { slug: 'commercial',  label: 'Commercial', icon: 'trending-up', sectionName: 'Commercial',
-    description: 'Money in, money out. Finance, pipeline, clients, investors, partners, invoicing.' },
-  { slug: 'marketing',   label: 'Marketing',  icon: 'edit',       sectionName: 'Marketing',
-    description: 'Brand, content, social, podcast, performance. The full marketing engine.' },
-  { slug: 'delivery',    label: 'Delivery',   icon: 'check-square', sectionName: 'Delivery',
-    description: 'Sessions, tasks, compliance. The operational backbone.' },
-  { slug: 'knowledge',   label: 'Knowledge',  icon: 'book',       sectionName: 'Knowledge',
-    description: 'Strategy, documents, knowledge base. The source of truth.' },
-  { slug: 'usage',      label: 'Insights',   icon: 'bar-chart',    sectionName: 'Insights',
-    description: 'Member engagement, usage analytics, retention, and platform health.' },
-  { slug: 'org',         label: 'Org',        icon: 'user',       sectionName: 'Org',
-    description: 'Action plans, team, settings. Run the company.' }
+  { slug: 'brief', label: 'Run the Business', icon: 'layers', sectionName: 'Daily',
+    description: 'Daily ops, commercial, marketing, delivery, knowledge, org.' },
+  { slug: 'usage', label: 'Analytics', icon: 'bar-chart', sectionName: 'Analytics',
+    description: 'App health, usage, retention, wellbeing, platform, revenue, AI.' },
+  { slug: 'active-users', label: 'Members', icon: 'users', sectionName: 'Members',
+    description: 'Member admin, broadcast, active users.' },
+  { href: '/partners.html', label: 'Partners', icon: 'link', sectionName: 'Partners',
+    description: 'Partner management, moderation, payouts, portal.' }
 ];
 
 // Route -> top-nav tab slug mapping (used by router to highlight the right tab)
@@ -150,20 +148,21 @@ window.VYVE_ROUTE_TO_TOP = (function(){
   (window.VYVE_NAV || []).forEach(function(section){
     var topSlug = ({
       'Daily':      'brief',
-      'Commercial': 'commercial',
-      'Marketing':  'marketing',
-      'Delivery':   'delivery',
-      'Insights':   'usage',
-      'Knowledge':  'knowledge',
-      'Org':        'org'
+      'Commercial': 'brief',
+      'Marketing':  'brief',
+      'Delivery':   'brief',
+      'Knowledge':  'brief',
+      'Org':        'brief',
+      'Analytics':  'usage',
+      'Members':    'active-users',
+      'Partners':   'brief'
     })[section.section] || 'brief';
     section.items.forEach(function(item){
       if (item.slug) m[item.slug] = topSlug;
     });
   });
-  // Hub routes map to themselves
-  ['commercial','marketing','delivery','knowledge','org','insights'].forEach(function(s){ m[s] = s; });
   m['brief'] = 'brief';
   m['usage'] = 'usage';
+  m['active-users'] = 'active-users';
   return m;
 })();

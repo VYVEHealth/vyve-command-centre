@@ -23,7 +23,7 @@
         <div class="stat-num" id="dash-mrr">&mdash;</div>
         <div class="stat-sub" id="dash-mrr-sub">Latest snapshot</div>
       </div>
-      <div class="stat" data-route="#/performance">
+      <div class="stat" data-route="#/social-blueprint">
         <div class="stat-label">30-day reach</div>
         <div class="stat-num" id="dash-reach">&mdash;</div>
         <div class="stat-sub">Social channels</div>
@@ -197,8 +197,8 @@
     el('dash-marketing').innerHTML =
       kpiCard('Podcast eps published', pubEps, inProd ? inProd + ' in production' : '', '#/podcast') +
       kpiCard('Content in flight', contentInFlight, contentInFlight ? 'Across channels' : 'Plan in Content', '#/content') +
-      kpiCard('LinkedIn impressions', D.fmt(liLatest), liGrowth != null ? (liGrowth >= 0 ? '+' : '') + liGrowth + '% over 31d' : 'Latest day', '#/performance') +
-      kpiCard('IG engagement (31d)', D.fmt(igEng), 'Likes + comments', '#/performance');
+      kpiCard('LinkedIn impressions', D.fmt(liLatest), liGrowth != null ? (liGrowth >= 0 ? '+' : '') + liGrowth + '% over 31d' : 'Latest day', '#/social-blueprint') +
+      kpiCard('IG engagement (31d)', D.fmt(igEng), 'Likes + comments', '#/social-blueprint');
   }
 
   function renderDelivery(){
