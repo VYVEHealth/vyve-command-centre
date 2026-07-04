@@ -287,10 +287,12 @@
     <div class="login-logo">VYVE</div>
     <div class="login-sub">Partner Portal</div>
     <h2>Welcome back</h2>
-    <p>Enter the portal password to continue.</p>
+    <p>Sign in with your VYVE partner login.</p>
+    <label for="pp-email">Email</label>
+    <input id="pp-email" type="email" placeholder="you@example.com" autocomplete="username"/>
     <label for="pp-password">Password</label>
     <input id="pp-password" type="password" placeholder="Password" autocomplete="current-password"/>
-    <button class="btn-primary" id="pp-login-btn" type="button">Enter</button>
+    <button class="btn-primary" id="pp-login-btn" type="button">Sign in</button>
     <div id="login-msg"></div>
   </div>
 </div>
@@ -599,6 +601,15 @@
   }
   function fmtGBP(n) { return n == null ? '—' : '£' + Number(n).toFixed(2); }
 
+  // PM-XXX (finding D): all partner-content-upload calls are JWT-authenticated.
+  // The EF derives the partner server-side for partner logins; admins pass
+  // partner_id explicitly (demo/ops path).
+  function efHeaders() {
+    var t = state.session && state.session.access_token;
+    return { 'Authorization': 'Bearer ' + (t || ''), 'Content-Type': 'application/json' };
+  }
+
+
   // ── Auth ──────────────────────────────────────────────────────────────────
   async function boot() {
     var client = sb();
@@ -641,19 +652,28 @@
     $('shell').classList.add('ready');
     $('pp-user-email').textContent = session.user.email || '';
 
+    // loadPartnerData sets state.partnerId; every other loader needs it —
+    // chain, don't race (un-awaited parallel calls made loadContent bail early).
     await loadPartnerData();
-    await loadContent();
-    await loadCommunity();
-    await loadSessions();
-    await loadEarnings();
+    await Promise.all([loadContent(), loadCommunity(), loadPushQueue(), loadSessions(), loadEarnings()]);
   }
 
   // ── Load partner profile ──────────────────────────────────────────────────
+  // PM-XXX (finding D): partner identity comes from the session, not a hardcoded
+  // id. get_my_partner_id() maps auth.email() -> partner_partners.contact_email
+  // for active role='partner' logins. Admins (Dean/Lewis demoing) get the demo
+  // partner as a fallback — the EF accepts explicit partner_id for admins only.
   var DEMO_PARTNER_ID = '4867d2c2-53bd-4139-8289-19df0132d71e';
   async function loadPartnerData() {
-    // Demo mode: load partner directly by ID via REST (no session RLS needed for anon read of live partner)
+    var client = sb();
+    var myPartnerId = null;
+    try {
+      var r = await client.rpc('get_my_partner_id');
+      myPartnerId = r && r.data ? r.data : null;
+    } catch (e) { /* fall through to demo */ }
+    var pid = myPartnerId || DEMO_PARTNER_ID;
     var res = await fetch(
-      'https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_partners?id=eq.' + DEMO_PARTNER_ID + '&select=*&limit=1',
+      'https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_partners?id=eq.' + pid + '&select=*&limit=1',
       { headers: { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg', 'Content-Type': 'application/json' } }
     );
     var rows = res.ok ? await res.json() : [];
@@ -708,7 +728,7 @@
     // demo portal's anon key (§23.132 class). Gate matches sign/commit.
     var res = await fetch(_SUPA_URL + '/functions/v1/partner-content-upload', {
       method: 'POST',
-      headers: { 'x-portal-key': 'vyve2026', 'Content-Type': 'application/json' },
+      headers: efHeaders(),
       body: JSON.stringify({ action: 'list', partner_id: state.partnerId }),
     });
     var data = res.ok ? await res.json() : {};
@@ -791,7 +811,7 @@
     if (tooSoonLocal(pubVal)) { toast('Go-live must be at least 48 hours away'); return; }
     var res = await fetch(_SUPA_URL + '/functions/v1/partner-content-upload', {
       method: 'POST',
-      headers: { 'x-portal-key': 'vyve2026', 'Content-Type': 'application/json' },
+      headers: efHeaders(),
       body: JSON.stringify({ action: 'update', partner_id: state.partnerId, id: id, title: title, description: desc, publish_at: new Date(pubVal).toISOString() }),
     });
     var d = await res.json().catch(function(){ return {}; });
@@ -868,7 +888,7 @@
       var jwt = state.session.access_token;
       var urlRes = await fetch(_SUPA_URL + '/functions/v1/partner-content-upload', {
         method: 'POST',
-        headers: { 'x-portal-key': 'vyve2026', 'Content-Type': 'application/json' },
+        headers: efHeaders(),
         body: JSON.stringify({
           action: 'sign',
           partner_id: state.partnerId,
@@ -902,7 +922,7 @@
         if (blob) {
           var tRes = await fetch(_SUPA_URL + '/functions/v1/partner-content-upload', {
             method: 'POST',
-            headers: { 'x-portal-key': 'vyve2026', 'Content-Type': 'application/json' },
+            headers: efHeaders(),
             body: JSON.stringify({ action: 'sign-thumb', partner_id: state.partnerId }),
           });
           var tData = await tRes.json();
@@ -916,7 +936,7 @@
       // 3. Create the content row server-side via the EF (service role, RLS-clean).
       var insertRes = await fetch(_SUPA_URL + '/functions/v1/partner-content-upload', {
         method: 'POST',
-        headers: { 'x-portal-key': 'vyve2026', 'Content-Type': 'application/json' },
+        headers: efHeaders(),
         body: JSON.stringify({
           action: 'commit',
           partner_id: state.partnerId,
@@ -1253,67 +1273,30 @@
     });
   });
 
-  // ── Password gate ─────────────────────────────────────────────────────────
-  var PORTAL_PW = 'vyve2026';
-  var ALLOWED_EMAIL = 'deanonbrown@hotmail.com'; // demo: load as this partner
-
-  function checkPassword() {
-    return sessionStorage.getItem('vyve-partner-portal-unlocked') === '1';
-  }
-
-  $('pp-login-btn').addEventListener('click', function() {
-    var val = $('pp-password').value;
-    if (val === PORTAL_PW) {
-      sessionStorage.setItem('vyve-partner-portal-unlocked','1');
-      $('login-overlay').classList.remove('show');
-      $('shell').classList.add('ready');
-      $('pp-user-email').textContent = ALLOWED_EMAIL;
-      // Spoof state.session.user.email so loadPartnerData etc work
-      state.session = { user: { email: ALLOWED_EMAIL } };
-      // loadPartnerData sets state.partnerId; every other loader needs it —
-      // chain, don't race (un-awaited parallel calls made loadContent bail early).
-      loadPartnerData().then(function() {
-        loadContent();
-        loadCommunity();
-        loadPushQueue();
-        loadSessions();
-        loadEarnings();
-      });
-    } else {
-      $('login-msg').textContent = 'Incorrect password.';
-    }
+  // ── Sign in (Supabase Auth — finding D: shared portal password removed) ──
+  $('pp-login-btn').addEventListener('click', async function() {
+    var email = $('pp-email').value.trim();
+    var pw = $('pp-password').value;
+    if (!email || !pw) { $('login-msg').textContent = 'Enter your email and password.'; return; }
+    var btn = this; btn.disabled = true; btn.textContent = 'Signing in…';
+    var client = sb();
+    var { error } = await client.auth.signInWithPassword({ email: email, password: pw });
+    btn.disabled = false; btn.textContent = 'Sign in';
+    if (error) { $('login-msg').textContent = 'Sign-in failed: ' + error.message; return; }
+    $('login-msg').textContent = '';
+    // onAuthStateChange in boot() drives showApp()
   });
-
   $('pp-password').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') $('pp-login-btn').click();
   });
 
   // ── Sign out ──────────────────────────────────────────────────────────────
-  $('pp-signout').addEventListener('click', function() {
-    sessionStorage.removeItem('vyve-partner-portal-unlocked');
+  $('pp-signout').addEventListener('click', async function() {
+    var client = sb();
+    await client.auth.signOut();
+    state.session = null;
     showLogin();
   });
-
-  // ── Boot ──────────────────────────────────────────────────────────────────
-  function boot() {
-    if (checkPassword()) {
-      $('login-overlay').classList.remove('show');
-      $('shell').classList.add('ready');
-      $('pp-user-email').textContent = ALLOWED_EMAIL;
-      state.session = { user: { email: ALLOWED_EMAIL } };
-      // loadPartnerData sets state.partnerId; every other loader needs it —
-      // chain, don't race (un-awaited parallel calls made loadContent bail early).
-      loadPartnerData().then(function() {
-        loadContent();
-        loadCommunity();
-        loadPushQueue();
-        loadSessions();
-        loadEarnings();
-      });
-    } else {
-      showLogin();
-    }
-  }
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', boot);
