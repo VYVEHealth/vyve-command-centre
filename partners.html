@@ -928,8 +928,37 @@ async function advancePartner(id,newStatus){
     }catch(e){
       toast('Status updated, but login provision error: '+e.message,'error');
     }
+  } else if(newStatus==='live'){
+    // PM-748: materialize the application's launch details at go-live (calendar occurrence +
+    // pinned welcome post) — same pattern as the Gate-A partner-provision call above. Idempotent.
+    let liveMsg='Partner is now live!';
+    try{
+      const sess=await sb.auth.getSession();
+      const jwt=sess?.data?.session?.access_token;
+      const matRes=await fetch(SUPA_URL+'/functions/v1/partner-launch-materialize',{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+jwt,'Content-Type':'application/json'},
+        body:JSON.stringify({partner_id:id}),
+      });
+      const mat=await matRes.json();
+      if(matRes.ok&&!mat.already){
+        const bits=[];
+        if(mat.calendar?.created)bits.push('launch session on calendar ('+(mat.calendar.category_mapped_from_pillar||'')+')');
+        else if(mat.calendar?.reason==='launch_date_past')bits.push('LAUNCH DATE HAS PASSED — arrange a new date with the partner');
+        else if(mat.calendar?.reason)bits.push('calendar skipped: '+mat.calendar.reason);
+        if(mat.post?.created)bits.push('welcome post pinned');
+        if(bits.length)liveMsg='Partner is now live! '+bits.join(' · ');
+      }else if(matRes.ok&&mat.already){
+        liveMsg='Partner is now live! (launch already materialized)';
+      }else{
+        liveMsg='Partner is live, but launch materialize failed: '+(mat.error||matRes.status);
+      }
+    }catch(e){
+      liveMsg='Partner is live, but launch materialize error: '+e.message;
+    }
+    toast(liveMsg);
   } else {
-    toast(newStatus==='live'?'Partner is now live!':'Moved to '+newStatus);
+    toast('Moved to '+newStatus);
   }
   document.getElementById('appDetail').style.display='none';
   // Refresh
