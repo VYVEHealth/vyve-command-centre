@@ -84,7 +84,7 @@
   function el(id){ return document.getElementById(id); }
   function esc(s){ var d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
   function err(m){ var e=el('ig-error'); e.style.display='block'; e.textContent=m; }
-  function sb(){ return window.VYVE_SUPABASE && window.VYVE_SUPABASE.client && window.VYVE_SUPABASE.client(); }
+  function sb(){ return window.VYVE_SUPABASE && window.VYVE_SUPABASE.client && window.VYVE_SUPABASE.client; }
   function gbp(v){ return v==null?'—':'£'+Number(v).toLocaleString('en-GB'); }
   function opts(list, sel){ return list.map(function(s){return '<option value="'+s+'"'+(sel===s?' selected':'')+'>'+s+'</option>'}).join(''); }
 

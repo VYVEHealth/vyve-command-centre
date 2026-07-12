@@ -238,7 +238,7 @@
   async function load(){
     var token = null;
     try {
-      var sb = window.VYVE_SUPABASE && window.VYVE_SUPABASE.client && window.VYVE_SUPABASE.client();
+      var sb = window.VYVE_SUPABASE && window.VYVE_SUPABASE.client && window.VYVE_SUPABASE.client;
       if (sb){
         var s = await sb.auth.getSession();
         var sess = s && s.data && s.data.session;

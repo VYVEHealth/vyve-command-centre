@@ -177,7 +177,7 @@
   async function getSessionToken(){
     if (!window.VYVE_SUPABASE) return null;
     try {
-      var sb = window.VYVE_SUPABASE.client();
+      var sb = window.VYVE_SUPABASE.client;
       var res = await sb.auth.getSession();
       return res && res.data && res.data.session ? res.data.session.access_token : null;
     } catch (e) { return null; }
@@ -191,7 +191,7 @@
       bootContent();
       return;
     }
-    var sb = window.VYVE_SUPABASE.client();
+    var sb = window.VYVE_SUPABASE.client;
     var sessionRes = await sb.auth.getSession();
     var session = sessionRes && sessionRes.data ? sessionRes.data.session : null;
     if (!session){ showGate('signin'); return; }
@@ -346,7 +346,7 @@
     var sel = $('bc-aud-company');
     if (!sel) return;
     try {
-      var sb = window.VYVE_SUPABASE.client();
+      var sb = window.VYVE_SUPABASE.client;
       var r = await sb.from('members').select('company').not('company','is',null);
       if (r.error){ console.warn(r.error); return; }
       var seen = {};
@@ -368,7 +368,7 @@
     if (!el) return;
     el.textContent = 'Loading…';
     try {
-      var sb = window.VYVE_SUPABASE.client();
+      var sb = window.VYVE_SUPABASE.client;
       var r = await sb.from('admin_broadcast_log')
         .select('sent_at,sent_by,source,title,body,push_type,recipient_count,error')
         .order('sent_at', { ascending: false })

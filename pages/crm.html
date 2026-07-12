@@ -72,7 +72,7 @@ textarea.cr-in{min-height:70px;resize:vertical}
   function esc(s){ var d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
   function err(msg){ var e=el('cr-error'); e.style.display='block'; e.textContent=msg; }
   function clearErr(){ el('cr-error').style.display='none'; }
-  function sb(){ return window.VYVE_SUPABASE && window.VYVE_SUPABASE.client && window.VYVE_SUPABASE.client(); }
+  function sb(){ return window.VYVE_SUPABASE && window.VYVE_SUPABASE.client && window.VYVE_SUPABASE.client; }
   function gbp(v){ return v==null?'':'£'+Number(v).toLocaleString('en-GB')+'/mo'; }
 
   function render(){

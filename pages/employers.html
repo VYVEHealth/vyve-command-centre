@@ -109,7 +109,7 @@
   function err(m){ var e=el('em-error'); e.style.display='block'; e.textContent=m; el('em-notice').style.display='none'; }
   function notice(m){ var e=el('em-notice'); e.style.display='block'; e.textContent=m; el('em-error').style.display='none'; }
   function clearMsgs(){ el('em-error').style.display='none'; el('em-notice').style.display='none'; }
-  function sb(){ return window.VYVE_SUPABASE && window.VYVE_SUPABASE.client && window.VYVE_SUPABASE.client(); }
+  function sb(){ return window.VYVE_SUPABASE && window.VYVE_SUPABASE.client && window.VYVE_SUPABASE.client; }
   function fmtDate(iso){ try { return new Date(iso).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); } catch(_){ return '—'; } }
 
   async function getToken(){

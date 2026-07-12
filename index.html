@@ -186,7 +186,8 @@
   <script src="lib/shortcuts.js"></script>
   <script src="lib/pdf-export.js"></script>
   <script src="lib/targets.js"></script>
-  <script src="lib/supabase.js"></script>
+  <!-- PM-779 SOFT-KILL: lib/supabase.js (localStorage-era stub) clobbered the real
+       VYVE_SUPABASE wrapper from supabase-client.js — load removed, file kept. -->
   <script src="lib/auth.js"></script>
   <!-- PM-759: localStorage-era lib layer retired (store/comments/notifications/views/entities/views-ui/drafts/make/data + seed-data) -->
   <script src="lib/router.js"></script>

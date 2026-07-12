@@ -64,7 +64,7 @@ textarea.ct-in{min-height:90px;resize:vertical}
   function el(id){ return document.getElementById(id); }
   function esc(s){ var d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
   function err(m){ var e=el('ct-error'); e.style.display='block'; e.textContent=m; }
-  function sb(){ return window.VYVE_SUPABASE && window.VYVE_SUPABASE.client && window.VYVE_SUPABASE.client(); }
+  function sb(){ return window.VYVE_SUPABASE && window.VYVE_SUPABASE.client && window.VYVE_SUPABASE.client; }
   function opts(list, sel){ return list.map(function(s){var val=Array.isArray(s)?s[0]:s,lab=Array.isArray(s)?s[1]:s;return '<option value="'+val+'"'+(sel===val?' selected':'')+'>'+lab+'</option>'}).join(''); }
 
   function render(){
