@@ -990,3 +990,17 @@ table.tbl tr:hover td { background: var(--bg-alt); }
   .page-title { font-size: var(--fs-xl); }
   .page-hero .page-sub { font-size: var(--fs-base); }
 }
+
+/* =====================================================================
+   PM-764 — M1 mobile primitives (CC mobile campaign)
+   Shell already handles the drawer (≤900px) and content padding (≤480px).
+   These are the shared building blocks pages adopt in M2/M3:
+   - .m-scroll: horizontal scroll-wrap for any data table card
+   - page-scoped modals should go near-full-screen ≤640px (M2 sweep)
+   ===================================================================== */
+.m-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.m-scroll table{min-width:560px}
+@media (max-width:640px){
+  .content{padding:16px 12px 56px}
+  .modal{width:96%;max-height:94vh;padding:20px 16px}
+}

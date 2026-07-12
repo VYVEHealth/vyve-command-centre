@@ -1,0 +1,76 @@
+<!-- =====================================================================
+     VYVE Command Centre — Domain landing (PM-764)
+     ONE page for every #/domain-{key} route. Reads the key from the hash,
+     looks it up in window.VYVE_DOMAINS, and tiles the matching VYVE_NAV
+     section's items. Config-driven: add a nav item, its tile appears here
+     automatically — nav and landings can never drift.
+     Responsive by construction: 3 col → 2 (≤860px) → 1 (≤560px).
+     ===================================================================== -->
+<style>
+.dm-eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.dm-h1{font-size:22px;font-weight:700;letter-spacing:-.015em}
+.dm-meta{font-size:13px;color:var(--text-muted);margin:4px 0 20px;max-width:640px;line-height:1.5}
+.dm-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:860px){.dm-tiles{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.dm-tiles{grid-template-columns:1fr}}
+.dm-tile{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;text-decoration:none;color:var(--text);display:flex;flex-direction:column;gap:8px;transition:border-color .15s,transform .12s;min-height:110px;box-shadow:var(--shadow-md)}
+.dm-tile:hover{border-color:var(--accent);transform:translateY(-1px)}
+.dm-top{display:flex;align-items:center;justify-content:space-between}
+.dm-ic{width:38px;height:38px;border-radius:10px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;color:var(--accent)}
+.dm-ic svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.dm-tile h3{margin:0;font-size:15.5px;font-weight:700}
+.dm-tile p{margin:0;font-size:12.5px;color:var(--text-muted);line-height:1.45}
+.dm-pill{font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;border-radius:99px;padding:3px 9px}
+.dm-pill.live{background:var(--success-pale);color:var(--success)}
+.dm-pill.skeleton{background:var(--warning-pale);color:var(--warning)}
+.dm-pill.ext{background:var(--surface-2);color:var(--text-dim)}
+.dm-empty{padding:30px;text-align:center;color:var(--text-muted);font-size:13px;background:var(--surface);border:1px solid var(--border);border-radius:14px}
+</style>
+
+<div class="dm-eyebrow">Domain</div>
+<div class="dm-h1" id="dm-title"></div>
+<div class="dm-meta" id="dm-desc"></div>
+<div class="dm-tiles" id="dm-tiles"></div>
+
+<script>
+(function(){
+  function esc(s){ var d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
+
+  var slug = (location.hash || '').replace(/^#\/?/, '').split('/')[0];
+  var key = slug.indexOf('domain-') === 0 ? slug.slice(7) : '';
+  var dom = (window.VYVE_DOMAINS || {})[key];
+  var tilesEl = document.getElementById('dm-tiles');
+
+  if (!dom){
+    tilesEl.innerHTML = '<div class="dm-empty">Unknown domain. Head back <a href="#/home">Home</a>.</div>';
+    return;
+  }
+
+  document.getElementById('dm-title').textContent = dom.label;
+  document.getElementById('dm-desc').textContent = dom.desc || '';
+
+  var section = (window.VYVE_NAV || []).find(function(s){ return s.section === dom.section; });
+  var items = (section && section.items) || [];
+  if (!items.length){
+    tilesEl.innerHTML = '<div class="dm-empty">Nothing in this domain yet.</div>';
+    return;
+  }
+
+  tilesEl.innerHTML = items.map(function(it){
+    var icon = (window.VYVE_ICONS && window.VYVE_ICONS[it.icon]) || '';
+    var pill, href, extra = '';
+    if (it.slug){
+      pill = '<span class="dm-pill ' + esc(it.status || 'live') + '">' + esc(it.status || 'live') + '</span>';
+      href = '#/' + esc(it.slug);
+    } else {
+      pill = '<span class="dm-pill ext">' + (it.external ? 'External \u2197' : 'Open \u2197') + '</span>';
+      href = esc(it.href);
+      if (it.external) extra = ' target="_blank" rel="noopener"';
+    }
+    return '<a class="dm-tile" href="' + href + '"' + extra + '>' +
+      '<div class="dm-top"><div class="dm-ic">' + icon + '</div>' + pill + '</div>' +
+      '<h3>' + esc(it.label) + '</h3>' +
+      '<p>' + esc(it.desc || '') + '</p></a>';
+  }).join('');
+})();
+</script>

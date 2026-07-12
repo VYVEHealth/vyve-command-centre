@@ -6,6 +6,18 @@
 // (Dean call) — pages remain in repo + reachable via #/slug; restore = re-add nav items.
 // =====================================================================
 
+
+// PM-764: domain registry — drives the #/domain-{key} landing pages.
+// Each landing renders its section's items as a tile grid, so nav and
+// landings can never drift. Item `desc` (below) supplies tile copy.
+window.VYVE_DOMAINS = {
+  "rtb":       { section: "Run the Business", label: "Run the Business", desc: "Pipeline, finance, investors, content, tasks and the operating calendar." },
+  "members":   { section: "Members",          label: "Members",          desc: "Member admin, broadcast push and who's active right now." },
+  "partners":  { section: "Partners",         label: "Partners",         desc: "Pipeline, go-live gates, content moderation, payouts and the partner portal." },
+  "employers": { section: "Employers",        label: "Employers",        desc: "Employer accounts, benchmarks, the live portal and the sales demo." },
+  "analytics": { section: "Analytics",        label: "Analytics",        desc: "App health, usage, retention, wellbeing, platform, revenue and AI." }
+};
+
 window.VYVE_NAV = [
   // ---------- Home ----------
   {
@@ -18,15 +30,15 @@ window.VYVE_NAV = [
   {
     section: "Run the Business",
     items: [
-      { slug: "crm",       label: "Sales Pipeline",      icon: "users",        status: "live" },
-      { slug: "finance",   label: "Finance",             icon: "trending-up",  status: "live" },
-      { slug: "invoicing", label: "Invoicing",           icon: "file-text",    status: "live" },
-      { slug: "investor",  label: "Investors & Grants",  icon: "target",       status: "live" },
-      { slug: "content",   label: "Content",             icon: "edit",         status: "live" },
-      { slug: "podcast",   label: "Podcast",             icon: "mic",          status: "live" },
-      { slug: "tasks",     label: "Tasks",               icon: "check-square", status: "live" },
-      { slug: "documents", label: "Documents",           icon: "folder",       status: "skeleton" },
-      { slug: "calendar",  label: "Calendar",            icon: "calendar",     status: "live" },
+      { slug: "crm",       label: "Sales Pipeline",      icon: "users",        status: "live", desc: "Stage-grouped leads on cc_leads. Won leads auto-create clients." },
+      { slug: "finance",   label: "Finance",             icon: "trending-up",  status: "live", desc: "Live billed MRR, the \u00a36K target bar, snapshots and runway." },
+      { slug: "invoicing", label: "Invoicing",           icon: "file-text",    status: "live", desc: "Raise, track and mark invoices paid." },
+      { slug: "investor",  label: "Investors & Grants",  icon: "target",       status: "live", desc: "Funding pipeline and the grant calendar." },
+      { slug: "content",   label: "Content",             icon: "edit",         status: "live", desc: "Plan and approve posts before Metricool publishes." },
+      { slug: "podcast",   label: "Podcast",             icon: "mic",          status: "live", desc: "Episode tracker \u2014 planned, recorded, published." },
+      { slug: "tasks",     label: "Tasks",               icon: "check-square", status: "live", desc: "The shared team task board." },
+      { slug: "documents", label: "Documents",           icon: "folder",       status: "skeleton", desc: "Internal docs and files." },
+      { slug: "calendar",  label: "Calendar",            icon: "calendar",     status: "live", desc: "The operating calendar \u2014 sessions, deadlines, events." },
       { href: "https://app.metricool.com/evolution/instagram?blogId=5565297&userId=4317867", label: "Social Media", icon: "share", external: true },
       { href: "https://riverside.fm/dashboard/home", label: "Riverside", icon: "video", external: true },
       { href: "https://drive.google.com/drive/u/1/home", label: "Shared Documents", icon: "drive", external: true }
@@ -36,26 +48,26 @@ window.VYVE_NAV = [
   {
     section: "Members",
     items: [
-      { href: "/admin-console.html", label: "Member Admin", icon: "users", external: false },
-      { slug: "broadcast",    label: "Broadcast",    icon: "share", status: "live" },
-      { slug: "active-users", label: "Active Users", icon: "users", status: "live" }
+      { href: "/admin-console.html", label: "Member Admin", icon: "users", external: false, desc: "Member list, detail and edit \u2014 the members admin surface." },
+      { slug: "broadcast",    label: "Broadcast",    icon: "share", status: "live", desc: "Push notifications to member devices." },
+      { slug: "active-users", label: "Active Users", icon: "users", status: "live", desc: "Who\u2019s in the app right now." }
     ]
   },
   // ---------- Partners ----------
   {
     section: "Partners",
     items: [
-      { href: "/partners.html",       label: "Partner Management", icon: "link",  external: false },
-      { href: "/partner-portal.html", label: "Partner Portal",     icon: "video", external: false }
+      { href: "/partners.html",       label: "Partner Management", icon: "link",  external: false, desc: "Pipeline, go-live gates, moderation and payouts." },
+      { href: "/partner-portal.html", label: "Partner Portal",     icon: "video", external: false, desc: "What partners see \u2014 content, publishing, notify." }
     ]
   },
   // ---------- Employers ----------
   {
     section: "Employers",
     items: [
-      { slug: "employers", label: "Employer Accounts", icon: "briefcase", status: "live" },
-      { href: "https://www.vyvehealth.co.uk/employer-portal.html", label: "Employer Portal (live)", icon: "briefcase", external: true },
-      { href: "https://www.vyvehealth.co.uk/employer-portal.html?demo=1", label: "Sales Demo", icon: "eye", external: true }
+      { slug: "employers", label: "Employer Accounts", icon: "briefcase", status: "live", desc: "Provision logins, seat counts and benchmark figures." },
+      { href: "https://www.vyvehealth.co.uk/employer-portal.html", label: "Employer Portal (live)", icon: "briefcase", external: true, desc: "The live employer dashboard \u2014 aggregate only, no PII." },
+      { href: "https://www.vyvehealth.co.uk/employer-portal.html?demo=1", label: "Sales Demo", icon: "eye", external: true, desc: "The demo employer dashboard for prospect calls." }
     ]
   },
   // ---------- Analytics ----------
