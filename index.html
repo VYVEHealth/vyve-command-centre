@@ -9,7 +9,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 
   <link rel="stylesheet" href="assets/tokens.css"/>
   <link rel="stylesheet" href="assets/shell.css"/>
@@ -99,6 +99,9 @@
         </nav>
 
         <div class="topnav-tools">
+          <button class="topnav-bell" id="topnav-theme" type="button" aria-label="Toggle light and dark theme" title="Toggle theme" onclick="(function(){var cur=document.documentElement.getAttribute('data-theme'); if(!cur){cur=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';} window.VYVE_THEME.set(cur==='dark'?'light':'dark');})()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" stroke="none"/></svg>
+          </button>
           <span class="topnav-role" id="topnav-role" title="Your role" style="display:none"></span>
           <button class="topnav-bell" id="topnav-print" type="button" aria-label="Print current page as PDF" title="Print current page as PDF" onclick="window.VYVE_PDF && window.VYVE_PDF.printPage()">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
@@ -174,7 +177,7 @@
   </script>
 
   <!-- Supabase JS -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.js"></script>
+  <!-- PM-753: duplicate supabase-js 2.39.3 removed — single 2.45.0 load below -->
 
   <!-- Config + libs -->
   <script src="assets/sidebar-config.js"></script>

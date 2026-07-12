@@ -374,8 +374,9 @@ aside.sidebar::-webkit-scrollbar-track { background: transparent; }
 
 .nav-section { padding: 14px 10px 2px; }
 .nav-section-label {
-  font-size: 9px;
-  font-weight: var(--fw-bold);
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: var(--fw-medium);
   color: var(--sidebar-section);
   letter-spacing: var(--ls-mega);
   text-transform: uppercase;
@@ -410,7 +411,7 @@ aside.sidebar::-webkit-scrollbar-track { background: transparent; }
   transform: translateY(-50%);
   width: 3px;
   height: 18px;
-  background: var(--vyve-teal-light);
+  background: var(--vyve-gold);
   border-radius: 0 2px 2px 0;
 }
 .nav-item svg {

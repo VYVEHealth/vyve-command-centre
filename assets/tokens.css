@@ -15,7 +15,7 @@
   --vyve-teal-pale:  #DEEFEF;
   --vyve-gold:       #C9A84C;
   --vyve-gold-pale:  #F4ECD3;
-  --vyve-cream:      #FAF7F1;     /* warm hero background */
+  --vyve-cream:      #EFF4F4;     /* warm hero background */
   --vyve-charcoal:   #1A2B2B;
 
   /* ---------- Three pillars (used throughout the hub) ----------
@@ -24,40 +24,40 @@
      Social   = warm, connecting coral
   */
   --pillar-physical:        #D49B2C;
-  --pillar-physical-pale:   #FAEFD0;
+  --pillar-physical-pale:   #F6EDD6;
   --pillar-mental:          #4DAAAA;
-  --pillar-mental-pale:     #DCEEEE;
+  --pillar-mental-pale:     #DEEFEF;
   --pillar-social:          #D17F6E;
-  --pillar-social-pale:     #F8E0DA;
+  --pillar-social-pale:     #F7E3DE;
 
   /* ---------- Neutrals — light theme (default) ----------
      Warmer cream-white to match the marketing site feel rather than cold mint.
   */
-  --bg:             #F7F5F0;      /* cream-white, very subtle warmth */
-  --bg-alt:         #FAF8F4;      /* slightly lighter for hero contrast */
+  --bg:             #F3F6F6;      /* cream-white, very subtle warmth */
+  --bg-alt:         #F7FAFA;      /* slightly lighter for hero contrast */
   --surface:        #FFFFFF;
-  --surface-2:      #F1EEE7;      /* soft sand */
-  --surface-3:      #E7E3D9;
-  --surface-sunken: #EFECE5;
-  --border:         #E4DFD4;
-  --border-strong:  #C9C2B2;
-  --text:           #1A2B2B;
-  --text-muted:     #6B7373;
-  --text-dim:       #9DA3A3;
+  --surface-2:      #ECF2F2;      /* soft sand */
+  --surface-3:      #E0EAEA;
+  --surface-sunken: #E9F0F0;
+  --border:         rgba(13,43,43,.10);
+  --border-strong:  rgba(13,43,43,.20);
+  --text:           #0D2B2B;
+  --text-muted:     #4E6E6E;
+  --text-dim:       #8CA6A6;
 
   /* ---------- Semantic colours ---------- */
-  --success:       #2D9E4A;
+  --success:       #1F8F45;
   --success-pale:  #D8EDDE;
   --warning:       #E09B3D;
   --warning-pale:  #FAEAD0;
-  --danger:        #C9534A;
+  --danger:        #C64545;
   --danger-pale:   #F3D6D3;
   --info:          #3D7FD9;
   --info-pale:     #D7E4F5;
 
   /* ---------- Sidebar (dark, on-brand) ---------- */
-  --sidebar-bg:     #0A2222;
-  --sidebar-bg-2:   #0E2A2A;
+  --sidebar-bg:     #0D2B2B;
+  --sidebar-bg-2:   #0A2222;
   --sidebar-text:   rgba(245,242,236,.75);
   --sidebar-active: rgba(77,170,170,.16);
   --sidebar-active-fg: #EAF5F5;
@@ -73,9 +73,9 @@
   --on-accent:      #FFFFFF;
 
   /* ---------- Typography ---------- */
-  --font-head: 'Playfair Display', Georgia, 'Times New Roman', serif;
-  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
+  --font-head: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'DM Mono', 'SF Mono', ui-monospace, 'Roboto Mono', monospace;
 
   /* ---------- Type scale ---------- */
   --fs-xxs:  10.5px;
@@ -156,21 +156,21 @@
 
 /* ===== Dark theme override (still light by default; dark via [data-theme="dark"] on <html>) ===== */
 html[data-theme="dark"] {
-  --bg:             #0B1F1F;
-  --bg-alt:         #0E2424;
-  --surface:        #122B2B;
-  --surface-2:      #163333;
-  --surface-3:      #1B3D3C;
-  --surface-sunken: #0D2424;
-  --border:         rgba(255,255,255,.08);
-  --border-strong:  rgba(255,255,255,.16);
-  --text:           #EAF2F2;
-  --text-muted:     #94ADAD;
-  --text-dim:       #5A7575;
+  --bg:             #081616;
+  --bg-alt:         #0B1D1D;
+  --surface:        #0E2222;
+  --surface-2:      #132C2C;
+  --surface-3:      #1A3838;
+  --surface-sunken: #0A1C1C;
+  --border:         rgba(141,196,196,.12);
+  --border-strong:  rgba(141,196,196,.22);
+  --text:           #E9F3F3;
+  --text-muted:     #93B3B3;
+  --text-dim:       #5E7D7D;
   --shadow-sm: 0 1px 2px rgba(0,0,0,.32);
   --shadow-md: 0 4px 12px rgba(0,0,0,.4);
   --shadow-lg: 0 24px 64px rgba(0,0,0,.6);
-  --vyve-cream:  #0F2727;
+  --vyve-cream:  #0C2020;
   --pillar-physical-pale: rgba(212,155,44,.18);
   --pillar-mental-pale:   rgba(77,170,170,.18);
   --pillar-social-pale:   rgba(209,127,110,.18);
@@ -180,23 +180,70 @@ html[data-theme="dark"] {
 /* System preference: auto dark when no explicit data-theme set */
 @media (prefers-color-scheme: dark) {
   html:not([data-theme="light"]):not([data-theme="dark"]) {
-    --bg:             #0B1F1F;
-    --bg-alt:         #0E2424;
-    --surface:        #122B2B;
-    --surface-2:      #163333;
-    --surface-3:      #1B3D3C;
-    --surface-sunken: #0D2424;
-    --border:         rgba(255,255,255,.08);
-    --border-strong:  rgba(255,255,255,.16);
-    --text:           #EAF2F2;
-    --text-muted:     #94ADAD;
-    --text-dim:       #5A7575;
+    --bg:             #081616;
+    --bg-alt:         #0B1D1D;
+    --surface:        #0E2222;
+    --surface-2:      #132C2C;
+    --surface-3:      #1A3838;
+    --surface-sunken: #0A1C1C;
+    --border:         rgba(141,196,196,.12);
+    --border-strong:  rgba(141,196,196,.22);
+    --text:           #E9F3F3;
+    --text-muted:     #93B3B3;
+    --text-dim:       #5E7D7D;
     --shadow-sm: 0 1px 2px rgba(0,0,0,.32);
     --shadow-md: 0 4px 12px rgba(0,0,0,.4);
     --shadow-lg: 0 24px 64px rgba(0,0,0,.6);
-    --vyve-cream:  #0F2727;
+    --vyve-cream:  #0C2020;
     --pillar-physical-pale: rgba(212,155,44,.18);
     --pillar-mental-pale:   rgba(77,170,170,.18);
     --pillar-social-pale:   rgba(209,127,110,.18);
+  }
+}
+
+/* ===== v2 additions (PM-753 CC overhaul Phase 2) =====
+   Aliases used by the Analytics page family + new kit tokens.
+   Theme-aware where the value differs between themes. */
+:root {
+  --teal:         var(--vyve-teal);
+  --teal-lt:      var(--vyve-teal-light);
+  --gold:         #A8873A;               /* readable gold on light surfaces */
+  --gold-pale:    rgba(201,168,76,.14);
+  --settled:      rgba(13,43,43,.10);
+  --settled-pale: rgba(13,43,43,.04);
+  --ring:         rgba(27,120,120,.5);
+}
+html[data-theme="dark"] {
+  --gold:         #D5B65E;
+  --gold-pale:    rgba(213,182,94,.12);
+  --settled:      rgba(233,243,243,.16);
+  --settled-pale: rgba(233,243,243,.06);
+  --ring:         rgba(111,197,197,.55);
+  --accent:       var(--vyve-teal-light);
+  --accent-hover: #6FC5C5;
+  --accent-pale:  rgba(77,170,170,.10);
+  --on-accent:    #081616;
+  --success:      #4ADE80; --success-pale: rgba(74,222,128,.12);
+  --warning:      #E8A855; --warning-pale: rgba(232,168,85,.13);
+  --danger:       #F87171; --danger-pale:  rgba(248,113,113,.12);
+  --info:         #60A5FA; --info-pale:    rgba(96,165,250,.12);
+  --sidebar-bg:   #061212;
+}
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]):not([data-theme="dark"]) {
+    --gold:         #D5B65E;
+    --gold-pale:    rgba(213,182,94,.12);
+    --settled:      rgba(233,243,243,.16);
+    --settled-pale: rgba(233,243,243,.06);
+    --ring:         rgba(111,197,197,.55);
+    --accent:       var(--vyve-teal-light);
+    --accent-hover: #6FC5C5;
+    --accent-pale:  rgba(77,170,170,.10);
+    --on-accent:    #081616;
+    --success:      #4ADE80; --success-pale: rgba(74,222,128,.12);
+    --warning:      #E8A855; --warning-pale: rgba(232,168,85,.13);
+    --danger:       #F87171; --danger-pale:  rgba(248,113,113,.12);
+    --info:         #60A5FA; --info-pale:    rgba(96,165,250,.12);
+    --sidebar-bg:   #061212;
   }
 }

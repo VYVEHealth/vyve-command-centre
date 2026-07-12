@@ -1,83 +1,27 @@
 // =====================================================================
 // VYVE Command Centre — Sidebar configuration
 // Single source for nav structure. Update here, sidebar re-renders.
-// PM-685: 4-domain IA (PM-639 spec) — Run the Business / Analytics /
-// Members / Partners. Old 7-tab hub layer retired.
+// PM-753: 5-domain IA (PM-752 CC overhaul) — Run the Business / Members /
+// Partners / Employers / Analytics, + Legacy (pending Lewis kill-list) + System.
 // =====================================================================
 
 window.VYVE_NAV = [
   // ---------- Run the Business ----------
   {
-    section: "Daily",
+    section: "Run the Business",
     items: [
-      { slug: "brief",       label: "Morning Brief",     icon: "layers",       status: "live" },
-      { slug: "inbox",       label: "Inbox",             icon: "check-square", status: "live" },
-      { slug: "activity",    label: "Activity",          icon: "radar",        status: "live" },
-      { slug: "intel",       label: "Research & Grants", icon: "search",       status: "live" },
-      { slug: "competitors", label: "Competitor Watch",  icon: "eye",          status: "live" },
-      { slug: "intel-hub",   label: "Intel Hub",         icon: "radar",        status: "live" },
-      { slug: "dashboard",   label: "Dashboard",         icon: "grid",         status: "live" }
-    ]
-  },
-  {
-    section: "Commercial",
-    items: [
-      { slug: "finance",   label: "Finance",        icon: "trending-up", status: "stub" },
-      { slug: "crm",       label: "Sales Pipeline", icon: "users",       status: "skeleton" },
-      { slug: "clients",   label: "Clients",        icon: "briefcase",   status: "skeleton" },
-      { slug: "investor",  label: "Investors",      icon: "target",      status: "live" },
-      { slug: "invoicing", label: "Invoicing",      icon: "file-text",   status: "skeleton" }
-    ]
-  },
-  {
-    section: "Marketing",
-    items: [
-      { slug: "content",          label: "Content",          icon: "edit",    status: "live" },
-      { slug: "social-blueprint", label: "Social Blueprint", icon: "compass", status: "live" },
+      { slug: "brief",     label: "Morning Brief",       icon: "layers",       status: "live" },
+      { slug: "crm",       label: "Sales Pipeline",      icon: "users",        status: "skeleton" },
+      { slug: "finance",   label: "Finance",             icon: "trending-up",  status: "stub" },
+      { slug: "invoicing", label: "Invoicing",           icon: "file-text",    status: "skeleton" },
+      { slug: "investor",  label: "Investors & Grants",  icon: "target",       status: "live" },
+      { slug: "content",   label: "Content",             icon: "edit",         status: "live" },
+      { slug: "podcast",   label: "Podcast",             icon: "mic",          status: "stub" },
+      { slug: "tasks",     label: "Tasks",               icon: "check-square", status: "live" },
+      { slug: "documents", label: "Documents",           icon: "folder",       status: "skeleton" },
+      { slug: "calendar",  label: "Calendar",            icon: "calendar",     status: "live" },
       { href: "https://app.metricool.com/evolution/instagram?blogId=5565297&userId=4317867", label: "Social Media", icon: "share", external: true },
-      { slug: "podcast",          label: "Podcast",          icon: "mic",     status: "stub" },
       { href: "https://riverside.fm/dashboard/home", label: "Riverside", icon: "video", external: true }
-    ]
-  },
-  {
-    section: "Delivery",
-    items: [
-      { slug: "calendar",   label: "Calendar",   icon: "calendar",     status: "live" },
-      { slug: "sessions",   label: "Sessions",   icon: "calendar",     status: "skeleton" },
-      { slug: "tasks",      label: "Tasks",      icon: "check-square", status: "live" },
-      { slug: "compliance", label: "Compliance", icon: "shield",       status: "stub" }
-    ]
-  },
-  {
-    section: "Knowledge",
-    items: [
-      { slug: "strategy",  label: "Strategy",       icon: "compass", status: "stub" },
-      { slug: "documents", label: "Documents",      icon: "folder",  status: "skeleton" },
-      { href: "https://drive.google.com/drive/u/1/home", label: "Shared Documents", icon: "drive", external: true },
-      { slug: "knowledge", label: "Knowledge Base", icon: "book",    status: "skeleton" }
-    ]
-  },
-  {
-    section: "Org",
-    items: [
-      { slug: "action-plans", label: "Action Plans", icon: "target",   status: "live" },
-      { slug: "team",         label: "Team",         icon: "user",     status: "skeleton" },
-      { slug: "trash",        label: "Trash",        icon: "folder",   status: "live" },
-      { slug: "settings",     label: "Settings",     icon: "settings", status: "live" }
-    ]
-  },
-  // ---------- Analytics ----------
-  {
-    section: "Analytics",
-    items: [
-      { slug: "app-health",     label: "App Health",         icon: "activity",    status: "live" },
-      { slug: "usage",          label: "Overview & Members", icon: "grid",        status: "live" },
-      { slug: "retention",      label: "Retention",          icon: "trending-up", status: "live" },
-      { slug: "activity-depth", label: "Activity Depth",     icon: "bar-chart",   status: "live" },
-      { slug: "wellbeing",      label: "Wellbeing",          icon: "heart",       status: "live" },
-      { slug: "platform",       label: "Platform & UX",      icon: "monitor",     status: "live" },
-      { slug: "revenue",        label: "Revenue",            icon: "trending-up", status: "live" },
-      { slug: "ai-usage",       label: "AI Usage",           icon: "cpu",         status: "live" }
     ]
   },
   // ---------- Members ----------
@@ -96,11 +40,65 @@ window.VYVE_NAV = [
       { href: "/partners.html",       label: "Partner Management", icon: "link",  external: false },
       { href: "/partner-portal.html", label: "Partner Portal",     icon: "video", external: false }
     ]
+  },
+  // ---------- Employers ----------
+  {
+    section: "Employers",
+    items: [
+      { href: "https://www.vyvehealth.co.uk/employer-portal.html", label: "Employer Portal (live)", icon: "briefcase", external: true },
+      { href: "https://www.vyvehealth.co.uk/employer-portal.html?demo=1", label: "Sales Demo", icon: "eye", external: true }
+    ]
+  },
+  // ---------- Analytics ----------
+  {
+    section: "Analytics",
+    items: [
+      { slug: "app-health",     label: "App Health",         icon: "activity",    status: "live" },
+      { slug: "usage",          label: "Overview & Members", icon: "grid",        status: "live" },
+      { slug: "retention",      label: "Retention",          icon: "trending-up", status: "live" },
+      { slug: "activity-depth", label: "Activity Depth",     icon: "bar-chart",   status: "live" },
+      { slug: "wellbeing",      label: "Wellbeing",          icon: "heart",       status: "live" },
+      { slug: "platform",       label: "Platform & UX",      icon: "monitor",     status: "live" },
+      { slug: "revenue",        label: "Revenue",            icon: "trending-up", status: "live" },
+      { slug: "ai-usage",       label: "AI Usage",           icon: "cpu",         status: "live" }
+    ]
+  },
+  // ---------- Legacy (pending Lewis kill-list confirm — PM-752 spec) ----------
+  {
+    section: "Legacy",
+    items: [
+      { slug: "dashboard",        label: "Dashboard",        icon: "grid",         status: "live" },
+      { slug: "inbox",            label: "Inbox",            icon: "check-square", status: "live" },
+      { slug: "activity",         label: "Activity",         icon: "radar",        status: "live" },
+      { slug: "intel",            label: "Research & Grants",icon: "search",       status: "live" },
+      { slug: "competitors",      label: "Competitor Watch", icon: "eye",          status: "live" },
+      { slug: "intel-hub",        label: "Intel Hub",        icon: "radar",        status: "live" },
+      { slug: "clients",          label: "Clients",          icon: "briefcase",    status: "skeleton" },
+      { slug: "social-blueprint", label: "Social Blueprint", icon: "compass",      status: "live" },
+      { slug: "strategy",         label: "Strategy",         icon: "compass",      status: "stub" },
+      { slug: "knowledge",        label: "Knowledge Base",   icon: "book",         status: "skeleton" },
+      { slug: "compliance",       label: "Compliance",       icon: "shield",       status: "stub" },
+      { slug: "team",             label: "Team",             icon: "user",         status: "skeleton" },
+      { slug: "action-plans",     label: "Action Plans",     icon: "target",       status: "live" },
+      { slug: "trash",            label: "Trash",            icon: "folder",       status: "live" },
+      { href: "https://drive.google.com/drive/u/1/home", label: "Shared Documents", icon: "drive", external: true }
+    ]
+  },
+  // ---------- System ----------
+  {
+    section: "System",
+    items: [
+      { slug: "settings", label: "Settings", icon: "settings", status: "live" }
+    ]
   }
 ];
 
 // Minimal SVG icon set (stroke-based, 24x24 viewBox).
 window.VYVE_ICONS = {
+  "activity":     '<svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
+  "heart":        '<svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/></svg>',
+  "monitor":      '<svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>',
+  "cpu":          '<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>',
   "layers":       '<svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>',
   "search":       '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>',
   "radar":        '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 12 L12 4"/><path d="M12 12 L18.5 8"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>',

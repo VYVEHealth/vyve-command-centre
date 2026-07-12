@@ -6,37 +6,37 @@
   <title>App Health — VYVE Command Centre</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
   <style>
 /* ── Dual theme tokens ──────────────────────────────────────────────── */
 html[data-theme="dark"] {
-  --bg:#0D2B2B;--bg-alt:#0A2222;--surface:#112E2E;--surface-2:#163535;
-  --border:rgba(77,170,170,.16);--border-strong:rgba(77,170,170,.28);
-  --text:#EAF5F5;--text-muted:rgba(234,245,245,.55);--text-dim:rgba(234,245,245,.32);
-  --teal:#1B7878;--teal-lt:#4DAAAA;--gold:#C9A84C;
+  --bg:#081616;--bg-alt:#0B1D1D;--surface:#0E2222;--surface-2:#132C2C;
+  --border:rgba(141,196,196,.12);--border-strong:rgba(141,196,196,.22);
+  --text:#E9F3F3;--text-muted:#93B3B3;--text-dim:#5E7D7D;
+  --teal:#1B7878;--teal-lt:#4DAAAA;--gold:#D5B65E;
   --danger:#e8674a;--danger-pale:rgba(232,103,74,.12);
   --warning:#e8a34a;--warning-pale:rgba(232,163,74,.12);
-  --success:#22c55e;--success-pale:rgba(34,197,94,.12);
+  --success:#4ADE80;--success-pale:rgba(34,197,94,.12);
   --info:#4DAAAA;--info-pale:rgba(77,170,170,.1);
   --settled:rgba(234,245,245,.16);--settled-pale:rgba(234,245,245,.06);
-  --sidebar-bg:#0A2222;
+  --sidebar-bg:#061212;
 }
 html[data-theme="light"] {
-  --bg:#f4faf8;--bg-alt:#edf5f3;--surface:#ffffff;--surface-2:#f0f7f5;
-  --border:#d0e6e0;--border-strong:#a8cfc7;
-  --text:#0D2B2B;--text-muted:#567373;--text-dim:#8AADAD;
-  --teal:#1B7878;--teal-lt:#4DAAAA;--gold:#C9A84C;
-  --danger:#c9433a;--danger-pale:#fdecea;
+  --bg:#F3F6F6;--bg-alt:#ECF2F2;--surface:#ffffff;--surface-2:#ECF2F2;
+  --border:rgba(13,43,43,.10);--border-strong:rgba(13,43,43,.20);
+  --text:#0D2B2B;--text-muted:#4E6E6E;--text-dim:#8CA6A6;
+  --teal:#1B7878;--teal-lt:#4DAAAA;--gold:#A8873A;
+  --danger:#C64545;--danger-pale:#fdecea;
   --warning:#c97a2a;--warning-pale:#fdf2e3;
-  --success:#1a9448;--success-pale:#e6f6ec;
+  --success:#1F8F45;--success-pale:#e6f6ec;
   --info:#1B7878;--info-pale:rgba(27,120,120,.08);
   --settled:rgba(0,0,0,.06);--settled-pale:rgba(0,0,0,.03);
   --sidebar-bg:#0A2222;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { font-size: 14px; }
-body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
-h1,h2,h3 { font-family: 'Playfair Display', Georgia, serif; font-weight: 600; }
+body { font-family: 'DM Sans', -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+h1,h2,h3 { font-family: inherit; font-weight: 700; letter-spacing: -.015em; }
 
 /* ── Layout ──────────────────────────────────────────────────────────── */
 .page-wrap { max-width: 1200px; margin: 0 auto; padding: 24px 24px 80px; }
