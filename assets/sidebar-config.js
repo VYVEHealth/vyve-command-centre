@@ -18,7 +18,7 @@ window.VYVE_NAV = [
   {
     section: "Run the Business",
     items: [
-      { slug: "crm",       label: "Sales Pipeline",      icon: "users",        status: "skeleton" },
+      { slug: "crm",       label: "Sales Pipeline",      icon: "users",        status: "live" },
       { slug: "finance",   label: "Finance",             icon: "trending-up",  status: "stub" },
       { slug: "invoicing", label: "Invoicing",           icon: "file-text",    status: "skeleton" },
       { slug: "investor",  label: "Investors & Grants",  icon: "target",       status: "live" },
