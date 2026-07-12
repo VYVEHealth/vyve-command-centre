@@ -23,7 +23,7 @@ window.VYVE_NAV = [
       { slug: "invoicing", label: "Invoicing",           icon: "file-text",    status: "live" },
       { slug: "investor",  label: "Investors & Grants",  icon: "target",       status: "live" },
       { slug: "content",   label: "Content",             icon: "edit",         status: "live" },
-      { slug: "podcast",   label: "Podcast",             icon: "mic",          status: "stub" },
+      { slug: "podcast",   label: "Podcast",             icon: "mic",          status: "live" },
       { slug: "tasks",     label: "Tasks",               icon: "check-square", status: "live" },
       { slug: "documents", label: "Documents",           icon: "folder",       status: "skeleton" },
       { slug: "calendar",  label: "Calendar",            icon: "calendar",     status: "live" },

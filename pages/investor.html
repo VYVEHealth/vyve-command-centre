@@ -1,351 +1,206 @@
-<div class="page active" id="page-investor">
-  <div class="page-hero">
-    <div class="eyebrow">Funding</div>
-    <h1 class="page-title">Investors</h1>
-    <p class="page-sub">Funding pipeline, investor CRM, runway and round tracking.</p>
-    <div class="hero-actions">
-      <button class="btn btn-primary" id="inv-add">Add investor</button>
-      <button class="btn btn-ghost btn-sm" id="inv-export">Export board pack</button>
-    </div>
-  </div>
+<!-- =====================================================================
+     VYVE Command Centre — Investors & Grants (PM-758, CC overhaul Phase 3)
+     cc_investors + cc_grants CRUD. CHECK vocabularies:
+     investors.stage cold/intro/meeting/due-diligence/term-sheet/passed
+     investors.type Angel/VC/Family Office/Grant Body/Corporate
+     grants.status identified/applying/submitted/awarded/rejected
+     ===================================================================== -->
+<style>
+.ig-head{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px}
+.ig-eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.ig-h1{font-size:22px;font-weight:700;letter-spacing:-.015em}
+.ig-meta{font-size:13px;color:var(--text-muted)}
+.ig-btn{border:0;border-radius:9px;padding:9px 16px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:var(--font-body)}
+.ig-btn.primary{background:var(--accent);color:var(--on-accent)}
+.ig-btn.primary:hover{background:var(--accent-hover)}
+.ig-btn.secondary{background:var(--surface-2);color:var(--text);border:1px solid var(--border-strong)}
+.ig-btn.danger{background:var(--danger-pale);color:var(--danger)}
+.ig-sect{font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--text-dim);margin:26px 0 12px;display:flex;align-items:center;gap:10px}
+.ig-sect:first-of-type{margin-top:0}
+.ig-sect::after{content:"";flex:1;height:1px;background:var(--border)}
+.ig-sect button{margin-left:auto}
+.ig-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow-md);overflow-x:auto}
+.ig-table{width:100%;border-collapse:collapse}
+.ig-table th{font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim);text-align:left;padding:10px 16px;border-bottom:1px solid var(--border)}
+.ig-table td{padding:11px 16px;border-bottom:1px solid var(--border);font-size:13.5px;vertical-align:middle}
+.ig-table td.num{font-variant-numeric:tabular-nums;font-weight:600}
+.ig-table tbody tr:last-child td{border-bottom:0}
+.ig-table tbody tr{cursor:pointer;transition:background .12s}
+.ig-table tbody tr:hover{background:var(--accent-pale)}
+.ig-pill{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;border-radius:99px;padding:3px 10px}
+.ig-pill i{width:6px;height:6px;border-radius:50%;background:currentColor}
+.ig-pill.cold,.ig-pill.identified{background:var(--surface-2);color:var(--text-muted)}
+.ig-pill.intro,.ig-pill.meeting,.ig-pill.applying{background:var(--accent-pale);color:var(--accent)}
+.ig-pill.due-diligence,.ig-pill.submitted{background:var(--warning-pale);color:var(--warning)}
+.ig-pill.term-sheet,.ig-pill.awarded{background:var(--success-pale);color:var(--success)}
+.ig-pill.passed,.ig-pill.rejected{background:var(--danger-pale);color:var(--danger)}
+.ig-empty{padding:22px;text-align:center;color:var(--text-muted);font-size:13px}
+.ig-error{background:var(--danger-pale);border-radius:12px;padding:12px 16px;color:var(--danger);font-size:13.5px;margin-bottom:14px;display:none}
+.ig-overlay{position:fixed;inset:0;background:rgba(4,12,12,.6);backdrop-filter:blur(3px);z-index:80;display:flex;align-items:center;justify-content:center;padding:18px}
+.ig-modal{background:var(--surface);border:1px solid var(--border-strong);border-radius:16px;max-width:460px;width:100%;box-shadow:var(--shadow-lg);max-height:92vh;overflow-y:auto}
+.ig-mh{padding:18px 20px 0}.ig-mh h3{font-size:16px;font-weight:700}
+.ig-mb{padding:12px 20px 4px}
+.ig-field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.ig-field label{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim)}
+.ig-in{background:var(--surface-2);border:1px solid var(--border-strong);border-radius:9px;padding:9px 12px;font-size:13.5px;color:var(--text);font-family:var(--font-body);width:100%}
+.ig-in:focus{outline:2px solid var(--accent);outline-offset:0;border-color:transparent}
+.ig-two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ig-mf{display:flex;justify-content:space-between;gap:10px;padding:16px 20px 18px}
+.ig-mf-right{display:flex;gap:10px}
+</style>
 
-  <!-- KPI strip -->
-  <div class="grid-4" style="margin-bottom:22px">
-    <div class="stat">
-      <div class="stat-label">Pipeline</div>
-      <div class="stat-value" id="inv-pipeline">0</div>
-      <div class="stat-sub">Total investors</div>
-    </div>
-    <div class="stat">
-      <div class="stat-label">Round target</div>
-      <div class="stat-value" id="inv-target">—</div>
-      <div class="stat-sub" id="inv-round-name">Set in Settings</div>
-    </div>
-    <div class="stat">
-      <div class="stat-label">Committed</div>
-      <div class="stat-value" id="inv-committed">—</div>
-      <div class="stat-sub" id="inv-committed-pct">0% of target</div>
-    </div>
-    <div class="stat" id="inv-runway-card">
-      <div class="stat-label">Runway</div>
-      <div class="stat-value" id="inv-runway">—</div>
-      <div class="stat-sub" id="inv-runway-sub">Months at current burn</div>
-    </div>
+<div class="ig-head">
+  <div>
+    <div class="ig-eyebrow">Run the Business</div>
+    <div class="ig-h1">Investors &amp; Grants</div>
+    <div class="ig-meta" id="ig-meta">Loading…</div>
   </div>
+</div>
+<div class="ig-error" id="ig-error"></div>
 
-  <!-- Pipeline kanban -->
-  <div class="card" style="padding:0;overflow:hidden">
-    <div class="card-header"><div class="card-title">Pipeline</div><div class="card-sub" id="inv-pipeline-sub"></div></div>
-    <div class="kanban" id="inv-kanban" style="padding:0 14px 14px">
-      <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">To approach</span><span class="kanban-count" data-stage="approach">0</span></div><div class="kanban-body" data-stage="approach"></div></div>
-      <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">First meeting</span><span class="kanban-count" data-stage="meeting">0</span></div><div class="kanban-body" data-stage="meeting"></div></div>
-      <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">Due diligence</span><span class="kanban-count" data-stage="dd">0</span></div><div class="kanban-body" data-stage="dd"></div></div>
-      <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">Term sheet</span><span class="kanban-count" data-stage="termsheet">0</span></div><div class="kanban-body" data-stage="termsheet"></div></div>
-      <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">Closed</span><span class="kanban-count" data-stage="closed">0</span></div><div class="kanban-body" data-stage="closed"></div></div>
-    </div>
-  </div>
+<div class="ig-sect">Investors <button class="ig-btn primary" id="ig-add-inv">Add investor</button></div>
+<div class="ig-card">
+  <table class="ig-table">
+    <thead><tr><th>Name</th><th>Type</th><th>Stage</th><th>Amount</th><th>Next action</th></tr></thead>
+    <tbody id="ig-inv-rows"><tr><td colspan="5" class="ig-empty">Loading…</td></tr></tbody>
+  </table>
+</div>
 
-  <!-- Two-column body -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px">
-    <div class="card">
-      <div class="card-header"><div class="card-title">MRR trend</div><div class="card-sub">Latest 6 months</div></div>
-      <div class="card-body" id="inv-mrr-trend" style="padding:18px 22px 24px"></div>
-    </div>
-    <div class="card">
-      <div class="card-header"><div class="card-title">Active conversations</div><div class="card-sub" id="inv-active-sub">No recent activity</div></div>
-      <div id="inv-active-list" class="card-body"></div>
-    </div>
-  </div>
-
-  <!-- Board update history -->
-  <div class="card" style="margin-top:18px">
-    <div class="card-header"><div class="card-title">Board updates</div><div class="card-sub" id="inv-updates-sub">Send monthly updates to investors</div></div>
-    <div id="inv-updates-list" class="card-body"></div>
-  </div>
+<div class="ig-sect">Grants <button class="ig-btn primary" id="ig-add-gr">Add grant</button></div>
+<div class="ig-card">
+  <table class="ig-table">
+    <thead><tr><th>Grant</th><th>Funder</th><th>Amount</th><th>Deadline</th><th>Status</th><th>Notes</th></tr></thead>
+    <tbody id="ig-gr-rows"><tr><td colspan="6" class="ig-empty">Loading…</td></tr></tbody>
+  </table>
 </div>
 
 <script>
 (function(){
-  if (!window.VYVE_DATA) return;
-  var D = window.VYVE_DATA;
-  var LS = 'vyve_investors';
+  var INV_STAGES = ['cold','intro','meeting','due-diligence','term-sheet','passed'];
+  var INV_TYPES  = ['Angel','VC','Family Office','Grant Body','Corporate'];
+  var GR_STATUS  = ['identified','applying','submitted','awarded','rejected'];
+  var invs = [], grants = [];
+  function el(id){ return document.getElementById(id); }
+  function esc(s){ var d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
+  function err(m){ var e=el('ig-error'); e.style.display='block'; e.textContent=m; }
+  function sb(){ return window.VYVE_SUPABASE && window.VYVE_SUPABASE.client && window.VYVE_SUPABASE.client(); }
+  function gbp(v){ return v==null?'—':'£'+Number(v).toLocaleString('en-GB'); }
+  function opts(list, sel){ return list.map(function(s){return '<option value="'+s+'"'+(sel===s?' selected':'')+'>'+s+'</option>'}).join(''); }
 
-  function lsGet(){ try { var v = localStorage.getItem(LS); return v ? JSON.parse(v) : []; } catch(e){ return []; } }
-  function lsSet(v){ try { localStorage.setItem(LS, JSON.stringify(v)); } catch(e){} }
+  function render(){
+    var activeInv = invs.filter(function(i){return i.stage!=='passed'}).length;
+    var openGr = grants.filter(function(g){return g.status==='identified'||g.status==='applying'||g.status==='submitted'}).length;
+    el('ig-meta').textContent = activeInv + ' active investor conversations · ' + openGr + ' open grants';
+
+    var ir = el('ig-inv-rows');
+    ir.innerHTML = invs.length ? invs.map(function(i){
+      return '<tr data-k="inv" data-id="'+i.id+'"><td><b>'+esc(i.name)+'</b>'+(i.contact?'<div style="font-size:12px;color:var(--text-muted)">'+esc(i.contact)+'</div>':'')+'</td>'+
+        '<td>'+esc(i.type||'—')+'</td><td><span class="ig-pill '+esc(i.stage)+'"><i></i>'+esc(i.stage)+'</span></td>'+
+        '<td class="num">'+gbp(i.amount)+'</td><td>'+esc(i.next_action||'')+'</td></tr>';
+    }).join('') : '<tr><td colspan="5" class="ig-empty">No investor conversations yet. Series A targets: £1–2M ARR, 10%+ MoM, sub-8% churn, 100%+ NRR.</td></tr>';
+
+    var gr = el('ig-gr-rows');
+    gr.innerHTML = grants.length ? grants.map(function(g){
+      return '<tr data-k="gr" data-id="'+g.id+'"><td><b>'+esc(g.name)+'</b></td><td>'+esc(g.funder||'—')+'</td>'+
+        '<td class="num">'+gbp(g.amount)+'</td><td>'+esc(g.deadline||'—')+'</td>'+
+        '<td><span class="ig-pill '+esc(g.status)+'"><i></i>'+esc(g.status)+'</span></td><td>'+esc(g.notes||'')+'</td></tr>';
+    }).join('') : '<tr><td colspan="6" class="ig-empty">No grants tracked yet.</td></tr>';
+
+    document.querySelectorAll('#ig-inv-rows tr[data-id]').forEach(function(tr){
+      tr.addEventListener('click', function(){ openInv(invs.find(function(i){return i.id===tr.getAttribute('data-id')})); });
+    });
+    document.querySelectorAll('#ig-gr-rows tr[data-id]').forEach(function(tr){
+      tr.addEventListener('click', function(){ openGrant(grants.find(function(g){return g.id===tr.getAttribute('data-id')})); });
+    });
+  }
 
   async function load(){
-    if (window.VYVE_MAKE){ var fm = await VYVE_MAKE.list('investors',{limit:200}); if (fm && fm.length) return fm; }
-    return lsGet();
-  }
-  async function save(id, item){
-    var existing = lsGet().find(function(x){return x._id===id;});
-    var op = existing ? 'update' : 'create';
-    var diff = existing && window.VYVE_STORE ? window.VYVE_STORE.diff(existing, Object.assign({}, existing, item)) : null;
-    if (window.VYVE_MAKE){ var r = await VYVE_MAKE.upsert('investors', id, item); if (r){
-      if (window.VYVE_STORE) window.VYVE_STORE.logChange('investor', id, null, op, diff);
-      return;
-    }}
-    var a = lsGet(); var i = a.findIndex(function(x){return x._id===id;}); var e = Object.assign({_id:id}, item);
-    if (i>=0) a[i]=e; else a.unshift(e); lsSet(a);
-    if (window.VYVE_STORE) window.VYVE_STORE.logChange('investor', id, null, op, diff);
-  }
-  async function remove(id){
-    var existing = lsGet().find(function(x){return x._id===id;});
-    if (window.VYVE_STORE && existing) window.VYVE_STORE.softDelete('investor', id, existing);
-    if (window.VYVE_MAKE) await VYVE_MAKE.remove('investors', id);
-    lsSet(lsGet().filter(function(x){return x._id!==id;}));
+    var client = sb();
+    if (!client){ err('Supabase client unavailable — reload.'); return; }
+    var res = await Promise.all([
+      client.from('cc_investors').select('*').order('updated_at',{ascending:false}),
+      client.from('cc_grants').select('*').order('deadline',{ascending:true,nullsFirst:false})
+    ]);
+    if (res[0].error){ err('Investors failed to load: '+res[0].error.message); return; }
+    if (res[1].error){ err('Grants failed to load: '+res[1].error.message); return; }
+    invs = res[0].data||[]; grants = res[1].data||[];
+    render();
   }
 
-  function getRoundConfig(){
-    try {
-      var raw = localStorage.getItem('vyve.investor.round');
-      if (raw) return JSON.parse(raw);
-    } catch(e){}
-    return { name: 'Pre-seed', target: 500000 };
+  var overlay=null;
+  function closeModal(){ if(overlay){overlay.remove();overlay=null;} }
+  function modal(title, bodyHtml, canDelete){
+    closeModal();
+    overlay = document.createElement('div');
+    overlay.className='ig-overlay';
+    overlay.innerHTML = '<div class="ig-modal"><div class="ig-mh"><h3>'+title+'</h3></div><div class="ig-mb">'+bodyHtml+'</div>'+
+      '<div class="ig-mf">'+(canDelete?'<button class="ig-btn danger" id="g-delete">Delete</button>':'<span></span>')+
+      '<div class="ig-mf-right"><button class="ig-btn secondary" id="g-cancel">Cancel</button><button class="ig-btn primary" id="g-save">Save</button></div></div></div>';
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', function(e){ if(e.target===overlay) closeModal(); });
+    overlay.querySelector('#g-cancel').addEventListener('click', closeModal);
+    return overlay;
   }
-  function saveRoundConfig(cfg){
-    try { localStorage.setItem('vyve.investor.round', JSON.stringify(cfg)); } catch(e){}
+  function v(id){ return overlay.querySelector(id).value; }
+  function num(id){ var x=v(id); return x===''?null:Number(x); }
+  async function withEmail(payload){
+    try { var s = await sb().auth.getSession(); payload.created_by = (s.data.session && s.data.session.user.email) || null; } catch(_){}
+    return payload;
+  }
+  async function save(table, isNew, id, payload, btn){
+    btn.disabled=true; btn.textContent='Saving…';
+    var res;
+    if (isNew) res = await sb().from(table).insert(await withEmail(payload));
+    else { payload.updated_at = new Date().toISOString(); res = await sb().from(table).update(payload).eq('id', id); }
+    if (res.error){ btn.disabled=false; btn.textContent='Save'; err('Save failed: '+res.error.message); return false; }
+    closeModal(); el('ig-error').style.display='none'; load(); return true;
+  }
+  async function remove(table, id, label){
+    if (!confirm('Delete '+label+'? This cannot be undone.')) return;
+    var res = await sb().from(table).delete().eq('id', id);
+    if (res.error){ err('Delete failed: '+res.error.message); return; }
+    closeModal(); load();
   }
 
-  function renderKPIs(items){
-    var cfg = getRoundConfig();
-    document.getElementById('inv-target').textContent = cfg.target ? '£' + (cfg.target/1000).toFixed(0) + 'k' : '—';
-    document.getElementById('inv-round-name').textContent = cfg.name || 'Pre-seed';
-    document.getElementById('inv-pipeline').textContent = items.length;
-
-    var closed = items.filter(function(i){ return (i.stage||'').toLowerCase() === 'closed'; });
-    var committedAmt = closed.reduce(function(s,i){ return s + (Number(i.amount)||0); }, 0);
-    document.getElementById('inv-committed').textContent = committedAmt ? D.fmtGBP(committedAmt) : '£0';
-    var pct = cfg.target ? Math.round(committedAmt / cfg.target * 100) : 0;
-    document.getElementById('inv-committed-pct').textContent = pct + '% of target';
-
-    // Runway (gated by ACL)
-    var runway = D.finance.runwayMonths();
-    var redact = window.VYVE_ACL && window.VYVE_ACL.shouldRedact('runway');
-    if (redact) {
-      document.getElementById('inv-runway').innerHTML = window.VYVE_ACL.redactedValue();
-      document.getElementById('inv-runway-sub').textContent = 'Lead-only';
-    } else {
-      document.getElementById('inv-runway').textContent = runway != null ? runway + ' months' : '—';
-      document.getElementById('inv-runway-sub').textContent = runway != null ? 'At current burn' : 'Add finance entries';
-    }
-  }
-
-  function renderPipeline(items){
-    var stages = { approach:[], meeting:[], dd:[], termsheet:[], closed:[] };
-    items.forEach(function(i){
-      var s = (i.stage||'approach').toLowerCase();
-      if (!stages[s]) s = 'approach';
-      stages[s].push(i);
+  function openInv(inv){
+    var isNew = !inv; inv = inv||{};
+    modal(isNew?'Add investor':'Edit investor',
+      '<div class="ig-field"><label>Name</label><input class="ig-in" id="f-name" value="'+esc(inv.name||'')+'"></div>'+
+      '<div class="ig-two"><div class="ig-field"><label>Contact</label><input class="ig-in" id="f-contact" value="'+esc(inv.contact||'')+'"></div>'+
+      '<div class="ig-field"><label>Email</label><input class="ig-in" id="f-email" value="'+esc(inv.email||'')+'"></div></div>'+
+      '<div class="ig-two"><div class="ig-field"><label>Type</label><select class="ig-in" id="f-type">'+opts(INV_TYPES,inv.type)+'</select></div>'+
+      '<div class="ig-field"><label>Stage</label><select class="ig-in" id="f-stage">'+opts(INV_STAGES,inv.stage)+'</select></div></div>'+
+      '<div class="ig-field"><label>Amount £</label><input class="ig-in" id="f-amount" type="number" step="1" value="'+(inv.amount!=null?esc(inv.amount):'')+'"></div>'+
+      '<div class="ig-field"><label>Next action</label><input class="ig-in" id="f-next" value="'+esc(inv.next_action||'')+'"></div>'+
+      '<div class="ig-field"><label>Notes</label><input class="ig-in" id="f-notes" value="'+esc(inv.notes||'')+'"></div>', !isNew);
+    overlay.querySelector('#g-save').addEventListener('click', function(){
+      var name = v('#f-name').trim(); if(!name){ overlay.querySelector('#f-name').focus(); return; }
+      save('cc_investors', isNew, inv.id, {name:name, contact:v('#f-contact').trim()||null, email:v('#f-email').trim()||null,
+        type:v('#f-type'), stage:v('#f-stage'), amount:num('#f-amount'),
+        next_action:v('#f-next').trim()||null, notes:v('#f-notes').trim()||null}, this);
     });
-    Object.keys(stages).forEach(function(stage){
-      var body = document.querySelector('.kanban-body[data-stage="'+stage+'"]');
-      var count = document.querySelector('.kanban-count[data-stage="'+stage+'"]');
-      if (count) count.textContent = stages[stage].length;
-      if (!body) return;
-      if (!stages[stage].length){ body.innerHTML = '<div style="padding:14px 8px;text-align:center;font-size:11px;color:var(--text-muted)">Empty</div>'; return; }
-      body.innerHTML = stages[stage].map(function(i){
-        var amount = i.amount ? D.fmtGBP(i.amount) : '';
-        var meta = [];
-        if (i.type) meta.push(VYVE_UI.escape(i.type));
-        if (i.round) meta.push(VYVE_UI.escape(i.round));
-        if (amount) meta.push(amount);
-        return '<div class="kanban-card" data-id="' + i._id + '">' +
-          '<div class="kc-title">' + VYVE_UI.escape(i.name || i.firm || '(unknown)') + '</div>' +
-          '<div class="kc-meta">' + meta.join(' · ') + '</div>' +
-        '</div>';
-      }).join('');
-      body.querySelectorAll('.kanban-card').forEach(function(card){
-        card.addEventListener('click', function(){ openInvestorModal(items.find(function(x){return x._id===card.dataset.id;})); });
-      });
+    if (!isNew) overlay.querySelector('#g-delete').addEventListener('click', function(){ remove('cc_investors', inv.id, inv.name); });
+  }
+
+  function openGrant(g){
+    var isNew = !g; g = g||{};
+    modal(isNew?'Add grant':'Edit grant',
+      '<div class="ig-field"><label>Grant</label><input class="ig-in" id="f-name" value="'+esc(g.name||'')+'"></div>'+
+      '<div class="ig-two"><div class="ig-field"><label>Funder</label><input class="ig-in" id="f-funder" value="'+esc(g.funder||'')+'"></div>'+
+      '<div class="ig-field"><label>Amount £</label><input class="ig-in" id="f-amount" type="number" step="1" value="'+(g.amount!=null?esc(g.amount):'')+'"></div></div>'+
+      '<div class="ig-two"><div class="ig-field"><label>Deadline</label><input class="ig-in" id="f-deadline" type="date" value="'+esc(g.deadline||'')+'"></div>'+
+      '<div class="ig-field"><label>Status</label><select class="ig-in" id="f-status">'+opts(GR_STATUS,g.status)+'</select></div></div>'+
+      '<div class="ig-field"><label>Notes</label><input class="ig-in" id="f-notes" value="'+esc(g.notes||'')+'"></div>', !isNew);
+    overlay.querySelector('#g-save').addEventListener('click', function(){
+      var name = v('#f-name').trim(); if(!name){ overlay.querySelector('#f-name').focus(); return; }
+      save('cc_grants', isNew, g.id, {name:name, funder:v('#f-funder').trim()||null, amount:num('#f-amount'),
+        deadline:v('#f-deadline')||null, status:v('#f-status'), notes:v('#f-notes').trim()||null}, this);
     });
+    if (!isNew) overlay.querySelector('#g-delete').addEventListener('click', function(){ remove('cc_grants', g.id, g.name); });
   }
 
-  function renderMRRTrend(){
-    var snaps = D.finance.all().slice(0, 6).reverse();
-    var redact = window.VYVE_ACL && window.VYVE_ACL.shouldRedact('mrr');
-    if (redact) {
-      document.getElementById('inv-mrr-trend').innerHTML = '<div style="padding:30px 0;text-align:center">' + window.VYVE_ACL.redactedValue('Lead-only data') + '<p style="margin-top:8px;font-size:12px;color:var(--text-muted)">MRR trend hidden for your role</p></div>';
-      return;
-    }
-    if (!snaps.length){
-      document.getElementById('inv-mrr-trend').innerHTML = '<div class="empty" style="padding:24px 0"><p>No finance snapshots logged. Add monthly entries in Finance.</p></div>';
-      return;
-    }
-    // Build a simple SVG sparkline
-    var values = snaps.map(function(s){ return Number(s.mrr) || 0; });
-    var max = Math.max.apply(null, values.concat([1]));
-    var w = 380, h = 100, pad = 8;
-    var pts = values.map(function(v, i){
-      var x = pad + (i / Math.max(1, values.length - 1)) * (w - pad*2);
-      var y = h - pad - (v / max) * (h - pad*2);
-      return x + ',' + y;
-    });
-    // Target line if MRR target set
-    var targetSvg = window.VYVE_TARGETS ? window.VYVE_TARGETS.targetLineSvg('mrr', { width: w, height: h, padding: pad, dataMax: max }) : '';
-    var svg = '<svg viewBox="0 0 ' + w + ' ' + h + '" style="width:100%;height:auto;max-width:480px">' +
-      targetSvg +
-      '<polyline fill="none" stroke="var(--vyve-teal)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" points="' + pts.join(' ') + '"/>' +
-      pts.map(function(p){ var xy = p.split(','); return '<circle cx="' + xy[0] + '" cy="' + xy[1] + '" r="3" fill="var(--vyve-teal)"/>'; }).join('') +
-    '</svg>';
-    var latest = values[values.length - 1];
-    var first = values[0];
-    var growth = first ? Math.round(((latest - first) / first) * 100) : null;
-    var vsTarget = window.VYVE_TARGETS ? window.VYVE_TARGETS.renderVsBadge('mrr', latest) : '';
-    document.getElementById('inv-mrr-trend').innerHTML =
-      '<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;gap:8px;flex-wrap:wrap">' +
-        '<div style="display:flex;align-items:baseline;gap:8px">' +
-          '<div style="font-family:var(--font-head);font-size:32px;font-weight:700;color:var(--text);letter-spacing:-0.01em">' + D.fmtGBP(latest) + '</div>' +
-          vsTarget +
-        '</div>' +
-        '<div style="font-size:12px;color:' + (growth >= 0 ? 'var(--success)' : 'var(--danger)') + ';font-weight:600">' + (growth != null ? (growth >= 0 ? '+' : '') + growth + '% vs 6mo' : '') + '</div>' +
-      '</div>' +
-      svg;
-  }
-
-  function renderActive(items){
-    // Active = not "closed" and last activity < 30d, or has next_step
-    var active = items.filter(function(i){
-      var s = (i.stage||'').toLowerCase();
-      if (s === 'closed') return false;
-      return !!i.next_step || !!i.last_contact;
-    }).slice(0, 8);
-    var sub = document.getElementById('inv-active-sub');
-    if (!active.length){
-      sub.textContent = 'No active conversations';
-      document.getElementById('inv-active-list').innerHTML = '<div class="empty" style="padding:24px 0"><p>Set <strong>Next step</strong> on investors to surface them here.</p></div>';
-      return;
-    }
-    sub.textContent = active.length + ' open';
-    document.getElementById('inv-active-list').innerHTML = active.map(function(i){
-      return '<div class="list-row" style="padding:12px 22px;cursor:pointer;border-bottom:1px solid var(--border)" data-id="' + i._id + '">' +
-        '<div class="list-row-main">' +
-          '<div class="list-row-title">' + VYVE_UI.escape(i.name || i.firm || '—') + '</div>' +
-          '<div class="list-row-sub">' + VYVE_UI.escape(i.next_step || 'Next step not set') + '</div>' +
-        '</div>' +
-        '<div class="list-row-meta" style="font-size:11px;color:var(--text-muted)">' + (i.last_contact ? D.fmtDate(i.last_contact) : '') + '</div>' +
-      '</div>';
-    }).join('');
-    document.getElementById('inv-active-list').querySelectorAll('[data-id]').forEach(function(row){
-      row.addEventListener('click', function(){ openInvestorModal(items.find(function(x){return x._id===row.dataset.id;})); });
-    });
-  }
-
-  function renderUpdates(){
-    try {
-      var raw = localStorage.getItem('vyve.investor.updates');
-      var updates = raw ? JSON.parse(raw) : [];
-      if (!updates.length){
-        document.getElementById('inv-updates-list').innerHTML = '<div class="empty" style="padding:24px 22px"><h3>No updates logged</h3><p>Click "Add update" below to log a monthly investor update. It will appear here as a history.</p><div style="margin-top:14px"><button class="btn btn-primary btn-sm" id="inv-add-update">Add update</button></div></div>';
-      } else {
-        document.getElementById('inv-updates-list').innerHTML = updates.slice(0, 5).map(function(u){
-          return '<div style="padding:14px 22px;border-bottom:1px solid var(--border)">' +
-            '<div style="display:flex;align-items:baseline;justify-content:space-between"><div style="font-weight:600">' + VYVE_UI.escape(u.title || 'Update') + '</div><div style="font-size:11px;color:var(--text-muted)">' + D.fmtDate(u.at) + '</div></div>' +
-            '<div style="font-size:13px;color:var(--text);margin-top:4px;white-space:pre-wrap">' + VYVE_UI.escape(u.body || '') + '</div>' +
-          '</div>';
-        }).join('') + '<div style="padding:14px 22px;text-align:right"><button class="btn btn-ghost btn-sm" id="inv-add-update">Add update</button></div>';
-      }
-      var btn = document.getElementById('inv-add-update');
-      if (btn) btn.addEventListener('click', openAddUpdate);
-    } catch(e){}
-  }
-
-  function openInvestorModal(i){
-    i = i || {};
-    var _modal = VYVE_UI.modal({
-      title: i._id ? ('Edit ' + (i.name || i.firm || 'investor')) : 'Add investor',
-      draftKey: 'investor:' + (i._id || 'new'),
-      body:
-        '<div class="form-row cols-2"><div class="form-group"><label>Name / firm</label><input id="iv-name" value="' + VYVE_UI.escape(i.name || i.firm || '') + '"/></div><div class="form-group"><label>Type</label><select id="iv-type"><option value="angel">Angel</option><option value="vc">VC</option><option value="family-office">Family office</option><option value="impact">Impact</option><option value="grant">Grant</option><option value="strategic">Strategic</option></select></div></div>' +
-        '<div class="form-row cols-2"><div class="form-group"><label>Stage</label><select id="iv-stage"><option value="approach">To approach</option><option value="meeting">First meeting</option><option value="dd">Due diligence</option><option value="termsheet">Term sheet</option><option value="closed">Closed</option></select></div><div class="form-group"><label>Round</label><input id="iv-round" value="' + VYVE_UI.escape(i.round || '') + '" placeholder="Pre-seed, Seed, Series A..."/></div></div>' +
-        '<div class="form-row cols-2"><div class="form-group"><label>Amount (£)</label><input id="iv-amount" type="number" min="0" value="' + (i.amount || '') + '"/></div><div class="form-group"><label>Last contact</label><input id="iv-last" type="date" value="' + ((i.last_contact || '').slice(0, 10)) + '"/></div></div>' +
-        '<div class="form-row"><div class="form-group"><label>Contact email</label><input id="iv-email" value="' + VYVE_UI.escape(i.contact_email || '') + '"/></div></div>' +
-        '<div class="form-row"><div class="form-group"><label>Next step</label><input id="iv-next" value="' + VYVE_UI.escape(i.next_step || '') + '" placeholder="e.g. send teaser deck, schedule call"/></div></div>' +
-        '<div class="form-row"><div class="form-group"><label>Notes</label><textarea id="iv-notes" rows="3">' + VYVE_UI.escape(i.notes || '') + '</textarea></div></div>' +
-        '<div style="display:flex;justify-content:space-between;gap:8px">' +
-          (i._id ? '<button class="btn" id="iv-del" style="color:var(--danger);border-color:rgba(224,96,96,.3)">Delete</button>' : '<span></span>') +
-          '<button class="btn btn-primary" id="iv-save">Save</button>' +
-        '</div>'
-    });
-    setTimeout(function(){
-      if (i.type) document.getElementById('iv-type').value = i.type;
-      if (i.stage) document.getElementById('iv-stage').value = i.stage;
-      document.getElementById('iv-save').addEventListener('click', async function(){
-        var n = document.getElementById('iv-name').value.trim();
-        if (!n){ VYVE_UI.toast('Name required', 'error'); return; }
-        var u = {
-          name: n,
-          type: document.getElementById('iv-type').value,
-          stage: document.getElementById('iv-stage').value,
-          round: document.getElementById('iv-round').value.trim(),
-          amount: Number(document.getElementById('iv-amount').value) || 0,
-          last_contact: document.getElementById('iv-last').value,
-          contact_email: document.getElementById('iv-email').value.trim(),
-          next_step: document.getElementById('iv-next').value.trim(),
-          notes: document.getElementById('iv-notes').value.trim(),
-          updated_at: new Date().toISOString(),
-          created_at: i.created_at || new Date().toISOString()
-        };
-        if (_modal && _modal.draft) _modal.draft.clear();
-        await save(i._id || ('inv_' + Date.now()), u);
-        document.querySelector('.modal-overlay').classList.remove('open');
-        boot();
-      });
-      var del = document.getElementById('iv-del');
-      if (del) del.addEventListener('click', async function(){
-        if (!confirm('Move this investor to trash?')) return;
-        await remove(i._id);
-        document.querySelector('.modal-overlay').classList.remove('open');
-        boot();
-      });
-    }, 50);
-  }
-
-  function openAddUpdate(){
-    var _upModal = VYVE_UI.modal({
-      title: 'Add board update',
-      draftKey: 'investor-update:new',
-      body:
-        '<div class="form-row"><div class="form-group"><label>Title</label><input id="up-title" placeholder="e.g. April 2026 update" value=""/></div></div>' +
-        '<div class="form-row"><div class="form-group"><label>Body</label><textarea id="up-body" rows="8" placeholder="What happened this month, what changed in the numbers, what\u2019s next..."></textarea></div></div>' +
-        '<div style="display:flex;justify-content:flex-end"><button class="btn btn-primary" id="up-save">Save</button></div>'
-    });
-    setTimeout(function(){
-      document.getElementById('up-save').addEventListener('click', function(){
-        var title = document.getElementById('up-title').value.trim();
-        var body = document.getElementById('up-body').value.trim();
-        if (!title){ VYVE_UI.toast('Title required', 'error'); return; }
-        var raw = localStorage.getItem('vyve.investor.updates');
-        var list = [];
-        try { list = raw ? JSON.parse(raw) : []; } catch(e){}
-        list.unshift({ title: title, body: body, at: new Date().toISOString() });
-        localStorage.setItem('vyve.investor.updates', JSON.stringify(list.slice(0, 50)));
-        if (_upModal && _upModal.draft) _upModal.draft.clear();
-        document.querySelector('.modal-overlay').classList.remove('open');
-        VYVE_UI.toast('Update saved', 'success');
-        renderUpdates();
-      });
-    }, 50);
-  }
-
-  async function boot(){
-    var items = await load();
-    renderKPIs(items);
-    renderPipeline(items);
-    renderMRRTrend();
-    renderActive(items);
-    renderUpdates();
-  }
-
-  document.getElementById('inv-add').addEventListener('click', function(){ openInvestorModal({}); });
-  document.getElementById('inv-export').addEventListener('click', function(){
-    if (window.VYVE_PDF) window.VYVE_PDF.printBoardPack();
-  });
-
-  window.VYVE_PAGE_SHORTCUTS = {
-    onNew: function(){ openInvestorModal({}); }
-  };
-
-  boot();
+  el('ig-add-inv').addEventListener('click', function(){ openInv(null); });
+  el('ig-add-gr').addEventListener('click', function(){ openGrant(null); });
+  load();
 })();
 </script>

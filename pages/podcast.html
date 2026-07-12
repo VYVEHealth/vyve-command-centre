@@ -1,289 +1,152 @@
-<div class="page active" id="page-podcast">
-  <div class="page-header">
-    <div class="hdr-row">
-      <div>
-        <div class="eyebrow">Voice & Reach</div><h1 class="page-title">Podcast</h1><p class="page-sub">Episode pipeline, guest CRM, performance per episode</p>
-      </div>
-      <div style="display:flex;gap:8px">
-        <button class="btn" id="pod-refresh" title="Pull the latest podcast episodes from Make">↻ Refresh from Make</button>
-        <span id="pod-fresh" style="font-size:11px;color:var(--text-muted);align-self:center;margin-left:-2px"></span>
-        <button class="btn" id="pod-add-guest">Add guest</button>
-        <button class="btn btn-primary" id="pod-add-ep">New episode</button>
-      </div>
-    </div>
-  </div>
+<!-- =====================================================================
+     VYVE Command Centre — Podcast (PM-758, CC overhaul Phase 3)
+     cc_episodes tracker for The VYVE Podcast. CHECK: planned/recorded/published.
+     ===================================================================== -->
+<style>
+.pd-head{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px}
+.pd-eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.pd-h1{font-size:22px;font-weight:700;letter-spacing:-.015em}
+.pd-meta{font-size:13px;color:var(--text-muted)}
+.pd-btn{border:0;border-radius:9px;padding:9px 16px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:var(--font-body)}
+.pd-btn.primary{background:var(--accent);color:var(--on-accent)}
+.pd-btn.primary:hover{background:var(--accent-hover)}
+.pd-btn.secondary{background:var(--surface-2);color:var(--text);border:1px solid var(--border-strong)}
+.pd-btn.danger{background:var(--danger-pale);color:var(--danger)}
+.pd-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow-md);overflow-x:auto}
+.pd-table{width:100%;border-collapse:collapse}
+.pd-table th{font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim);text-align:left;padding:10px 16px;border-bottom:1px solid var(--border)}
+.pd-table td{padding:11px 16px;border-bottom:1px solid var(--border);font-size:13.5px;vertical-align:middle}
+.pd-table td.num{font-variant-numeric:tabular-nums;font-family:var(--font-mono);font-size:12px;color:var(--text-dim)}
+.pd-table tbody tr:last-child td{border-bottom:0}
+.pd-table tbody tr{cursor:pointer;transition:background .12s}
+.pd-table tbody tr:hover{background:var(--accent-pale)}
+.pd-pill{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;border-radius:99px;padding:3px 10px}
+.pd-pill i{width:6px;height:6px;border-radius:50%;background:currentColor}
+.pd-pill.planned{background:var(--surface-2);color:var(--text-muted)}
+.pd-pill.recorded{background:var(--warning-pale);color:var(--warning)}
+.pd-pill.published{background:var(--success-pale);color:var(--success)}
+.pd-empty{padding:22px;text-align:center;color:var(--text-muted);font-size:13px}
+.pd-error{background:var(--danger-pale);border-radius:12px;padding:12px 16px;color:var(--danger);font-size:13.5px;margin-bottom:14px;display:none}
+.pd-overlay{position:fixed;inset:0;background:rgba(4,12,12,.6);backdrop-filter:blur(3px);z-index:80;display:flex;align-items:center;justify-content:center;padding:18px}
+.pd-modal{background:var(--surface);border:1px solid var(--border-strong);border-radius:16px;max-width:440px;width:100%;box-shadow:var(--shadow-lg)}
+.pd-mh{padding:18px 20px 0}.pd-mh h3{font-size:16px;font-weight:700}
+.pd-mb{padding:12px 20px 4px}
+.pd-field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.pd-field label{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim)}
+.pd-in{background:var(--surface-2);border:1px solid var(--border-strong);border-radius:9px;padding:9px 12px;font-size:13.5px;color:var(--text);font-family:var(--font-body);width:100%}
+.pd-in:focus{outline:2px solid var(--accent);outline-offset:0;border-color:transparent}
+.pd-two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pd-mf{display:flex;justify-content:space-between;gap:10px;padding:16px 20px 18px}
+.pd-mf-right{display:flex;gap:10px}
+</style>
 
-  <div class="tab-bar">
-    <button class="tab-btn active" data-tab="pod-pipeline">Episode Pipeline</button>
-    <button class="tab-btn" data-tab="pod-guests">Guest CRM</button>
-    <button class="tab-btn" data-tab="pod-published">Published</button>
+<div class="pd-head">
+  <div>
+    <div class="pd-eyebrow">Run the Business</div>
+    <div class="pd-h1">The VYVE Podcast</div>
+    <div class="pd-meta" id="pd-meta">Loading…</div>
   </div>
-
-  <div id="pod-pipeline" class="tab-panel active">
-    <div class="kanban" id="pod-kanban">
-      <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">Idea</span><span class="kanban-count" data-pod="idea">0</span></div><div class="kanban-body" data-pod="idea"></div></div>
-      <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">Invited</span><span class="kanban-count" data-pod="invited">0</span></div><div class="kanban-body" data-pod="invited"></div></div>
-      <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">Booked</span><span class="kanban-count" data-pod="booked">0</span></div><div class="kanban-body" data-pod="booked"></div></div>
-      <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">Recorded</span><span class="kanban-count" data-pod="recorded">0</span></div><div class="kanban-body" data-pod="recorded"></div></div>
-      <div class="kanban-col"><div class="kanban-col-header"><span class="kanban-col-title">Editing</span><span class="kanban-count" data-pod="editing">0</span></div><div class="kanban-body" data-pod="editing"></div></div>
-    </div>
-  </div>
-
-  <div id="pod-guests" class="tab-panel">
-    <div class="tbl-wrap">
-      <div class="tbl-filters"><div class="search"><input id="guest-search" placeholder="Search guests by name, organisation, expertise..."/></div></div>
-      <table class="tbl">
-        <thead><tr><th>Name</th><th>Organisation</th><th>Expertise</th><th>Status</th><th>Last contacted</th></tr></thead>
-        <tbody id="guests-tbody"><tr><td colspan="5"><div class="empty"><span class="icon">·</span><h3>No guests yet</h3><p>Click &ldquo;Add guest&rdquo; to build your guest CRM.</p></div></td></tr></tbody>
-      </table>
-    </div>
-  </div>
-
-  <div id="pod-published" class="tab-panel">
-    <div class="grid-3" style="margin-bottom:16px">
-      <div class="stat"><div class="stat-label">Episodes published</div><div class="stat-value" id="ep-count">0</div></div>
-      <div class="stat"><div class="stat-label">Total downloads</div><div class="stat-value" id="ep-downloads">—</div></div>
-      <div class="stat"><div class="stat-label">Avg per episode</div><div class="stat-value" id="ep-avg">—</div></div>
-    </div>
-    <div class="card">
-      <div class="card-header"><span class="card-title">Recent episodes</span></div>
-      <div id="published-list"><div class="empty"><span class="icon">·</span><h3>No published episodes yet</h3><p>Episodes marked &ldquo;Published&rdquo; appear here with stats.</p></div></div>
-    </div>
-  </div>
+  <button class="pd-btn primary" id="pd-add">Add episode</button>
+</div>
+<div class="pd-error" id="pd-error"></div>
+<div class="pd-card">
+  <table class="pd-table">
+    <thead><tr><th>#</th><th>Title</th><th>Guest</th><th>Date</th><th>Status</th><th>Notes</th></tr></thead>
+    <tbody id="pd-rows"><tr><td colspan="6" class="pd-empty">Loading…</td></tr></tbody>
+  </table>
 </div>
 
 <script>
 (function(){
-  var LS_EP='vyve_podcast_eps', LS_G='vyve_podcast_guests';
-  function lsGet(k){ try { var v=localStorage.getItem(k); return v?JSON.parse(v):[]; } catch(e){ return []; } }
-  function lsSet(k,v){ try { localStorage.setItem(k,JSON.stringify(v)); } catch(e){} }
+  var STATUSES = ['planned','recorded','published'];
+  var eps = [];
+  function el(id){ return document.getElementById(id); }
+  function esc(s){ var d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
+  function err(m){ var e=el('pd-error'); e.style.display='block'; e.textContent=m; }
+  function sb(){ return window.VYVE_SUPABASE && window.VYVE_SUPABASE.client && window.VYVE_SUPABASE.client(); }
+  function opts(list, sel){ return list.map(function(s){return '<option value="'+s+'"'+(sel===s?' selected':'')+'>'+s+'</option>'}).join(''); }
 
-  async function loadEps(){
-    if (window.VYVE_MAKE){ var fm = await VYVE_MAKE.list('podcast_episodes',{limit:500}); if(fm&&fm.length) return fm; }
-    return lsGet(LS_EP);
-  }
-  async function loadGuests(){
-    if (window.VYVE_MAKE){ var fm = await VYVE_MAKE.list('podcast_guests',{limit:500}); if(fm&&fm.length) return fm; }
-    return lsGet(LS_G);
-  }
-  async function saveEp(id, item){
-    if (window.VYVE_MAKE){ var r = await VYVE_MAKE.upsert('podcast_episodes', id, item); if (r) return; }
-    var a = lsGet(LS_EP); var i = a.findIndex(function(x){return x._id===id;}); var e = Object.assign({_id:id}, item);
-    if (i>=0) a[i]=e; else a.unshift(e); lsSet(LS_EP, a);
-  }
-  async function saveGuest(id, item){
-    if (window.VYVE_MAKE){ var r = await VYVE_MAKE.upsert('podcast_guests', id, item); if (r) return; }
-    var a = lsGet(LS_G); var i = a.findIndex(function(x){return x._id===id;}); var e = Object.assign({_id:id}, item);
-    if (i>=0) a[i]=e; else a.unshift(e); lsSet(LS_G, a);
-  }
-  async function removeEp(id){ if (window.VYVE_MAKE) await VYVE_MAKE.remove('podcast_episodes', id); lsSet(LS_EP, lsGet(LS_EP).filter(function(x){return x._id!==id;})); }
-  async function removeGuest(id){ if (window.VYVE_MAKE) await VYVE_MAKE.remove('podcast_guests', id); lsSet(LS_G, lsGet(LS_G).filter(function(x){return x._id!==id;})); }
-
-  document.querySelectorAll('#page-podcast .tab-btn').forEach(function(b){
-    b.addEventListener('click', function(){
-      document.querySelectorAll('#page-podcast .tab-btn').forEach(function(x){x.classList.remove('active');});
-      document.querySelectorAll('#page-podcast .tab-panel').forEach(function(x){x.classList.remove('active');});
-      b.classList.add('active');
-      document.getElementById(b.dataset.tab).classList.add('active');
-    });
-  });
-
-  function renderPipeline(eps){
-    var inProgress = eps.filter(function(e){ return (e.status||'idea') !== 'published'; });
-    var stages = { idea:[], invited:[], booked:[], recorded:[], editing:[] };
-    inProgress.forEach(function(e){ var s = (e.status||'idea').toLowerCase(); if (!stages[s]) s='idea'; stages[s].push(e); });
-    Object.keys(stages).forEach(function(stage){
-      var body = document.querySelector('.kanban-body[data-pod="'+stage+'"]');
-      var count = document.querySelector('.kanban-count[data-pod="'+stage+'"]');
-      if (count) count.textContent = stages[stage].length;
-      if (!body) return;
-      if (!stages[stage].length){ body.innerHTML = '<div style="padding:16px 10px;text-align:center;font-size:11px;color:var(--text-muted)">Empty</div>'; return; }
-      body.innerHTML = stages[stage].map(function(e){
-        return '<div class="kanban-card" data-id="'+e._id+'"><div class="kc-title">'+VYVE_UI.escape(e.title||'(untitled)')+'</div><div class="kc-meta">'+VYVE_UI.escape(e.guest||'TBD')+(e.recording_date ? ' &middot; '+VYVE_UI.fmtDate(e.recording_date) : '')+'</div></div>';
-      }).join('');
-      body.querySelectorAll('.kanban-card').forEach(function(card){
-        card.addEventListener('click', function(){ editEp(card.dataset.id, eps); });
-      });
+  function render(){
+    var pub = eps.filter(function(e){return e.status==='published'}).length;
+    var pipeline = eps.length - pub;
+    el('pd-meta').textContent = eps.length ? (pub+' published · '+pipeline+' in the pipeline') : 'No episodes tracked yet';
+    var rows = el('pd-rows');
+    rows.innerHTML = eps.length ? eps.map(function(e){
+      return '<tr data-id="'+e.id+'"><td class="num">'+(e.episode_number!=null?esc(e.episode_number):'—')+'</td>'+
+        '<td><b>'+esc(e.title||'(untitled)')+'</b></td><td>'+esc(e.guest||'—')+'</td><td>'+esc(e.episode_date||'—')+'</td>'+
+        '<td><span class="pd-pill '+esc(e.status)+'"><i></i>'+esc(e.status)+'</span></td><td>'+esc(e.notes||'')+'</td></tr>';
+    }).join('') : '<tr><td colspan="6" class="pd-empty">Nothing tracked yet. The 60+ back-catalogue lives on the podcast page — track new episodes and guests here from planning to publish.</td></tr>';
+    rows.querySelectorAll('tr[data-id]').forEach(function(tr){
+      tr.addEventListener('click', function(){ openModal(eps.find(function(e){return e.id===tr.getAttribute('data-id')})); });
     });
   }
 
-  function renderPublished(eps){
-    var pub = eps.filter(function(e){ return (e.status||'').toLowerCase() === 'published'; });
-    document.getElementById('ep-count').textContent = pub.length;
-    var totalDl = pub.reduce(function(s,e){ return s + (Number(e.downloads)||0); }, 0);
-    document.getElementById('ep-downloads').textContent = totalDl ? totalDl.toLocaleString('en-GB') : '—';
-    document.getElementById('ep-avg').textContent = (pub.length && totalDl) ? Math.round(totalDl/pub.length).toLocaleString('en-GB') : '—';
-    var list = document.getElementById('published-list');
-    if (!pub.length){ list.innerHTML = '<div class="empty"><span class="icon">·</span><h3>No published episodes yet</h3></div>'; return; }
-    pub.sort(function(a,b){ return new Date(b.published_at||0) - new Date(a.published_at||0); });
-    list.innerHTML = pub.slice(0,20).map(function(e){
-      return '<div style="padding:14px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">'+
-        '<div style="flex:1"><div style="font-weight:600;color:var(--text);margin-bottom:3px">'+VYVE_UI.escape(e.title||'(untitled)')+'</div><div style="font-size:11.5px;color:var(--text-muted)">'+VYVE_UI.escape(e.guest||'')+(e.published_at ? ' &middot; '+VYVE_UI.fmtDate(e.published_at) : '')+'</div></div>'+
-        (e.downloads ? '<div style="font-size:13px;color:var(--vyve-teal);font-weight:600">'+Number(e.downloads).toLocaleString('en-GB')+' downloads</div>' : '')+
-        '</div>';
-    }).join('');
+  async function load(){
+    var client = sb();
+    if (!client){ err('Supabase client unavailable — reload.'); return; }
+    var res = await client.from('cc_episodes').select('*').order('episode_number',{ascending:false,nullsFirst:false});
+    if (res.error){ err('Episodes failed to load: '+res.error.message); return; }
+    eps = res.data||[];
+    render();
   }
 
-  function renderGuests(items){
-    var q = (document.getElementById('guest-search').value || '').toLowerCase();
-    if (q) items = items.filter(function(g){
-      return (g.name||'').toLowerCase().includes(q) || (g.org||'').toLowerCase().includes(q) || (g.expertise||'').toLowerCase().includes(q);
-    });
-    var tbody = document.getElementById('guests-tbody');
-    if (!items.length){ tbody.innerHTML = '<tr><td colspan="5"><div class="empty"><span class="icon">·</span><h3>No guests yet</h3></div></td></tr>'; return; }
-    tbody.innerHTML = items.map(function(g){
-      var statusColor = { 'invited':'badge-amber', 'declined':'badge-red', 'recorded':'badge-blue', 'aired':'badge-green' }[(g.status||'').toLowerCase()] || 'badge-grey';
-      return '<tr style="cursor:pointer" data-guest-id="'+g._id+'"><td style="font-weight:600">'+VYVE_UI.escape(g.name||'')+'</td><td>'+VYVE_UI.escape(g.org||'')+'</td><td>'+VYVE_UI.escape(g.expertise||'')+'</td><td><span class="badge '+statusColor+'">'+VYVE_UI.escape(g.status||'lead')+'</span></td><td>'+(g.last_contact ? VYVE_UI.fmtRelative(g.last_contact) : '—')+'</td></tr>';
-    }).join('');
-    tbody.querySelectorAll('[data-guest-id]').forEach(function(row){
-      row.addEventListener('click', function(){ editGuest(row.dataset.guestId, items); });
-    });
-  }
-
-  function editEp(id, eps){
-    var e = eps.find(function(x){return x._id===id;}); if (!e) return;
-    openEpModal('Edit episode', e, async function(u){ await saveEp(id, u); var all = await loadEps(); renderPipeline(all); renderPublished(all); }, async function(){ await removeEp(id); var all = await loadEps(); renderPipeline(all); renderPublished(all); });
-  }
-  function editGuest(id, gs){
-    var g = gs.find(function(x){return x._id===id;}); if (!g) return;
-    openGuestModal('Edit guest', g, async function(u){ await saveGuest(id, u); renderGuests(await loadGuests()); }, async function(){ await removeGuest(id); renderGuests(await loadGuests()); });
-  }
-
-  function openEpModal(title, init, onSave, onDel){
-    init = init || {};
-    VYVE_UI.modal({ title: title, body:
-      '<div class="form-row"><div class="form-group"><label>Episode title</label><input id="ep-title" value="'+VYVE_UI.escape(init.title||'')+'"/></div></div>'+
-      '<div class="form-row cols-2">'+
-        '<div class="form-group"><label>Guest</label><input id="ep-guest" value="'+VYVE_UI.escape(init.guest||'')+'"/></div>'+
-        '<div class="form-group"><label>Status</label><select id="ep-status"><option value="idea">Idea</option><option value="invited">Invited</option><option value="booked">Booked</option><option value="recorded">Recorded</option><option value="editing">Editing</option><option value="published">Published</option></select></div>'+
+  var overlay=null;
+  function closeModal(){ if(overlay){overlay.remove();overlay=null;} }
+  function openModal(e){
+    closeModal();
+    var isNew = !e; e = e||{};
+    var nextNum = isNew ? (eps.reduce(function(m,x){return Math.max(m, x.episode_number||0)},0) + 1) : e.episode_number;
+    overlay = document.createElement('div');
+    overlay.className='pd-overlay';
+    overlay.innerHTML =
+      '<div class="pd-modal"><div class="pd-mh"><h3>'+(isNew?'Add episode':'Edit episode')+'</h3></div>'+
+      '<div class="pd-mb">'+
+        '<div class="pd-two"><div class="pd-field"><label>Episode #</label><input class="pd-in" id="e-num" type="number" min="1" value="'+(nextNum!=null?esc(nextNum):'')+'"></div>'+
+        '<div class="pd-field"><label>Date</label><input class="pd-in" id="e-date" type="date" value="'+esc(e.episode_date||'')+'"></div></div>'+
+        '<div class="pd-field"><label>Title</label><input class="pd-in" id="e-title" value="'+esc(e.title||'')+'"></div>'+
+        '<div class="pd-field"><label>Guest</label><input class="pd-in" id="e-guest" value="'+esc(e.guest||'')+'"></div>'+
+        '<div class="pd-field"><label>Status</label><select class="pd-in" id="e-status">'+opts(STATUSES,e.status)+'</select></div>'+
+        '<div class="pd-field"><label>Notes</label><input class="pd-in" id="e-notes" value="'+esc(e.notes||'')+'"></div>'+
       '</div>'+
-      '<div class="form-row cols-2">'+
-        '<div class="form-group"><label>Recording date</label><input id="ep-rec" type="date" value="'+VYVE_UI.escape(init.recording_date||'')+'"/></div>'+
-        '<div class="form-group"><label>Publish date</label><input id="ep-pub" type="date" value="'+VYVE_UI.escape((init.published_at||'').slice(0,10))+'"/></div>'+
-      '</div>'+
-      '<div class="form-row cols-2">'+
-        '<div class="form-group"><label>Pillar</label><select id="ep-pillar"><option value="">—</option><option value="physical">Physical</option><option value="mental">Mental</option><option value="social">Social</option></select></div>'+
-        '<div class="form-group"><label>Downloads (if published)</label><input id="ep-dl" type="number" min="0" value="'+(init.downloads||'')+'"/></div>'+
-      '</div>'+
-      '<div class="form-row"><div class="form-group"><label>Notes</label><textarea id="ep-notes" rows="3">'+VYVE_UI.escape(init.notes||'')+'</textarea></div></div>'+
-      '<div style="display:flex;justify-content:space-between;gap:8px">'+(onDel?'<button class="btn" id="ep-del" style="color:var(--danger);border-color:rgba(224,96,96,.3)">Delete</button>':'<span></span>')+'<button class="btn btn-primary" id="ep-save">Save</button></div>'
-    });
-    setTimeout(function(){
-      if (init.status) document.getElementById('ep-status').value = init.status;
-      if (init.pillar) document.getElementById('ep-pillar').value = init.pillar;
-      document.getElementById('ep-save').addEventListener('click', function(){
-        var t = document.getElementById('ep-title').value.trim();
-        if (!t){ VYVE_UI.toast('Title required','error'); return; }
-        var pub = document.getElementById('ep-pub').value;
-        var u = { title:t, guest:document.getElementById('ep-guest').value.trim(), status:document.getElementById('ep-status').value, recording_date:document.getElementById('ep-rec').value, published_at: pub ? (pub+'T00:00:00.000Z') : (init.published_at||''), pillar:document.getElementById('ep-pillar').value, downloads:Number(document.getElementById('ep-dl').value)||0, notes:document.getElementById('ep-notes').value.trim(), updated_at:new Date().toISOString(), created_at: init.created_at || new Date().toISOString() };
-        onSave(u);
-        document.querySelector('.modal-overlay').classList.remove('open');
-      });
-      if (onDel) document.getElementById('ep-del').addEventListener('click', function(){ if (confirm('Delete?')){ onDel(); document.querySelector('.modal-overlay').classList.remove('open'); } });
-    }, 50);
-  }
-
-  function openGuestModal(title, init, onSave, onDel){
-    init = init || {};
-    VYVE_UI.modal({ title: title, body:
-      '<div class="form-row cols-2">'+
-        '<div class="form-group"><label>Name</label><input id="g-name" value="'+VYVE_UI.escape(init.name||'')+'"/></div>'+
-        '<div class="form-group"><label>Organisation</label><input id="g-org" value="'+VYVE_UI.escape(init.org||'')+'"/></div>'+
-      '</div>'+
-      '<div class="form-row"><div class="form-group"><label>Expertise / angle</label><input id="g-exp" value="'+VYVE_UI.escape(init.expertise||'')+'"/></div></div>'+
-      '<div class="form-row cols-2">'+
-        '<div class="form-group"><label>Status</label><select id="g-status"><option value="lead">Lead</option><option value="invited">Invited</option><option value="declined">Declined</option><option value="recorded">Recorded</option><option value="aired">Aired</option></select></div>'+
-        '<div class="form-group"><label>Last contact</label><input id="g-lc" type="date" value="'+VYVE_UI.escape((init.last_contact||'').slice(0,10))+'"/></div>'+
-      '</div>'+
-      '<div class="form-row cols-2">'+
-        '<div class="form-group"><label>Email</label><input id="g-email" type="email" value="'+VYVE_UI.escape(init.email||'')+'"/></div>'+
-        '<div class="form-group"><label>LinkedIn / website</label><input id="g-link" value="'+VYVE_UI.escape(init.link||'')+'"/></div>'+
-      '</div>'+
-      '<div class="form-row"><div class="form-group"><label>Notes</label><textarea id="g-notes" rows="3">'+VYVE_UI.escape(init.notes||'')+'</textarea></div></div>'+
-      '<div style="display:flex;justify-content:space-between;gap:8px">'+(onDel?'<button class="btn" id="g-del" style="color:var(--danger);border-color:rgba(224,96,96,.3)">Delete</button>':'<span></span>')+'<button class="btn btn-primary" id="g-save">Save</button></div>'
-    });
-    setTimeout(function(){
-      if (init.status) document.getElementById('g-status').value = init.status;
-      document.getElementById('g-save').addEventListener('click', function(){
-        var n = document.getElementById('g-name').value.trim();
-        if (!n){ VYVE_UI.toast('Name required','error'); return; }
-        var lc = document.getElementById('g-lc').value;
-        var u = { name:n, org:document.getElementById('g-org').value.trim(), expertise:document.getElementById('g-exp').value.trim(), status:document.getElementById('g-status').value, last_contact: lc ? (lc+'T00:00:00.000Z') : '', email:document.getElementById('g-email').value.trim(), link:document.getElementById('g-link').value.trim(), notes:document.getElementById('g-notes').value.trim(), updated_at:new Date().toISOString(), created_at: init.created_at || new Date().toISOString() };
-        onSave(u);
-        document.querySelector('.modal-overlay').classList.remove('open');
-      });
-      if (onDel) document.getElementById('g-del').addEventListener('click', function(){ if (confirm('Delete?')){ onDel(); document.querySelector('.modal-overlay').classList.remove('open'); } });
-    }, 50);
-  }
-
-  document.getElementById('pod-add-ep').addEventListener('click', function(){
-    openEpModal('New episode', {}, async function(u){ await saveEp('ep_'+Date.now(), u); var all = await loadEps(); renderPipeline(all); renderPublished(all); VYVE_UI.toast('Added','success'); });
-  });
-  document.getElementById('pod-add-guest').addEventListener('click', function(){
-    openGuestModal('New guest', {}, async function(u){ await saveGuest('g_'+Date.now(), u); renderGuests(await loadGuests()); VYVE_UI.toast('Added','success'); });
-  });
-  document.getElementById('guest-search').addEventListener('input', async function(){ renderGuests(await loadGuests()); });
-
-  (async function(){ var eps = await loadEps(); renderPipeline(eps); renderPublished(eps); renderGuests(await loadGuests()); })();
-
-  // Freshness + auto-pull
-  (function(){
-    function renderFresh(){
-      var el = document.getElementById('pod-fresh');
-      if (!el || !window.VYVE_MAKE || !VYVE_MAKE.lastRefreshedAt) return;
-      var t = VYVE_MAKE.lastRefreshedAt('podcast');
-      if (!t){ el.textContent = ''; return; }
-      var diff = Math.floor((Date.now() - t) / 1000);
-      var when = diff < 60 ? 'just now' :
-                 diff < 3600 ? Math.floor(diff/60) + 'm ago' :
-                 diff < 86400 ? Math.floor(diff/3600) + 'h ago' :
-                 Math.floor(diff/86400) + 'd ago';
-      el.textContent = 'refreshed ' + when;
-    }
-    window.__pod_renderFresh = renderFresh;
-    renderFresh();
-    if (window.VYVE_MAKE && VYVE_MAKE.autoPullPodcast){
-      VYVE_MAKE.autoPullPodcast(3600000).then(function(n){
-        if (n > 0){ renderFresh(); try { if (typeof render === 'function' && typeof load === 'function') load().then(render); else location.reload(); } catch(e){} }
-      });
-    }
-  })();
-
-  // Refresh from Make
-  (function(){
-    var btn = document.getElementById('pod-refresh');
-    if (!btn) return;
-    btn.addEventListener('click', async function(){
-      if (!window.VYVE_MAKE || !window.VYVE_MAKE.hasToken || !window.VYVE_MAKE.hasToken()){
-        VYVE_UI.toast('Add your Make API token in Settings first', 'error'); return;
+      '<div class="pd-mf">'+(isNew?'<span></span>':'<button class="pd-btn danger" id="e-delete">Delete</button>')+
+      '<div class="pd-mf-right"><button class="pd-btn secondary" id="e-cancel">Cancel</button><button class="pd-btn primary" id="e-save">Save</button></div></div></div>';
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', function(ev){ if(ev.target===overlay) closeModal(); });
+    overlay.querySelector('#e-cancel').addEventListener('click', closeModal);
+    overlay.querySelector('#e-save').addEventListener('click', async function(){
+      var title = overlay.querySelector('#e-title').value.trim();
+      if (!title){ overlay.querySelector('#e-title').focus(); return; }
+      var numRaw = overlay.querySelector('#e-num').value;
+      var payload = {
+        episode_number: numRaw===''?null:parseInt(numRaw,10),
+        title: title,
+        guest: overlay.querySelector('#e-guest').value.trim() || null,
+        episode_date: overlay.querySelector('#e-date').value || null,
+        status: overlay.querySelector('#e-status').value,
+        notes: overlay.querySelector('#e-notes').value.trim() || null,
+        updated_at: new Date().toISOString()
+      };
+      var btn=this; btn.disabled=true; btn.textContent='Saving…';
+      var client = sb(); var res;
+      if (isNew){
+        try { var s = await client.auth.getSession(); payload.created_by = (s.data.session && s.data.session.user.email) || null; } catch(_){}
+        res = await client.from('cc_episodes').insert(payload);
+      } else {
+        res = await client.from('cc_episodes').update(payload).eq('id', e.id);
       }
-      if (!window.VYVE_MAKE.storeId || !window.VYVE_MAKE.storeId('podcast')){
-        VYVE_UI.toast('Set the podcast store ID in Settings → Data Stores', 'error'); return;
-      }
-      btn.disabled = true;
-      var label = btn.textContent;
-      btn.textContent = 'Refreshing...';
-      try {
-        var n = await window.VYVE_MAKE.refreshPodcast();
-        VYVE_UI.toast('Refreshed: ' + n + ' episodes', 'success');
-        if (window.__pod_renderFresh) window.__pod_renderFresh();
-        if (typeof render === 'function' && typeof load === 'function') render(await load());
-        else location.reload();
-      } catch(e){
-        VYVE_UI.toast('Refresh failed — see console', 'error');
-        console.error('[Podcast refresh]', e);
-      } finally {
-        btn.disabled = false;
-        btn.textContent = label;
-      }
+      if (res.error){ btn.disabled=false; btn.textContent='Save'; err('Save failed: '+res.error.message); return; }
+      closeModal(); el('pd-error').style.display='none'; load();
     });
-  })();
-  window.VYVE_PAGE_SHORTCUTS = {
-    onNew: function(){
-      var b = document.getElementById('pod-add-guest');
-      if (b) b.click();
-    }
-  };
+    var del = overlay.querySelector('#e-delete');
+    if (del) del.addEventListener('click', async function(){
+      if (!confirm('Delete this episode? This cannot be undone.')) return;
+      var res = await sb().from('cc_episodes').delete().eq('id', e.id);
+      if (res.error){ err('Delete failed: '+res.error.message); return; }
+      closeModal(); load();
+    });
+  }
 
+  el('pd-add').addEventListener('click', function(){ openModal(null); });
+  load();
 })();
 </script>
