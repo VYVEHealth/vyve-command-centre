@@ -125,7 +125,18 @@
 
 <script>
 (function(){
-  if (!window.VYVE_SUPABASE) return;
+  if (!window.VYVE_SUPABASE){
+    // PM-778: this used to be a silent blank page
+    var host = document.getElementById('page-calendar');
+    if (host){
+      var el = document.createElement('div');
+      el.className = 'card';
+      el.style.cssText = 'padding:26px;text-align:center;color:var(--danger)';
+      el.textContent = 'Calendar failed to boot: Supabase client not initialised.';
+      host.appendChild(el);
+    }
+    return;
+  }
   var S = window.VYVE_SUPABASE;
   var TABLE = 'cc_calendar_events';
 
@@ -562,6 +573,18 @@
   }
 
   bindSignin();
-  boot();
+  // PM-778: never die silent — surface boot failures on the page.
+  boot().catch(function(err){
+    console.error('[calendar] boot failed', err);
+    hideAll();
+    var host = document.getElementById('page-calendar');
+    if (host){
+      var el = document.createElement('div');
+      el.className = 'card';
+      el.style.cssText = 'padding:26px;text-align:center;color:var(--danger)';
+      el.textContent = 'Calendar failed to load: ' + (err && err.message ? err.message : err);
+      host.appendChild(el);
+    }
+  });
 })();
 </script>
