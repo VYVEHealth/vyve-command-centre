@@ -2,7 +2,8 @@
 // VYVE Command Centre — Sidebar configuration
 // Single source for nav structure. Update here, sidebar re-renders.
 // PM-753: 5-domain IA (PM-752 CC overhaul) — Run the Business / Members /
-// Partners / Employers / Analytics, + Legacy (pending Lewis kill-list) + System.
+// Partners / Employers / Analytics + System. Legacy section removed PM-754
+// (Dean call) — pages remain in repo + reachable via #/slug; restore = re-add nav items.
 // =====================================================================
 
 window.VYVE_NAV = [
@@ -21,7 +22,8 @@ window.VYVE_NAV = [
       { slug: "documents", label: "Documents",           icon: "folder",       status: "skeleton" },
       { slug: "calendar",  label: "Calendar",            icon: "calendar",     status: "live" },
       { href: "https://app.metricool.com/evolution/instagram?blogId=5565297&userId=4317867", label: "Social Media", icon: "share", external: true },
-      { href: "https://riverside.fm/dashboard/home", label: "Riverside", icon: "video", external: true }
+      { href: "https://riverside.fm/dashboard/home", label: "Riverside", icon: "video", external: true },
+      { href: "https://drive.google.com/drive/u/1/home", label: "Shared Documents", icon: "drive", external: true }
     ]
   },
   // ---------- Members ----------
@@ -61,27 +63,6 @@ window.VYVE_NAV = [
       { slug: "platform",       label: "Platform & UX",      icon: "monitor",     status: "live" },
       { slug: "revenue",        label: "Revenue",            icon: "trending-up", status: "live" },
       { slug: "ai-usage",       label: "AI Usage",           icon: "cpu",         status: "live" }
-    ]
-  },
-  // ---------- Legacy (pending Lewis kill-list confirm — PM-752 spec) ----------
-  {
-    section: "Legacy",
-    items: [
-      { slug: "dashboard",        label: "Dashboard",        icon: "grid",         status: "live" },
-      { slug: "inbox",            label: "Inbox",            icon: "check-square", status: "live" },
-      { slug: "activity",         label: "Activity",         icon: "radar",        status: "live" },
-      { slug: "intel",            label: "Research & Grants",icon: "search",       status: "live" },
-      { slug: "competitors",      label: "Competitor Watch", icon: "eye",          status: "live" },
-      { slug: "intel-hub",        label: "Intel Hub",        icon: "radar",        status: "live" },
-      { slug: "clients",          label: "Clients",          icon: "briefcase",    status: "skeleton" },
-      { slug: "social-blueprint", label: "Social Blueprint", icon: "compass",      status: "live" },
-      { slug: "strategy",         label: "Strategy",         icon: "compass",      status: "stub" },
-      { slug: "knowledge",        label: "Knowledge Base",   icon: "book",         status: "skeleton" },
-      { slug: "compliance",       label: "Compliance",       icon: "shield",       status: "stub" },
-      { slug: "team",             label: "Team",             icon: "user",         status: "skeleton" },
-      { slug: "action-plans",     label: "Action Plans",     icon: "target",       status: "live" },
-      { slug: "trash",            label: "Trash",            icon: "folder",       status: "live" },
-      { href: "https://drive.google.com/drive/u/1/home", label: "Shared Documents", icon: "drive", external: true }
     ]
   },
   // ---------- System ----------
