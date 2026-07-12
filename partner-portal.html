@@ -4,50 +4,33 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
   <meta name="robots" content="noindex,nofollow"/>
-  <meta name="theme-color" content="#0A2222"/>
+  <meta name="theme-color" content="#081616"/>
   <title>VYVE Partner Portal</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="assets/tokens.css"/>
 
   <script>
+    // PM-763: single authoritative boot. Partners keep their own key (external
+    // audience, never sees the shell); vyve-cc-theme honoured as fallback for
+    // admins previewing; default dark preserves the page's historic default.
     (function(){
-      var stored = localStorage.getItem('vyve-cc-theme');
-      if (stored === 'dark') document.documentElement.setAttribute('data-theme','dark');
-      else if (stored === 'light') document.documentElement.setAttribute('data-theme','light');
+      var t = null;
+      try {
+        t = localStorage.getItem('vyve-partner-theme');
+        if (t !== 'dark' && t !== 'light') t = localStorage.getItem('vyve-cc-theme');
+      } catch(_){}
+      if (t !== 'dark' && t !== 'light') t = 'dark';
+      document.documentElement.setAttribute('data-theme', t);
     })();
   </script>
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    /* Light / dark theme tokens — matches VYVE portal dual-block pattern */
-    :root,[data-theme="dark"] {
-      --bg: #0A1A1A; --surface: #112222; --surface-2: #1A2E2E; --surface-3: #223838;
-      --border: rgba(255,255,255,.1); --text: #E8F4F4; --text-muted: rgba(232,244,244,.6);
-      --text-dim: rgba(232,244,244,.35); --white: #fff;
-      --vyve-teal: #1B7878; --vyve-teal-light: #4DAAAA; --accent-hover: #1F8A8A;
-      --accent-pale: rgba(77,170,170,.08);
-      --sidebar-bg: #061414; --sidebar-border: rgba(255,255,255,.07); --sidebar-text: #A0C4C4;
-      --success: #4ade80; --success-pale: rgba(74,222,128,.12);
-      --warning: #f59e0b; --warning-pale: rgba(245,158,11,.12);
-      --danger: #f87171; --danger-pale: rgba(248,113,113,.12);
-      --info: #60a5fa; --info-pale: rgba(96,165,250,.12);
-    }
-    [data-theme="light"] {
-      --bg: #F4F7F7; --surface: #FFFFFF; --surface-2: #EEF3F3; --surface-3: #E4ECEC;
-      --border: rgba(0,0,0,.1); --text: #0D2B2B; --text-muted: #4A6B6B;
-      --text-dim: #8AABAB; --white: #fff;
-      --vyve-teal: #1B7878; --vyve-teal-light: #1B7878; --accent-hover: #156060;
-      --accent-pale: rgba(27,120,120,.07);
-      --sidebar-bg: #0D2B2B; --sidebar-border: rgba(255,255,255,.08); --sidebar-text: #9ABFBF;
-      --success: #16a34a; --success-pale: rgba(22,163,74,.1);
-      --warning: #d97706; --warning-pale: rgba(217,119,6,.1);
-      --danger: #dc2626; --danger-pale: rgba(220,38,38,.1);
-      --info: #2563eb; --info-pale: rgba(37,99,235,.1);
-    }
+    /* PM-763: local token blocks removed — assets/tokens.css v2 is the single
+       source of truth for this page (all names verified defined there). */
 
     html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 14px; line-height: 1.6; }
 
@@ -272,12 +255,6 @@
     .notify-panel { background: var(--accent-pale); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; margin-bottom: 16px; }
     .notify-result { font-size: 12px; margin-top: 8px; color: var(--text-muted); min-height: 18px; }
   </style>
-<script>
-  (function(){
-    var t = localStorage.getItem('vyve-partner-theme') || 'dark';
-    document.documentElement.setAttribute('data-theme', t);
-  })();
-</script>
 </head>
 <body>
 
@@ -644,7 +621,7 @@
     if (!isPartner) {
       $('login-overlay').classList.remove('show');
       $('shell').classList.remove('ready');
-      document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:var(--bg);font-family:var(--font-body);text-align:center;padding:20px;"><div><div style="font-size:32px;margin-bottom:16px;">🔒</div><h2 style="margin-bottom:8px;color:var(--text);">Access not yet provisioned</h2><p style="color:var(--text-muted);max-width:360px;">Your partner portal access hasn\'t been set up yet. The VYVE team will send you login credentials once your application has been reviewed. Questions? <a href="mailto:team@vyvehealth.co.uk" style="color:#1B7878;">team@vyvehealth.co.uk</a></p></div></div>';
+      document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:var(--bg);font-family:var(--font-body);text-align:center;padding:20px;"><div><div style="font-size:32px;margin-bottom:16px;">🔒</div><h2 style="margin-bottom:8px;color:var(--text);">Access not yet provisioned</h2><p style="color:var(--text-muted);max-width:360px;">Your partner portal access hasn\'t been set up yet. The VYVE team will send you login credentials once your application has been reviewed. Questions? <a href="mailto:team@vyvehealth.co.uk" style="color:var(--vyve-teal);">team@vyvehealth.co.uk</a></p></div></div>';
       return;
     }
 
