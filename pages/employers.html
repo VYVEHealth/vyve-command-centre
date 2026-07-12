@@ -1,0 +1,330 @@
+<!-- =====================================================================
+     VYVE Command Centre — Employers (PM-761, CC overhaul Phase 6)
+     Two surfaces:
+       1. Employer accounts — employer_admins is service-role-only RLS
+          (no policies), so ALL reads/writes go through the
+          employer-provision EF v2 (list / provision / deprovision)
+          with the admin session JWT.
+       2. Benchmark figures — employer_benchmark_figures CRUD direct via
+          supabase-js under benchmark_write_admin_or_team (PM-761
+          migration). Scope vocabulary is DB CHECK-constrained:
+          uk / eu / global. Table ships EMPTY by design — Lewis + Alan
+          source curated figures; never seed invented values.
+     ===================================================================== -->
+<style>
+.em-head{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px}
+.em-eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.em-h1{font-size:22px;font-weight:700;letter-spacing:-.015em}
+.em-meta{font-size:13px;color:var(--text-muted)}
+.em-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.em-btn{border:0;border-radius:9px;padding:9px 16px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:var(--font-body);text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.em-btn.primary{background:var(--accent);color:var(--on-accent)}
+.em-btn.primary:hover{background:var(--accent-hover)}
+.em-btn.secondary{background:var(--surface-2);color:var(--text);border:1px solid var(--border-strong)}
+.em-btn.danger{background:var(--danger-pale);color:var(--danger)}
+.em-btn.small{padding:5px 11px;font-size:12px;border-radius:7px}
+.em-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow-md);overflow-x:auto;margin-bottom:22px}
+.em-table{width:100%;border-collapse:collapse}
+.em-table th{font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim);text-align:left;padding:10px 16px;border-bottom:1px solid var(--border)}
+.em-table td{padding:11px 16px;border-bottom:1px solid var(--border);font-size:13.5px;vertical-align:middle}
+.em-table td.num{font-variant-numeric:tabular-nums;font-weight:600}
+.em-table tbody tr:last-child td{border-bottom:0}
+.em-row-click{cursor:pointer;transition:background .12s}
+.em-row-click:hover{background:var(--accent-pale)}
+.em-pill{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;border-radius:99px;padding:3px 10px}
+.em-pill i{width:6px;height:6px;border-radius:50%;background:currentColor}
+.em-pill.uk{background:var(--accent-pale);color:var(--accent)}
+.em-pill.eu{background:var(--success-pale);color:var(--success)}
+.em-pill.global{background:var(--warning-pale);color:var(--warning)}
+.em-empty{padding:26px;text-align:center;color:var(--text-muted);font-size:13px;line-height:1.55}
+.em-error{background:var(--danger-pale);border-radius:12px;padding:12px 16px;color:var(--danger);font-size:13.5px;margin-bottom:14px;display:none}
+.em-notice{background:var(--success-pale);border-radius:12px;padding:12px 16px;color:var(--success);font-size:13.5px;margin-bottom:14px;display:none}
+.em-sec{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:10px;margin:4px 0 12px}
+.em-sec h2{font-size:16px;font-weight:700}
+.em-sec .em-sub{font-size:12.5px;color:var(--text-muted);margin-top:2px}
+.em-overlay{position:fixed;inset:0;background:rgba(4,12,12,.6);backdrop-filter:blur(3px);z-index:80;display:flex;align-items:center;justify-content:center;padding:18px}
+.em-modal{background:var(--surface);border:1px solid var(--border-strong);border-radius:16px;max-width:460px;width:100%;box-shadow:var(--shadow-lg)}
+.em-mh{padding:18px 20px 0}.em-mh h3{font-size:16px;font-weight:700}
+.em-mh .em-mnote{font-size:12.5px;color:var(--text-muted);margin-top:4px;line-height:1.5}
+.em-mb{padding:12px 20px 4px}
+.em-field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.em-field label{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim)}
+.em-in{background:var(--surface-2);border:1px solid var(--border-strong);border-radius:9px;padding:9px 12px;font-size:13.5px;color:var(--text);font-family:var(--font-body);width:100%}
+.em-in:focus{outline:2px solid var(--accent);outline-offset:0;border-color:transparent}
+.em-two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.em-mf{display:flex;justify-content:space-between;gap:10px;padding:16px 20px 18px}
+.em-mf-right{display:flex;gap:10px}
+</style>
+
+<div class="em-head">
+  <div>
+    <div class="em-eyebrow">Employers</div>
+    <div class="em-h1">Employer Accounts</div>
+    <div class="em-meta" id="em-meta">Loading…</div>
+  </div>
+  <div class="em-actions">
+    <a class="em-btn secondary" href="https://www.vyvehealth.co.uk/employer-portal.html" target="_blank" rel="noopener">Employer Portal ↗</a>
+    <a class="em-btn secondary" href="https://www.vyvehealth.co.uk/employer-portal.html?demo=1" target="_blank" rel="noopener">Sales Demo ↗</a>
+    <button class="em-btn primary" id="em-add">Provision employer login</button>
+  </div>
+</div>
+<div class="em-error" id="em-error"></div>
+<div class="em-notice" id="em-notice"></div>
+
+<div class="em-card">
+  <table class="em-table">
+    <thead><tr><th>Employer</th><th>Contact</th><th>Seats</th><th>Provisioned</th><th>By</th><th></th></tr></thead>
+    <tbody id="em-rows"><tr><td colspan="6" class="em-empty">Loading…</td></tr></tbody>
+  </table>
+</div>
+
+<div class="em-sec">
+  <div>
+    <h2>Benchmark figures</h2>
+    <div class="em-sub">External benchmarks shown in the employer portal render only from this table. Curated figures only — Lewis &amp; Alan own sourcing.</div>
+  </div>
+  <button class="em-btn secondary" id="em-bench-add">Add figure</button>
+</div>
+<div class="em-card">
+  <table class="em-table">
+    <thead><tr><th>Metric</th><th>Scope</th><th>Value</th><th>Source</th><th>Year</th></tr></thead>
+    <tbody id="em-bench-rows"><tr><td colspan="5" class="em-empty">Loading…</td></tr></tbody>
+  </table>
+</div>
+<datalist id="em-metric-suggestions">
+  <option value="engagement_rate"></option>
+  <option value="activities_per_member"></option>
+</datalist>
+
+<script>
+(function(){
+  var EF = 'https://ixjfklpckgxrwjlfsaaz.supabase.co/functions/v1/employer-provision';
+  var SCOPES = ['uk','eu','global']; // DB CHECK vocabulary (employer_benchmark_figures_scope_check)
+  var accounts = [], seats = {}, benchmarks = [];
+  var token = null;
+
+  function el(id){ return document.getElementById(id); }
+  function esc(s){ var d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
+  function err(m){ var e=el('em-error'); e.style.display='block'; e.textContent=m; el('em-notice').style.display='none'; }
+  function notice(m){ var e=el('em-notice'); e.style.display='block'; e.textContent=m; el('em-error').style.display='none'; }
+  function clearMsgs(){ el('em-error').style.display='none'; el('em-notice').style.display='none'; }
+  function sb(){ return window.VYVE_SUPABASE && window.VYVE_SUPABASE.client && window.VYVE_SUPABASE.client(); }
+  function fmtDate(iso){ try { return new Date(iso).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); } catch(_){ return '—'; } }
+
+  async function getToken(){
+    if (token) return token;
+    try {
+      var client = sb();
+      if (!client) return null;
+      var s = await client.auth.getSession();
+      token = s && s.data && s.data.session && s.data.session.access_token;
+    } catch(_){}
+    return token;
+  }
+
+  async function efPost(payload){
+    var t = await getToken();
+    if (!t) return { ok:false, status:0, body:{error:'no_session'} };
+    var res;
+    try {
+      res = await fetch(EF, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + t, 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    } catch(e){
+      return { ok:false, status:0, body:{error:'network'} };
+    }
+    var body = null;
+    try { body = await res.json(); } catch(_){}
+    return { ok: res.ok, status: res.status, body: body || {} };
+  }
+
+  // ── Accounts (via EF — employer_admins has no client-readable RLS) ──
+  function renderAccounts(){
+    var totalSeats = Object.keys(seats).reduce(function(a,k){return a+seats[k]},0);
+    el('em-meta').textContent = accounts.length
+      ? accounts.length + ' employer login' + (accounts.length===1?'':'s') + ' · ' + totalSeats + ' enrolled seats'
+      : 'No employer logins yet';
+    var rows = el('em-rows');
+    if (!accounts.length){
+      rows.innerHTML = '<tr><td colspan="6" class="em-empty">No employer logins provisioned yet.<br>Provision one when Lewis has the Sage contact.</td></tr>';
+      return;
+    }
+    rows.innerHTML = accounts.map(function(a){
+      return '<tr>'+
+        '<td><b>'+esc(a.employer_name)+'</b></td>'+
+        '<td>'+esc(a.email)+'</td>'+
+        '<td class="num">'+(seats[a.employer_name]!=null?seats[a.employer_name]:0)+'</td>'+
+        '<td>'+fmtDate(a.created_at)+'</td>'+
+        '<td>'+esc(a.created_by||'—')+'</td>'+
+        '<td><button class="em-btn danger small" data-deprov="'+esc(a.email)+'">Deprovision</button></td></tr>';
+    }).join('');
+    rows.querySelectorAll('[data-deprov]').forEach(function(b){
+      b.addEventListener('click', async function(){
+        var email = b.getAttribute('data-deprov');
+        if (!confirm('Remove employer portal access for ' + email + '?\n\nTheir dashboard login stops working immediately. If they are also a member or admin their sign-in is preserved; otherwise the auth account is disabled.')) return;
+        b.disabled = true; b.textContent = '…';
+        var r = await efPost({ action:'deprovision', contact_email: email });
+        if (!r.ok){ err('Deprovision failed ('+r.status+'): '+((r.body&&r.body.error)||'unknown')); b.disabled=false; b.textContent='Deprovision'; return; }
+        notice('Access removed for ' + email + (r.body.auth_disabled ? ' — auth account disabled.' : ' — auth account preserved (member or other role).'));
+        loadAccounts();
+      });
+    });
+  }
+
+  async function loadAccounts(){
+    var r = await efPost({ action:'list' });
+    if (!r.ok){
+      err(r.status===0 ? 'No session — sign in again to load employer accounts.'
+        : r.status===403 ? 'Your account isn\u2019t authorised for employer provisioning (admin only).'
+        : 'Employer accounts failed to load ('+r.status+').');
+      el('em-rows').innerHTML = '<tr><td colspan="6" class="em-empty">Could not load accounts.</td></tr>';
+      return;
+    }
+    accounts = (r.body && r.body.admins) || [];
+    seats = (r.body && r.body.seats) || {};
+    renderAccounts();
+  }
+
+  // ── Provision modal ─────────────────────────────────────────────
+  var overlay = null;
+  function closeModal(){ if(overlay){overlay.remove();overlay=null;} }
+
+  function openProvision(){
+    closeModal();
+    overlay = document.createElement('div');
+    overlay.className = 'em-overlay';
+    overlay.innerHTML =
+      '<div class="em-modal"><div class="em-mh"><h3>Provision employer login</h3>'+
+      '<div class="em-mnote">Creates the portal login and emails credentials. If the contact already has a VYVE account their existing password is never touched.</div></div>'+
+      '<div class="em-mb">'+
+        '<div class="em-field"><label>Employer name</label><input class="em-in" id="p-employer" placeholder="e.g. Sage"></div>'+
+        '<div class="em-field"><label>Contact email</label><input class="em-in" id="p-email" type="email" placeholder="name@company.com"></div>'+
+        '<div class="em-field"><label>Contact name (optional)</label><input class="em-in" id="p-name"></div>'+
+      '</div>'+
+      '<div class="em-mf"><span></span>'+
+      '<div class="em-mf-right"><button class="em-btn secondary" id="p-cancel">Cancel</button><button class="em-btn primary" id="p-save">Provision</button></div>'+
+      '</div></div>';
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', function(e){ if(e.target===overlay) closeModal(); });
+    overlay.querySelector('#p-cancel').addEventListener('click', closeModal);
+    overlay.querySelector('#p-save').addEventListener('click', async function(){
+      var employer = overlay.querySelector('#p-employer').value.trim();
+      var email = overlay.querySelector('#p-email').value.trim().toLowerCase();
+      var name = overlay.querySelector('#p-name').value.trim();
+      if (!employer){ overlay.querySelector('#p-employer').focus(); return; }
+      if (!email || email.indexOf('@')<0){ overlay.querySelector('#p-email').focus(); return; }
+      var btn = this; btn.disabled = true; btn.textContent = 'Provisioning…';
+      var r = await efPost({ action:'provision', employer_name: employer, contact_email: email, contact_name: name });
+      if (r.status===409){ btn.disabled=false; btn.textContent='Provision'; err(email+' is already provisioned for '+((r.body&&r.body.employer)||'another employer')+'. Deprovision first to move them.'); closeModal(); return; }
+      if (!r.ok){ btn.disabled=false; btn.textContent='Provision'; err('Provision failed ('+r.status+'): '+((r.body&&r.body.error)||'unknown')); return; }
+      closeModal();
+      notice((r.body&&r.body.message)||('Provisioned '+email)
+        + (r.body && r.body.existing_auth_user
+          ? ' Existing VYVE account — they sign in with their current password.'
+          : ' Credentials email sent with a temporary password.'));
+      loadAccounts();
+    });
+  }
+
+  // ── Benchmarks (direct CRUD under benchmark_write_admin_or_team) ──
+  function renderBenchmarks(){
+    var rows = el('em-bench-rows');
+    if (!benchmarks.length){
+      rows.innerHTML = '<tr><td colspan="5" class="em-empty">No benchmark figures yet — the portal hides external benchmarks until curated figures land here.<br>Lewis &amp; Alan are sourcing; add only real, cited numbers.</td></tr>';
+      return;
+    }
+    rows.innerHTML = benchmarks.map(function(b){
+      return '<tr class="em-row-click" data-id="'+b.id+'">'+
+        '<td><b>'+esc(b.metric)+'</b></td>'+
+        '<td><span class="em-pill '+esc(b.scope)+'"><i></i>'+esc(b.scope)+'</span></td>'+
+        '<td class="num">'+esc(b.value)+'</td>'+
+        '<td>'+esc(b.source||'—')+'</td>'+
+        '<td>'+esc(b.published_year||'—')+'</td></tr>';
+    }).join('');
+    rows.querySelectorAll('tr').forEach(function(tr){
+      tr.addEventListener('click', function(){
+        var id = Number(tr.getAttribute('data-id'));
+        openBenchmark(benchmarks.find(function(b){return b.id===id}));
+      });
+    });
+  }
+
+  async function loadBenchmarks(){
+    var client = sb();
+    if (!client){ err('Supabase client unavailable — reload.'); return; }
+    var res = await client.from('employer_benchmark_figures').select('*').order('metric').order('scope');
+    if (res.error){ err('Benchmarks failed to load: '+res.error.message); return; }
+    benchmarks = res.data || [];
+    renderBenchmarks();
+  }
+
+  function openBenchmark(row){
+    closeModal();
+    var isNew = !row; row = row || {};
+    overlay = document.createElement('div');
+    overlay.className = 'em-overlay';
+    overlay.innerHTML =
+      '<div class="em-modal"><div class="em-mh"><h3>'+(isNew?'Add benchmark figure':'Edit benchmark figure')+'</h3>'+
+      '<div class="em-mnote">Curated, cited figures only — this table drives external benchmarks in the live employer portal.</div></div>'+
+      '<div class="em-mb">'+
+        '<div class="em-field"><label>Metric</label><input class="em-in" id="b-metric" list="em-metric-suggestions" value="'+esc(row.metric||'')+'" placeholder="engagement_rate"></div>'+
+        '<div class="em-two">'+
+          '<div class="em-field"><label>Scope</label><select class="em-in" id="b-scope">'+
+            SCOPES.map(function(s){return '<option value="'+s+'"'+(row.scope===s?' selected':'')+'>'+s+'</option>'}).join('')+
+          '</select></div>'+
+          '<div class="em-field"><label>Value</label><input class="em-in" id="b-value" type="number" step="any" value="'+(row.value!=null?esc(row.value):'')+'"></div>'+
+        '</div>'+
+        '<div class="em-field"><label>Source</label><input class="em-in" id="b-source" value="'+esc(row.source||'')+'" placeholder="e.g. CIPD Health & Wellbeing at Work 2025"></div>'+
+        '<div class="em-field"><label>Published year</label><input class="em-in" id="b-year" type="number" min="2000" max="2100" value="'+esc(row.published_year||'')+'"></div>'+
+      '</div>'+
+      '<div class="em-mf">'+
+        (isNew?'<span></span>':'<button class="em-btn danger" id="b-delete">Delete</button>')+
+        '<div class="em-mf-right"><button class="em-btn secondary" id="b-cancel">Cancel</button><button class="em-btn primary" id="b-save">'+(isNew?'Add figure':'Save changes')+'</button></div>'+
+      '</div></div>';
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', function(e){ if(e.target===overlay) closeModal(); });
+    overlay.querySelector('#b-cancel').addEventListener('click', closeModal);
+    overlay.querySelector('#b-save').addEventListener('click', async function(){
+      var metric = overlay.querySelector('#b-metric').value.trim();
+      var valueRaw = overlay.querySelector('#b-value').value;
+      var scope = overlay.querySelector('#b-scope').value;
+      if (SCOPES.indexOf(scope) < 0) scope = 'uk';
+      if (!metric){ overlay.querySelector('#b-metric').focus(); return; }
+      if (valueRaw===''){ overlay.querySelector('#b-value').focus(); return; }
+      var yearRaw = overlay.querySelector('#b-year').value;
+      var payload = {
+        metric: metric,
+        scope: scope,
+        value: Number(valueRaw),
+        source: overlay.querySelector('#b-source').value.trim() || null,
+        published_year: yearRaw===''?null:Number(yearRaw)
+      };
+      var btn = this; btn.disabled = true; btn.textContent = 'Saving…';
+      var client = sb(); var res;
+      if (isNew){
+        // insert-time provenance only (PM-757 discipline) — never sent on update
+        try { var s = await client.auth.getSession(); payload.added_by = s.data.session.user.email; } catch(_){}
+        res = await client.from('employer_benchmark_figures').insert(payload);
+      } else {
+        res = await client.from('employer_benchmark_figures').update(payload).eq('id', row.id);
+      }
+      if (res.error){ btn.disabled=false; btn.textContent=isNew?'Add figure':'Save changes'; err('Save failed: '+res.error.message); return; }
+      closeModal(); clearMsgs(); loadBenchmarks();
+    });
+    var del = overlay.querySelector('#b-delete');
+    if (del) del.addEventListener('click', async function(){
+      if (!confirm('Delete this benchmark figure? The portal stops rendering it immediately.')) return;
+      var res = await sb().from('employer_benchmark_figures').delete().eq('id', row.id);
+      if (res.error){ err('Delete failed: '+res.error.message); return; }
+      closeModal(); loadBenchmarks();
+    });
+  }
+
+  el('em-add').addEventListener('click', openProvision);
+  el('em-bench-add').addEventListener('click', function(){ openBenchmark(null); });
+  loadAccounts();
+  loadBenchmarks();
+})();
+</script>

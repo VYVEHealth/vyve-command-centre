@@ -53,6 +53,7 @@ window.VYVE_NAV = [
   {
     section: "Employers",
     items: [
+      { slug: "employers", label: "Employer Accounts", icon: "briefcase", status: "live" },
       { href: "https://www.vyvehealth.co.uk/employer-portal.html", label: "Employer Portal (live)", icon: "briefcase", external: true },
       { href: "https://www.vyvehealth.co.uk/employer-portal.html?demo=1", label: "Sales Demo", icon: "eye", external: true }
     ]
