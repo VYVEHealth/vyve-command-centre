@@ -7,11 +7,17 @@
 // =====================================================================
 
 window.VYVE_NAV = [
+  // ---------- Home ----------
+  {
+    section: "VYVE",
+    items: [
+      { slug: "home", label: "Home", icon: "grid", status: "live" }
+    ]
+  },
   // ---------- Run the Business ----------
   {
     section: "Run the Business",
     items: [
-      { slug: "brief",     label: "Morning Brief",       icon: "layers",       status: "live" },
       { slug: "crm",       label: "Sales Pipeline",      icon: "users",        status: "skeleton" },
       { slug: "finance",   label: "Finance",             icon: "trending-up",  status: "stub" },
       { slug: "invoicing", label: "Invoicing",           icon: "file-text",    status: "skeleton" },

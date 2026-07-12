@@ -1,0 +1,251 @@
+<!-- =====================================================================
+     VYVE Command Centre — Home (PM-755, CC overhaul Phase 3)
+     Live launchpad: single cc-home EF call -> KPIs, today's sessions,
+     needs-attention feed, domain tiles. Replaces brief as default route.
+     ===================================================================== -->
+<style>
+.hm-head{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px}
+.hm-eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.hm-dot{width:7px;height:7px;border-radius:50%;background:var(--success);box-shadow:0 0 0 3px var(--success-pale)}
+.hm-h1{font-size:25px;font-weight:700;letter-spacing:-.015em}
+.hm-meta{font-size:13px;color:var(--text-muted)}
+.hm-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+.hm-kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow-md)}
+.hm-kl{font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim)}
+.hm-kv{font-size:24px;font-weight:700;letter-spacing:-.02em;margin:4px 0 2px;font-variant-numeric:tabular-nums}
+.hm-kv.gold{color:var(--gold)}
+.hm-ks{font-family:var(--font-mono);font-size:11px;color:var(--text-muted)}
+.hm-ks.good{color:var(--success)}.hm-ks.warn{color:var(--warning)}
+.hm-today{display:grid;grid-template-columns:1.5fr 1fr;gap:12px;margin-bottom:26px}
+.hm-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow-md)}
+.hm-ch{display:flex;justify-content:space-between;align-items:center;padding:13px 16px;border-bottom:1px solid var(--border)}
+.hm-ch h3{font-size:14px;font-weight:600}
+.hm-ch a{font-size:12.5px;color:var(--accent);text-decoration:none;font-weight:600}
+.hm-row{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border);font-size:13.5px}
+.hm-row:last-child{border-bottom:0}
+.hm-time{font-family:var(--font-mono);font-size:11.5px;color:var(--text-dim);min-width:44px}
+.hm-row b{font-weight:600}
+.hm-sub{color:var(--text-muted);font-size:12.5px}
+.hm-pill{margin-left:auto;font-size:11px;font-weight:600;border-radius:99px;padding:2px 9px;flex-shrink:0}
+.hm-pill.live{background:var(--success-pale);color:var(--success)}
+.hm-pill.aired{background:var(--surface-2);color:var(--text-muted)}
+.hm-pill.upcoming{background:var(--accent-pale);color:var(--accent)}
+.hm-pill.critical,.hm-pill.high{background:var(--danger-pale);color:var(--danger)}
+.hm-pill.info{background:var(--accent-pale);color:var(--accent)}
+.hm-sect{font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--text-dim);margin:0 0 12px;display:flex;align-items:center;gap:10px}
+.hm-sect::after{content:"";flex:1;height:1px;background:var(--border)}
+.hm-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.hm-tile{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px;box-shadow:var(--shadow-md);text-decoration:none;color:var(--text);display:flex;flex-direction:column;gap:10px;transition:border-color .15s,transform .12s}
+.hm-tile:hover{border-color:var(--accent);transform:translateY(-2px);color:var(--text)}
+.hm-tt{display:flex;align-items:center;justify-content:space-between}
+.hm-tic{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;background:var(--accent-pale);color:var(--accent)}
+.hm-tic svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.hm-tile.gold .hm-tic{background:var(--gold-pale);color:var(--gold)}
+.hm-badge{font-family:var(--font-mono);font-size:10.5px;border-radius:99px;padding:3px 9px;background:var(--surface-2);color:var(--text-muted)}
+.hm-badge.alert{background:var(--danger-pale);color:var(--danger)}
+.hm-badge.gold{background:var(--gold-pale);color:var(--gold)}
+.hm-tile h2{font-size:16.5px;font-weight:700;letter-spacing:-.01em}
+.hm-tile p{font-size:12.5px;color:var(--text-muted);flex:1;margin:0}
+.hm-tlinks{display:flex;flex-wrap:wrap;gap:6px}
+.hm-tl{font-size:11.5px;font-weight:600;color:var(--accent);background:var(--accent-pale);border-radius:7px;padding:4px 9px;text-decoration:none}
+.hm-tl:hover{background:var(--surface-2);color:var(--accent)}
+.hm-empty{padding:16px;color:var(--text-muted);font-size:13px}
+.hm-skel{height:14px;border-radius:6px;background:var(--surface-2);animation:hmPulse 1.4s infinite}
+@keyframes hmPulse{0%,100%{opacity:1}50%{opacity:.45}}
+.hm-error{background:var(--danger-pale);border:1px solid var(--border);border-radius:12px;padding:14px 16px;color:var(--danger);font-size:13.5px;margin-bottom:14px;display:none}
+@media(max-width:900px){.hm-kpis{grid-template-columns:1fr 1fr}.hm-today{grid-template-columns:1fr}.hm-tiles{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.hm-tiles{grid-template-columns:1fr}}
+</style>
+
+<div class="hm-head">
+  <div>
+    <div class="hm-eyebrow"><span class="hm-dot"></span><span id="hm-date">Loading…</span></div>
+    <div class="hm-h1" id="hm-greet">Welcome.</div>
+    <div class="hm-meta" id="hm-metaline"><span class="hm-skel" style="display:inline-block;width:220px"></span></div>
+  </div>
+</div>
+
+<div class="hm-error" id="hm-error"></div>
+
+<div class="hm-kpis">
+  <div class="hm-kpi"><div class="hm-kl">MRR</div><div class="hm-kv gold" id="k-mrr">—</div><div class="hm-ks" id="k-mrr-sub"></div></div>
+  <div class="hm-kpi"><div class="hm-kl">Active members · 7d</div><div class="hm-kv" id="k-active">—</div><div class="hm-ks" id="k-active-sub"></div></div>
+  <div class="hm-kpi"><div class="hm-kl">Sessions today</div><div class="hm-kv" id="k-sessions">—</div><div class="hm-ks" id="k-sessions-sub"></div></div>
+  <div class="hm-kpi"><div class="hm-kl">Open alerts</div><div class="hm-kv" id="k-alerts">—</div><div class="hm-ks" id="k-alerts-sub"></div></div>
+</div>
+
+<div class="hm-today">
+  <div class="hm-card">
+    <div class="hm-ch"><h3>Today's sessions</h3><a href="#/calendar">Calendar →</a></div>
+    <div id="hm-sessions"><div class="hm-empty">Loading…</div></div>
+  </div>
+  <div class="hm-card">
+    <div class="hm-ch"><h3>Needs attention</h3><a href="#/app-health">App Health →</a></div>
+    <div id="hm-alerts"><div class="hm-empty">Loading…</div></div>
+  </div>
+</div>
+
+<div class="hm-sect">Where to</div>
+<div class="hm-tiles">
+  <a class="hm-tile" href="#/tasks">
+    <div class="hm-tt"><div class="hm-tic"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div><span class="hm-badge" id="b-rtb">—</span></div>
+    <h2>Run the Business</h2>
+    <p>Pipeline, finance, investors, content, tasks and the operating calendar.</p>
+    <div class="hm-tlinks"><a class="hm-tl" href="#/crm">Pipeline</a><a class="hm-tl" href="#/finance">Finance</a><a class="hm-tl" href="#/tasks">Tasks</a><a class="hm-tl" href="#/calendar">Calendar</a></div>
+  </a>
+  <a class="hm-tile" href="/admin-console.html">
+    <div class="hm-tt"><div class="hm-tic"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg></div><span class="hm-badge" id="b-members">—</span></div>
+    <h2>Members</h2>
+    <p>Member admin, broadcast push and who's active right now.</p>
+    <div class="hm-tlinks"><a class="hm-tl" href="/admin-console.html">Member Admin</a><a class="hm-tl" href="#/broadcast">Broadcast</a><a class="hm-tl" href="#/active-users">Active Users</a></div>
+  </a>
+  <a class="hm-tile" href="/partners.html">
+    <div class="hm-tt"><div class="hm-tic"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div><span class="hm-badge" id="b-partners">—</span></div>
+    <h2>Partners</h2>
+    <p>Pipeline, go-live gates, content moderation, payouts and the partner portal.</p>
+    <div class="hm-tlinks"><a class="hm-tl" href="/partners.html">Management</a><a class="hm-tl" href="/partner-portal.html">Portal</a></div>
+  </a>
+  <a class="hm-tile gold" href="https://www.vyvehealth.co.uk/employer-portal.html" target="_blank" rel="noopener">
+    <div class="hm-tt"><div class="hm-tic"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></div><span class="hm-badge gold" id="b-employers">—</span></div>
+    <h2>Employers</h2>
+    <p>Employer accounts, the live portal, benchmarks and the sales demo.</p>
+    <div class="hm-tlinks"><a class="hm-tl" href="https://www.vyvehealth.co.uk/employer-portal.html" target="_blank" rel="noopener">Live portal</a><a class="hm-tl" href="https://www.vyvehealth.co.uk/employer-portal.html?demo=1" target="_blank" rel="noopener">Sales demo</a></div>
+  </a>
+  <a class="hm-tile" href="#/app-health">
+    <div class="hm-tt"><div class="hm-tic"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><span class="hm-badge" id="b-analytics">—</span></div>
+    <h2>Analytics</h2>
+    <p>App health, usage, retention, wellbeing, revenue and AI spend.</p>
+    <div class="hm-tlinks"><a class="hm-tl" href="#/app-health">App Health</a><a class="hm-tl" href="#/retention">Retention</a><a class="hm-tl" href="#/revenue">Revenue</a></div>
+  </a>
+  <a class="hm-tile" href="#/settings">
+    <div class="hm-tt"><div class="hm-tic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div></div>
+    <h2>System</h2>
+    <p>Settings, auth mode, theme and integrations.</p>
+    <div class="hm-tlinks"><a class="hm-tl" href="#/settings">Settings</a></div>
+  </a>
+</div>
+
+<script>
+(function(){
+  var EF = 'https://ixjfklpckgxrwjlfsaaz.supabase.co/functions/v1/cc-home';
+  function el(id){ return document.getElementById(id); }
+  function esc(s){ var d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
+
+  // Static header pieces render immediately — no data dependency
+  (function(){
+    var now = new Date();
+    var h = now.getHours();
+    var phase = h<5?'Late night':h<12?'Morning':h<17?'Afternoon':h<22?'Evening':'Late night';
+    el('hm-date').textContent = now.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+    var who = '';
+    try {
+      var email = (window.VYVE_AUTH && window.VYVE_AUTH.email && window.VYVE_AUTH.email()) || '';
+      if (email) who = email.split('@')[0].split('.')[0];
+      who = who ? who.charAt(0).toUpperCase()+who.slice(1) : '';
+    } catch(_){}
+    el('hm-greet').textContent = phase + (who ? ', ' + who + '.' : '.');
+  })();
+
+  function lonTime(iso){
+    try { return new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/London',hour:'2-digit',minute:'2-digit'}).format(new Date(iso)); }
+    catch(_){ return ''; }
+  }
+
+  function render(d){
+    var hl = (d.revenue && d.revenue.headline) || {};
+    var mrr = hl.mrr != null ? hl.mrr : null;
+    el('k-mrr').textContent = mrr != null ? '£' + Number(mrr).toLocaleString('en-GB') : '—';
+    el('k-mrr-sub').textContent = (hl.paid_members!=null? hl.paid_members+' paid' : '') + (hl.trial_members!=null? ' · '+hl.trial_members+' trial' : '');
+
+    el('k-active').textContent = d.members ? d.members.active7d : '—';
+    el('k-active-sub').textContent = d.members ? 'of ' + d.members.total + ' members' : '';
+
+    var ss = d.sessionsToday || [];
+    var aired = ss.filter(function(s){return s.state==='aired'}).length;
+    var live  = ss.filter(function(s){return s.state==='live'}).length;
+    var up    = ss.length - aired - live;
+    el('k-sessions').textContent = ss.length;
+    el('k-sessions-sub').textContent = live ? (live+' live now · '+up+' upcoming') : (aired+' aired · '+up+' upcoming');
+    if (live) el('k-sessions-sub').className = 'hm-ks good';
+
+    var al = d.alerts || {open:0, bySeverity:{}};
+    el('k-alerts').textContent = al.open;
+    var crit = al.bySeverity.critical||0, high = al.bySeverity.high||0;
+    el('k-alerts-sub').textContent = crit + ' critical · ' + high + ' high';
+    el('k-alerts-sub').className = 'hm-ks' + ((crit||high) ? ' warn' : '');
+
+    // sessions card
+    var sHost = el('hm-sessions');
+    if (!ss.length){ sHost.innerHTML = '<div class="hm-empty">No sessions scheduled today.</div>'; }
+    else {
+      sHost.innerHTML = ss.map(function(s){
+        var lbl = s.state==='live'?'Live now':s.state==='aired'?'Aired':'Upcoming';
+        return '<div class="hm-row"><span class="hm-time">'+lonTime(s.starts_at)+'</span>'+
+          '<div><b>'+esc(s.title)+'</b><div class="hm-sub">'+esc(s.host||'')+(s.category?' · '+esc(s.category):'')+'</div></div>'+
+          '<span class="hm-pill '+s.state+'">'+lbl+'</span></div>';
+      }).join('');
+    }
+
+    // alerts card
+    var aHost = el('hm-alerts');
+    var latest = al.latest || [];
+    if (!latest.length){ aHost.innerHTML = '<div class="hm-empty">Nothing open. All clear.</div>'; }
+    else {
+      aHost.innerHTML = latest.map(function(a){
+        var det = (a.details||a.type||'').slice(0,90);
+        return '<div class="hm-row"><div><b>'+esc(a.type||'Alert')+'</b><div class="hm-sub">'+esc(det)+'</div></div>'+
+          '<span class="hm-pill '+esc(a.severity||'info')+'">'+esc(a.severity||'')+'</span></div>';
+      }).join('');
+    }
+
+    // tile badges + metaline
+    el('b-rtb').textContent = (d.tasks ? d.tasks.open : 0) + ' open tasks';
+    el('b-members').textContent = d.members ? d.members.total + ' members' : '—';
+    el('b-partners').textContent = d.partners ? d.partners.live + ' live' : '—';
+    el('b-employers').textContent = (d.employers && d.employers.admins) ? d.employers.admins + ' accounts' : 'Portal live';
+    var ab = el('b-analytics');
+    if (al.open > 0){ ab.textContent = al.open + (al.open===1?' alert':' alerts'); ab.className = 'hm-badge alert'; }
+    else { ab.textContent = 'All clear'; }
+
+    el('hm-metaline').textContent = (d.members?d.members.total:'—') + ' members · ' + al.open + ' open alert' + (al.open===1?'':'s') +
+      (ss.length ? ' · ' + ss.length + ' sessions today' : '');
+  }
+
+  async function load(){
+    var token = null;
+    try {
+      var sb = window.VYVE_SUPABASE && window.VYVE_SUPABASE.client && window.VYVE_SUPABASE.client();
+      if (sb){ var s = await sb.auth.getSession(); token = s && s.data && s.data.session && s.data.session.access_token; }
+    } catch(_){}
+    if (!token){
+      el('hm-error').style.display = 'block';
+      el('hm-error').textContent = 'No session — sign in again to load live data.';
+      return;
+    }
+    var res;
+    try {
+      res = await fetch(EF, { headers: { Authorization: 'Bearer ' + token } });
+    } catch(e){
+      el('hm-error').style.display = 'block';
+      el('hm-error').textContent = 'Could not reach VYVE — check your connection.';
+      return;
+    }
+    if (!res.ok){
+      el('hm-error').style.display = 'block';
+      el('hm-error').textContent = res.status === 401
+        ? 'Your session isn\u2019t authorised for the Command Centre (401).'
+        : 'Home data failed to load (' + res.status + ').';
+      return;
+    }
+    try {
+      render(await res.json());
+    } catch(e){
+      // PM-751 discipline: display errors are display errors, never "check your connection"
+      console.error('[home] render error', e);
+      el('hm-error').style.display = 'block';
+      el('hm-error').textContent = 'Data loaded but failed to display — see console.';
+    }
+  }
+  load();
+})();
+</script>
