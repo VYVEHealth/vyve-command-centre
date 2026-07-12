@@ -35,8 +35,14 @@
 .hm-sect{font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--text-dim);margin:0 0 12px;display:flex;align-items:center;gap:10px}
 .hm-sect::after{content:"";flex:1;height:1px;background:var(--border)}
 .hm-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-.hm-tile{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px;box-shadow:var(--shadow-md);text-decoration:none;color:var(--text);display:flex;flex-direction:column;gap:10px;transition:border-color .15s,transform .12s}
-.hm-tile:hover{border-color:var(--accent);transform:translateY(-2px);color:var(--text)}
+.hm-tile{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px;box-shadow:var(--shadow-md);color:var(--text);display:flex;flex-direction:column;gap:10px;transition:border-color .15s,transform .12s}
+.hm-tile:hover{border-color:var(--accent);transform:translateY(-2px)}
+/* PM-776: tiles were <a> wrapping <a class="hm-tl"> — nested anchors are
+   invalid HTML; the parser split each tile and ejected .hm-tlinks as its
+   own stretched grid item (the tall sliver pills). Tile is now a div;
+   .hm-tile-main is the tile-level link. */
+.hm-tile-main{display:flex;flex-direction:column;gap:10px;flex:1;text-decoration:none;color:inherit}
+.hm-tile-main:hover{color:inherit}
 .hm-tt{display:flex;align-items:center;justify-content:space-between}
 .hm-tic{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;background:var(--accent-pale);color:var(--accent)}
 .hm-tic svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
@@ -87,42 +93,54 @@
 
 <div class="hm-sect">Where to</div>
 <div class="hm-tiles">
-  <a class="hm-tile" href="#/domain-rtb">
+  <div class="hm-tile">
+    <a class="hm-tile-main" href="#/domain-rtb">
     <div class="hm-tt"><div class="hm-tic"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div><span class="hm-badge" id="b-rtb">—</span></div>
     <h2>Run the Business</h2>
     <p>Pipeline, finance, investors, content, tasks and the operating calendar.</p>
+    </a>
     <div class="hm-tlinks"><a class="hm-tl" href="#/crm">Pipeline</a><a class="hm-tl" href="#/finance">Finance</a><a class="hm-tl" href="#/tasks">Tasks</a><a class="hm-tl" href="#/calendar">Calendar</a></div>
-  </a>
-  <a class="hm-tile" href="#/domain-members">
+  </div>
+  <div class="hm-tile">
+    <a class="hm-tile-main" href="#/domain-members">
     <div class="hm-tt"><div class="hm-tic"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg></div><span class="hm-badge" id="b-members">—</span></div>
     <h2>Members</h2>
     <p>Member admin, broadcast push and who's active right now.</p>
+    </a>
     <div class="hm-tlinks"><a class="hm-tl" href="/admin-console.html">Member Admin</a><a class="hm-tl" href="#/broadcast">Broadcast</a><a class="hm-tl" href="#/active-users">Active Users</a></div>
-  </a>
-  <a class="hm-tile" href="#/domain-partners">
+  </div>
+  <div class="hm-tile">
+    <a class="hm-tile-main" href="#/domain-partners">
     <div class="hm-tt"><div class="hm-tic"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div><span class="hm-badge" id="b-partners">—</span></div>
     <h2>Partners</h2>
     <p>Pipeline, go-live gates, content moderation, payouts and the partner portal.</p>
+    </a>
     <div class="hm-tlinks"><a class="hm-tl" href="/partners.html">Management</a><a class="hm-tl" href="/partner-portal.html">Portal</a></div>
-  </a>
-  <a class="hm-tile gold" href="#/domain-employers">
+  </div>
+  <div class="hm-tile gold">
+    <a class="hm-tile-main" href="#/domain-employers">
     <div class="hm-tt"><div class="hm-tic"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></div><span class="hm-badge gold" id="b-employers">—</span></div>
     <h2>Employers</h2>
     <p>Employer accounts, the live portal, benchmarks and the sales demo.</p>
+    </a>
     <div class="hm-tlinks"><a class="hm-tl" href="#/employers">Accounts</a><a class="hm-tl" href="https://www.vyvehealth.co.uk/employer-portal.html" target="_blank" rel="noopener">Live portal</a><a class="hm-tl" href="https://www.vyvehealth.co.uk/employer-portal.html?demo=1" target="_blank" rel="noopener">Sales demo</a></div>
-  </a>
-  <a class="hm-tile" href="#/domain-analytics">
+  </div>
+  <div class="hm-tile">
+    <a class="hm-tile-main" href="#/domain-analytics">
     <div class="hm-tt"><div class="hm-tic"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><span class="hm-badge" id="b-analytics">—</span></div>
     <h2>Analytics</h2>
     <p>App health, usage, retention, wellbeing, revenue and AI spend.</p>
+    </a>
     <div class="hm-tlinks"><a class="hm-tl" href="#/app-health">App Health</a><a class="hm-tl" href="#/retention">Retention</a><a class="hm-tl" href="#/revenue">Revenue</a></div>
-  </a>
-  <a class="hm-tile" href="#/settings">
+  </div>
+  <div class="hm-tile">
+    <a class="hm-tile-main" href="#/settings">
     <div class="hm-tt"><div class="hm-tic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div></div>
     <h2>System</h2>
     <p>Settings, auth mode, theme and integrations.</p>
+    </a>
     <div class="hm-tlinks"><a class="hm-tl" href="#/settings">Settings</a></div>
-  </a>
+  </div>
 </div>
 
 <script>
