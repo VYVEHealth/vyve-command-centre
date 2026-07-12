@@ -1,127 +1,184 @@
-<div class="page active" id="page-invoicing">
-  <div class="page-header">
-    <div class="hdr-row">
-      <div><div class="eyebrow">Finance</div><h1 class="page-title">Invoicing</h1><p class="page-sub">Client invoices, payment tracking, aged debt</p></div>
-      <button class="btn btn-primary" id="inv-add">New invoice</button>
-    </div>
-  </div>
+<!-- =====================================================================
+     VYVE Command Centre — Invoicing (PM-757, CC overhaul Phase 3)
+     cc_invoices CRUD. Status vocabulary is DB CHECK-constrained:
+     outstanding / paid / overdue / cancelled.
+     ===================================================================== -->
+<style>
+.iv-head{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px}
+.iv-eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.iv-h1{font-size:22px;font-weight:700;letter-spacing:-.015em}
+.iv-meta{font-size:13px;color:var(--text-muted)}
+.iv-btn{border:0;border-radius:9px;padding:9px 16px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:var(--font-body)}
+.iv-btn.primary{background:var(--accent);color:var(--on-accent)}
+.iv-btn.primary:hover{background:var(--accent-hover)}
+.iv-btn.secondary{background:var(--surface-2);color:var(--text);border:1px solid var(--border-strong)}
+.iv-btn.danger{background:var(--danger-pale);color:var(--danger)}
+.iv-btn.small{padding:5px 11px;font-size:12px;border-radius:7px}
+.iv-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow-md);overflow-x:auto}
+.iv-table{width:100%;border-collapse:collapse}
+.iv-table th{font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim);text-align:left;padding:10px 16px;border-bottom:1px solid var(--border)}
+.iv-table td{padding:11px 16px;border-bottom:1px solid var(--border);font-size:13.5px;vertical-align:middle}
+.iv-table td.num{font-variant-numeric:tabular-nums;font-weight:600}
+.iv-table tbody tr:last-child td{border-bottom:0}
+.iv-row-click{cursor:pointer;transition:background .12s}
+.iv-row-click:hover{background:var(--accent-pale)}
+.iv-pill{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;border-radius:99px;padding:3px 10px}
+.iv-pill i{width:6px;height:6px;border-radius:50%;background:currentColor}
+.iv-pill.outstanding{background:var(--warning-pale);color:var(--warning)}
+.iv-pill.paid{background:var(--success-pale);color:var(--success)}
+.iv-pill.overdue{background:var(--danger-pale);color:var(--danger)}
+.iv-pill.cancelled{background:var(--surface-2);color:var(--text-dim)}
+.iv-empty{padding:26px;text-align:center;color:var(--text-muted);font-size:13px}
+.iv-error{background:var(--danger-pale);border-radius:12px;padding:12px 16px;color:var(--danger);font-size:13.5px;margin-bottom:14px;display:none}
+.iv-overlay{position:fixed;inset:0;background:rgba(4,12,12,.6);backdrop-filter:blur(3px);z-index:80;display:flex;align-items:center;justify-content:center;padding:18px}
+.iv-modal{background:var(--surface);border:1px solid var(--border-strong);border-radius:16px;max-width:440px;width:100%;box-shadow:var(--shadow-lg)}
+.iv-mh{padding:18px 20px 0}.iv-mh h3{font-size:16px;font-weight:700}
+.iv-mb{padding:12px 20px 4px}
+.iv-field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.iv-field label{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim)}
+.iv-in{background:var(--surface-2);border:1px solid var(--border-strong);border-radius:9px;padding:9px 12px;font-size:13.5px;color:var(--text);font-family:var(--font-body);width:100%}
+.iv-in:focus{outline:2px solid var(--accent);outline-offset:0;border-color:transparent}
+.iv-two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.iv-mf{display:flex;justify-content:space-between;gap:10px;padding:16px 20px 18px}
+.iv-mf-right{display:flex;gap:10px}
+</style>
 
-  <div class="grid-4" style="margin-bottom:18px">
-    <div class="stat"><div class="stat-label">Issued (30d)</div><div class="stat-value" id="inv-issued">£0</div></div>
-    <div class="stat"><div class="stat-label">Paid (30d)</div><div class="stat-value" id="inv-paid" style="color:var(--success)">£0</div></div>
-    <div class="stat"><div class="stat-label">Outstanding</div><div class="stat-value" id="inv-out" style="color:var(--warning)">£0</div></div>
-    <div class="stat"><div class="stat-label">Overdue</div><div class="stat-value" id="inv-over" style="color:var(--danger)">£0</div></div>
+<div class="iv-head">
+  <div>
+    <div class="iv-eyebrow">Run the Business</div>
+    <div class="iv-h1">Invoicing</div>
+    <div class="iv-meta" id="iv-meta">Loading…</div>
   </div>
-
-  <div class="tbl-wrap">
-    <div class="tbl-filters">
-      <div class="search"><input id="inv-search" placeholder="Search invoices..."/></div>
-      <select id="inv-filter" style="padding:9px 12px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface-2);color:var(--text);font-size:13px">
-        <option value="">All</option>
-        <option value="outstanding">Outstanding</option>
-        <option value="paid">Paid</option>
-        <option value="overdue">Overdue</option>
-      </select>
-    </div>
-    <table class="tbl">
-      <thead><tr><th>Invoice #</th><th>Client</th><th>Issued</th><th>Due</th><th>Amount</th><th>Status</th></tr></thead>
-      <tbody id="inv-tbody"><tr><td colspan="6"><div class="empty"><span class="icon">·</span><h3>No invoices yet</h3></div></td></tr></tbody>
-    </table>
-  </div>
+  <button class="iv-btn primary" id="iv-add">Raise invoice</button>
+</div>
+<div class="iv-error" id="iv-error"></div>
+<div class="iv-card">
+  <table class="iv-table">
+    <thead><tr><th>Client</th><th>Amount</th><th>Due</th><th>Status</th><th>Notes</th><th></th></tr></thead>
+    <tbody id="iv-rows"><tr><td colspan="6" class="iv-empty">Loading…</td></tr></tbody>
+  </table>
 </div>
 
 <script>
 (function(){
+  var STATUSES = ['outstanding','paid','overdue','cancelled']; // DB CHECK vocabulary
+  var invoices = [];
+  function el(id){ return document.getElementById(id); }
+  function esc(s){ var d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
+  function err(m){ var e=el('iv-error'); e.style.display='block'; e.textContent=m; }
+  function sb(){ return window.VYVE_SUPABASE && window.VYVE_SUPABASE.client && window.VYVE_SUPABASE.client(); }
+  function gbp(v){ return v==null?'—':'£'+Number(v).toLocaleString('en-GB'); }
 
-  var LS='vyve_invoices';
-  function lsGet(){ try { var v=localStorage.getItem(LS); return v?JSON.parse(v):[]; } catch(e){ return []; } }
-  function lsSet(v){ try { localStorage.setItem(LS,JSON.stringify(v)); } catch(e){} }
-  async function load(){
-    if (window.VYVE_MAKE){ var fm = await VYVE_MAKE.list('invoices',{limit:500}); if (fm&&fm.length) return fm; }
-    return lsGet();
-  }
-  async function save(id, item){
-    if (window.VYVE_MAKE){ var r = await VYVE_MAKE.upsert('invoices', id, item); if (r) return; }
-    var a = lsGet(); var i = a.findIndex(function(x){return x._id===id;}); var e = Object.assign({_id:id}, item);
-    if (i>=0) a[i]=e; else a.unshift(e); lsSet(a);
-  }
-  async function remove(id){ if (window.VYVE_MAKE) await VYVE_MAKE.remove('invoices', id); lsSet(lsGet().filter(function(x){return x._id!==id;})); }
-
-  function statusOf(inv){
-    if (inv.paid_at) return 'paid';
-    if (inv.due && new Date(inv.due).getTime() < Date.now()) return 'overdue';
-    return 'outstanding';
-  }
-
-  function render(items){
-    var q = (document.getElementById('inv-search').value||'').toLowerCase();
-    var filter = document.getElementById('inv-filter').value;
-
-    items.forEach(function(i){ i._status = statusOf(i); });
-    var view = items.slice();
-    if (q) view = view.filter(function(i){ return (i.number||'').toLowerCase().includes(q) || (i.client||'').toLowerCase().includes(q); });
-    if (filter) view = view.filter(function(i){ return i._status === filter; });
-
-    var thirty = Date.now() - 30*86400000;
-    var issued30 = items.filter(function(i){ return i.issued && new Date(i.issued).getTime() > thirty; }).reduce(function(s,i){ return s + (Number(i.amount)||0); }, 0);
-    var paid30 = items.filter(function(i){ return i.paid_at && new Date(i.paid_at).getTime() > thirty; }).reduce(function(s,i){ return s + (Number(i.amount)||0); }, 0);
-    var out = items.filter(function(i){ return i._status === 'outstanding'; }).reduce(function(s,i){ return s + (Number(i.amount)||0); }, 0);
-    var over = items.filter(function(i){ return i._status === 'overdue'; }).reduce(function(s,i){ return s + (Number(i.amount)||0); }, 0);
-    document.getElementById('inv-issued').textContent = VYVE_UI.fmtMoney(issued30);
-    document.getElementById('inv-paid').textContent = VYVE_UI.fmtMoney(paid30);
-    document.getElementById('inv-out').textContent = VYVE_UI.fmtMoney(out);
-    document.getElementById('inv-over').textContent = VYVE_UI.fmtMoney(over);
-
-    var tbody = document.getElementById('inv-tbody');
-    if (!view.length){ tbody.innerHTML = '<tr><td colspan="6"><div class="empty"><span class="icon">·</span><h3>No invoices match</h3></div></td></tr>'; return; }
-    view.sort(function(a,b){ return new Date(b.issued||0) - new Date(a.issued||0); });
-    tbody.innerHTML = view.map(function(i){
-      var statusColor = i._status==='paid' ? 'badge-green' : i._status==='overdue' ? 'badge-red' : 'badge-amber';
-      return '<tr style="cursor:pointer" data-id="'+i._id+'"><td style="font-family:monospace;font-size:12px">'+VYVE_UI.escape(i.number||'—')+'</td><td>'+VYVE_UI.escape(i.client||'')+'</td><td>'+VYVE_UI.fmtDate(i.issued)+'</td><td>'+VYVE_UI.fmtDate(i.due)+'</td><td style="font-weight:600">'+VYVE_UI.fmtMoney(i.amount)+'</td><td><span class="badge '+statusColor+'">'+i._status+'</span></td></tr>';
-    }).join('');
-    tbody.querySelectorAll('[data-id]').forEach(function(row){ row.addEventListener('click', function(){ edit(row.dataset.id, items); }); });
-  }
-
-  function edit(id, items){
-    var i = items.find(function(x){return x._id===id;}); if(!i) return;
-    openModal('Edit invoice', i, async function(u){ await save(id, u); render(await load()); }, async function(){ await remove(id); render(await load()); });
-  }
-
-  function openModal(title, init, onSave, onDel){
-    init = init || {};
-    VYVE_UI.modal({ title: title, body:
-      '<div class="form-row cols-2"><div class="form-group"><label>Invoice number</label><input id="i-num" value="'+VYVE_UI.escape(init.number||'')+'"/></div><div class="form-group"><label>Client</label><input id="i-client" value="'+VYVE_UI.escape(init.client||'')+'"/></div></div>'+
-      '<div class="form-row cols-3"><div class="form-group"><label>Amount (£)</label><input id="i-amt" type="number" min="0" value="'+(init.amount||'')+'"/></div><div class="form-group"><label>Issued</label><input id="i-issued" type="date" value="'+VYVE_UI.escape((init.issued||'').slice(0,10))+'"/></div><div class="form-group"><label>Due</label><input id="i-due" type="date" value="'+VYVE_UI.escape((init.due||'').slice(0,10))+'"/></div></div>'+
-      '<div class="form-row cols-2"><div class="form-group"><label>Paid on (leave blank if unpaid)</label><input id="i-paid" type="date" value="'+VYVE_UI.escape((init.paid_at||'').slice(0,10))+'"/></div><div class="form-group"><label>Reference</label><input id="i-ref" value="'+VYVE_UI.escape(init.reference||'')+'"/></div></div>'+
-      '<div class="form-row"><div class="form-group"><label>Notes</label><textarea id="i-notes" rows="2">'+VYVE_UI.escape(init.notes||'')+'</textarea></div></div>'+
-      '<div style="display:flex;justify-content:space-between;gap:8px">'+(onDel?'<button class="btn" id="i-del" style="color:var(--danger);border-color:rgba(224,96,96,.3)">Delete</button>':'<span></span>')+'<button class="btn btn-primary" id="i-save">Save</button></div>'
-    });
-    setTimeout(function(){
-      document.getElementById('i-save').addEventListener('click', function(){
-        var num = document.getElementById('i-num').value.trim();
-        var client = document.getElementById('i-client').value.trim();
-        if (!num || !client){ VYVE_UI.toast('Number and client required','error'); return; }
-        var paid = document.getElementById('i-paid').value;
-        var u = { number:num, client:client, amount:Number(document.getElementById('i-amt').value)||0, issued:document.getElementById('i-issued').value, due:document.getElementById('i-due').value, paid_at: paid?(paid+'T00:00:00.000Z'):'', reference:document.getElementById('i-ref').value.trim(), notes:document.getElementById('i-notes').value.trim(), updated_at:new Date().toISOString(), created_at: init.created_at||new Date().toISOString() };
-        onSave(u);
-        document.querySelector('.modal-overlay').classList.remove('open');
-      });
-      if (onDel) document.getElementById('i-del').addEventListener('click', function(){ if (confirm('Delete?')){ onDel(); document.querySelector('.modal-overlay').classList.remove('open'); }});
-    }, 50);
-  }
-
-  document.getElementById('inv-add').addEventListener('click', function(){
-    openModal('New invoice', { issued: new Date().toISOString().slice(0,10) }, async function(u){ await save('inv_'+Date.now(), u); render(await load()); VYVE_UI.toast('Saved','success'); });
-  });
-  document.getElementById('inv-search').addEventListener('input', async function(){ render(await load()); });
-  document.getElementById('inv-filter').addEventListener('change', async function(){ render(await load()); });
-  (async function(){ render(await load()); })();
-  window.VYVE_PAGE_SHORTCUTS = {
-    onNew: function(){
-      var b = document.getElementById('inv-add');
-      if (b) b.click();
+  function render(){
+    var out = invoices.filter(function(i){return i.status==='outstanding'||i.status==='overdue'});
+    var outVal = out.reduce(function(a,i){return a+(Number(i.amount)||0)},0);
+    el('iv-meta').textContent = out.length
+      ? out.length + ' unpaid · ' + gbp(outVal) + ' outstanding'
+      : (invoices.length ? 'Nothing outstanding' : 'No invoices yet');
+    var rows = el('iv-rows');
+    if (!invoices.length){
+      rows.innerHTML = '<tr><td colspan="6" class="iv-empty">No invoices yet. The first enterprise contract raises the first one.</td></tr>';
+      return;
     }
-  };
+    rows.innerHTML = invoices.map(function(i){
+      var quick = (i.status==='outstanding'||i.status==='overdue')
+        ? '<button class="iv-btn secondary small" data-paid="'+i.id+'">Mark paid</button>' : '';
+      return '<tr class="iv-row-click" data-id="'+i.id+'">'+
+        '<td><b>'+esc(i.client)+'</b></td>'+
+        '<td class="num">'+gbp(i.amount)+'</td>'+
+        '<td>'+esc(i.due_date||'—')+'</td>'+
+        '<td><span class="iv-pill '+esc(i.status)+'"><i></i>'+esc(i.status)+'</span></td>'+
+        '<td>'+esc(i.notes||'')+'</td>'+
+        '<td>'+quick+'</td></tr>';
+    }).join('');
+    rows.querySelectorAll('tr').forEach(function(tr){
+      tr.addEventListener('click', function(e){
+        if (e.target.getAttribute && e.target.getAttribute('data-paid')) return;
+        openModal(invoices.find(function(i){return i.id===tr.getAttribute('data-id')}));
+      });
+    });
+    rows.querySelectorAll('[data-paid]').forEach(function(b){
+      b.addEventListener('click', async function(){
+        b.disabled = true; b.textContent = '…';
+        var res = await sb().from('cc_invoices').update({status:'paid',updated_at:new Date().toISOString()}).eq('id', b.getAttribute('data-paid'));
+        if (res.error){ err('Update failed: '+res.error.message); b.disabled=false; b.textContent='Mark paid'; return; }
+        load();
+      });
+    });
+  }
 
+  async function load(){
+    var client = sb();
+    if (!client){ err('Supabase client unavailable — reload.'); return; }
+    var res = await client.from('cc_invoices').select('*').order('due_date',{ascending:true,nullsFirst:false});
+    if (res.error){ err('Invoices failed to load: '+res.error.message); return; }
+    invoices = res.data || [];
+    // derive overdue display-side (status stays authoritative in DB)
+    render();
+  }
+
+  var overlay = null;
+  function closeModal(){ if(overlay){overlay.remove();overlay=null;} }
+  function openModal(inv){
+    closeModal();
+    var isNew = !inv; inv = inv || {};
+    overlay = document.createElement('div');
+    overlay.className = 'iv-overlay';
+    overlay.innerHTML =
+      '<div class="iv-modal"><div class="iv-mh"><h3>'+(isNew?'Raise invoice':'Edit invoice')+'</h3></div>'+
+      '<div class="iv-mb">'+
+        '<div class="iv-field"><label>Client</label><input class="iv-in" id="v-client" value="'+esc(inv.client||'')+'"></div>'+
+        '<div class="iv-two">'+
+          '<div class="iv-field"><label>Amount £</label><input class="iv-in" id="v-amount" type="number" min="0" step="0.01" value="'+(inv.amount!=null?esc(inv.amount):'')+'"></div>'+
+          '<div class="iv-field"><label>Due date</label><input class="iv-in" id="v-due" type="date" value="'+esc(inv.due_date||'')+'"></div>'+
+        '</div>'+
+        '<div class="iv-field"><label>Status</label><select class="iv-in" id="v-status">'+
+          STATUSES.map(function(s){return '<option value="'+s+'"'+(inv.status===s?' selected':'')+'>'+s+'</option>'}).join('')+
+        '</select></div>'+
+        '<div class="iv-field"><label>Notes</label><input class="iv-in" id="v-notes" value="'+esc(inv.notes||'')+'"></div>'+
+      '</div>'+
+      '<div class="iv-mf">'+
+        (isNew?'<span></span>':'<button class="iv-btn danger" id="v-delete">Delete</button>')+
+        '<div class="iv-mf-right"><button class="iv-btn secondary" id="v-cancel">Cancel</button><button class="iv-btn primary" id="v-save">'+(isNew?'Raise':'Save changes')+'</button></div>'+
+      '</div></div>';
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', function(e){ if(e.target===overlay) closeModal(); });
+    overlay.querySelector('#v-cancel').addEventListener('click', closeModal);
+    overlay.querySelector('#v-save').addEventListener('click', async function(){
+      var clientName = overlay.querySelector('#v-client').value.trim();
+      if (!clientName){ overlay.querySelector('#v-client').focus(); return; }
+      var amtRaw = overlay.querySelector('#v-amount').value;
+      var status = overlay.querySelector('#v-status').value;
+      if (STATUSES.indexOf(status) < 0) status = 'outstanding';
+      var payload = {
+        client: clientName,
+        amount: amtRaw===''?null:Number(amtRaw),
+        due_date: overlay.querySelector('#v-due').value || null,
+        status: status,
+        notes: overlay.querySelector('#v-notes').value.trim() || null,
+        updated_at: new Date().toISOString()
+      };
+      var btn = this; btn.disabled = true; btn.textContent = 'Saving…';
+      var client = sb(); var res;
+      if (isNew){
+        try { var s = await client.auth.getSession(); payload.created_by = s.data.session.user.email; } catch(_){}
+        res = await client.from('cc_invoices').insert(payload);
+      } else {
+        res = await client.from('cc_invoices').update(payload).eq('id', inv.id);
+      }
+      if (res.error){ btn.disabled=false; btn.textContent=isNew?'Raise':'Save changes'; err('Save failed: '+res.error.message); return; }
+      closeModal(); el('iv-error').style.display='none'; load();
+    });
+    var del = overlay.querySelector('#v-delete');
+    if (del) del.addEventListener('click', async function(){
+      if (!confirm('Delete this invoice? This cannot be undone.')) return;
+      var res = await sb().from('cc_invoices').delete().eq('id', inv.id);
+      if (res.error){ err('Delete failed: '+res.error.message); return; }
+      closeModal(); load();
+    });
+  }
+
+  el('iv-add').addEventListener('click', function(){ openModal(null); });
+  load();
 })();
 </script>

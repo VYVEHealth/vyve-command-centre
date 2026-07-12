@@ -1,141 +1,197 @@
-<div class="page active" id="page-finance">
-  <div class="page-header">
-    <div class="hdr-row">
-      <div>
-        <div class="eyebrow">Finance</div><h1 class="page-title">Finance</h1><p class="page-sub">P&amp;L, cashflow, runway, budget vs actual</p>
-      </div>
-      <button class="btn btn-primary" id="fin-add">Log entry</button>
-    </div>
-  </div>
+<!-- =====================================================================
+     VYVE Command Centre — Finance (PM-757, CC overhaul Phase 3)
+     Monthly financial snapshots on cc_finance + live billed MRR from
+     cc_revenue_cache. Replaces the localStorage-era finance.html.
+     ===================================================================== -->
+<style>
+.fn-head{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px}
+.fn-eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.fn-h1{font-size:22px;font-weight:700;letter-spacing:-.015em}
+.fn-meta{font-size:13px;color:var(--text-muted)}
+.fn-btn{border:0;border-radius:9px;padding:9px 16px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:var(--font-body)}
+.fn-btn.primary{background:var(--accent);color:var(--on-accent)}
+.fn-btn.primary:hover{background:var(--accent-hover)}
+.fn-btn.secondary{background:var(--surface-2);color:var(--text);border:1px solid var(--border-strong)}
+.fn-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+.fn-kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow-md)}
+.fn-kl{font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim)}
+.fn-kv{font-size:24px;font-weight:700;letter-spacing:-.02em;margin:4px 0 2px;font-variant-numeric:tabular-nums}
+.fn-kv.gold{color:var(--gold)}
+.fn-ks{font-family:var(--font-mono);font-size:11px;color:var(--text-muted)}
+.fn-ks.good{color:var(--success)}.fn-ks.warn{color:var(--warning)}
+.fn-target{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow-md);margin-bottom:22px}
+.fn-target-h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.fn-target-h h3{font-size:14px;font-weight:600}
+.fn-target-h span{font-family:var(--font-mono);font-size:12px;color:var(--text-muted)}
+.fn-bar{height:10px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.fn-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--vyve-teal),var(--vyve-teal-light));transition:width .6s ease}
+.fn-sect{font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--text-dim);margin:0 0 12px;display:flex;align-items:center;gap:10px}
+.fn-sect::after{content:"";flex:1;height:1px;background:var(--border)}
+.fn-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow-md);overflow-x:auto}
+.fn-table{width:100%;border-collapse:collapse}
+.fn-table th{font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim);text-align:left;padding:10px 16px;border-bottom:1px solid var(--border)}
+.fn-table td{padding:11px 16px;border-bottom:1px solid var(--border);font-size:13.5px;font-variant-numeric:tabular-nums}
+.fn-table tbody tr:last-child td{border-bottom:0}
+.fn-table tbody tr{cursor:pointer;transition:background .12s}
+.fn-table tbody tr:hover{background:var(--accent-pale)}
+.fn-empty{padding:22px;text-align:center;color:var(--text-muted);font-size:13px}
+.fn-error{background:var(--danger-pale);border-radius:12px;padding:12px 16px;color:var(--danger);font-size:13.5px;margin-bottom:14px;display:none}
+.fn-overlay{position:fixed;inset:0;background:rgba(4,12,12,.6);backdrop-filter:blur(3px);z-index:80;display:flex;align-items:center;justify-content:center;padding:18px}
+.fn-modal{background:var(--surface);border:1px solid var(--border-strong);border-radius:16px;max-width:440px;width:100%;box-shadow:var(--shadow-lg)}
+.fn-mh{padding:18px 20px 0}.fn-mh h3{font-size:16px;font-weight:700}
+.fn-mb{padding:12px 20px 4px}
+.fn-field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.fn-field label{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim)}
+.fn-in{background:var(--surface-2);border:1px solid var(--border-strong);border-radius:9px;padding:9px 12px;font-size:13.5px;color:var(--text);font-family:var(--font-body);width:100%}
+.fn-in:focus{outline:2px solid var(--accent);outline-offset:0;border-color:transparent}
+.fn-two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fn-mf{display:flex;justify-content:flex-end;gap:10px;padding:16px 20px 18px}
+@media(max-width:900px){.fn-kpis{grid-template-columns:1fr 1fr}}
+</style>
 
-  <div class="grid-4">
-    <div class="stat"><div class="stat-label">Monthly burn</div><div class="stat-value" id="fin-burn">—</div><div class="stat-sub" id="fin-burn-d">avg last 3 months</div></div>
-    <div class="stat"><div class="stat-label">Cash on hand</div><div class="stat-value" id="fin-cash">—</div><div class="stat-sub">latest entry</div></div>
-    <div class="stat"><div class="stat-label">Runway</div><div class="stat-value" id="fin-runway">—</div><div class="stat-sub" id="fin-runway-d">months</div></div>
-    <div class="stat"><div class="stat-label">MRR</div><div class="stat-value" id="fin-mrr">—</div><div class="stat-sub">recurring</div></div>
+<div class="fn-head">
+  <div>
+    <div class="fn-eyebrow">Run the Business</div>
+    <div class="fn-h1">Finance</div>
+    <div class="fn-meta" id="fn-meta">Loading…</div>
   </div>
+  <button class="fn-btn primary" id="fn-add">Record snapshot</button>
+</div>
+<div class="fn-error" id="fn-error"></div>
 
-  <div class="grid-2" style="margin-top:16px">
-    <div class="card">
-      <div class="card-header"><span class="card-title">Recent entries</span></div>
-      <div class="tbl-wrap" style="border:none">
-        <table class="tbl">
-          <thead><tr><th>Month</th><th>Income</th><th>Costs</th><th>Net</th><th>Cash bal.</th></tr></thead>
-          <tbody id="fin-tbody"><tr><td colspan="5"><div class="empty"><span class="icon">·</span><h3>No financial entries</h3><p>Click &ldquo;Log entry&rdquo; to add monthly figures.</p></div></td></tr></tbody>
-        </table>
-      </div>
-    </div>
+<div class="fn-kpis">
+  <div class="fn-kpi"><div class="fn-kl">Live billed MRR</div><div class="fn-kv gold" id="f-live-mrr">—</div><div class="fn-ks" id="f-live-sub"></div></div>
+  <div class="fn-kpi"><div class="fn-kl">Burn · latest</div><div class="fn-kv" id="f-burn">—</div><div class="fn-ks" id="f-burn-sub"></div></div>
+  <div class="fn-kpi"><div class="fn-kl">Cash · latest</div><div class="fn-kv" id="f-cash">—</div><div class="fn-ks" id="f-cash-sub"></div></div>
+  <div class="fn-kpi"><div class="fn-kl">Runway</div><div class="fn-kv" id="f-runway">—</div><div class="fn-ks" id="f-runway-sub"></div></div>
+</div>
 
-    <div class="card">
-      <div class="card-header"><span class="card-title">Runway forecast</span></div>
-      <div id="fin-forecast" style="padding:14px 0">
-        <div class="empty"><span class="icon">·</span><h3>No forecast yet</h3><p>Log 2+ months of entries to project runway.</p></div>
-      </div>
-    </div>
-  </div>
+<div class="fn-target">
+  <div class="fn-target-h"><h3>MRR target — Dean full-time</h3><span id="f-target-label">£— of £6,000</span></div>
+  <div class="fn-bar"><i id="f-target-bar" style="width:0%"></i></div>
+</div>
 
-  <div class="card" style="margin-top:16px">
-    <div class="card-header"><span class="card-title">Notes</span></div>
-    <p style="font-size:12px;color:var(--text-muted);line-height:1.7">
-      Cashflow and P&amp;L are typically pulled from accounting software (Xero, QuickBooks). For now this page uses manual entries stored in browser localStorage.
-      When you're ready, wire to your accounting system via Make.com and the data flows automatically. The figures shown here are pre-tax, in GBP unless overridden.
-    </p>
-  </div>
+<div class="fn-sect">Snapshot history</div>
+<div class="fn-card">
+  <table class="fn-table">
+    <thead><tr><th>Date</th><th>MRR</th><th>Burn</th><th>Cash</th><th>Target</th><th>Notes</th></tr></thead>
+    <tbody id="fn-rows"><tr><td colspan="6" class="fn-empty">Loading…</td></tr></tbody>
+  </table>
 </div>
 
 <script>
 (function(){
-  var LS='vyve_finance_entries';
-  function lsGet(){ try { var v=localStorage.getItem(LS); return v?JSON.parse(v):[]; } catch(e){ return []; } }
-  function lsSet(v){ try { localStorage.setItem(LS,JSON.stringify(v)); } catch(e){} }
+  var snaps = [];
+  var DEFAULT_TARGET = 6000; // £6K/month — Dean full-time threshold
+  function el(id){ return document.getElementById(id); }
+  function esc(s){ var d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
+  function err(m){ var e=el('fn-error'); e.style.display='block'; e.textContent=m; }
+  function sb(){ return window.VYVE_SUPABASE && window.VYVE_SUPABASE.client && window.VYVE_SUPABASE.client(); }
+  function gbp(v){ return v==null?'—':'£'+Number(v).toLocaleString('en-GB'); }
+
+  function render(){
+    var latest = snaps[0] || null;
+    el('f-burn').textContent = latest ? gbp(latest.burn) : '—';
+    el('f-burn-sub').textContent = latest ? 'recorded ' + esc(latest.recorded_date) : 'no snapshots yet';
+    el('f-cash').textContent = latest ? gbp(latest.cash) : '—';
+    el('f-cash-sub').textContent = latest ? 'recorded ' + esc(latest.recorded_date) : '';
+    var runway = (latest && latest.cash != null && latest.burn > 0) ? (latest.cash / latest.burn) : null;
+    el('f-runway').textContent = runway != null ? runway.toFixed(1) + ' mo' : '—';
+    el('f-runway-sub').textContent = runway != null ? 'cash ÷ monthly burn' : 'needs cash + burn';
+    el('fn-meta').textContent = snaps.length + ' snapshot' + (snaps.length===1?'':'s') + ' recorded';
+
+    var rows = el('fn-rows');
+    if (!snaps.length){
+      rows.innerHTML = '<tr><td colspan="6" class="fn-empty">No snapshots yet — record the first month-end position.</td></tr>';
+    } else {
+      rows.innerHTML = snaps.map(function(s){
+        return '<tr data-id="'+s.id+'"><td>'+esc(s.recorded_date)+'</td><td>'+gbp(s.mrr)+'</td><td>'+gbp(s.burn)+'</td><td>'+gbp(s.cash)+'</td><td>'+gbp(s.target)+'</td><td>'+esc(s.notes||'')+'</td></tr>';
+      }).join('');
+      rows.querySelectorAll('tr').forEach(function(tr){
+        tr.addEventListener('click', function(){ openModal(snaps.find(function(s){return s.id===tr.getAttribute('data-id')})); });
+      });
+    }
+  }
+
+  function renderTarget(liveMrr, latest){
+    var target = (latest && latest.target) || DEFAULT_TARGET;
+    var mrr = liveMrr != null ? liveMrr : (latest ? latest.mrr : 0) || 0;
+    var pct = Math.max(0, Math.min(100, (mrr / target) * 100));
+    el('f-target-label').textContent = gbp(mrr) + ' of ' + gbp(target);
+    el('f-target-bar').style.width = pct.toFixed(1) + '%';
+  }
 
   async function load(){
-    if (window.VYVE_MAKE){ var fm = await VYVE_MAKE.list('finance',{limit:500}); if (fm&&fm.length) return fm; }
-    return lsGet();
-  }
-  async function save(id, item){
-    if (window.VYVE_MAKE){ var r = await VYVE_MAKE.upsert('finance', id, item); if (r) return; }
-    var a = lsGet(); var i = a.findIndex(function(x){return x._id===id;}); var e = Object.assign({_id:id}, item);
-    if (i>=0) a[i]=e; else a.unshift(e); lsSet(a);
-  }
-
-  function render(items){
-    items = (items||[]).slice().sort(function(a,b){ return (a.month||'').localeCompare(b.month||''); });
-    var latest = items[items.length-1];
-
-    if (latest) {
-      document.getElementById('fin-cash').textContent = VYVE_UI.fmtMoney(latest.cash_balance);
-      document.getElementById('fin-mrr').textContent = VYVE_UI.fmtMoney(latest.mrr);
+    var client = sb();
+    if (!client){ err('Supabase client unavailable — reload.'); return; }
+    var results = await Promise.all([
+      client.from('cc_finance').select('*').order('recorded_date',{ascending:false}).limit(36),
+      client.from('cc_revenue_cache').select('headline_json,refreshed_at').order('refreshed_at',{ascending:false}).limit(1)
+    ]);
+    if (results[0].error){ err('Finance failed to load: '+results[0].error.message); return; }
+    snaps = results[0].data || [];
+    var liveMrr = null;
+    if (!results[1].error && results[1].data && results[1].data[0] && results[1].data[0].headline_json){
+      var hl = results[1].data[0].headline_json;
+      liveMrr = hl.mrr != null ? Number(hl.mrr) : null;
+      el('f-live-mrr').textContent = gbp(liveMrr);
+      el('f-live-sub').textContent = (hl.paid_members!=null?hl.paid_members+' paid':'') + (hl.trial_members!=null?' · '+hl.trial_members+' trial':'');
+    } else {
+      el('f-live-mrr').textContent = '—';
+      el('f-live-sub').textContent = 'revenue cache unavailable';
     }
+    render();
+    renderTarget(liveMrr, snaps[0] || null);
+  }
 
-    var last3 = items.slice(-3);
-    if (last3.length) {
-      var avgNet = last3.reduce(function(s,e){ return s + (Number(e.costs||0) - Number(e.income||0)); }, 0) / last3.length;
-      document.getElementById('fin-burn').textContent = avgNet > 0 ? VYVE_UI.fmtMoney(avgNet) : VYVE_UI.fmtMoney(0);
-      if (latest && avgNet > 0 && latest.cash_balance) {
-        var months = Math.round(Number(latest.cash_balance) / avgNet * 10)/10;
-        document.getElementById('fin-runway').textContent = months;
-        document.getElementById('fin-runway-d').textContent = months >= 12 ? 'months · healthy' : (months >= 6 ? 'months · monitor' : 'months · urgent');
-        var el = document.getElementById('fin-runway-d');
-        el.style.color = months >= 12 ? 'var(--success)' : (months >= 6 ? 'var(--warning)' : 'var(--danger)');
+  var overlay = null;
+  function closeModal(){ if(overlay){overlay.remove();overlay=null;} }
+  function openModal(snap){
+    closeModal();
+    var isNew = !snap; snap = snap || {};
+    var today = new Date().toISOString().slice(0,10);
+    overlay = document.createElement('div');
+    overlay.className = 'fn-overlay';
+    overlay.innerHTML =
+      '<div class="fn-modal"><div class="fn-mh"><h3>'+(isNew?'Record snapshot':'Edit snapshot')+'</h3></div>'+
+      '<div class="fn-mb">'+
+        '<div class="fn-two">'+
+          '<div class="fn-field"><label>Date</label><input class="fn-in" id="s-date" type="date" value="'+esc(snap.recorded_date||today)+'"></div>'+
+          '<div class="fn-field"><label>MRR £</label><input class="fn-in" id="s-mrr" type="number" step="1" value="'+(snap.mrr!=null?esc(snap.mrr):'')+'"></div>'+
+        '</div>'+
+        '<div class="fn-two">'+
+          '<div class="fn-field"><label>Burn £/mo</label><input class="fn-in" id="s-burn" type="number" step="1" value="'+(snap.burn!=null?esc(snap.burn):'')+'"></div>'+
+          '<div class="fn-field"><label>Cash £</label><input class="fn-in" id="s-cash" type="number" step="1" value="'+(snap.cash!=null?esc(snap.cash):'')+'"></div>'+
+        '</div>'+
+        '<div class="fn-field"><label>Target £/mo</label><input class="fn-in" id="s-target" type="number" step="1" value="'+(snap.target!=null?esc(snap.target):DEFAULT_TARGET)+'"></div>'+
+        '<div class="fn-field"><label>Notes</label><input class="fn-in" id="s-notes" value="'+esc(snap.notes||'')+'"></div>'+
+      '</div>'+
+      '<div class="fn-mf"><button class="fn-btn secondary" id="s-cancel">Cancel</button><button class="fn-btn primary" id="s-save">'+(isNew?'Record':'Save changes')+'</button></div></div>';
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', function(e){ if(e.target===overlay) closeModal(); });
+    overlay.querySelector('#s-cancel').addEventListener('click', closeModal);
+    overlay.querySelector('#s-save').addEventListener('click', async function(){
+      var num = function(id){ var v = overlay.querySelector(id).value; return v===''?null:Number(v); };
+      var payload = {
+        recorded_date: overlay.querySelector('#s-date').value || null,
+        mrr: num('#s-mrr'), burn: num('#s-burn'), cash: num('#s-cash'), target: num('#s-target'),
+        notes: overlay.querySelector('#s-notes').value.trim() || null
+      };
+      if (!payload.recorded_date){ overlay.querySelector('#s-date').focus(); return; }
+      var btn = this; btn.disabled = true; btn.textContent = 'Saving…';
+      var client = sb(); var res;
+      if (isNew){
+        try { var s = await client.auth.getSession(); payload.created_by = s.data.session.user.email; } catch(_){}
+        res = await client.from('cc_finance').insert(payload);
+      } else {
+        res = await client.from('cc_finance').update(payload).eq('id', snap.id);
       }
-    }
-
-    var tbody = document.getElementById('fin-tbody');
-    if (!items.length) {
-      tbody.innerHTML = '<tr><td colspan="5"><div class="empty"><span class="icon">·</span><h3>No financial entries</h3></div></td></tr>';
-      return;
-    }
-    tbody.innerHTML = items.slice(-12).reverse().map(function(e){
-      var net = Number(e.income||0) - Number(e.costs||0);
-      var netColor = net >= 0 ? 'var(--success)' : 'var(--danger)';
-      return '<tr><td style="font-weight:600">'+VYVE_UI.escape(e.month||'')+'</td><td>'+VYVE_UI.fmtMoney(e.income)+'</td><td>'+VYVE_UI.fmtMoney(e.costs)+'</td><td style="color:'+netColor+';font-weight:600">'+VYVE_UI.fmtMoney(net)+'</td><td>'+VYVE_UI.fmtMoney(e.cash_balance)+'</td></tr>';
-    }).join('');
-
-    // Simple forecast
-    if (items.length >= 2 && latest) {
-      var avgBurn = last3.reduce(function(s,e){ return s + (Number(e.costs||0) - Number(e.income||0)); }, 0) / last3.length;
-      if (avgBurn > 0 && latest.cash_balance) {
-        var monthsLeft = latest.cash_balance / avgBurn;
-        var rows = '';
-        var bal = Number(latest.cash_balance);
-        for (var i=1; i<=Math.min(12, Math.ceil(monthsLeft)+1); i++){
-          bal -= avgBurn;
-          if (bal < 0) { rows += '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:12.5px;color:var(--danger);font-weight:600">+'+i+' months → '+VYVE_UI.fmtMoney(bal)+' (out of runway)</div>'; break; }
-          rows += '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:12.5px;color:var(--text)"><span>+'+i+' months</span><span style="font-weight:600">'+VYVE_UI.fmtMoney(bal)+'</span></div>';
-        }
-        document.getElementById('fin-forecast').innerHTML = rows;
-      }
-    }
-  }
-
-  document.getElementById('fin-add').addEventListener('click', function(){
-    VYVE_UI.modal({
-      title: 'Log financial entry',
-      body: '<div class="form-row cols-2">'+
-              '<div class="form-group"><label>Month (YYYY-MM)</label><input id="f-month" placeholder="2026-05" value="'+new Date().toISOString().slice(0,7)+'"/></div>'+
-              '<div class="form-group"><label>Cash balance (£)</label><input id="f-cash" type="number"/></div>'+
-            '</div>'+
-            '<div class="form-row cols-2">'+
-              '<div class="form-group"><label>Income (£)</label><input id="f-inc" type="number"/></div>'+
-              '<div class="form-group"><label>Costs (£)</label><input id="f-costs" type="number"/></div>'+
-            '</div>'+
-            '<div class="form-row"><div class="form-group"><label>MRR (£, optional)</label><input id="f-mrr" type="number"/></div></div>'+
-            '<div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn btn-primary" id="f-save">Save</button></div>'
+      if (res.error){ btn.disabled=false; btn.textContent=isNew?'Record':'Save changes'; err('Save failed: '+res.error.message); return; }
+      closeModal(); el('fn-error').style.display='none'; load();
     });
-    setTimeout(function(){
-      document.getElementById('f-save').addEventListener('click', async function(){
-        var m = document.getElementById('f-month').value.trim();
-        if (!m){ VYVE_UI.toast('Month required','error'); return; }
-        var item = { month: m, income: Number(document.getElementById('f-inc').value)||0, costs: Number(document.getElementById('f-costs').value)||0, cash_balance: Number(document.getElementById('f-cash').value)||0, mrr: Number(document.getElementById('f-mrr').value)||0, created_at:new Date().toISOString() };
-        await save('fin_'+m, item);
-        render(await load());
-        VYVE_UI.toast('Saved','success');
-        document.querySelector('.modal-overlay').classList.remove('open');
-      });
-    }, 50);
-  });
+  }
 
-  (async function(){ render(await load()); })();
+  el('fn-add').addEventListener('click', function(){ openModal(null); });
+  load();
 })();
 </script>

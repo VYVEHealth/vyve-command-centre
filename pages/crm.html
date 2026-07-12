@@ -165,13 +165,24 @@ textarea.cr-in{min-height:70px;resize:vertical}
       };
       var btn = this; btn.disabled = true; btn.textContent = 'Saving…';
       var client = sb(); var res;
+      try { var sess = await client.auth.getSession(); payload.created_by = payload.created_by || (sess.data.session && sess.data.session.user.email) || null; } catch(_){}
       if (isNew){
-        try { var s = await client.auth.getSession(); payload.created_by = s.data.session.user.email; } catch(_){}
         res = await client.from('cc_leads').insert(payload);
       } else {
-        res = await client.from('cc_leads').update(payload).eq('id', lead.id);
+        var up = Object.assign({}, payload); delete up.created_by;
+        res = await client.from('cc_leads').update(up).eq('id', lead.id);
       }
       if (res.error){ btn.disabled=false; btn.textContent=isNew?'Add lead':'Save changes'; err('Save failed: '+res.error.message); return; }
+      // PM-757: winning a lead creates the client record (stage 'onboarding' per cc_clients CHECK)
+      if (stage === 'won' && lead.stage !== 'won'){
+        var cres = await client.from('cc_clients').insert({
+          company: payload.company, contact: payload.contact, email: payload.email,
+          value: payload.value, stage: 'onboarding',
+          notes: 'Created from won lead' + (payload.notes ? ' — ' + payload.notes : ''),
+          created_by: payload.created_by || null
+        });
+        if (cres.error) err('Lead saved, but client record failed: ' + cres.error.message);
+      }
       closeModal(); clearErr(); load();
     });
 
