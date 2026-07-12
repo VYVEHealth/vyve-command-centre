@@ -7,7 +7,7 @@
 <title>VYVE Admin Console</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
 <style>
 /* =======================================================================
@@ -16,29 +16,32 @@
 :root{
   --teal:#1B7878; --teal-lt:#4DAAAA; --teal-xl:#8FD4D4; --teal-dark:#0D2B2B;
   --gold:#C9A84C; --success:#2D9E4A; --warning:#E09B3D; --danger:#E06060;
-  --font-head:'Playfair Display',serif; --font-body:'Inter','DM Sans',system-ui,sans-serif;
+  --font-head:'DM Sans',system-ui,sans-serif; --font-body:'DM Sans',system-ui,sans-serif;
+  --font-mono:'DM Mono','SF Mono',ui-monospace,monospace;
   --sidebar-w:240px;
 }
 html[data-theme="dark"]{
-  --bg:#0A1F1F; --surface:#0F2A2A; --surface-2:#123333; --surface-3:#17403F;
-  --border:rgba(255,255,255,.08); --border-strong:rgba(255,255,255,.14);
-  --text:#EAF2F2; --text-muted:#8FAAAA; --text-dim:#5A7575;
-  --accent:#4DAAAA; --accent-hover:#6FC5C5; --on-accent:#0A1F1F;
+  --bg:#081616; --surface:#0E2222; --surface-2:#132C2C; --surface-3:#1A3838;
+  --border:rgba(141,196,196,.12); --border-strong:rgba(141,196,196,.22);
+  --text:#E9F3F3; --text-muted:#93B3B3; --text-dim:#5E7D7D;
+  --accent:#4DAAAA; --accent-hover:#6FC5C5; --on-accent:#081616;
+  --gold:#D5B65E;
   --row-hover:rgba(77,170,170,.06);
-  --sidebar-bg:#081919; --sidebar-text:rgba(234,242,242,.72); --sidebar-active:rgba(77,170,170,.16);
+  --sidebar-bg:#061212; --sidebar-text:rgba(234,242,242,.72); --sidebar-active:rgba(77,170,170,.16);
 }
 html[data-theme="light"]{
-  --bg:#F6F8F8; --surface:#FFFFFF; --surface-2:#EEF3F3; --surface-3:#E2ECEC;
-  --border:rgba(13,43,43,.08); --border-strong:rgba(13,43,43,.14);
-  --text:#0D2B2B; --text-muted:#5A7575; --text-dim:#89A0A0;
-  --accent:#1B7878; --accent-hover:#145A5A; --on-accent:#FFFFFF;
+  --bg:#F3F6F6; --surface:#FFFFFF; --surface-2:#ECF2F2; --surface-3:#E0EAEA;
+  --border:rgba(13,43,43,.10); --border-strong:rgba(13,43,43,.20);
+  --text:#0D2B2B; --text-muted:#4E6E6E; --text-dim:#8CA6A6;
+  --accent:#1B7878; --accent-hover:#145E5E; --on-accent:#FFFFFF;
+  --gold:#A8873A;
   --row-hover:rgba(27,120,120,.04);
   --sidebar-bg:#0D2B2B; --sidebar-text:rgba(234,242,242,.72); --sidebar-active:rgba(77,170,170,.18);
 }
 
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
-h1,h2,h3,h4{font-family:var(--font-head);font-weight:600;margin:0;letter-spacing:-.01em}
+h1,h2,h3,h4{font-family:var(--font-head);font-weight:700;margin:0;letter-spacing:-.015em}
 button,input,select,textarea{font-family:inherit;font-size:inherit}
 button{cursor:pointer;border:0;background:transparent;color:inherit}
 a{color:var(--accent);text-decoration:none}
@@ -609,12 +612,13 @@ function toggleTheme() {
   const current = html.getAttribute('data-theme');
   const next = current === 'dark' ? 'light' : 'dark';
   html.setAttribute('data-theme', next);
-  localStorage.setItem('vyve_admin_console_theme', next);
+  localStorage.setItem('vyve-cc-theme', next); // PM-760: unified with the shell's theme key
   document.getElementById('theme-btn').textContent = next === 'dark' ? '🌙' : '☀️';
 }
 
 // Load saved theme
-const savedTheme = localStorage.getItem('vyve_admin_console_theme') || 'dark';
+let savedTheme = localStorage.getItem('vyve-cc-theme') || localStorage.getItem('vyve_admin_console_theme') || 'dark'; // PM-760: shell key first, legacy key as one-time migration
+if (savedTheme !== 'dark' && savedTheme !== 'light') savedTheme = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark'; // 'system' resolved — this page has no :root fallback theme
 document.documentElement.setAttribute('data-theme', savedTheme);
 document.addEventListener('DOMContentLoaded', () => {
   if (document.getElementById('theme-btn')) {
