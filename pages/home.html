@@ -137,13 +137,7 @@
     var h = now.getHours();
     var phase = h<5?'Late night':h<12?'Morning':h<17?'Afternoon':h<22?'Evening':'Late night';
     el('hm-date').textContent = now.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
-    var who = '';
-    try {
-      var email = (window.VYVE_AUTH && window.VYVE_AUTH.email && window.VYVE_AUTH.email()) || '';
-      if (email) who = email.split('@')[0].split('.')[0];
-      who = who ? who.charAt(0).toUpperCase()+who.slice(1) : '';
-    } catch(_){}
-    el('hm-greet').textContent = phase + (who ? ', ' + who + '.' : '.');
+    el('hm-greet').textContent = phase + '.';  // name appended from session in load()
   })();
 
   function lonTime(iso){
@@ -215,7 +209,18 @@
     var token = null;
     try {
       var sb = window.VYVE_SUPABASE && window.VYVE_SUPABASE.client && window.VYVE_SUPABASE.client();
-      if (sb){ var s = await sb.auth.getSession(); token = s && s.data && s.data.session && s.data.session.access_token; }
+      if (sb){
+        var s = await sb.auth.getSession();
+        var sess = s && s.data && s.data.session;
+        token = sess && sess.access_token;
+        var em = sess && sess.user && sess.user.email;
+        if (em){
+          var nm = em.split('@')[0].split('.')[0].replace(/[0-9]+$/,'');
+          nm = nm.charAt(0).toUpperCase() + nm.slice(1);
+          var g = el('hm-greet').textContent || '';
+          el('hm-greet').textContent = g.replace(/\.$/, '') + ', ' + nm + '.';
+        }
+      }
     } catch(_){}
     if (!token){
       el('hm-error').style.display = 'block';
