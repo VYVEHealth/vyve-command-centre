@@ -88,7 +88,7 @@
               <line x1="3" y1="18" x2="21" y2="18"></line>
             </svg>
           </button>
-          <a href="#/brief" class="topnav-logo">
+          <a href="#/home" class="topnav-logo">
             <div class="topnav-wordmark">VYVE</div>
             <div class="topnav-eyebrow">Command Centre</div>
           </a>
@@ -109,13 +109,6 @@
           <button class="topnav-bell" id="topnav-help" type="button" aria-label="Keyboard shortcuts (?)" title="Keyboard shortcuts" onclick="window.VYVE_SHORTCUTS && window.VYVE_SHORTCUTS.open()">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           </button>
-          <a class="topnav-bell" id="topnav-bell" href="#/inbox" aria-label="Inbox">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-            </svg>
-            <span class="topnav-bell-dot" id="topnav-bell-dot" style="display:none"></span>
-          </a>
           <button class="topnav-search" id="topnav-search-btn" type="button" aria-label="Search (Cmd+K)">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
@@ -181,29 +174,20 @@
 
   <!-- Config + libs -->
   <script src="assets/sidebar-config.js"></script>
-  <script src="lib/store.js"></script>
-  <script src="lib/comments.js"></script>
-  <script src="lib/notifications.js"></script>
-  <script src="lib/views.js"></script>
   <script src="lib/acl.js"></script>
-  <script src="lib/entities.js"></script>
   <script src="lib/ui.js"></script>
   <script src="lib/widgets.js"></script>
-  <script src="lib/views-ui.js"></script>
   <!-- Supabase JS client (UMD build from official CDN) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.min.js"></script>
   <script src="lib/supabase-client.js"></script>
   <script src="lib/cc-adapter.js"></script>
   <script src="lib/integrations.js"></script>
   <script src="lib/shortcuts.js"></script>
-  <script src="lib/drafts.js"></script>
   <script src="lib/pdf-export.js"></script>
   <script src="lib/targets.js"></script>
   <script src="lib/supabase.js"></script>
-  <script src="lib/make.js"></script>
-  <script src="lib/data.js"></script>
   <script src="lib/auth.js"></script>
-  <script src="assets/seed-data.js"></script>
+  <!-- PM-759: localStorage-era lib layer retired (store/comments/notifications/views/entities/views-ui/drafts/make/data + seed-data) -->
   <script src="lib/router.js"></script>
   <script src="lib/quick-search.js"></script>
 
