@@ -185,8 +185,20 @@
     var latest = al.latest || [];
     if (!latest.length){ aHost.innerHTML = '<div class="hm-empty">Nothing open. All clear.</div>'; }
     else {
+      // PM-774: details may arrive as a JSON envelope ({"raw":{...,"details":"msg"}})
+      // from the platform-alert EF — unwrap to the human message, never dump raw JSON.
+      function alertMessage(a){
+        var d = a.details || '';
+        if (typeof d === 'string' && d.charAt(0) === '{'){
+          try {
+            var p = JSON.parse(d);
+            d = (p.raw && p.raw.details) || p.details || p.message || d;
+          } catch(_){}
+        }
+        return String(d || a.type || '');
+      }
       aHost.innerHTML = latest.map(function(a){
-        var det = (a.details||a.type||'').slice(0,90);
+        var det = alertMessage(a).slice(0,90);
         return '<div class="hm-row"><div><b>'+esc(a.type||'Alert')+'</b><div class="hm-sub">'+esc(det)+'</div></div>'+
           '<span class="hm-pill '+esc(a.severity||'info')+'">'+esc(a.severity||'')+'</span></div>';
       }).join('');
