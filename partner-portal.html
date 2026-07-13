@@ -96,6 +96,27 @@
     .status-badge.vetting { background: var(--warning-pale); color: var(--warning); }
     .status-badge.applied { background: var(--surface-3); color: var(--text-muted); }
 
+    /* My Space editor (PM-788) */
+    .img-drop { position:relative; border:1.5px dashed var(--border); border-radius:10px; height:110px; display:flex; align-items:center; justify-content:center; cursor:pointer; overflow:hidden; background:var(--bg-elevated,var(--card)); }
+    .img-drop:hover { border-color: var(--vyve-teal); }
+    .img-drop img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+    .img-drop span { font-size:12px; color:var(--text-muted); position:relative; z-index:1; background:var(--card); padding:3px 9px; border-radius:8px; }
+    .img-drop.uploading span { color: var(--vyve-teal); }
+    .mini-phone { width:230px; height:470px; margin:0 auto; background:var(--card); border-radius:28px; border:1px solid var(--border); box-shadow:0 0 0 7px #05080c,0 0 0 8px #1c2630; overflow:hidden; display:flex; flex-direction:column; }
+    .mini-notch { height:18px; background:#05080c; width:88px; margin:0 auto; border-radius:0 0 11px 11px; flex:none; }
+    .mini-scroll { flex:1; overflow-y:auto; }
+    .mini-scroll::-webkit-scrollbar { width:0; }
+    .mp-banner { height:84px; position:relative; }
+    .mp-av { width:50px; height:50px; border-radius:14px; border:3px solid var(--card); position:absolute; left:13px; bottom:-20px; display:flex; align-items:center; justify-content:center; font-size:17px; font-weight:800; color:#fff; background-size:cover; background-position:center; overflow:hidden; }
+    .mp-av img { width:100%; height:100%; object-fit:cover; display:block; }
+    .mp-info { padding:26px 13px 0; }
+    .mp-info h4 { font-size:14px; font-weight:800; margin:0; }
+    .mp-info .r { font-size:10.5px; color:var(--vyve-teal-light); font-weight:600; }
+    .mp-sec { padding:10px 13px; border-top:1px solid var(--border); }
+    .mp-sec:first-of-type { border-top:none; }
+    .mp-sec h5 { font-size:10.5px; font-weight:700; margin:0 0 4px; }
+    .mp-sec p { font-size:10.5px; color:var(--text-muted); margin:0; line-height:1.5; }
+    @media (max-width:800px){ .myspace-grid{ grid-template-columns:1fr !important; } }
     /* Tab nav */
     .pp-tabs { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; gap: 0; overflow-x: auto; }
     .pp-tab {
@@ -315,11 +336,19 @@
           </div>
         </div>
 
+        <div style="display:grid;grid-template-columns:1fr 250px;gap:24px;align-items:start;" class="myspace-grid">
+        <div>
         <div class="field-row">
           <div class="field">
             <label>Display name</label>
-            <input id="profile-role-title" type="text" placeholder="e.g. Emma Clarke — Yoga"/>
+            <input id="profile-name" type="text" placeholder="e.g. Emma Clarke"/>
           </div>
+          <div class="field">
+            <label>Tagline / role</label>
+            <input id="profile-role-title" type="text" placeholder="e.g. Yoga &amp; Mobility Coach"/>
+          </div>
+        </div>
+        <div class="field-row">
           <div class="field">
             <label>Pillar</label>
             <select id="profile-pillar">
@@ -328,22 +357,46 @@
               <option value="connect">Connect</option>
             </select>
           </div>
+          <div class="field"></div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Profile photo</label>
+            <div class="img-drop" id="avatar-drop">
+              <img id="avatar-preview" alt="" style="display:none"/>
+              <span id="avatar-drop-label">Click to upload</span>
+              <input type="file" id="avatar-file" accept="image/*" style="display:none"/>
+            </div>
+          </div>
+          <div class="field">
+            <label>Cover photo</label>
+            <div class="img-drop" id="cover-drop">
+              <img id="cover-preview" alt="" style="display:none"/>
+              <span id="cover-drop-label">Click to upload</span>
+              <input type="file" id="cover-file" accept="image/*" style="display:none"/>
+            </div>
+          </div>
         </div>
         <div class="field">
           <label>Bio (shown to members)</label>
           <textarea id="profile-bio" placeholder="Tell members who you are and what you bring to the VYVE community…"></textarea>
         </div>
         <div class="field">
-          <label>Why VYVE</label>
-          <textarea id="profile-why" placeholder="Why did you choose to partner with VYVE?" style="min-height:70px;"></textarea>
+          <label>Reason for being here</label>
+          <textarea id="profile-why" placeholder="The personal 'why' behind your work — members connect with this." style="min-height:70px;"></textarea>
         </div>
         <div class="field">
-          <label>Profile photo URL</label>
-          <input id="profile-avatar" type="url" placeholder="https://…"/>
-          <div class="field-hint">Upload your photo to partner-docs storage, then paste the public URL here.</div>
+          <label>The feel of your community</label>
+          <textarea id="profile-feel" placeholder="e.g. Warm, no-judgement, beginners welcome, cameras optional." style="min-height:70px;"></textarea>
         </div>
         <div style="display:flex;gap:10px">
           <button class="btn btn-teal" id="save-profile-btn" type="button">Save profile</button>
+        </div>
+        </div>
+        <div>
+          <div style="font-size:12px;color:var(--text-muted);text-align:center;margin-bottom:8px;">Live member preview</div>
+          <div class="mini-phone"><div class="mini-notch"></div><div class="mini-scroll" id="myspace-phone"></div></div>
+        </div>
         </div>
       </div>
     </div>
@@ -649,9 +702,10 @@
       myPartnerId = r && r.data ? r.data : null;
     } catch (e) { /* fall through to demo */ }
     var pid = myPartnerId || DEMO_PARTNER_ID;
+    var _jwt = (state.session && state.session.access_token) || '';
     var res = await fetch(
       'https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_partners?id=eq.' + pid + '&select=*&limit=1',
-      { headers: { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg', 'Content-Type': 'application/json' } }
+      { headers: { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg', 'Authorization': 'Bearer ' + _jwt, 'Content-Type': 'application/json' } }
     );
     var rows = res.ok ? await res.json() : [];
     var data = rows[0];
@@ -668,12 +722,89 @@
     if (data.status !== 'live') $('gate-b-notice').style.display = 'flex';
 
     // Fill profile fields
+    $('profile-name').value = data.name || '';
     $('profile-role-title').value = data.role_title || '';
     $('profile-pillar').value = data.pillar || 'mind';
     $('profile-bio').value = data.bio || '';
     $('profile-why').value = data.why || '';
-    $('profile-avatar').value = data.avatar_url || '';
+    $('profile-feel').value = data.feel || '';
+    state.avatarUrl = data.avatar_url || null;
+    state.coverUrl = data.cover_url || null;
+    setDropPreview('avatar', urlish(state.avatarUrl));
+    setDropPreview('cover', urlish(state.coverUrl));
+    syncMyPhone();
   }
+
+  // avatar_url/cover_url may hold a bare storage PATH (wizard-era rows in the
+  // private partner-docs bucket) — only render it if it's an actual URL.
+  function urlish(v) { return v && /^https?:\/\//.test(v) ? v : null; }
+  function setDropPreview(kind, url) {
+    var img = $(kind + '-preview'), lbl = $(kind + '-drop-label');
+    if (url) { img.src = url; img.style.display = 'block'; lbl.textContent = 'Click to replace'; }
+    else { img.style.display = 'none'; lbl.textContent = 'Click to upload'; }
+  }
+
+  // ── My Space live phone preview ─────────────────────────────────────────
+  function _mpEsc(x) { var d = document.createElement('div'); d.textContent = x || ''; return d.innerHTML; }
+  function syncMyPhone() {
+    var el = $('myspace-phone'); if (!el) return;
+    var name = $('profile-name').value.trim() || 'Your name';
+    var role = $('profile-role-title').value.trim() || 'Your role / tagline';
+    var bio  = $('profile-bio').value.trim() || 'Your bio will appear here as members read it.';
+    var why  = $('profile-why').value.trim();
+    var feel = $('profile-feel').value.trim();
+    var av   = urlish(state.avatarUrl), cov = urlish(state.coverUrl);
+    var init = (name.replace(/[^a-zA-Z ]/g,' ').split(/\s+/).filter(Boolean).map(function(w){return w[0];}).slice(0,2).join('') || 'Y').toUpperCase();
+    var banner = cov ? 'background:linear-gradient(120deg,rgba(27,120,120,.25),rgba(13,43,43,.18)),url(\'' + cov + '\') center/cover no-repeat'
+                     : 'background:linear-gradient(120deg,var(--vyve-teal),#0F4C4C)';
+    el.innerHTML =
+      '<div class="mp-banner" style="' + banner + '"><div class="mp-av" style="background:var(--vyve-teal)">' +
+      (av ? '<img src="' + av + '">' : init) + '</div></div>' +
+      '<div class="mp-info"><h4>' + _mpEsc(name) + '</h4><div class="r">' + _mpEsc(role) + '</div></div>' +
+      '<div class="mp-sec"><h5>About</h5><p>' + _mpEsc(bio) + '</p></div>' +
+      (why ? '<div class="mp-sec"><h5>Reason for being here</h5><p>' + _mpEsc(why) + '</p></div>' : '') +
+      (feel ? '<div class="mp-sec"><h5>Community feel</h5><p>' + _mpEsc(feel) + '</p></div>' : '') +
+      '<div class="mp-sec"><h5>Upcoming</h5><p>Your next live session will show here.</p></div>';
+  }
+  ['profile-name','profile-role-title','profile-bio','profile-why','profile-feel'].forEach(function(id){
+    document.addEventListener('input', function(e){ if (e.target && e.target.id === id) syncMyPhone(); });
+  });
+
+  // ── My Space image uploads: partner-content-upload sign-thumb (PUBLIC bucket) ──
+  async function uploadSpaceImage(kind, file) {
+    if (!file || !state.partnerId) return;
+    if (!/^image\//.test(file.type)) { toast('Please choose an image file'); return; }
+    if (file.size > 8 * 1024 * 1024) { toast('Image too large — 8MB max'); return; }
+    var drop = $(kind + '-drop'); drop.classList.add('uploading');
+    $(kind + '-drop-label').textContent = 'Uploading…';
+    try {
+      var r = await fetch(_SUPA_URL + '/functions/v1/partner-content-upload', {
+        method: 'POST', headers: efHeaders(),
+        body: JSON.stringify({ action: 'sign-thumb', partner_id: state.partnerId }),
+      });
+      var d = await r.json();
+      if (!d.signed_url) throw new Error(d.error || 'Could not get upload URL');
+      var up = await fetch(d.signed_url, { method: 'PUT', headers: { 'Content-Type': file.type || 'image/jpeg' }, body: file });
+      if (!up.ok) throw new Error('Upload failed (' + up.status + ')');
+      var col = kind === 'avatar' ? 'avatar_url' : 'cover_url';
+      var patch = {}; patch[col] = d.public_url;
+      var pr = await fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_partners?id=eq.' + state.partnerId, {
+        method: 'PATCH',
+        headers: { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg', 'Authorization': 'Bearer ' + ((state.session && state.session.access_token) || ''), 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+        body: JSON.stringify(patch),
+      });
+      var rows = pr.ok ? await pr.json() : [];
+      if (!rows.length) throw new Error('Save was blocked — contact team@vyvehealth.co.uk');
+      if (kind === 'avatar') state.avatarUrl = d.public_url; else state.coverUrl = d.public_url;
+      setDropPreview(kind, d.public_url); syncMyPhone();
+      toast(kind === 'avatar' ? 'Profile photo updated' : 'Cover photo updated');
+    } catch (e) { toast('Error: ' + e.message); setDropPreview(kind, urlish(kind === 'avatar' ? state.avatarUrl : state.coverUrl)); }
+    drop.classList.remove('uploading');
+  }
+  ['avatar','cover'].forEach(function(kind){
+    $(kind + '-drop').addEventListener('click', function(){ $(kind + '-file').click(); });
+    $(kind + '-file').addEventListener('change', function(e){ uploadSpaceImage(kind, e.target.files[0]); e.target.value = ''; });
+  });
 
   // ── Save profile ──────────────────────────────────────────────────────────
   $('save-profile-btn').addEventListener('click', async function() {
@@ -682,16 +813,20 @@
     var client = sb();
     var res = await fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_partners?id=eq.' + state.partnerId, {
       method: 'PATCH',
-      headers: { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg', 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      headers: { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg', 'Authorization': 'Bearer ' + ((state.session && state.session.access_token) || ''), 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
       body: JSON.stringify({
+        name: $('profile-name').value.trim(),
         role_title: $('profile-role-title').value.trim(),
         pillar: $('profile-pillar').value,
         bio: $('profile-bio').value.trim(),
         why: $('profile-why').value.trim(),
-        avatar_url: $('profile-avatar').value.trim() || null,
+        feel: $('profile-feel').value.trim(),
       }),
     });
-    var error = res.ok ? null : { message: 'Save failed (' + res.status + ')' };
+    // return=representation: RLS-blocked writes come back as an EMPTY array with 200 —
+    // the old return=minimal version toasted "saved" on a zero-row no-op.
+    var _rows = res.ok ? await res.json() : [];
+    var error = (res.ok && _rows.length) ? null : { message: res.ok ? 'Save was blocked — your login may not be linked to this partner. Contact team@vyvehealth.co.uk' : 'Save failed (' + res.status + ')' };
     btn.disabled = false; btn.textContent = 'Save profile';
     if (error) toast('Error: ' + error.message);
     else toast('Profile saved');
