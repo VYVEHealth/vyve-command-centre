@@ -192,7 +192,7 @@ kbd {
 .topnav-tab.active {
   color: var(--text);
   font-weight: var(--fw-semi);
-  background: var(--vyve-teal-pale);
+  background: var(--accent-pale); /* PM-796: theme-aware — raw teal-pale stayed light in dark mode */
 }
 .topnav-tab.active::after {
   content: '';
@@ -600,7 +600,7 @@ aside.sidebar::-webkit-scrollbar-track { background: transparent; }
 }
 .qs-result:hover,
 .qs-result.active {
-  background: var(--vyve-teal-pale);
+  background: var(--accent-pale); /* PM-796 */
 }
 .qs-result-icon {
   width: 28px;
@@ -1188,7 +1188,7 @@ main.main::-webkit-scrollbar-thumb { background: var(--border-strong); border-ra
 .view-tab.active {
   color: var(--text);
   font-weight: var(--fw-semi);
-  background: var(--vyve-teal-pale);
+  background: var(--accent-pale); /* PM-796 */
 }
 .view-pin {
   display: inline-block;

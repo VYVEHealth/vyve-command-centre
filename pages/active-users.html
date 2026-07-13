@@ -212,28 +212,42 @@
     var thirtyDaysAgo = new Date(Date.now() - 30*86400000).toISOString();
     var sevenDaysAgo = new Date(Date.now() - 7*86400000).toISOString();
 
-    var act30Res = await S.client.from('member_activity_log').select('member_id,created_at').gte('created_at', thirtyDaysAgo);
-    if (!act30Res.error && act30Res.data){
+    // PM-796: real schema — member_activity_log is keyed by member_email with
+    // activity_date/logged_at (the member_id/created_at columns never existed;
+    // both queries 400'd since this page shipped).
+    var thirtyDaysDate = thirtyDaysAgo.slice(0, 10);
+    var sevenDaysDate = sevenDaysAgo.slice(0, 10);
+    var act30Res = await S.client.from('member_activity_log').select('member_email,activity_date').gte('activity_date', thirtyDaysDate);
+    if (act30Res.error){
+      console.error('[active-users] activity fetch failed', act30Res.error);
+    } else if (act30Res.data){
       var seen30 = {};
       var seen7 = {};
       act30Res.data.forEach(function(row){
-        seen30[row.member_id] = true;
-        if (row.created_at >= sevenDaysAgo) seen7[row.member_id] = true;
+        var em = String(row.member_email || '').toLowerCase();
+        if (!em) return;
+        seen30[em] = true;
+        if (row.activity_date >= sevenDaysDate) seen7[em] = true;
       });
       state.activity30 = seen30;
       state.activity7 = seen7;
     }
 
-    // Weekly scores - latest per member
-    var scoresRes = await S.client.from('weekly_scores').select('member_id,wellbeing_score,engagement_score,week_start').order('week_start', { ascending: false });
-    if (!scoresRes.error && scoresRes.data){
+    // Weekly scores — latest per member (weekly_scores keys on member_email; iso_week/iso_year, no week_start)
+    var scoresRes = await S.client.from('weekly_scores').select('member_email,wellbeing_score,engagement_score,logged_at').order('logged_at', { ascending: false });
+    if (scoresRes.error){
+      console.error('[active-users] weekly_scores fetch failed', scoresRes.error);
+    } else if (scoresRes.data){
       var byMember = {};
       scoresRes.data.forEach(function(row){
-        if (!byMember[row.member_id]) byMember[row.member_id] = row;
+        var em = String(row.member_email || '').toLowerCase();
+        if (em && !byMember[em]) byMember[em] = row;
       });
       state.weeklyScores = byMember;
     }
   }
+
+  function memberKey(m){ return String(m.email || '').toLowerCase(); }
 
   function fullName(m){
     var n = ((m.first_name || '') + ' ' + (m.last_name || '')).trim();
@@ -256,8 +270,8 @@
   function renderRoster(){
     var rows = state.members.filter(function(m){
       // Filter
-      if (state.filter === 'active' && !state.activity30[m.id]) return false;
-      if (state.filter === 'inactive' && state.activity30[m.id]) return false;
+      if (state.filter === 'active' && !state.activity30[memberKey(m)]) return false;
+      if (state.filter === 'inactive' && state.activity30[memberKey(m)]) return false;
       // Search
       if (state.search){
         var hay = (fullName(m) + ' ' + (m.email || '')).toLowerCase();
@@ -275,7 +289,7 @@
 
     document.getElementById('au-roster-body').innerHTML = rows.map(function(m){
       var name = fullName(m);
-      var scores = state.weeklyScores[m.id] || {};
+      var scores = state.weeklyScores[memberKey(m)] || {};
       return '<tr class="au-row" data-id="' + m.id + '">' +
         '<td><div class="au-name-cell">' + avatar(name) + '<div><div>' + name + '</div><div class="au-email">' + (m.email || '') + '</div></div></div></td>' +
         '<td style="color:var(--text-muted)">' + (m.persona || '—') + '</td>' +
