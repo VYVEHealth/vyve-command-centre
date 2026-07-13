@@ -139,6 +139,16 @@ function usageLifecyclePill(m) {
   if (lc === 'installed') return '<span class="pill pill-teal">Installed \u00b7 no activity</span>';
   return '<span class="pill pill-grey">Never installed</span>';            // never / consented / signed_in collapse
 }
+
+// PM-794 — native push notification pill (push_enabled from cc-usage v15; '—' on pre-v15 cache)
+function usagePushPill(m) {
+  if (m.push_enabled === undefined) return '<span style="color:var(--text-dim)">—</span>';
+  if (m.push_enabled) {
+    const plats = (m.push_platforms || []).join(' + ');
+    return '<span class="pill pill-ok" title="Live push token' + (plats ? ': ' + usageEsc(plats) : '') + '" style="font-size:10px">🔔 ' + (plats ? usageEsc(plats) : 'on') + '</span>';
+  }
+  return '<span class="pill pill-grey" title="No live push token — notifications not enabled or token revoked" style="font-size:10px">off</span>';
+}
 function usagePct(val, total) {
   if (!total) return 0;
   return Math.round((val / total) * 100);
@@ -479,7 +489,7 @@ function usageRenderMembersPage() {
   if (countLbl) countLbl.textContent = total + ' member' + (total !== 1 ? 's' : '');
 
   if (!total) {
-    tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state">No members match this filter</div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="12"><div class="empty-state">No members match this filter</div></td></tr>';
     if (pg) pg.style.display = 'none';
     return;
   }
@@ -510,6 +520,7 @@ function usageRenderMembersPage() {
       + '<td><span class="persona-badge persona-' + usageEsc(persona) + '">' + usageEsc(persona) + '</span></td>'
       + '<td>' + usageAccountPill(m.account_type, m.subscription_status) + '</td>'
       + '<td>' + usageLifecyclePill(m) + '</td>'
+      + '<td>' + usagePushPill(m) + '</td>'
       + '</tr>';
   }).join('');
 

@@ -254,6 +254,7 @@ function renderCronTable(jobs) {
   const sum = document.getElementById('cron-summary-tab');
   if (!jobs || !jobs.length) {
     el.innerHTML = '<div class="empty-state">No cron data — click Refresh cache</div>';
+    if (sum) sum.innerHTML = ''; // PM-793: never leave stale badges over an empty table
     return;
   }
   const withStatus = jobs.map(j => ({ ...j, _s: cronJobStatus(j) }));
@@ -614,6 +615,7 @@ async function loadCache() {
   } catch(e) {
     console.error('loadCache:', e);
     setEl('refresh-text', 'Error loading cache: '+e.message);
+    showPageError('App Health cache failed to load: ' + e.message);
   }
 }
 
@@ -631,7 +633,13 @@ async function triggerRefresh() {
       body:'{}'
     });
     if (!res.ok) throw new Error('EF '+res.status);
-    showToast('Cache refreshed ✓');
+    const out = await res.json().catch(()=>({}));
+    if (out && Array.isArray(out.errors) && out.errors.length) {
+      showToast('Refreshed with warnings — see console');
+      console.warn('cc-app-health collection warnings:', out.errors);
+    } else {
+      showToast('Cache refreshed ✓');
+    }
     await Promise.all([loadCache(), loadErrors()]);
   } catch(e) {
     showToast('Refresh failed: '+e.message);
@@ -748,8 +756,30 @@ async function resolveModalGroup() {
   }
 }
 
+// ── Visible error surfacing (PM-793, per the PM-778 rule: boots never die silent) ──
+function showPageError(msg) {
+  try {
+    let bar = document.getElementById('ah-error-bar');
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.id = 'ah-error-bar';
+      bar.style.cssText = 'margin:0 0 14px;padding:12px 16px;border-radius:10px;background:var(--danger-pale,#3a1518);color:var(--danger,#e5484d);font-size:12px;font-weight:600;';
+      const wrap = document.querySelector('.page-wrap');
+      const header = document.querySelector('.page-header');
+      if (wrap) wrap.insertBefore(bar, header ? header.nextSibling : wrap.firstChild);
+      else document.body.prepend(bar);
+    }
+    bar.textContent = '⚠ ' + msg;
+  } catch(_) {}
+}
+
 // ── Boot ──────────────────────────────────────────────────────────────
 (async function boot() {
   setEl('refresh-text', 'Loading…');
-  await Promise.all([loadErrors(), loadCache()]);
+  try {
+    await Promise.all([loadErrors(), loadCache()]);
+  } catch (e) {
+    console.error('app-health boot:', e);
+    showPageError('App Health failed to load: ' + (e && e.message ? e.message : e));
+  }
 })();
