@@ -129,6 +129,8 @@
 
     /* Content area */
     .pp-content { flex: 1; padding: 28px 24px; max-width: 900px; width: 100%; margin: 0 auto; }
+    .bk-lbl { display:block; font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px; }
+    #panel-bookings input, #panel-bookings select { background:var(--surface); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:8px 10px; font-family:inherit; font-size:13px; }
     .pp-panel { display: none; }
     .pp-panel.active { display: block; }
 
@@ -315,6 +317,7 @@
     <button class="pp-tab" data-tab="community" type="button">Community</button>
     <button class="pp-tab" data-tab="sessions" type="button">Sessions</button>
     <button class="pp-tab" data-tab="earnings" type="button">Earnings</button>
+    <button class="pp-tab" data-tab="bookings" type="button">Bookings</button>
   </div>
 
   <div class="pp-content">
@@ -585,6 +588,78 @@
           <div style="font-size:12px;color:var(--text-dim);margin-top:8px;">Members who click this link get £10 off every month, forever. Their signup is automatically attributed to you.</div>
         </div>
       </div>
+    </div>
+
+
+    <!-- ── BOOKINGS (PM-812 B1) ── -->
+    <div class="pp-panel" id="panel-bookings">
+
+      <div class="card">
+        <div class="card-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M8 2v4"/><path d="M16 2v4"/><path d="M3 10h18"/></svg>
+          My bookable services
+          <button class="btn btn-primary" id="bs-new-btn" type="button" style="margin-left:auto;font-size:12px;">+ New service</button>
+        </div>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">Private 1:1 sessions members can book with you. You keep 100% of booking revenue — members pay on your own payment link. Therapy services need VYVE clinical approval before members can see them.</p>
+        <div id="bs-list"><div class="empty-state"><h3>No services yet</h3><p>Create your first bookable service to appear on your profile.</p></div></div>
+
+        <div id="bs-editor" style="display:none;margin-top:16px;border:1px solid var(--border);border-radius:10px;padding:16px;">
+          <div style="font-weight:700;font-size:14px;margin-bottom:12px;" id="bs-editor-title">New service</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" class="bs-grid">
+            <div style="grid-column:1/-1;"><label class="bk-lbl">Title</label><input type="text" id="bsf-title" maxlength="120" placeholder="e.g. Private breathwork session"/></div>
+            <div style="grid-column:1/-1;"><label class="bk-lbl">Description (optional)</label><input type="text" id="bsf-desc" maxlength="300"/></div>
+            <div><label class="bk-lbl">Category</label><select id="bsf-category"><option value="fitness">Fitness</option><option value="coaching">Coaching</option><option value="nutrition">Nutrition</option><option value="mindfulness">Mindfulness</option><option value="therapy">Therapy</option><option value="other">Other</option></select></div>
+            <div><label class="bk-lbl">Delivery</label><select id="bsf-mode"><option value="online">Online</option><option value="in_person">In person</option><option value="both">Both</option></select></div>
+            <div><label class="bk-lbl">Duration (minutes)</label><input type="number" id="bsf-duration" min="15" max="480" step="5" value="60"/></div>
+            <div><label class="bk-lbl">Price (£)</label><input type="number" id="bsf-price" min="0" step="0.5" value="40"/></div>
+            <div style="grid-column:1/-1;" id="bsf-link-wrap"><label class="bk-lbl">Meeting link (online sessions — Zoom/Meet/Teams)</label><input type="text" id="bsf-meeting" placeholder="https://…"/></div>
+            <div id="bsf-venue-wrap" style="display:none;"><label class="bk-lbl">Venue</label><input type="text" id="bsf-venue"/></div>
+            <div id="bsf-city-wrap" style="display:none;"><label class="bk-lbl">City</label><input type="text" id="bsf-city"/></div>
+            <div style="grid-column:1/-1;display:none;" id="bsf-address-wrap"><label class="bk-lbl">Address</label><input type="text" id="bsf-address"/></div>
+            <div style="grid-column:1/-1;"><label class="bk-lbl">Payment link (optional — defaults to your partner payment link)</label><input type="text" id="bsf-paylink" placeholder="https://buy.stripe.com/…"/></div>
+          </div>
+          <div id="bsf-therapy-note" style="display:none;margin-top:10px;padding:10px 12px;border-radius:8px;background:var(--accent-pale);font-size:12.5px;color:var(--text-muted);">Therapy services are reviewed by VYVE's clinical lead before they become visible to members. You can set everything up now.</div>
+          <div style="display:flex;gap:8px;margin-top:14px;">
+            <button class="btn btn-primary" id="bsf-save" type="button">Save service</button>
+            <button class="btn btn-ghost" id="bsf-cancel" type="button">Cancel</button>
+          </div>
+          <div id="bsf-msg" style="margin-top:8px;font-size:12.5px;color:var(--text-muted);"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Weekly availability
+        </div>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">When members can book each service. Add blocked dates for holidays.</p>
+        <div style="max-width:340px;margin-bottom:12px;"><label class="bk-lbl">Service</label><select id="ba-service"></select></div>
+        <div id="ba-rows"></div>
+        <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-top:10px;">
+          <div><label class="bk-lbl">Day</label><select id="ba-day"><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="0">Sunday</option></select></div>
+          <div><label class="bk-lbl">From</label><input type="time" id="ba-start" value="09:00"/></div>
+          <div><label class="bk-lbl">To</label><input type="time" id="ba-end" value="17:00"/></div>
+          <button class="btn btn-ghost" id="ba-add" type="button">Add window</button>
+        </div>
+        <div style="border-top:1px solid var(--border);margin-top:16px;padding-top:14px;">
+          <div style="font-weight:600;font-size:13px;margin-bottom:8px;">Blocked dates</div>
+          <div id="bx-rows"></div>
+          <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-top:8px;">
+            <div><label class="bk-lbl">Date</label><input type="date" id="bx-date"/></div>
+            <button class="btn btn-ghost" id="bx-add" type="button">Block day</button>
+          </div>
+        </div>
+        <div id="ba-msg" style="margin-top:8px;font-size:12.5px;color:var(--text-muted);"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="m9 16 2 2 4-4"/></svg>
+          My diary
+        </div>
+        <div id="bk-diary"><div class="empty-state"><h3>No bookings yet</h3><p>Confirmed bookings will appear here.</p></div></div>
+      </div>
+
     </div>
 
   </div><!-- /pp-content -->
@@ -1415,6 +1490,207 @@
   } else {
     boot();
   }
+})();
+</script>
+<script>
+/* ── PM-812 B1: Bookings tab (self-contained — resolves its own session + partner id) ── */
+(function(){
+  'use strict';
+  var REST = _SUPA_URL + '/rest/v1';
+  var inited = false, partnerId = null, services = [], editingId = null;
+  function $b(id){ return document.getElementById(id); }
+  function esc(x){ return String(x==null?'':x).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  var DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+  async function jwt(){
+    var r = await _getSB().auth.getSession();
+    return (r.data.session && r.data.session.access_token) || '';
+  }
+  async function rest(path, opts){
+    opts = opts || {};
+    var t = await jwt();
+    var h = { 'apikey': _SUPA_ANON, 'Authorization': 'Bearer ' + t, 'Content-Type': 'application/json' };
+    if (opts.rep) h['Prefer'] = 'return=representation';
+    var r = await fetch(REST + path, { method: opts.method || 'GET', headers: h, body: opts.body ? JSON.stringify(opts.body) : undefined });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    if (r.status === 204) return null;
+    var txt = await r.text();
+    return txt ? JSON.parse(txt) : null;
+  }
+
+  function fmtPrice(p){ return p === 0 ? 'Free' : '\u00a3' + (p/100).toFixed(2).replace(/\.00$/,''); }
+  function modeLabel(m){ return m==='online'?'Online':m==='in_person'?'In person':'Online or in person'; }
+
+  // ── Services ──
+  function renderServices(){
+    var el = $b('bs-list');
+    if (!services.length){ el.innerHTML = '<div class="empty-state"><h3>No services yet</h3><p>Create your first bookable service to appear on your profile.</p></div>'; return; }
+    el.innerHTML = services.map(function(sv){
+      var gate = sv.requires_clinical_signoff && !sv.clinical_approved
+        ? '<span style="font-size:11px;font-weight:700;color:#b7791f;background:rgba(183,121,31,.12);border-radius:99px;padding:2px 8px;">Awaiting clinical approval</span>'
+        : (sv.active ? '<span style="font-size:11px;font-weight:700;color:#22c55e;background:rgba(34,197,94,.12);border-radius:99px;padding:2px 8px;">Bookable</span>'
+                     : '<span style="font-size:11px;font-weight:700;color:var(--text-muted);background:var(--border);border-radius:99px;padding:2px 8px;">Paused</span>');
+      return '<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);">'
+        + '<div style="flex:1;min-width:0;"><div style="font-weight:600;font-size:14px;">' + esc(sv.title) + ' ' + gate + '</div>'
+        + '<div style="font-size:12.5px;color:var(--text-muted);margin-top:2px;">' + esc(sv.category) + ' \u00b7 ' + modeLabel(sv.delivery_mode) + ' \u00b7 ' + sv.duration_min + ' min \u00b7 ' + fmtPrice(sv.price_pence) + '</div></div>'
+        + '<button class="btn btn-ghost" data-bs-toggle="' + sv.id + '" type="button" style="font-size:12px;">' + (sv.active ? 'Pause' : 'Resume') + '</button>'
+        + '<button class="btn btn-ghost" data-bs-edit="' + sv.id + '" type="button" style="font-size:12px;">Edit</button>'
+        + '</div>';
+    }).join('');
+    el.querySelectorAll('[data-bs-edit]').forEach(function(b){ b.addEventListener('click', function(){ openEditor(b.getAttribute('data-bs-edit')); }); });
+    el.querySelectorAll('[data-bs-toggle]').forEach(function(b){ b.addEventListener('click', function(){ toggleService(b.getAttribute('data-bs-toggle')); }); });
+    var sel = $b('ba-service');
+    sel.innerHTML = services.map(function(sv){ return '<option value="' + sv.id + '">' + esc(sv.title) + '</option>'; }).join('');
+    if (services.length) loadAvailability();
+  }
+
+  function syncModeFields(){
+    var m = $b('bsf-mode').value;
+    var online = (m === 'online' || m === 'both'), inp = (m === 'in_person' || m === 'both');
+    $b('bsf-link-wrap').style.display = online ? '' : 'none';
+    $b('bsf-venue-wrap').style.display = inp ? '' : 'none';
+    $b('bsf-city-wrap').style.display = inp ? '' : 'none';
+    $b('bsf-address-wrap').style.display = inp ? '' : 'none';
+  }
+  function openEditor(id){
+    editingId = id || null;
+    var sv = id ? services.find(function(x){ return x.id === id; }) : null;
+    $b('bs-editor-title').textContent = sv ? 'Edit service' : 'New service';
+    $b('bsf-title').value = sv ? sv.title : '';
+    $b('bsf-desc').value = sv ? (sv.description || '') : '';
+    $b('bsf-category').value = sv ? sv.category : 'coaching';
+    $b('bsf-mode').value = sv ? sv.delivery_mode : 'online';
+    $b('bsf-duration').value = sv ? sv.duration_min : 60;
+    $b('bsf-price').value = sv ? (sv.price_pence / 100) : 40;
+    $b('bsf-meeting').value = sv ? (sv.meeting_link || '') : '';
+    $b('bsf-venue').value = sv ? (sv.venue || '') : '';
+    $b('bsf-city').value = sv ? (sv.city || '') : '';
+    $b('bsf-address').value = sv ? (sv.address || '') : '';
+    $b('bsf-paylink').value = sv ? (sv.payment_link_url || '') : '';
+    $b('bsf-msg').textContent = '';
+    syncModeFields();
+    $b('bsf-therapy-note').style.display = $b('bsf-category').value === 'therapy' ? '' : 'none';
+    $b('bs-editor').style.display = '';
+  }
+  async function saveService(){
+    var title = $b('bsf-title').value.trim();
+    if (!title){ $b('bsf-msg').textContent = 'Title is required.'; return; }
+    var body = {
+      partner_id: partnerId,
+      title: title,
+      description: $b('bsf-desc').value.trim() || null,
+      category: $b('bsf-category').value,
+      delivery_mode: $b('bsf-mode').value,
+      duration_min: parseInt($b('bsf-duration').value, 10) || 60,
+      price_pence: Math.round(parseFloat($b('bsf-price').value || '0') * 100),
+      meeting_link: $b('bsf-meeting').value.trim() || null,
+      venue: $b('bsf-venue').value.trim() || null,
+      city: $b('bsf-city').value.trim() || null,
+      address: $b('bsf-address').value.trim() || null,
+      payment_link_url: $b('bsf-paylink').value.trim() || null
+    };
+    $b('bsf-msg').textContent = 'Saving\u2026';
+    try {
+      if (editingId) await rest('/booking_services?id=eq.' + editingId, { method: 'PATCH', body: body });
+      else await rest('/booking_services', { method: 'POST', body: body });
+      $b('bs-editor').style.display = 'none';
+      await loadServices();
+    } catch(e){ $b('bsf-msg').textContent = 'Save failed: ' + e.message; }
+  }
+  async function toggleService(id){
+    var sv = services.find(function(x){ return x.id === id; }); if (!sv) return;
+    try { await rest('/booking_services?id=eq.' + id, { method: 'PATCH', body: { active: !sv.active } }); await loadServices(); } catch(e){}
+  }
+  async function loadServices(){
+    services = await rest('/booking_services?partner_id=eq.' + partnerId + '&order=created_at.asc') || [];
+    renderServices();
+  }
+
+  // ── Availability + exceptions ──
+  async function loadAvailability(){
+    var sid = $b('ba-service').value; if (!sid) return;
+    var rows = await rest('/booking_availability?service_id=eq.' + sid + '&order=weekday.asc,start_time.asc') || [];
+    $b('ba-rows').innerHTML = rows.length ? rows.map(function(r){
+      return '<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;">'
+        + '<span style="min-width:90px;font-weight:600;">' + DAYS[r.weekday] + '</span>'
+        + '<span>' + r.start_time.slice(0,5) + ' \u2013 ' + r.end_time.slice(0,5) + '</span>'
+        + '<button class="btn btn-ghost" data-ba-del="' + r.id + '" type="button" style="margin-left:auto;font-size:12px;">Remove</button></div>';
+    }).join('') : '<div style="font-size:13px;color:var(--text-muted);padding:6px 0;">No windows yet \u2014 members can\u2019t book this service until you add one.</div>';
+    $b('ba-rows').querySelectorAll('[data-ba-del]').forEach(function(b){
+      b.addEventListener('click', async function(){ await rest('/booking_availability?id=eq.' + b.getAttribute('data-ba-del'), { method: 'DELETE' }); loadAvailability(); });
+    });
+    var ex = await rest('/booking_exceptions?service_id=eq.' + sid + '&order=date.asc') || [];
+    $b('bx-rows').innerHTML = ex.length ? ex.map(function(r){
+      return '<div style="display:flex;align-items:center;gap:10px;padding:6px 0;font-size:13px;"><span>' + r.date + (r.kind === 'blocked' ? ' \u00b7 blocked' : '') + '</span>'
+        + '<button class="btn btn-ghost" data-bx-del="' + r.id + '" type="button" style="margin-left:auto;font-size:12px;">Remove</button></div>';
+    }).join('') : '<div style="font-size:13px;color:var(--text-muted);">None.</div>';
+    $b('bx-rows').querySelectorAll('[data-bx-del]').forEach(function(b){
+      b.addEventListener('click', async function(){ await rest('/booking_exceptions?id=eq.' + b.getAttribute('data-bx-del'), { method: 'DELETE' }); loadAvailability(); });
+    });
+  }
+  async function addWindow(){
+    var sid = $b('ba-service').value; if (!sid){ $b('ba-msg').textContent = 'Create a service first.'; return; }
+    var st = $b('ba-start').value, en = $b('ba-end').value;
+    if (!st || !en || en <= st){ $b('ba-msg').textContent = 'End must be after start.'; return; }
+    $b('ba-msg').textContent = '';
+    try { await rest('/booking_availability', { method: 'POST', body: { service_id: sid, weekday: parseInt($b('ba-day').value, 10), start_time: st, end_time: en } }); loadAvailability(); }
+    catch(e){ $b('ba-msg').textContent = 'Failed: ' + e.message; }
+  }
+  async function blockDay(){
+    var sid = $b('ba-service').value, d = $b('bx-date').value;
+    if (!sid || !d) return;
+    try { await rest('/booking_exceptions', { method: 'POST', body: { service_id: sid, date: d, kind: 'blocked' } }); loadAvailability(); } catch(e){}
+  }
+
+  // ── Diary ──
+  async function loadDiary(){
+    var rows = await rest('/bookings?partner_id=eq.' + partnerId + '&status=in.(pending_payment,confirmed,completed,no_show)&order=starts_at.desc&limit=100') || [];
+    var el = $b('bk-diary');
+    if (!rows.length){ el.innerHTML = '<div class="empty-state"><h3>No bookings yet</h3><p>Confirmed bookings will appear here.</p></div>'; return; }
+    el.innerHTML = rows.map(function(r){
+      var d = new Date(r.starts_at);
+      var when = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+      var who = r.member_email ? esc(r.member_email) : esc(r.employer_name || '');
+      var sv = services.find(function(x){ return x.id === r.service_id; });
+      var past = d.getTime() < Date.now();
+      var actions = (r.status === 'confirmed' && past)
+        ? '<button class="btn btn-ghost" data-bk-done="' + r.id + '" type="button" style="font-size:12px;">Completed</button><button class="btn btn-ghost" data-bk-ns="' + r.id + '" type="button" style="font-size:12px;">No-show</button>'
+        : '';
+      var chip = { pending_payment: 'Awaiting payment', confirmed: 'Confirmed', completed: 'Completed', no_show: 'No-show' }[r.status] || r.status;
+      return '<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;">'
+        + '<div style="min-width:130px;font-weight:600;">' + when + '</div>'
+        + '<div style="flex:1;min-width:0;">' + who + (sv ? ' \u00b7 ' + esc(sv.title) : '') + '</div>'
+        + '<span style="font-size:11.5px;color:var(--text-muted);">' + chip + '</span>' + actions + '</div>';
+    }).join('');
+    el.querySelectorAll('[data-bk-done]').forEach(function(b){ b.addEventListener('click', function(){ progress(b.getAttribute('data-bk-done'), 'completed'); }); });
+    el.querySelectorAll('[data-bk-ns]').forEach(function(b){ b.addEventListener('click', function(){ progress(b.getAttribute('data-bk-ns'), 'no_show'); }); });
+  }
+  async function progress(id, st){
+    try { await rest('/bookings?id=eq.' + id, { method: 'PATCH', body: { status: st } }); loadDiary(); } catch(e){}
+  }
+
+  // ── Init on first tab open ──
+  async function init(){
+    if (inited) return; inited = true;
+    try {
+      var r = await _getSB().rpc('get_my_partner_id');
+      partnerId = r.data;
+      if (!partnerId){ $b('bs-list').innerHTML = '<div class="empty-state"><h3>Not linked</h3><p>Your login isn\u2019t linked to a partner record \u2014 contact the VYVE team.</p></div>'; return; }
+      await loadServices();
+      await loadDiary();
+    } catch(e){ inited = false; }
+  }
+  document.querySelectorAll('.pp-tab').forEach(function(t){
+    if (t.dataset.tab === 'bookings') t.addEventListener('click', init);
+  });
+  $b('bs-new-btn').addEventListener('click', function(){ openEditor(null); });
+  $b('bsf-cancel').addEventListener('click', function(){ $b('bs-editor').style.display = 'none'; });
+  $b('bsf-save').addEventListener('click', saveService);
+  $b('bsf-mode').addEventListener('change', syncModeFields);
+  $b('bsf-category').addEventListener('change', function(){ $b('bsf-therapy-note').style.display = this.value === 'therapy' ? '' : 'none'; });
+  $b('ba-service').addEventListener('change', loadAvailability);
+  $b('ba-add').addEventListener('click', addWindow);
+  $b('bx-add').addEventListener('click', blockDay);
 })();
 </script>
 </body>
