@@ -1,4 +1,20 @@
 <div class="page active" id="page-complaints">
+<style>
+/* PM-809 — CC shell only sets input color, not background; UA default white bg
+   made typed text invisible in dark mode. Token-backed fields, scoped to page. */
+#page-complaints select,
+#page-complaints input[type=text],
+#page-complaints input[type=email] {
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+#page-complaints select:focus,
+#page-complaints input:focus { outline: none; box-shadow: var(--shadow-focus); }
+#page-complaints input[type=checkbox] { accent-color: var(--accent, #1B7878); }
+</style>
   <div class="page-hero">
     <div class="eyebrow">Members · Live data</div>
     <h1 class="page-title">Complaints</h1>
