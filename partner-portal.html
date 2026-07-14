@@ -130,6 +130,8 @@
     /* Content area */
     .pp-content { flex: 1; padding: 28px 24px; max-width: 900px; width: 100%; margin: 0 auto; }
     .bk-lbl { display:block; font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px; }
+.ba-daypill{padding:7px 12px;border-radius:99px;border:1px solid var(--border);background:transparent;color:var(--text);font-family:inherit;font-size:12.5px;cursor:pointer;}
+.ba-daypill.sel{background:var(--teal,#1B7878);border-color:var(--teal,#1B7878);color:#fff;}
     #panel-bookings input, #panel-bookings select { background:var(--surface); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:8px 10px; font-family:inherit; font-size:13px; }
     .pp-panel { display: none; }
     .pp-panel.active { display: block; }
@@ -636,7 +638,21 @@
         <div style="max-width:340px;margin-bottom:12px;"><label class="bk-lbl">Service</label><select id="ba-service"></select></div>
         <div id="ba-rows"></div>
         <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-top:10px;">
-          <div><label class="bk-lbl">Day</label><select id="ba-day"><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="0">Sunday</option></select></div>
+          <div style="flex-basis:100%;">
+            <label class="bk-lbl">Days <span style="font-weight:400;text-transform:none;letter-spacing:0;">— tap all that apply</span></label>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+              <button class="ba-daypill" data-wd="1" type="button">Mon</button>
+              <button class="ba-daypill" data-wd="2" type="button">Tue</button>
+              <button class="ba-daypill" data-wd="3" type="button">Wed</button>
+              <button class="ba-daypill" data-wd="4" type="button">Thu</button>
+              <button class="ba-daypill" data-wd="5" type="button">Fri</button>
+              <button class="ba-daypill" data-wd="6" type="button">Sat</button>
+              <button class="ba-daypill" data-wd="0" type="button">Sun</button>
+              <span style="width:8px;"></span>
+              <button class="btn btn-ghost btn-sm" id="ba-weekdays" type="button" style="font-size:11.5px;">Weekdays</button>
+              <button class="btn btn-ghost btn-sm" id="ba-alldays" type="button" style="font-size:11.5px;">Every day</button>
+            </div>
+          </div>
           <div><label class="bk-lbl">From</label><input type="time" id="ba-start" value="09:00"/></div>
           <div><label class="bk-lbl">To</label><input type="time" id="ba-end" value="17:00"/></div>
           <button class="btn btn-ghost" id="ba-add" type="button">Add window</button>
@@ -1628,12 +1644,22 @@
       b.addEventListener('click', async function(){ await rest('/booking_exceptions?id=eq.' + b.getAttribute('data-bx-del'), { method: 'DELETE' }); loadAvailability(); });
     });
   }
+  function selectedDays(){
+    return Array.prototype.map.call(document.querySelectorAll('.ba-daypill.sel'), function(b){ return parseInt(b.getAttribute('data-wd'), 10); });
+  }
   async function addWindow(){
     var sid = $b('ba-service').value; if (!sid){ $b('ba-msg').textContent = 'Create a service first.'; return; }
+    var days = selectedDays();
+    if (!days.length){ $b('ba-msg').textContent = 'Pick at least one day.'; return; }
     var st = $b('ba-start').value, en = $b('ba-end').value;
     if (!st || !en || en <= st){ $b('ba-msg').textContent = 'End must be after start.'; return; }
     $b('ba-msg').textContent = '';
-    try { await rest('/booking_availability', { method: 'POST', body: { service_id: sid, weekday: parseInt($b('ba-day').value, 10), start_time: st, end_time: en } }); loadAvailability(); }
+    var rows = days.map(function(wd){ return { service_id: sid, weekday: wd, start_time: st, end_time: en }; });
+    try {
+      await rest('/booking_availability', { method: 'POST', body: rows });
+      document.querySelectorAll('.ba-daypill.sel').forEach(function(b){ b.classList.remove('sel'); });
+      loadAvailability();
+    }
     catch(e){ $b('ba-msg').textContent = 'Failed: ' + e.message; }
   }
   async function blockDay(){
@@ -1711,6 +1737,13 @@
   $b('bsf-category').addEventListener('change', function(){ $b('bsf-therapy-note').style.display = this.value === 'therapy' ? '' : 'none'; });
   $b('ba-service').addEventListener('change', loadAvailability);
   $b('ba-add').addEventListener('click', addWindow);
+  document.querySelectorAll('.ba-daypill').forEach(function(b){ b.addEventListener('click', function(){ b.classList.toggle('sel'); }); });
+  $b('ba-weekdays').addEventListener('click', function(){
+    document.querySelectorAll('.ba-daypill').forEach(function(b){ var wd = b.getAttribute('data-wd'); b.classList.toggle('sel', wd !== '0' && wd !== '6'); });
+  });
+  $b('ba-alldays').addEventListener('click', function(){
+    document.querySelectorAll('.ba-daypill').forEach(function(b){ b.classList.add('sel'); });
+  });
   $b('bx-add').addEventListener('click', blockDay);
 })();
 </script>
