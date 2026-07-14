@@ -1,0 +1,219 @@
+<div class="page active" id="page-bookings">
+<style>
+/* Token-backed fields per §23.152 */
+#page-bookings select, #page-bookings input[type=text], #page-bookings input[type=number],
+#page-bookings input[type=date], #page-bookings input[type=time], #page-bookings input[type=email] {
+  background: var(--surface-2); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px;
+}
+#page-bookings select:focus, #page-bookings input:focus { outline: none; box-shadow: var(--shadow-focus); }
+</style>
+  <div class="page-hero">
+    <div class="eyebrow">Partners · Live data</div>
+    <h1 class="page-title">Bookings</h1>
+    <p class="page-sub">Employer expert-booking requests to confirm (request → confirm + invoice), plus the full booking ledger across member 1:1s and corporate engagements.</p>
+  </div>
+
+  <div id="bq-gate-notready" class="card" style="display:none;padding:30px 26px;text-align:center"><div style="font-size:14px;color:var(--text-muted)">Connecting to Supabase…</div></div>
+  <div id="bq-gate-signin" class="card" style="display:none;padding:36px 26px">
+    <div style="max-width:420px;margin:0 auto;text-align:center">
+      <div style="font-family:var(--font-head);font-size:22px;font-weight:700;margin-bottom:8px">Sign in to view bookings</div>
+      <div style="display:flex;gap:8px;justify-content:center">
+        <input type="email" id="bq-signin-email" placeholder="team@vyvehealth.co.uk" style="flex:1;max-width:280px"/>
+        <button class="btn btn-primary" id="bq-signin-btn">Send magic link</button>
+      </div>
+      <div id="bq-signin-msg" style="margin-top:12px;font-size:12.5px;color:var(--text-muted)"></div>
+    </div>
+  </div>
+  <div id="bq-gate-denied" class="card" style="display:none;padding:36px 26px;text-align:center">
+    <div style="font-family:var(--font-head);font-size:20px;font-weight:700;margin-bottom:8px">Access restricted</div>
+    <p style="color:var(--text-muted);font-size:13.5px;max-width:420px;margin:0 auto 20px">You're signed in as <strong id="bq-denied-email"></strong> but this email isn't on the admin allowlist.</p>
+    <button class="btn btn-ghost btn-sm" id="bq-signout-btn">Sign out</button>
+  </div>
+
+  <div id="bq-content" style="display:none">
+    <div class="grid-4" style="margin-bottom:18px">
+      <div class="stat"><div class="stat-label">Requests</div><div class="stat-value" id="bq-kpi-req">—</div><div class="stat-sub">Awaiting confirm</div></div>
+      <div class="stat"><div class="stat-label">Confirmed upcoming</div><div class="stat-value" id="bq-kpi-conf">—</div><div class="stat-sub">On the calendar</div></div>
+      <div class="stat"><div class="stat-label">Bookings 30d</div><div class="stat-value" id="bq-kpi-30d">—</div><div class="stat-sub">All types created</div></div>
+      <div class="stat"><div class="stat-label">Top partner 30d</div><div class="stat-value" id="bq-kpi-top" style="font-size:16px">—</div><div class="stat-sub">By booking volume</div></div>
+    </div>
+
+    <div class="card">
+      <div style="font-weight:700;font-size:15px;margin-bottom:4px">Employer requests</div>
+      <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:12px">Confirm sets the final date/time and records the invoice fee — employer and partner are both emailed. Decline emails the employer with your note.</p>
+      <div id="bq-requests"></div>
+    </div>
+
+    <div class="card" id="bq-confirm-panel" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div style="font-weight:700;font-size:15px" id="bqc-title">—</div>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('bq-confirm-panel').style.display='none'">Close</button>
+      </div>
+      <div style="font-size:12.5px;color:var(--text-muted);margin:4px 0 12px" id="bqc-meta">—</div>
+      <div id="bqc-notes" style="font-size:13px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;margin-bottom:14px;white-space:pre-wrap;display:none"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+        <div><label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px">Final date</label><input type="date" id="bqc-date"/></div>
+        <div><label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px">Time</label><input type="time" id="bqc-time"/></div>
+        <div><label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px">Duration (min)</label><input type="number" id="bqc-dur" value="60" min="15" step="15" style="width:90px"/></div>
+        <div><label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px">Fee (£)</label><input type="number" id="bqc-fee" min="0" step="10" style="width:100px"/></div>
+      </div>
+      <div style="margin-top:10px"><label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px">Note (goes in the emails)</label><input type="text" id="bqc-note" maxlength="2000" style="width:100%"/></div>
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button class="btn btn-primary" id="bqc-confirm">Confirm booking</button>
+        <button class="btn btn-ghost" id="bqc-decline">Decline</button>
+      </div>
+      <div id="bqc-msg" style="margin-top:8px;font-size:12.5px;color:var(--text-muted)"></div>
+    </div>
+
+    <div class="card" style="padding:0;overflow:hidden">
+      <div style="padding:14px 16px;border-bottom:1px solid var(--border);font-weight:700;font-size:15px">Booking ledger</div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead><tr style="text-align:left;color:var(--text-muted)">
+            <th style="padding:10px 16px">When</th><th style="padding:10px 8px">Who</th><th style="padding:10px 8px">Partner</th><th style="padding:10px 8px">Type</th><th style="padding:10px 8px">Fee/Price</th><th style="padding:10px 16px">Status</th>
+          </tr></thead>
+          <tbody id="bq-ledger"><tr><td colspan="6" style="padding:24px 16px;color:var(--text-muted)">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  'use strict';
+  var S = window.VYVE_SUPABASE;
+  var rows = [], partners = {}, services = {}, selected = null;
+  function show(id){ ['bq-gate-notready','bq-gate-signin','bq-gate-denied','bq-content'].forEach(function(x){ var el=document.getElementById(x); if(el) el.style.display=(x===id)?'':'none'; }); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function fmtWhen(iso){ var d=new Date(iso); return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}); }
+  function money(p){ return p==null?'—':'£'+(p/100).toFixed(2).replace(/\.00$/,''); }
+  function chip(st){
+    var map = { requested:['Requested','#b7791f'], pending_payment:['Awaiting payment','#b7791f'], confirmed:['Confirmed','#22c55e'], completed:['Completed','var(--text-muted)'], cancelled:['Cancelled','var(--text-muted)'], no_show:['No-show','#ef4444'] };
+    var m = map[st]||[st,'var(--text-muted)'];
+    return '<span style="font-size:11.5px;font-weight:700;color:'+m[1]+'">'+m[0]+'</span>';
+  }
+
+  function renderKPIs(){
+    var req=0, conf=0, d30=0, vol={};
+    var cutoff = Date.now()-30*86400000;
+    rows.forEach(function(r){
+      if (r.status==='requested') req++;
+      if (r.status==='confirmed' && new Date(r.starts_at).getTime()>Date.now()) conf++;
+      if (new Date(r.created_at).getTime()>cutoff){ d30++; if(r.partner_id) vol[r.partner_id]=(vol[r.partner_id]||0)+1; }
+    });
+    var top = Object.keys(vol).sort(function(a,b){ return vol[b]-vol[a]; })[0];
+    document.getElementById('bq-kpi-req').textContent = req;
+    document.getElementById('bq-kpi-conf').textContent = conf;
+    document.getElementById('bq-kpi-30d').textContent = d30;
+    document.getElementById('bq-kpi-top').textContent = top ? (partners[top]||'—')+' ('+vol[top]+')' : '—';
+  }
+
+  function renderRequests(){
+    var el = document.getElementById('bq-requests');
+    var reqs = rows.filter(function(r){ return r.status==='requested'; });
+    if (!reqs.length){ el.innerHTML = '<div style="font-size:13px;color:var(--text-muted);padding:6px 0">No open requests.</div>'; return; }
+    el.innerHTML = reqs.map(function(r){
+      return '<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px">'
+        + '<div style="min-width:120px;font-weight:600">'+fmtWhen(r.starts_at)+'</div>'
+        + '<div style="flex:1;min-width:0">'+esc(r.employer_name||'')+' → '+esc(partners[r.partner_id]||'—')+' · '+esc(r.format||'')+(r.headcount?' · ~'+r.headcount+' people':'')+'</div>'
+        + '<button class="btn btn-primary btn-sm" data-bq-open="'+r.id+'" type="button">Review</button></div>';
+    }).join('');
+    el.querySelectorAll('[data-bq-open]').forEach(function(b){ b.addEventListener('click', function(){ openConfirm(b.getAttribute('data-bq-open')); }); });
+  }
+
+  function openConfirm(id){
+    selected = rows.find(function(r){ return r.id===id; }); if(!selected) return;
+    document.getElementById('bqc-title').textContent = (selected.employer_name||'') + ' → ' + (partners[selected.partner_id]||'—');
+    document.getElementById('bqc-meta').textContent = 'Requested by ' + (selected.employer_contact_email||'—') + ' · preferred ' + fmtWhen(selected.starts_at) + ' · ' + (selected.format||'');
+    var n = document.getElementById('bqc-notes');
+    if (selected.notes){ n.textContent = selected.notes; n.style.display=''; } else n.style.display='none';
+    var d = new Date(selected.starts_at);
+    document.getElementById('bqc-date').value = d.toISOString().slice(0,10);
+    document.getElementById('bqc-time').value = d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/London'});
+    document.getElementById('bqc-fee').value = '';
+    document.getElementById('bqc-note').value = '';
+    document.getElementById('bqc-msg').textContent = '';
+    document.getElementById('bq-confirm-panel').style.display='';
+    document.getElementById('bq-confirm-panel').scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
+
+  async function act(action){
+    if (!selected) return;
+    var msg = document.getElementById('bqc-msg');
+    msg.textContent = 'Working…';
+    try {
+      var session = await S.getSession();
+      var body = { id: selected.id, action: action, note: document.getElementById('bqc-note').value.trim() || null };
+      if (action==='confirm'){
+        var date = document.getElementById('bqc-date').value, time = document.getElementById('bqc-time').value || '10:00';
+        body.final_starts_at = date + 'T' + time + ':00+01:00';
+        body.duration_min = parseInt(document.getElementById('bqc-dur').value,10) || 60;
+        var fee = parseFloat(document.getElementById('bqc-fee').value);
+        if (!isNaN(fee)) body.fee_pence = Math.round(fee*100);
+      }
+      var r = await fetch(S.URL + '/functions/v1/confirm-booking', {
+        method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+session.access_token },
+        body: JSON.stringify(body)
+      });
+      var d = await r.json();
+      if (!r.ok || !d.ok) throw new Error(d.error||'failed');
+      msg.textContent = (action==='confirm'?'Confirmed':'Declined') + ' — employer emailed' + (d.emailedPartner ? ', partner emailed.' : (action==='confirm' ? '; partner has no contact_email on file.' : '.'));
+      await loadData();
+      document.getElementById('bq-confirm-panel').style.display='none';
+    } catch(e){ msg.textContent = 'Failed: '+e.message; }
+  }
+
+  function renderLedger(){
+    var tbody = document.getElementById('bq-ledger');
+    if (!rows.length){ tbody.innerHTML = '<tr><td colspan="6" style="padding:24px 16px;color:var(--text-muted)">No bookings yet.</td></tr>'; return; }
+    tbody.innerHTML = rows.map(function(r){
+      var who = r.member_email ? esc(r.member_email) : esc(r.employer_name||'');
+      var type = r.member_email ? 'Member 1:1' + (services[r.service_id] ? ' · '+esc(services[r.service_id]) : '') : 'Corporate · '+esc(r.format||'');
+      return '<tr style="border-top:1px solid var(--border)">'
+        + '<td style="padding:10px 16px;white-space:nowrap">'+fmtWhen(r.starts_at)+'</td>'
+        + '<td style="padding:10px 8px">'+who+'</td>'
+        + '<td style="padding:10px 8px">'+esc(partners[r.partner_id]||'—')+'</td>'
+        + '<td style="padding:10px 8px">'+type+'</td>'
+        + '<td style="padding:10px 8px">'+money(r.member_email ? r.price_pence_snapshot : r.fee_pence)+'</td>'
+        + '<td style="padding:10px 16px">'+chip(r.status)+'</td></tr>';
+    }).join('');
+  }
+
+  async function loadData(){
+    var res = await S.list('bookings', { order:{ column:'created_at', ascending:false }, limit: 300 });
+    rows = res.data || [];
+    var pr = await S.list('partner_partners', { select:'id,name', limit: 200 });
+    partners = {}; (pr.data||[]).forEach(function(p){ partners[p.id]=p.name; });
+    var sv = await S.list('booking_services', { select:'id,title', limit: 500 });
+    services = {}; (sv.data||[]).forEach(function(s){ services[s.id]=s.title; });
+    renderKPIs(); renderRequests(); renderLedger();
+  }
+
+  async function boot(){
+    if (!S) return;
+    if (!S.isReady()){ show('bq-gate-notready'); S.onReady(boot); return; }
+    var session = await S.getSession();
+    if (!session){ show('bq-gate-signin');
+      document.getElementById('bq-signin-btn').onclick = async function(){
+        var em = document.getElementById('bq-signin-email').value.trim(); if(!em) return;
+        await S.signInWithEmail(em);
+        document.getElementById('bq-signin-msg').textContent = 'Magic link sent — check your inbox.';
+      };
+      return;
+    }
+    var admin = await S.getCurrentAdmin();
+    if (!admin){
+      document.getElementById('bq-denied-email').textContent = await S.getUserEmail();
+      show('bq-gate-denied');
+      document.getElementById('bq-signout-btn').onclick = function(){ S.signOut().then(function(){ location.reload(); }); };
+      return;
+    }
+    show('bq-content');
+    document.getElementById('bqc-confirm').addEventListener('click', function(){ act('confirm'); });
+    document.getElementById('bqc-decline').addEventListener('click', function(){ act('decline'); });
+    await loadData();
+  }
+  boot();
+})();
+</script>
+</div>

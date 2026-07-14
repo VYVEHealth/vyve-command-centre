@@ -59,7 +59,8 @@ window.VYVE_NAV = [
     section: "Partners",
     items: [
       { href: "/partners.html",       label: "Partner Management", icon: "link",  external: false, desc: "Pipeline, go-live gates, moderation and payouts." },
-      { href: "/partner-portal.html", label: "Partner Portal",     icon: "video", external: false, desc: "What partners see \u2014 content, publishing, notify." }
+      { href: "/partner-portal.html", label: "Partner Portal",     icon: "video", external: false, desc: "What partners see \u2014 content, publishing, notify." },
+      { slug: "bookings",             label: "Bookings",           icon: "calendar", status: "live", desc: "Employer expert requests to confirm + the booking ledger." }
     ]
   },
   // ---------- Employers ----------
