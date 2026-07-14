@@ -614,6 +614,7 @@
             <div><label class="bk-lbl">Delivery</label><select id="bsf-mode"><option value="online">Online</option><option value="in_person">In person</option><option value="both">Both</option></select></div>
             <div><label class="bk-lbl">Duration (minutes)</label><input type="number" id="bsf-duration" min="15" max="480" step="5" value="60"/></div>
             <div><label class="bk-lbl">Price (£)</label><input type="number" id="bsf-price" min="0" step="0.5" value="40"/></div>
+            <div><label class="bk-lbl">Cancellation notice (hours)</label><input type="number" id="bsf-cancel" min="0" max="168" step="1" value="24"/></div>
             <div style="grid-column:1/-1;" id="bsf-link-wrap"><label class="bk-lbl">Meeting link (online sessions — Zoom/Meet/Teams)</label><input type="text" id="bsf-meeting" placeholder="https://…"/></div>
             <div id="bsf-venue-wrap" style="display:none;"><label class="bk-lbl">Venue</label><input type="text" id="bsf-venue"/></div>
             <div id="bsf-city-wrap" style="display:none;"><label class="bk-lbl">City</label><input type="text" id="bsf-city"/></div>
@@ -678,6 +679,7 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="m9 16 2 2 4-4"/></svg>
           My diary
         </div>
+        <div id="bk-stats" style="display:none;gap:16px;flex-wrap:wrap;margin-bottom:14px;"></div>
         <div id="bk-diary"><div class="empty-state"><h3>No bookings yet</h3><p>Confirmed bookings will appear here.</p></div></div>
       </div>
 
@@ -1553,7 +1555,7 @@
                      : '<span style="font-size:11px;font-weight:700;color:var(--text-muted);background:var(--border);border-radius:99px;padding:2px 8px;">Paused</span>');
       return '<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);">'
         + '<div style="flex:1;min-width:0;"><div style="font-weight:600;font-size:14px;">' + esc(sv.title) + ' ' + gate + '</div>'
-        + '<div style="font-size:12.5px;color:var(--text-muted);margin-top:2px;">' + esc(sv.category) + ' \u00b7 ' + modeLabel(sv.delivery_mode) + ' \u00b7 ' + sv.duration_min + ' min \u00b7 ' + fmtPrice(sv.price_pence) + '</div></div>'
+        + '<div style="font-size:12.5px;color:var(--text-muted);margin-top:2px;">' + esc(sv.category) + ' \u00b7 ' + modeLabel(sv.delivery_mode) + ' \u00b7 ' + sv.duration_min + ' min \u00b7 ' + fmtPrice(sv.price_pence) + ' \u00b7 ' + (sv.cancel_notice_hours != null ? sv.cancel_notice_hours : 24) + 'h cancel notice</div></div>'
         + '<button class="btn btn-ghost" data-bs-toggle="' + sv.id + '" type="button" style="font-size:12px;">' + (sv.active ? 'Pause' : 'Resume') + '</button>'
         + '<button class="btn btn-ghost" data-bs-edit="' + sv.id + '" type="button" style="font-size:12px;">Edit</button>'
         + '</div>';
@@ -1588,6 +1590,7 @@
     $b('bsf-city').value = sv ? (sv.city || '') : '';
     $b('bsf-address').value = sv ? (sv.address || '') : '';
     $b('bsf-paylink').value = sv ? (sv.payment_link_url || '') : '';
+    $b('bsf-cancel').value = sv ? (sv.cancel_notice_hours != null ? sv.cancel_notice_hours : 24) : 24;
     $b('bsf-msg').textContent = '';
     syncModeFields();
     $b('bsf-therapy-note').style.display = $b('bsf-category').value === 'therapy' ? '' : 'none';
@@ -1608,7 +1611,8 @@
       venue: $b('bsf-venue').value.trim() || null,
       city: $b('bsf-city').value.trim() || null,
       address: $b('bsf-address').value.trim() || null,
-      payment_link_url: $b('bsf-paylink').value.trim() || null
+      payment_link_url: $b('bsf-paylink').value.trim() || null,
+      cancel_notice_hours: Math.max(0, parseInt($b('bsf-cancel').value, 10) || 24)
     };
     $b('bsf-msg').textContent = 'Saving\u2026';
     try {
@@ -1715,7 +1719,21 @@
   async function loadDiary(){
     var rows = await rest('/bookings?partner_id=eq.' + partnerId + '&status=in.(pending_payment,confirmed,completed,no_show)&order=starts_at.desc&limit=100') || [];
     var el = $b('bk-diary');
-    if (!rows.length){ el.innerHTML = '<div class="empty-state"><h3>No bookings yet</h3><p>Confirmed bookings will appear here.</p></div>'; return; }
+    var stats = $b('bk-stats');
+    if (!rows.length){ el.innerHTML = '<div class="empty-state"><h3>No bookings yet</h3><p>Confirmed bookings will appear here.</p></div>'; if (stats) stats.style.display='none'; return; }
+    if (stats){
+      var done = 0, ns = 0, upcoming = 0;
+      rows.forEach(function(r){
+        if (r.status === 'completed') done++;
+        else if (r.status === 'no_show') ns++;
+        else if (r.status === 'confirmed' && new Date(r.starts_at).getTime() > Date.now()) upcoming++;
+      });
+      var held = done + ns;
+      var rate = held ? Math.round((done / held) * 100) : null;
+      var st = function(v, l){ return '<div><div style="font-size:20px;font-weight:700;">' + v + '</div><div style="font-size:11.5px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;">' + l + '</div></div>'; };
+      stats.innerHTML = st(upcoming, 'Upcoming') + st(done, 'Completed') + st(ns, 'No-shows') + st(rate === null ? '\u2014' : rate + '%', 'Attendance');
+      stats.style.display = 'flex';
+    }
     el.innerHTML = rows.map(function(r){
       var d = new Date(r.starts_at);
       var when = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
