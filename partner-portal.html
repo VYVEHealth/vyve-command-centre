@@ -636,6 +636,10 @@
         </div>
         <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">When members can book each service. Add blocked dates for holidays.</p>
         <div style="max-width:340px;margin-bottom:12px;"><label class="bk-lbl">Service</label><select id="ba-service"></select></div>
+        <div style="margin-bottom:12px;" id="ba-svcpills-wrap">
+          <label class="bk-lbl">Apply changes to <span style="font-weight:400;text-transform:none;letter-spacing:0;">— defaults to the service above</span></label>
+          <div id="ba-svcpills" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+        </div>
         <div id="ba-rows"></div>
         <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-top:10px;">
           <div style="flex-basis:100%;">
@@ -661,8 +665,9 @@
           <div style="font-weight:600;font-size:13px;margin-bottom:8px;">Blocked dates</div>
           <div id="bx-rows"></div>
           <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-top:8px;">
-            <div><label class="bk-lbl">Date</label><input type="date" id="bx-date"/></div>
-            <button class="btn btn-ghost" id="bx-add" type="button">Block day</button>
+            <div><label class="bk-lbl">From</label><input type="date" id="bx-date"/></div>
+            <div><label class="bk-lbl">To <span style="font-weight:400;text-transform:none;letter-spacing:0;">(optional — leave blank for one day)</span></label><input type="date" id="bx-date-end"/></div>
+            <button class="btn btn-ghost" id="bx-add" type="button">Block</button>
           </div>
         </div>
         <div id="ba-msg" style="margin-top:8px;font-size:12.5px;color:var(--text-muted);"></div>
@@ -1647,14 +1652,40 @@
   function selectedDays(){
     return Array.prototype.map.call(document.querySelectorAll('.ba-daypill.sel'), function(b){ return parseInt(b.getAttribute('data-wd'), 10); });
   }
+  function targetServiceIds(){
+    var picked = Array.prototype.map.call(document.querySelectorAll('.ba-svcpill.sel'), function(b){ return b.getAttribute('data-sid'); });
+    if (picked.length) return picked;
+    var v = $b('ba-service').value;
+    return v ? [v] : [];
+  }
+  function renderSvcPills(){
+    var sel = $b('ba-service'); var box = $b('ba-svcpills'); if (!sel || !box) return;
+    var opts = Array.prototype.slice.call(sel.options).filter(function(o){ return o.value; });
+    if (opts.length < 2){ box.innerHTML = ''; $b('ba-svcpills-wrap').style.display = 'none'; return; }
+    $b('ba-svcpills-wrap').style.display = '';
+    box.innerHTML = '<button class="ba-daypill" id="ba-svc-all" type="button">All services</button>' + opts.map(function(o){
+      return '<button class="ba-daypill ba-svcpill" data-sid="' + o.value + '" type="button"></button>';
+    }).join('');
+    var pills = box.querySelectorAll('.ba-svcpill');
+    for (var i = 0; i < pills.length; i++){ pills[i].textContent = opts[i].text; }
+    box.querySelectorAll('.ba-svcpill').forEach(function(b){ b.addEventListener('click', function(){ b.classList.toggle('sel'); }); });
+    var all = $b('ba-svc-all');
+    all.addEventListener('click', function(){
+      var on = !all.classList.contains('sel');
+      all.classList.toggle('sel', on);
+      box.querySelectorAll('.ba-svcpill').forEach(function(b){ b.classList.toggle('sel', on); });
+    });
+  }
   async function addWindow(){
-    var sid = $b('ba-service').value; if (!sid){ $b('ba-msg').textContent = 'Create a service first.'; return; }
+    var sids = targetServiceIds();
+    if (!sids.length){ $b('ba-msg').textContent = 'Create a service first.'; return; }
     var days = selectedDays();
     if (!days.length){ $b('ba-msg').textContent = 'Pick at least one day.'; return; }
     var st = $b('ba-start').value, en = $b('ba-end').value;
     if (!st || !en || en <= st){ $b('ba-msg').textContent = 'End must be after start.'; return; }
     $b('ba-msg').textContent = '';
-    var rows = days.map(function(wd){ return { service_id: sid, weekday: wd, start_time: st, end_time: en }; });
+    var rows = [];
+    sids.forEach(function(sid){ days.forEach(function(wd){ rows.push({ service_id: sid, weekday: wd, start_time: st, end_time: en }); }); });
     try {
       await rest('/booking_availability', { method: 'POST', body: rows });
       document.querySelectorAll('.ba-daypill.sel').forEach(function(b){ b.classList.remove('sel'); });
@@ -1663,9 +1694,21 @@
     catch(e){ $b('ba-msg').textContent = 'Failed: ' + e.message; }
   }
   async function blockDay(){
-    var sid = $b('ba-service').value, d = $b('bx-date').value;
-    if (!sid || !d) return;
-    try { await rest('/booking_exceptions', { method: 'POST', body: { service_id: sid, date: d, kind: 'blocked' } }); loadAvailability(); } catch(e){}
+    var sids = targetServiceIds();
+    if (!sids.length){ $b('ba-msg').textContent = 'Create a service first.'; return; }
+    var d = $b('bx-date').value; if (!d) return;
+    var d2 = $b('bx-date-end').value || d;
+    if (d2 < d){ $b('ba-msg').textContent = 'End date is before start date.'; return; }
+    var dates = [], cur = new Date(d + 'T00:00:00Z'), end = new Date(d2 + 'T00:00:00Z');
+    while (cur <= end && dates.length < 60){ dates.push(cur.toISOString().slice(0, 10)); cur.setUTCDate(cur.getUTCDate() + 1); }
+    $b('ba-msg').textContent = (cur <= end) ? 'Range capped at 60 days — block longer periods in chunks.' : '';
+    for (var i = 0; i < sids.length; i++){
+      for (var j = 0; j < dates.length; j++){
+        try { await rest('/booking_exceptions', { method: 'POST', body: { service_id: sids[i], date: dates[j], kind: 'blocked' } }); } catch(e){ /* duplicate days skipped */ }
+      }
+    }
+    $b('bx-date').value = ''; $b('bx-date-end').value = '';
+    loadAvailability();
   }
 
   // ── Diary ──
@@ -1737,7 +1780,9 @@
   $b('bsf-category').addEventListener('change', function(){ $b('bsf-therapy-note').style.display = this.value === 'therapy' ? '' : 'none'; });
   $b('ba-service').addEventListener('change', loadAvailability);
   $b('ba-add').addEventListener('click', addWindow);
-  document.querySelectorAll('.ba-daypill').forEach(function(b){ b.addEventListener('click', function(){ b.classList.toggle('sel'); }); });
+  document.querySelectorAll('.ba-daypill').forEach(function(b){ if (!b.classList.contains('ba-svcpill') && b.id !== 'ba-svc-all') b.addEventListener('click', function(){ b.classList.toggle('sel'); }); });
+  new MutationObserver(renderSvcPills).observe($b('ba-service'), { childList: true });
+  renderSvcPills();
   $b('ba-weekdays').addEventListener('click', function(){
     document.querySelectorAll('.ba-daypill').forEach(function(b){ var wd = b.getAttribute('data-wd'); b.classList.toggle('sel', wd !== '0' && wd !== '6'); });
   });
