@@ -50,7 +50,8 @@ window.VYVE_NAV = [
     items: [
       { href: "/admin-console.html", label: "Member Admin", icon: "users", external: false, desc: "Member list, detail and edit \u2014 the members admin surface." },
       { slug: "broadcast",    label: "Broadcast",    icon: "share", status: "live", desc: "Push notifications to member devices." },
-      { slug: "active-users", label: "Active Users", icon: "users", status: "live", desc: "Who\u2019s in the app right now." }
+      { slug: "active-users", label: "Active Users", icon: "users", status: "live", desc: "Who\u2019s in the app right now." },
+      { slug: "complaints",   label: "Complaints",   icon: "shield", status: "live", desc: "Member reports from Help & Support \u2014 triage and resolve." }
     ]
   },
   // ---------- Partners ----------

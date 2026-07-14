@@ -1,0 +1,237 @@
+<div class="page active" id="page-complaints">
+  <div class="page-hero">
+    <div class="eyebrow">Members · Live data</div>
+    <h1 class="page-title">Complaints</h1>
+    <p class="page-sub">Member reports from the in-app Help &amp; Support form. VYVE-handled — partners are never notified. Safeguarding-flagged reports arrive as Urgent.</p>
+  </div>
+
+  <!-- Gate states (active-users pattern) -->
+  <div id="cq-gate-notready" class="card" style="display:none;padding:30px 26px;text-align:center">
+    <div style="font-size:14px;color:var(--text-muted)">Connecting to Supabase…</div>
+  </div>
+  <div id="cq-gate-signin" class="card" style="display:none;padding:36px 26px">
+    <div style="max-width:420px;margin:0 auto;text-align:center">
+      <div style="font-family:var(--font-head);font-size:22px;font-weight:700;margin-bottom:8px">Sign in to view complaints</div>
+      <p style="color:var(--text-muted);font-size:13.5px;line-height:1.55;margin-bottom:20px">Complaint data is restricted. Sign in with your VYVE team email.</p>
+      <div style="display:flex;gap:8px;justify-content:center">
+        <input type="email" id="cq-signin-email" placeholder="team@vyvehealth.co.uk" style="flex:1;max-width:280px"/>
+        <button class="btn btn-primary" id="cq-signin-btn">Send magic link</button>
+      </div>
+      <div id="cq-signin-msg" style="margin-top:12px;font-size:12.5px;color:var(--text-muted)"></div>
+    </div>
+  </div>
+  <div id="cq-gate-denied" class="card" style="display:none;padding:36px 26px;text-align:center">
+    <div style="font-family:var(--font-head);font-size:20px;font-weight:700;margin-bottom:8px">Access restricted</div>
+    <p style="color:var(--text-muted);font-size:13.5px;max-width:420px;margin:0 auto 20px">You're signed in as <strong id="cq-denied-email"></strong> but this email isn't on the admin allowlist.</p>
+    <button class="btn btn-ghost btn-sm" id="cq-signout-btn">Sign out</button>
+  </div>
+
+  <div id="cq-content" style="display:none">
+    <div class="grid-4" style="margin-bottom:18px">
+      <div class="stat"><div class="stat-label">Open</div><div class="stat-value" id="cq-kpi-open">—</div><div class="stat-sub">Awaiting action</div></div>
+      <div class="stat"><div class="stat-label">Urgent</div><div class="stat-value" id="cq-kpi-urgent" style="color:#ef4444">—</div><div class="stat-sub">Safeguarding-flagged</div></div>
+      <div class="stat"><div class="stat-label">Resolved 30d</div><div class="stat-value" id="cq-kpi-resolved">—</div><div class="stat-sub">Closed this month</div></div>
+      <div class="stat"><div class="stat-label">Repeat partners</div><div class="stat-value" id="cq-kpi-repeat">—</div><div class="stat-sub">2+ complaints, 30d</div></div>
+    </div>
+
+    <div class="card" style="padding:0;overflow:hidden">
+      <div style="display:flex;gap:6px;padding:14px 16px;border-bottom:1px solid var(--border)">
+        <button class="btn btn-sm cq-filter btn-primary" data-f="active">Open + Urgent</button>
+        <button class="btn btn-sm cq-filter btn-ghost" data-f="resolved">Resolved</button>
+        <button class="btn btn-sm cq-filter btn-ghost" data-f="all">All</button>
+      </div>
+      <div id="cq-table-wrap" style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead><tr style="text-align:left;color:var(--text-muted)">
+            <th style="padding:10px 16px">When</th><th style="padding:10px 8px">Member</th><th style="padding:10px 8px">Category</th><th style="padding:10px 8px">Partner</th><th style="padding:10px 8px">Subject</th><th style="padding:10px 16px">Status</th>
+          </tr></thead>
+          <tbody id="cq-rows"><tr><td colspan="6" style="padding:24px 16px;color:var(--text-muted)">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Detail / resolve panel -->
+    <div class="card" id="cq-detail" style="display:none;margin-top:16px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+        <div>
+          <div style="font-weight:700;font-size:15px" id="cqd-title">—</div>
+          <div style="font-size:12.5px;color:var(--text-muted);margin-top:2px" id="cqd-meta">—</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('cq-detail').style.display='none'">Close</button>
+      </div>
+      <div id="cqd-flag" style="display:none;margin-top:12px;padding:10px 14px;border-radius:10px;background:rgba(239,68,68,0.1);color:#ef4444;font-size:12.5px;font-weight:600">Safeguarding language detected — handle as a priority. Member ack included crisis signposting automatically.</div>
+      <div style="margin-top:14px;padding:14px;border:1px solid var(--border);border-radius:10px;font-size:13.5px;line-height:1.6;white-space:pre-wrap" id="cqd-body">—</div>
+      <div id="cqd-resolution-done" style="display:none;margin-top:14px;font-size:13px;color:var(--text-muted)"></div>
+      <div id="cqd-resolve-form" style="margin-top:16px">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+          <div>
+            <label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px">Resolution</label>
+            <select id="cqd-rtype" style="min-width:180px">
+              <option value="apology">Apology</option>
+              <option value="free_session">Free session credit</option>
+              <option value="refund">Refund</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div style="flex:1;min-width:220px">
+            <label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px">Note to member (optional, goes in the email)</label>
+            <input type="text" id="cqd-rnote" maxlength="2000" style="width:100%"/>
+          </div>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-muted);white-space:nowrap"><input type="checkbox" id="cqd-internal"/> Resolve without emailing member</label>
+          <button class="btn btn-primary" id="cqd-resolve-btn">Resolve</button>
+        </div>
+        <div id="cqd-resolve-msg" style="margin-top:8px;font-size:12.5px;color:var(--text-muted)"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  'use strict';
+  var S = window.VYVE_SUPABASE;
+  var rows = [], partners = {}, filter = 'active', selected = null;
+
+  function show(id){
+    ['cq-gate-notready','cq-gate-signin','cq-gate-denied','cq-content'].forEach(function(x){
+      var el = document.getElementById(x); if (el) el.style.display = (x===id)?'':'none';
+    });
+  }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+  function fmtWhen(iso){ var d=new Date(iso); return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}); }
+  function chip(st){
+    if (st==='urgent') return '<span style="padding:3px 10px;border-radius:99px;background:rgba(239,68,68,0.12);color:#ef4444;font-weight:700;font-size:11.5px">URGENT</span>';
+    if (st==='resolved') return '<span style="padding:3px 10px;border-radius:99px;background:rgba(34,197,94,0.12);color:#22c55e;font-weight:700;font-size:11.5px">Resolved</span>';
+    return '<span style="padding:3px 10px;border-radius:99px;background:rgba(27,120,120,0.12);color:var(--accent,#1B7878);font-weight:700;font-size:11.5px">Open</span>';
+  }
+
+  function renderKPIs(){
+    var open=0, urgent=0, resolved30=0, byPartner={};
+    var cutoff = Date.now() - 30*86400000;
+    rows.forEach(function(r){
+      if (r.status==='open') open++;
+      if (r.status==='urgent') urgent++;
+      if (r.status==='resolved' && r.resolved_at && new Date(r.resolved_at).getTime()>cutoff) resolved30++;
+      if (r.partner_id && new Date(r.created_at).getTime()>cutoff) byPartner[r.partner_id]=(byPartner[r.partner_id]||0)+1;
+    });
+    var repeat = Object.keys(byPartner).filter(function(k){ return byPartner[k]>=2; }).length;
+    document.getElementById('cq-kpi-open').textContent = open;
+    document.getElementById('cq-kpi-urgent').textContent = urgent;
+    document.getElementById('cq-kpi-resolved').textContent = resolved30;
+    document.getElementById('cq-kpi-repeat').textContent = repeat;
+  }
+
+  function renderRows(){
+    var tbody = document.getElementById('cq-rows');
+    var list = rows.filter(function(r){
+      if (filter==='active') return r.status!=='resolved';
+      if (filter==='resolved') return r.status==='resolved';
+      return true;
+    });
+    if (!list.length){ tbody.innerHTML = '<tr><td colspan="6" style="padding:24px 16px;color:var(--text-muted)">Nothing here.</td></tr>'; return; }
+    tbody.innerHTML = list.map(function(r){
+      return '<tr data-id="'+r.id+'" style="cursor:pointer;border-top:1px solid var(--border)'+(r.status==='urgent'?';background:rgba(239,68,68,0.04)':'')+'">'
+        + '<td style="padding:10px 16px;white-space:nowrap">'+fmtWhen(r.created_at)+'</td>'
+        + '<td style="padding:10px 8px">'+esc(r.member_email)+'</td>'
+        + '<td style="padding:10px 8px;text-transform:capitalize">'+esc(r.category)+'</td>'
+        + '<td style="padding:10px 8px">'+esc(r.partner_id ? (partners[r.partner_id]||'—') : '—')+'</td>'
+        + '<td style="padding:10px 8px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(r.subject||r.body.slice(0,60))+'</td>'
+        + '<td style="padding:10px 16px">'+chip(r.status)+'</td></tr>';
+    }).join('');
+    Array.prototype.forEach.call(tbody.querySelectorAll('tr[data-id]'), function(tr){
+      tr.addEventListener('click', function(){ openDetail(tr.getAttribute('data-id')); });
+    });
+  }
+
+  function openDetail(id){
+    selected = rows.find(function(r){ return r.id===id; });
+    if (!selected) return;
+    document.getElementById('cqd-title').textContent = (selected.subject || selected.category.toUpperCase()) + ' — ' + selected.member_email;
+    document.getElementById('cqd-meta').textContent = fmtWhen(selected.created_at)
+      + ' · ' + selected.category
+      + (selected.partner_id ? ' · ' + (partners[selected.partner_id]||'unknown partner') : '');
+    document.getElementById('cqd-flag').style.display = selected.safeguarding_flag ? '' : 'none';
+    document.getElementById('cqd-body').textContent = selected.body;
+    var done = document.getElementById('cqd-resolution-done');
+    var form = document.getElementById('cqd-resolve-form');
+    if (selected.status==='resolved'){
+      done.style.display='';
+      done.textContent = 'Resolved '+fmtWhen(selected.resolved_at)+' by '+(selected.resolved_by||'—')+' — '+(selected.resolution_type||'')+(selected.resolution_note?(' · "'+selected.resolution_note+'"'):'');
+      form.style.display='none';
+    } else {
+      done.style.display='none'; form.style.display='';
+      document.getElementById('cqd-resolve-msg').textContent='';
+    }
+    document.getElementById('cq-detail').style.display='';
+    document.getElementById('cq-detail').scrollIntoView({behavior:'smooth', block:'nearest'});
+  }
+
+  async function resolveSelected(){
+    if (!selected) return;
+    var btn = document.getElementById('cqd-resolve-btn');
+    var msg = document.getElementById('cqd-resolve-msg');
+    btn.disabled = true; msg.textContent = 'Resolving…';
+    try {
+      var session = await S.getSession();
+      var r = await fetch(S.URL + '/functions/v1/resolve-complaint', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+session.access_token },
+        body: JSON.stringify({
+          id: selected.id,
+          resolution_type: document.getElementById('cqd-rtype').value,
+          resolution_note: document.getElementById('cqd-rnote').value.trim() || null,
+          internal: document.getElementById('cqd-internal').checked
+        })
+      });
+      var d = await r.json();
+      if (!r.ok || !d.ok) throw new Error(d.error||'failed');
+      msg.textContent = d.emailed ? 'Resolved — member emailed.' : 'Resolved (no member email).';
+      await loadData();
+      openDetail(selected.id);
+    } catch(e){ msg.textContent = 'Failed: '+e.message; }
+    btn.disabled = false;
+  }
+
+  async function loadData(){
+    var res = await S.list('member_complaints', { order:{ column:'created_at', ascending:false }, limit: 500 });
+    rows = res.data || [];
+    var pr = await S.list('partner_partners', { select:'id,name', limit: 200 });
+    partners = {}; (pr.data||[]).forEach(function(p){ partners[p.id]=p.name; });
+    renderKPIs(); renderRows();
+  }
+
+  async function boot(){
+    if (!S){ return; }
+    if (!S.isReady()){ show('cq-gate-notready'); S.onReady(boot); return; }
+    var session = await S.getSession();
+    if (!session){ show('cq-gate-signin');
+      document.getElementById('cq-signin-btn').onclick = async function(){
+        var em = document.getElementById('cq-signin-email').value.trim();
+        if (!em) return;
+        await S.signInWithEmail(em);
+        document.getElementById('cq-signin-msg').textContent = 'Magic link sent — check your inbox.';
+      };
+      return;
+    }
+    var admin = await S.getCurrentAdmin();
+    if (!admin){
+      document.getElementById('cq-denied-email').textContent = await S.getUserEmail();
+      show('cq-gate-denied');
+      document.getElementById('cq-signout-btn').onclick = function(){ S.signOut().then(function(){ location.reload(); }); };
+      return;
+    }
+    show('cq-content');
+    Array.prototype.forEach.call(document.querySelectorAll('.cq-filter'), function(b){
+      b.addEventListener('click', function(){
+        filter = b.getAttribute('data-f');
+        Array.prototype.forEach.call(document.querySelectorAll('.cq-filter'), function(x){ x.classList.remove('btn-primary'); x.classList.add('btn-ghost'); });
+        b.classList.add('btn-primary'); b.classList.remove('btn-ghost');
+        renderRows();
+      });
+    });
+    document.getElementById('cqd-resolve-btn').addEventListener('click', resolveSelected);
+    await loadData();
+  }
+  boot();
+})();
+</script>
+</div>
