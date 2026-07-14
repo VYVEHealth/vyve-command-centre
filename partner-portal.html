@@ -1655,7 +1655,9 @@
       var past = d.getTime() < Date.now();
       var actions = (r.status === 'confirmed' && past)
         ? '<button class="btn btn-ghost" data-bk-done="' + r.id + '" type="button" style="font-size:12px;">Completed</button><button class="btn btn-ghost" data-bk-ns="' + r.id + '" type="button" style="font-size:12px;">No-show</button>'
-        : '';
+        : (r.status === 'pending_payment' && r.member_email)
+          ? '<button class="btn btn-primary" data-bk-paid="' + r.id + '" type="button" style="font-size:12px;">Confirm paid</button>'
+          : '';
       var chip = { pending_payment: 'Awaiting payment', confirmed: 'Confirmed', completed: 'Completed', no_show: 'No-show' }[r.status] || r.status;
       return '<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;">'
         + '<div style="min-width:130px;font-weight:600;">' + when + '</div>'
@@ -1664,6 +1666,25 @@
     }).join('');
     el.querySelectorAll('[data-bk-done]').forEach(function(b){ b.addEventListener('click', function(){ progress(b.getAttribute('data-bk-done'), 'completed'); }); });
     el.querySelectorAll('[data-bk-ns]').forEach(function(b){ b.addEventListener('click', function(){ progress(b.getAttribute('data-bk-ns'), 'no_show'); }); });
+    el.querySelectorAll('[data-bk-paid]').forEach(function(b){ b.addEventListener('click', function(){ confirmPaid(b, b.getAttribute('data-bk-paid')); }); });
+  }
+  // PM-814: money lands in the partner's own Stripe (no webhook) — the partner
+  // confirms receipt here, which flips the booking to confirmed, emails the
+  // member the meeting link/location, and schedules the 1h reminder push.
+  async function confirmPaid(btn, id){
+    btn.disabled = true; btn.textContent = 'Confirming\u2026';
+    try {
+      var sess = await _getSB().auth.getSession();
+      var t = (sess.data.session && sess.data.session.access_token) || '';
+      var r = await fetch(_SUPA_URL + '/functions/v1/booking-paid-confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t },
+        body: JSON.stringify({ id: id })
+      });
+      var d = await r.json().catch(function(){ return {}; });
+      if (!r.ok || !d.ok) throw new Error(d.error || 'failed');
+      loadDiary();
+    } catch(e){ btn.disabled = false; btn.textContent = 'Confirm paid'; }
   }
   async function progress(id, st){
     try { await rest('/bookings?id=eq.' + id, { method: 'PATCH', body: { status: st } }); loadDiary(); } catch(e){}
