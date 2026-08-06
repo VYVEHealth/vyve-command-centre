@@ -1189,6 +1189,9 @@ async function loadPartnerDocs(p){
         <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px">${esc(DOC_FOLDER_LBL[folder]||folder.replace(/-/g,' '))}</div>
         ${groups[folder].map(f=>`
         <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)">
+          ${f.signed_url
+            ?`<img src="${f.signed_url}" alt="" onclick="window.open('${f.signed_url}','_blank')" style="width:52px;height:52px;border-radius:8px;object-fit:cover;cursor:pointer;flex-shrink:0;border:1px solid var(--line)">`
+            :`<div style="width:52px;height:52px;border-radius:8px;background:var(--surface);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--muted);font-size:10px;font-weight:700">${esc((f.name.split('.').pop()||'file').toUpperCase().slice(0,4))}</div>`}
           <div style="flex:1;min-width:0">
             <div style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(f.name.replace(/^[0-9a-f]{8}-/,''))}</div>
             <div style="font-size:11px;color:var(--muted)">${fmtBytes(f.size)}${f.created_at?' \u00b7 '+new Date(f.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):''}</div>
@@ -1196,7 +1199,7 @@ async function loadPartnerDocs(p){
           <button class="tb-btn" onclick="openPartnerDoc('${f.path.replace(/'/g,"\\'")}','inline')">View</button>
           <button class="tb-btn" onclick="openPartnerDoc('${f.path.replace(/'/g,"\\'")}','download')">Download</button>
         </div>`).join('')}
-      </div>`).join('')+'<div style="font-size:11px;color:var(--muted);margin-top:4px">Links are private and expire after 5 minutes. Access is admin-only and never visible to members or other partners.</div>';
+      </div>`).join('')+'<div style="font-size:11px;color:var(--muted);margin-top:4px">Previews and links are private and expire after 5 minutes — reopen the partner to refresh them. Access is admin-only and never visible to members or other partners.</div>';
   }catch(e){
     if(el())el().innerHTML=`<div class="empty-state" style="padding:14px">Could not load documents \u2014 ${esc(e.message)}</div>`;
   }
