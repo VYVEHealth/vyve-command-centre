@@ -719,7 +719,13 @@ function nav(el){
 }
 function navByView(view){
   const el=document.querySelector(`.nav-item[data-view="${view}"]`);
-  if(el) nav(el);
+  if(el){nav(el);return;}
+  // Detail views (partner-detail) have no sidebar item — switch the section directly.
+  // Without this, navByView silently no-ops and openPartner renders into a hidden pane (PM-840).
+  const vEl=document.getElementById('v-'+view);
+  if(!vEl)return;
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  vEl.classList.add('active');
 }
 
 function pdTab(el,id){
