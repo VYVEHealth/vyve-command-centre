@@ -941,10 +941,20 @@ async function openAppDetail(id){
           ${p.status!=='declined'&&p.status!=='live'?`<button class="tb-btn" style="color:var(--danger)" onclick="advancePartner('${id}','declined')">Decline application</button>`:''}
         </div>
       </div>
+    </div>
+    <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--line)">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:8px">Their answers</div>
+      <div id="rev-app" data-pid="${id}"><div class="empty-state" style="padding:10px">Loading answers…</div></div>
+    </div>
+    <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--line)">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:8px">Their documents</div>
+      <div id="rev-docs" data-pid="${id}"><div class="empty-state" style="padding:10px">Loading documents…</div></div>
     </div>`;
   document.getElementById('appDetail').style.display='block';
   document.getElementById('appDetail').scrollIntoView({behavior:'smooth',block:'start'});
   setIcons(document.getElementById('appDetail'));
+  loadPartnerApplication(p,'rev-app');
+  loadPartnerDocs(p,'rev-docs');
 }
 
 async function advancePartner(id,newStatus){
@@ -1082,10 +1092,10 @@ function openPartner(id){
       </div>
     </div>
     <div class="card mt"><div class="card-h"><h3>Application</h3></div>
-      <div id="pd-app"><div class="empty-state" style="padding:14px">Loading application…</div></div>
+      <div id="pd-app" data-pid="${p.id}"><div class="empty-state" style="padding:14px">Loading application…</div></div>
     </div>
     <div class="card mt"><div class="card-h"><h3>Documents</h3></div>
-      <div id="pd-docs"><div class="empty-state" style="padding:14px">Loading documents…</div></div>
+      <div id="pd-docs" data-pid="${p.id}"><div class="empty-state" style="padding:14px">Loading documents…</div></div>
     </div>
     <div class="card mt"><div class="card-h"><h3>Upcoming live sessions</h3></div>
       <div id="pd-schedule"><div class="empty-state" style="padding:14px">Loading schedule…</div></div>
@@ -1169,12 +1179,13 @@ async function loadPartnerRevenue(p){
 }
 
 /* ── APPLICATION ANSWERS (PM-845 — full credentials bag on the detail) ── */
-async function loadPartnerApplication(p){
-  const el=()=>document.getElementById('pd-app');
+async function loadPartnerApplication(p,targetId){
+  targetId=targetId||'pd-app';
+  const el=()=>{const e=document.getElementById(targetId);return(e&&e.dataset.pid===p.id)?e:null;};
   const {data,error}=await sb.from('partner_applications')
     .select('credentials,reference_contacts,applied_at,status_changed_at')
     .eq('partner_id',p.id).maybeSingle();
-  if(currentDetailId!==p.id||!el())return;
+  if(!el())return;
   if(error){el().innerHTML=`<div class="empty-state" style="padding:14px">Could not load application — ${esc(error.message)}</div>`;return;}
   if(!data){el().innerHTML='<div class="empty-state" style="padding:14px">No application record — this partner was created via the admin/playbook path, not the wizard.</div>';return;}
   const c=data.credentials||{}, ct=c.contact||{}, pr=c.practice||{}, ag=c.agreement||null, la=c.launch||null;
@@ -1219,8 +1230,9 @@ async function loadPartnerApplication(p){
 /* \u2500\u2500 DOCUMENTS (PM-842 \u2014 private partner-docs review panel) \u2500\u2500 */
 const DOC_FOLDER_LBL={'photo-id':'Photo ID','qualifications':'Qualifications','profile-photo':'Profile photo','':'Other files'};
 function fmtBytes(b){if(b==null)return'';if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(0)+' KB';return(b/1048576).toFixed(1)+' MB';}
-async function loadPartnerDocs(p){
-  const el=()=>document.getElementById('pd-docs');
+async function loadPartnerDocs(p,targetId){
+  targetId=targetId||'pd-docs';
+  const el=()=>{const e=document.getElementById(targetId);return(e&&e.dataset.pid===p.id)?e:null;};
   try{
     const {data:{session}}=await sb.auth.getSession();
     if(!session)throw new Error('Not signed in');
@@ -1231,7 +1243,7 @@ async function loadPartnerDocs(p){
     });
     const d=await r.json();
     if(!r.ok)throw new Error(d.error||('HTTP '+r.status));
-    if(currentDetailId!==p.id||!el())return;
+    if(!el())return;
     const files=d.files||[];
     if(!files.length){el().innerHTML='<div class="empty-state" style="padding:14px">No documents uploaded yet. Files from their application (ID, qualifications, photos) appear here \u2014 including unfinished drafts.</div>';return;}
     const groups={};
