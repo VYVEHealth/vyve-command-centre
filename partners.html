@@ -1081,6 +1081,9 @@ function openPartner(id){
         </div>
       </div>
     </div>
+    <div class="card mt"><div class="card-h"><h3>Documents</h3></div>
+      <div id="pd-docs"><div class="empty-state" style="padding:14px">Loading documents…</div></div>
+    </div>
     <div class="card mt"><div class="card-h"><h3>Upcoming live sessions</h3></div>
       <div id="pd-schedule"><div class="empty-state" style="padding:14px">Loading schedule…</div></div>
     </div>
@@ -1096,6 +1099,7 @@ function openPartner(id){
   loadPartnerMembers(p);
   loadPartnerRevenue(p);
   loadPartnerSchedule(p);
+  loadPartnerDocs(p);
   renderPartnerProfile(p);
   renderPartnerSettings(p);
 
@@ -1160,7 +1164,59 @@ async function loadPartnerRevenue(p){
   document.getElementById('pd-programs').innerHTML='<div class="empty-state">Programs feature coming soon</div>';
 }
 
-/* ── UPCOMING LIVE SESSIONS (PM-838) ────────────────────── */
+/* ── DOCUMENTS (PM-842 — private partner-docs review panel) ── */
+const DOC_FOLDER_LBL={'photo-id':'Photo ID','qualifications':'Qualifications','profile-photo':'Profile photo','':'Other files'};
+function fmtBytes(b){if(b==null)return'';if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(0)+' KB';return(b/1048576).toFixed(1)+' MB';}
+async function loadPartnerDocs(p){
+  const el=()=>document.getElementById('pd-docs');
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+    if(!session)throw new Error('Not signed in');
+    const r=await fetch(`${SUPA_URL}/functions/v1/partner-file-url`,{
+      method:'POST',
+      headers:{'Authorization':`Bearer ${session.access_token}`,'apikey':SUPA_ANON,'Content-Type':'application/json'},
+      body:JSON.stringify({action:'list',partner_id:p.id,bucket:'partner-docs'})
+    });
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error||('HTTP '+r.status));
+    if(currentDetailId!==p.id||!el())return;
+    const files=d.files||[];
+    if(!files.length){el().innerHTML='<div class="empty-state" style="padding:14px">No documents uploaded yet. Files from their application (ID, qualifications, photos) appear here \u2014 including unfinished drafts.</div>';return;}
+    const groups={};
+    files.forEach(f=>{(groups[f.folder]=groups[f.folder]||[]).push(f);});
+    el().innerHTML=Object.keys(groups).sort().map(folder=>`
+      <div style="margin-bottom:14px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px">${esc(DOC_FOLDER_LBL[folder]||folder.replace(/-/g,' '))}</div>
+        ${groups[folder].map(f=>`
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(f.name.replace(/^[0-9a-f]{8}-/,''))}</div>
+            <div style="font-size:11px;color:var(--muted)">${fmtBytes(f.size)}${f.created_at?' \u00b7 '+new Date(f.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):''}</div>
+          </div>
+          <button class="tb-btn" onclick="openPartnerDoc('${f.path.replace(/'/g,"\\'")}','inline')">View</button>
+          <button class="tb-btn" onclick="openPartnerDoc('${f.path.replace(/'/g,"\\'")}','download')">Download</button>
+        </div>`).join('')}
+      </div>`).join('')+'<div style="font-size:11px;color:var(--muted);margin-top:4px">Links are private and expire after 5 minutes. Access is admin-only and never visible to members or other partners.</div>';
+  }catch(e){
+    if(el())el().innerHTML=`<div class="empty-state" style="padding:14px">Could not load documents \u2014 ${esc(e.message)}</div>`;
+  }
+}
+async function openPartnerDoc(path,mode){
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+    if(!session)throw new Error('Not signed in');
+    const r=await fetch(`${SUPA_URL}/functions/v1/partner-file-url`,{
+      method:'POST',
+      headers:{'Authorization':`Bearer ${session.access_token}`,'apikey':SUPA_ANON,'Content-Type':'application/json'},
+      body:JSON.stringify({path,bucket:'partner-docs',disposition:mode==='inline'?'inline':'attachment'})
+    });
+    const d=await r.json();
+    if(!d.signedUrl)throw new Error(d.error||'Could not sign URL');
+    window.open(d.signedUrl,'_blank');
+  }catch(e){toast('Error: '+e.message,'error');}
+}
+
+/* \u2500\u2500 UPCOMING LIVE SESSIONS (PM-838) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 async function loadPartnerSchedule(p){
   const el=()=>document.getElementById('pd-schedule');
   const {data,error}=await sb.from('calendar_occurrences')
