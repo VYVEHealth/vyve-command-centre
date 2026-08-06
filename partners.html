@@ -1073,6 +1073,9 @@ function openPartner(id){
         </div>
       </div>
     </div>
+    <div class="card mt"><div class="card-h"><h3>Upcoming live sessions</h3></div>
+      <div id="pd-schedule"><div class="empty-state" style="padding:14px">Loading schedule…</div></div>
+    </div>
     <div class="card mt"><div class="card-h"><h3>Admin actions</h3></div>
       <div style="display:flex;flex-wrap:wrap;gap:8px">
         ${p.status!=='live'&&p.status!=='declined'?`<button class="tb-btn" onclick="navByView('pipeline')"><span class="bic" data-i="funnel"></span>View in pipeline</button>`:''}
@@ -1084,6 +1087,7 @@ function openPartner(id){
   loadPartnerContent(p);
   loadPartnerMembers(p);
   loadPartnerRevenue(p);
+  loadPartnerSchedule(p);
   renderPartnerProfile(p);
   renderPartnerSettings(p);
 
@@ -1146,6 +1150,35 @@ async function loadPartnerRevenue(p){
     </tr>`).join('')}</tbody></table>`:'<div class="empty-state">No payouts yet</div>';
 
   document.getElementById('pd-programs').innerHTML='<div class="empty-state">Programs feature coming soon</div>';
+}
+
+/* ── UPCOMING LIVE SESSIONS (PM-838) ────────────────────── */
+async function loadPartnerSchedule(p){
+  const el=()=>document.getElementById('pd-schedule');
+  const {data,error}=await sb.from('calendar_occurrences')
+    .select('id,name,session_title,starts_at,ends_at,category,visibility')
+    .eq('partner_id',p.id).is('cancelled_at',null)
+    .gte('starts_at',new Date().toISOString())
+    .order('starts_at',{ascending:true}).limit(30);
+  if(currentDetailId!==p.id||!el())return;
+  if(error){el().innerHTML=`<div class="empty-state" style="padding:14px">Could not load schedule — ${esc(error.message)}</div>`;return;}
+  if(!data||!data.length){el().innerHTML='<div class="empty-state" style="padding:14px">No upcoming sessions scheduled. Partners schedule sessions from their portal (48h minimum notice).</div>';return;}
+  const fmt=iso=>{const d=new Date(iso);return d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})+' · '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});};
+  const dur=s=>{if(!s.ends_at)return'';const m=Math.round((new Date(s.ends_at)-new Date(s.starts_at))/60000);return m>0?` · ${m} min`:'';};
+  el().innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead><tr style="text-align:left;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em">
+      <th style="padding:6px 8px">When</th><th style="padding:6px 8px">Session</th><th style="padding:6px 8px">Category</th><th style="padding:6px 8px;text-align:right">Audience</th>
+    </tr></thead><tbody>
+    ${data.map(s=>`<tr style="border-top:1px solid var(--line)">
+      <td style="padding:8px;white-space:nowrap">${fmt(s.starts_at)}<span style="color:var(--muted)">${dur(s)}</span></td>
+      <td style="padding:8px">${esc(s.session_title||s.name||'—')}</td>
+      <td style="padding:8px;color:var(--muted)">${esc(s.category||'—')}</td>
+      <td style="padding:8px;text-align:right">${s.visibility==='community'
+        ?'<span style="font-size:11px;background:rgba(77,170,170,.15);color:var(--mint);padding:2px 8px;border-radius:10px;font-weight:600">Community</span>'
+        :'<span style="font-size:11px;background:var(--surface);color:var(--muted);padding:2px 8px;border-radius:10px">Public</span>'}</td>
+    </tr>`).join('')}
+    </tbody></table>
+    <div style="font-size:11px;color:var(--muted);margin-top:8px">Next ${data.length} scheduled session${data.length===1?'':'s'} — cancelled sessions excluded. Times shown in your local timezone.</div>`;
 }
 
 /* ── PROFILE TAB — admin profile editor (PM-837) ────────── */
