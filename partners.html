@@ -1081,6 +1081,9 @@ function openPartner(id){
         </div>
       </div>
     </div>
+    <div class="card mt"><div class="card-h"><h3>Application</h3></div>
+      <div id="pd-app"><div class="empty-state" style="padding:14px">Loading application…</div></div>
+    </div>
     <div class="card mt"><div class="card-h"><h3>Documents</h3></div>
       <div id="pd-docs"><div class="empty-state" style="padding:14px">Loading documents…</div></div>
     </div>
@@ -1099,6 +1102,7 @@ function openPartner(id){
   loadPartnerMembers(p);
   loadPartnerRevenue(p);
   loadPartnerSchedule(p);
+  loadPartnerApplication(p);
   loadPartnerDocs(p);
   renderPartnerProfile(p);
   renderPartnerSettings(p);
@@ -1164,7 +1168,55 @@ async function loadPartnerRevenue(p){
   document.getElementById('pd-programs').innerHTML='<div class="empty-state">Programs feature coming soon</div>';
 }
 
-/* ── DOCUMENTS (PM-842 — private partner-docs review panel) ── */
+/* ── APPLICATION ANSWERS (PM-845 — full credentials bag on the detail) ── */
+async function loadPartnerApplication(p){
+  const el=()=>document.getElementById('pd-app');
+  const {data,error}=await sb.from('partner_applications')
+    .select('credentials,reference_contacts,applied_at,status_changed_at')
+    .eq('partner_id',p.id).maybeSingle();
+  if(currentDetailId!==p.id||!el())return;
+  if(error){el().innerHTML=`<div class="empty-state" style="padding:14px">Could not load application — ${esc(error.message)}</div>`;return;}
+  if(!data){el().innerHTML='<div class="empty-state" style="padding:14px">No application record — this partner was created via the admin/playbook path, not the wizard.</div>';return;}
+  const c=data.credentials||{}, ct=c.contact||{}, pr=c.practice||{}, ag=c.agreement||null, la=c.launch||null;
+  const fl=c.formFields||{}; // wizard saves the raw field map here on every autosave — the freshest truth for drafts
+  const g=(a,b)=>{const v=(a??'').toString().trim();return v||((b??'').toString().trim());};
+  const sysF=c._system||{};
+  const row=(l,v)=>v?`<tr><td style="padding:5px 10px 5px 0;color:var(--muted);font-size:12px;white-space:nowrap;vertical-align:top">${l}</td><td style="padding:5px 0;font-size:13px">${esc(String(v))}</td></tr>`:'';
+  const sec=(title,rows)=>rows.trim()?`<div style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:4px">${title}</div>
+      <table style="border-collapse:collapse;width:100%">${rows}</table></div>`:'';
+  const dt=iso=>iso?new Date(iso).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'';
+  let html='';
+  html+=sec('About them',
+    row('Name',g(fl.contactName,ct.name))+row('Business',g(fl.businessName,ct.business))+
+    row('Email',g(fl.email,ct.email))+row('Phone',g(fl.phone,ct.phone))+
+    row('Location',g(fl.location,ct.location))+row('Website',g(fl.website,ct.website)));
+  html+=sec('Their practice',
+    row('Pillar',c.pillar||pr.pillarLabel||pr.pillar)+row('Specialism',g(fl.specialism,pr.specialism))+
+    row('Years experience',g(fl.yearsExperience,pr.yearsExperience))+row('Description',g(fl.description,pr.description)));
+  html+=sec('Verification details',
+    row('Governing body',fl.govBody)+row('Membership no.',fl.govNumber));
+  html+=sec('Build your space (their words)',
+    row('Public display name',fl.pfName)+row('Tagline',fl.pfRole)+row('Bio',fl.pfBio)+
+    row('Reason for being here',fl.pfWhy)+row('Community feel',fl.pfFeel));
+  if(ag)html+=sec('Agreement',
+    row('Agreement accepted',ag.partnerAgreement?'Yes':'No')+
+    row('Revenue share accepted',ag.revenueShareAccepted?`Yes — ${ag.revenueSharePct??50}%`:'No')+
+    row('Legal name',ag.partnerLegalName)+row('Signed as',ag.signature)+
+    row('Signed',ag.signedDate||dt(ag.signedAt)));
+  const lx=la&&(la.sessionTitle||la.date)?la:{sessionTitle:fl.sessionTitle,format:fl.sessionFormat,date:fl.sessionDate,time:fl.sessionTime,durationMin:fl.sessionDuration};
+  if(lx.sessionTitle||lx.date)html+=sec('Proposed launch',
+    row('Session',lx.sessionTitle)+row('Format',lx.format)+
+    row('When',[lx.date,lx.time].filter(Boolean).join(' · '))+row('Duration',lx.durationMin?lx.durationMin+' min':''));
+  const wp=c.welcomePost||fl.welcomePost;
+  if(wp)html+=sec('Welcome post',row('Draft',wp));
+  if(data.reference_contacts)html+=sec('References',row('Contacts',JSON.stringify(data.reference_contacts)));
+  const submitted=!!ag;
+  html+=`<div style="font-size:11px;color:var(--muted);margin-top:2px">${submitted?'Submitted application':'Draft — not yet submitted'}${data.applied_at?' · started '+dt(data.applied_at):''}${data.status_changed_at?' · last activity '+dt(data.status_changed_at):''}${sysF.resume_email_sent?' · resume link emailed':''}</div>`;
+  el().innerHTML=html||'<div class="empty-state" style="padding:14px">Application record exists but holds no answers yet.</div>';
+}
+
+/* \u2500\u2500 DOCUMENTS (PM-842 \u2014 private partner-docs review panel) \u2500\u2500 */
 const DOC_FOLDER_LBL={'photo-id':'Photo ID','qualifications':'Qualifications','profile-photo':'Profile photo','':'Other files'};
 function fmtBytes(b){if(b==null)return'';if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(0)+' KB';return(b/1048576).toFixed(1)+' MB';}
 async function loadPartnerDocs(p){
