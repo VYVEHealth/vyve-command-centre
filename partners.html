@@ -939,6 +939,7 @@ async function openAppDetail(id){
           ${nextLabel?`<button class="tb-btn primary" onclick="advancePartner('${id}','${nextStage}')">${nextLabel}</button>`:''}
           <button class="tb-btn" onclick="openRequestInfoModal(this.closest('[data-id]')?.dataset.id || currentDetailId)">Request more info</button>
           ${p.status!=='declined'&&p.status!=='live'?`<button class="tb-btn" style="color:var(--danger)" onclick="advancePartner('${id}','declined')">Decline application</button>`:''}
+          ${p.status==='declined'?`<button class="tb-btn" onclick="if(confirm('Restore this application to the Applied column?'))advancePartner('${id}','applied')">Restore to Applied</button>`:''}
         </div>
       </div>
     </div>`;
