@@ -1210,11 +1210,20 @@ async function loadPartnerApplication(p,targetId){
   const dt=iso=>iso?new Date(iso).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'';
   let html='';
   if(prog){
-    const STEP_LBL={agreement_signed:'Agreement signed',identity_verified:'Identity documents',profile_complete:'Profile written',videos_watched:'Training modules',safeguarding_passed:'Safeguarding assessment',gdpr_passed:'GDPR assessment',starter_videos_uploaded:'Starter video',admin_approved:'Admin approval'};
+    const STEP_LBL={agreement_signed:'Agreement signed',identity_verified:'Identity documents',profile_complete:'Profile written',videos_watched:'Training modules',safeguarding_passed:'Safeguarding assessment',gdpr_passed:'GDPR assessment',admin_approved:'Admin approval'}; /* PM-857: Starter video chip removed — welcome video moved post-approval to the partner portal (PM-856) */
     const steps=prog.steps||{};
-    const pct=Math.max(0,Math.min(100,Number(prog.pct_complete)||0));
+    /* PM-857: honest display pct — the DB pct_complete counts deferred module gates the wizard never
+       collects (PM-659), so a COMPLETE application read 38%. Display pct = done/total across the gates
+       the partner can actually complete in the apply flow; deferred gates leave the denominator.
+       prog.pct_complete itself is untouched — it still feeds the go-live gate. */
+    const deferred=steps.modules_deferred===true;
+    const DEFER_KEYS=['videos_watched','safeguarding_passed','gdpr_passed'];
+    const applyGates=['agreement_signed','identity_verified','profile_complete'].concat(deferred?[]:DEFER_KEYS);
+    const pct=Math.round(applyGates.filter(k=>steps[k]===true).length/applyGates.length*100);
     const chips=Object.keys(STEP_LBL).filter(k=>(k in steps)||['agreement_signed','identity_verified','profile_complete','safeguarding_passed','gdpr_passed'].includes(k)).map(k=>{
       const done=steps[k]===true;
+      const isDeferred=!done&&deferred&&DEFER_KEYS.includes(k);
+      if(isDeferred)return `<span title="Deferred by design (PM-659) — not part of the apply flow; resolved before go-live" style="display:inline-flex;align-items:center;gap:5px;font-size:11.5px;padding:3px 9px;border-radius:10px;margin:0 6px 6px 0;background:rgba(224,155,61,.15);color:var(--warning)">&#10003; ${STEP_LBL[k]} (deferred)</span>`;
       return `<span style="display:inline-flex;align-items:center;gap:5px;font-size:11.5px;padding:3px 9px;border-radius:10px;margin:0 6px 6px 0;${done?'background:rgba(77,170,170,.15);color:var(--mint)':'background:var(--surface);color:var(--muted)'}">${done?'&#10003;':'&#9675;'} ${STEP_LBL[k]}</span>`;
     }).join('');
     const lastActive=prog.updated_at?new Date(prog.updated_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'})+' '+new Date(prog.updated_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'';
