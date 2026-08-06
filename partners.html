@@ -488,6 +488,7 @@ document.addEventListener('DOMContentLoaded', function(){
         <div class="partner-hero" id="pd-hero"></div>
         <div class="subtabs">
           <button class="subtab active" onclick="pdTab(this,'pd-over')">Overview</button>
+          <button class="subtab" onclick="pdTab(this,'pd-profile')">Profile</button>
           <button class="subtab" onclick="pdTab(this,'pd-content')">Content library</button>
           <button class="subtab" onclick="pdTab(this,'pd-programs')">Programs</button>
           <button class="subtab" onclick="pdTab(this,'pd-members')">Members</button>
@@ -495,6 +496,7 @@ document.addEventListener('DOMContentLoaded', function(){
           <button class="subtab" onclick="pdTab(this,'pd-settings')">Settings</button>
         </div>
         <div class="subpane active" id="pd-over"></div>
+        <div class="subpane" id="pd-profile"></div>
         <div class="subpane" id="pd-content"></div>
         <div class="subpane" id="pd-programs"></div>
         <div class="subpane" id="pd-members"></div>
@@ -1036,8 +1038,9 @@ function openPartner(id){
   const ms=membershipMap[id]||{total:0,he:0,at_risk:0};
   const cc=contentCountMap[id]||0;
 
+  const _hav=urlish(p.avatar_url);
   document.getElementById('pd-hero').innerHTML=`
-    <div class="pa" style="background:${PILLAR_COL[p.pillar]}">${initials(p.name)}</div>
+    <div class="pa" style="background:${PILLAR_COL[p.pillar]};${_hav?'overflow:hidden;padding:0':''}">${_hav?`<img src="${_hav}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit" alt="">`:initials(p.name)}</div>
     <div style="flex:1">
       <h2>${esc(p.name)} ${p.verified?'<span style="color:var(--mint);font-size:14px">✓</span>':''} ${pill(p.status)}</h2>
       <div class="role">${esc(p.role_title)}</div>
@@ -1081,6 +1084,7 @@ function openPartner(id){
   loadPartnerContent(p);
   loadPartnerMembers(p);
   loadPartnerRevenue(p);
+  renderPartnerProfile(p);
   renderPartnerSettings(p);
 
   navByView('partner-detail');
@@ -1142,6 +1146,110 @@ async function loadPartnerRevenue(p){
     </tr>`).join('')}</tbody></table>`:'<div class="empty-state">No payouts yet</div>';
 
   document.getElementById('pd-programs').innerHTML='<div class="empty-state">Programs feature coming soon</div>';
+}
+
+/* ── PROFILE TAB — admin profile editor (PM-837) ────────── */
+// Wizard-era rows can hold a bare storage PATH in avatar_url — only render real URLs.
+function urlish(u){return u&&/^https?:\/\//.test(u)?u:null;}
+
+function renderPartnerProfile(p){
+  const av=urlish(p.avatar_url), cv=urlish(p.cover_url);
+  const lbl='font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:6px';
+  const inp='width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--white);font-size:14px;font-family:var(--font)';
+  document.getElementById('pd-profile').innerHTML=`
+    <div class="grid g2">
+      <div class="card">
+        <div class="card-h"><h3>Photos</h3></div>
+        <label style="${lbl}">Cover photo</label>
+        <div id="pp-cover-drop" onclick="document.getElementById('pp-cover-file').click()" style="height:120px;border:1px dashed var(--line);border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-bottom:6px;background:${cv?`url('${cv}') center/cover`:'var(--surface)'}">
+          ${cv?'':'<span style="color:var(--muted);font-size:12px">Click to upload a cover — 1600×900 works best</span>'}
+        </div>
+        <div id="pp-cover-note" style="font-size:11px;color:var(--muted);margin-bottom:20px">JPEG/PNG/WebP, 5MB max. Shown as the banner on the member-facing profile and Discover card.</div>
+        <input type="file" id="pp-cover-file" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="adminUploadImage('cover','${p.id}',this.files[0]);this.value=''">
+        <label style="${lbl}">Profile photo</label>
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:6px">
+          <div id="pp-avatar-drop" onclick="document.getElementById('pp-avatar-file').click()" style="width:76px;height:76px;border-radius:50%;border:1px dashed var(--line);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden;background:${av?'transparent':PILLAR_COL[p.pillar]||'var(--surface)'}">
+            ${av?`<img src="${av}" style="width:100%;height:100%;object-fit:cover" alt="">`:`<span style="font-weight:700;color:#fff">${initials(p.name)}</span>`}
+          </div>
+          <div style="font-size:12px;color:var(--muted)">Click the circle to upload. Square images work best — this appears everywhere the partner's face shows in the app.</div>
+        </div>
+        <div id="pp-avatar-note" style="font-size:11px;color:var(--muted)">JPEG/PNG/WebP, 5MB max.</div>
+        <input type="file" id="pp-avatar-file" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="adminUploadImage('avatar','${p.id}',this.files[0]);this.value=''">
+      </div>
+      <div class="card">
+        <div class="card-h"><h3>Profile details</h3></div>
+        <div style="margin-bottom:14px"><label style="${lbl}">Display name</label>
+          <input type="text" id="pp-name" value="${esc(p.name)}" style="${inp}"></div>
+        <div style="margin-bottom:14px"><label style="${lbl}">Tagline / role title</label>
+          <input type="text" id="pp-role" value="${esc(p.role_title)}" placeholder="e.g. Yoga & Mobility Coach" style="${inp}"></div>
+        <div style="margin-bottom:14px"><label style="${lbl}">Pillar</label>
+          <select id="pp-pillar" style="${inp}">
+            <option value="body" ${p.pillar==='body'?'selected':''}>Body</option>
+            <option value="mind" ${p.pillar==='mind'?'selected':''}>Mind</option>
+            <option value="connect" ${p.pillar==='connect'?'selected':''}>Connect</option>
+          </select></div>
+        <div style="margin-bottom:14px"><label style="${lbl}">Bio / About</label>
+          <textarea id="pp-bio" rows="4" style="${inp};resize:vertical">${esc(p.bio)}</textarea></div>
+        <div style="margin-bottom:14px"><label style="${lbl}">Reason for being here</label>
+          <textarea id="pp-why" rows="3" style="${inp};resize:vertical">${esc(p.why)}</textarea></div>
+        <div style="margin-bottom:16px"><label style="${lbl}">Community feel</label>
+          <textarea id="pp-feel" rows="3" style="${inp};resize:vertical">${esc(p.feel)}</textarea></div>
+        <div style="display:flex;justify-content:flex-end">
+          <button class="tb-btn primary" id="pp-save-btn" onclick="saveAdminProfile('${p.id}')">Save profile</button>
+        </div>
+      </div>
+    </div>
+    <div class="card mt" style="padding:12px 16px;font-size:12px;color:var(--muted)">Changes here are live in the member app immediately. Partners can also edit their own space in the partner portal — edits on either side overwrite the other.</div>`;
+}
+
+async function adminUploadImage(kind,id,file){
+  if(!file)return;
+  if(!/^image\/(jpeg|png|webp)$/.test(file.type)){toast('JPEG, PNG or WebP only','error');return;}
+  if(file.size>5*1024*1024){toast('Image too large — 5MB max','error');return;}
+  const note=document.getElementById(kind==='cover'?'pp-cover-note':'pp-avatar-note');
+  if(note)note.textContent='Uploading…';
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+    if(!session)throw new Error('Not signed in');
+    const r=await fetch(`${SUPA_URL}/functions/v1/partner-content-upload`,{
+      method:'POST',
+      headers:{'Authorization':`Bearer ${session.access_token}`,'apikey':SUPA_ANON,'Content-Type':'application/json'},
+      body:JSON.stringify({action:'sign-thumb',partner_id:id})
+    });
+    const d=await r.json();
+    if(!d.signed_url)throw new Error(d.error||'Could not get an upload URL');
+    const up=await fetch(d.signed_url,{method:'PUT',headers:{'Content-Type':file.type},body:file});
+    if(!up.ok)throw new Error('Upload failed ('+up.status+')');
+    const col=kind==='avatar'?'avatar_url':'cover_url';
+    // .select() so an RLS-blocked write surfaces as an error instead of a silent no-op (PM-788 lesson).
+    const {data:rows,error}=await sb.from('partner_partners').update({[col]:d.public_url}).eq('id',id).select('id');
+    if(error)throw new Error(error.message);
+    if(!rows||!rows.length)throw new Error('Save was blocked — check your admin login');
+    partnerMap[id]={...partnerMap[id],[col]:d.public_url};
+    allPartners=allPartners.map(p=>p.id===id?{...p,[col]:d.public_url}:p);
+    toast(kind==='avatar'?'Profile photo updated':'Cover photo updated');
+    if(currentDetailId===id)openPartner(id);
+  }catch(e){
+    toast('Error: '+e.message,'error');
+    if(partnerMap[id])renderPartnerProfile(partnerMap[id]);
+  }
+}
+
+async function saveAdminProfile(id){
+  const g=x=>(document.getElementById(x)?.value||'').trim();
+  const name=g('pp-name');
+  if(!name){toast('Display name is required','error');return;}
+  const btn=document.getElementById('pp-save-btn');
+  if(btn){btn.disabled=true;btn.textContent='Saving…';}
+  const patch={name,role_title:g('pp-role')||null,pillar:document.getElementById('pp-pillar').value,bio:g('pp-bio')||null,why:g('pp-why')||null,feel:g('pp-feel')||null};
+  const {data:rows,error}=await sb.from('partner_partners').update(patch).eq('id',id).select('id');
+  if(btn){btn.disabled=false;btn.textContent='Save profile';}
+  if(error){toast(error.message,'error');return;}
+  if(!rows||!rows.length){toast('Save was blocked — check your admin login','error');return;}
+  partnerMap[id]={...partnerMap[id],...patch};
+  allPartners=allPartners.map(p=>p.id===id?{...p,...patch}:p);
+  toast('Profile saved');
+  openPartner(id);
 }
 
 function renderPartnerSettings(p){
@@ -1460,9 +1568,10 @@ function openPreview(id){
   const p=id?partnerMap[id]:allPartners.find(p=>p.status==='live');
   if(!p){toast('No live partner to preview');return;}
   const col=PILLAR_COL[p.pillar]||'var(--mint)';
+  const _pav=urlish(p.avatar_url), _pcv=urlish(p.cover_url);
   document.getElementById('ph-scroll').innerHTML=`
-    <div class="ph-banner" style="background:linear-gradient(120deg,${col},var(--teal-deep))"></div>
-    <div class="ph-av-wrap"><div class="ph-av" style="background:${col}">${initials(p.name)}</div></div>
+    <div class="ph-banner" style="background:${_pcv?`url('${_pcv}') center/cover`:`linear-gradient(120deg,${col},var(--teal-deep))`}"></div>
+    <div class="ph-av-wrap"><div class="ph-av" style="background:${col};${_pav?'overflow:hidden;padding:0':''}">${_pav?`<img src="${_pav}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit" alt="">`:initials(p.name)}</div></div>
     <div class="ph-info">
       <h4>${esc(p.name)} <span data-i="check" style="color:var(--mint)"></span></h4>
       <div class="r">${esc(p.role_title)}</div>
