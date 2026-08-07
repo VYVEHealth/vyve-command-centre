@@ -1561,6 +1561,7 @@ function renderPartnerSettings(p){
           <button class="tb-btn" onclick="downloadPartnerQr('${(p.slug||'partner')}')">Download QR (PNG)</button>
         </div>
         <div style="margin-top:8px;font-size:12px;color:var(--muted)">Spoken/typed code: <b style="color:var(--mint)">${p.slug||'—'}</b></div>
+        ${p.status!=='live'?`<div style="margin-top:10px;font-size:12px;color:var(--amber);background:rgba(224,155,61,.08);border:1px solid rgba(224,155,61,.3);border-radius:8px;padding:8px 10px;line-height:1.5">&#9888; Partner is <b>${p.status}</b> — this link answers &ldquo;invite not active&rdquo; until you set them live. It switches on automatically at go-live.</div>`:''}
       </div>
 
       <div style="margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--line)">

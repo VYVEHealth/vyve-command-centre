@@ -1569,6 +1569,21 @@
     var block = $('promo-code-block');
     if (block) block.style.display = 'block';
 
+    /* PM-879: validate_code only answers for LIVE partners, so before go-live the link
+       and QR resolve to "invite not active" — say so instead of presenting a dead link
+       (Dean hit exactly this on his onboarding-status test partner). Link + QR stay
+       visible for poster prep; the banner is the honesty. */
+    var notLiveEl = $('ref-notlive');
+    if (!notLiveEl) {
+      notLiveEl = document.createElement('div');
+      notLiveEl.id = 'ref-notlive';
+      notLiveEl.style.cssText = 'display:none;margin-top:12px;background:rgba(224,155,61,0.10);border:1px solid rgba(224,155,61,0.35);border-radius:8px;padding:10px 12px;font-size:12.5px;line-height:1.5;';
+      notLiveEl.innerHTML = '&#9888; <b>Your link activates at go-live.</b> Until your space is live, anyone opening it will see &ldquo;invite not active&rdquo;. Feel free to prepare posters and posts now &mdash; it switches on automatically the moment you\u2019re live.';
+      var codeRow = $('promo-code-display');
+      if (codeRow && codeRow.parentElement && codeRow.parentElement.parentElement) codeRow.parentElement.parentElement.insertBefore(notLiveEl, codeRow.parentElement.nextSibling);
+    }
+    notLiveEl.style.display = (state.partnerRow && state.partnerRow.status !== 'live') ? 'block' : 'none';
+
     // QR — rendered client-side from the link; nothing stored, can never go stale.
     if (shareVal && window.qrcode) {
       try {
