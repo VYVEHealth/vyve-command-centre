@@ -552,6 +552,7 @@
           <textarea id="new-post-body" placeholder="Share an update, tip, or motivation with your VYVE community…"></textarea>
           <div class="post-compose-footer">
             <span>Posts are visible to members who have joined your community</span>
+            <button class="btn btn-ghost" id="post-cancel-edit" type="button" style="padding:7px 16px;font-size:12px;display:none;">Cancel edit</button>
             <button class="btn btn-teal" id="post-submit-btn" type="button" style="padding:7px 16px;font-size:12px;">Post</button>
           </div>
         </div>
@@ -1358,7 +1359,7 @@
     var hdrs = rlsHeaders({}); /* PM-862: partner-scoped RLS reads need the session too, or they silently return empty */
     var [subRes, postRes] = await Promise.all([
       fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_memberships?partner_id=eq.' + state.partnerId + '&select=id,member_email,joined_at,engagement_segment', { headers: hdrs }),
-      fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_community_posts?partner_id=eq.' + state.partnerId + '&order=created_at.desc&limit=20&select=id,body,created_at,like_count,reply_count', { headers: hdrs }),
+      fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_community_posts?partner_id=eq.' + state.partnerId + '&order=created_at.desc&limit=20&select=id,body,created_at,edited_at,like_count,reply_count', { headers: hdrs }),
     ]);
 
     var subs = subRes.ok ? await subRes.json() : [];
@@ -1378,34 +1379,64 @@
       return;
     }
     el.innerHTML = posts.map(function(p) {
-      return '<div class="post"><div class="post-meta"><span>'+fmtDate(p.created_at)+'</span><span>'+p.like_count+' likes · '+p.reply_count+' replies</span></div><div class="post-body">'+escHtml(p.body)+'</div><div class="post-actions"><button class="post-action-btn" data-del="'+p.id+'" type="button">Delete</button></div></div>';
+      /* PM-866: posts are editable — a typo in a message to your whole community was previously
+         only fixable by deleting and reposting. Edits are stamped (trigger-set edited_at) so members
+         can see a post changed after they read it. */
+      var edited = p.edited_at ? '<span style="color:var(--text-dim);"> · edited ' + fmtDate(p.edited_at) + '</span>' : '';
+      return '<div class="post"><div class="post-meta"><span>'+fmtDate(p.created_at)+edited+'</span><span>'+p.like_count+' likes · '+p.reply_count+' replies</span></div><div class="post-body">'+escHtml(p.body)+'</div><div class="post-actions"><button class="post-action-btn" data-edit="'+p.id+'" type="button">Edit</button><button class="post-action-btn" data-del="'+p.id+'" type="button">Delete</button></div></div>';
     }).join('');
     el.querySelectorAll('[data-del]').forEach(function(btn) {
       btn.addEventListener('click', function() { deletePost(btn.dataset.del); });
+    });
+    el.querySelectorAll('[data-edit]').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var p = posts.filter(function(x){ return x.id === btn.dataset.edit; })[0];
+        if (p) editPost(p);
+      });
     });
   }
 
   function escHtml(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
+  /* PM-866: the compose box doubles as the editor, mirroring the scheduled-push pattern. */
+  function clearPostForm() {
+    state.editPostId = null;
+    $('new-post-body').value = '';
+    $('post-submit-btn').textContent = 'Post';
+    var c = $('post-cancel-edit'); if (c) c.style.display = 'none';
+  }
+  function editPost(p) {
+    state.editPostId = p.id;
+    $('new-post-body').value = p.body || '';
+    $('post-submit-btn').textContent = 'Update post';
+    var c = $('post-cancel-edit'); if (c) c.style.display = '';
+    $('new-post-body').focus();
+    $('new-post-body').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
   $('post-submit-btn').addEventListener('click', async function() {
     var body = $('new-post-body').value.trim();
     if (!body || !state.partnerId) return;
     var btn = this; btn.disabled = true;
+    var editingPost = state.editPostId;
     var client = sb();
-    var postRes = await fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_community_posts', {
-      method: 'POST',
+    var postRes = await fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_community_posts'
+      + (editingPost ? ('?id=eq.' + editingPost) : ''), {
+      method: editingPost ? 'PATCH' : 'POST',
       /* PM-862: this request carried only the anon apikey and NO Authorization bearer, so PostgREST
          saw an anonymous caller. partner_own_posts_insert requires partner_id = get_my_partner_id(),
          which resolves via auth.email() — null when anonymous — so every post was rejected by RLS and
          surfaced as the generic "Post failed". */
       headers: rlsHeaders({ 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }),
-      body: JSON.stringify({ partner_id: state.partnerId, author_email: state.session.user.email, author_kind: 'partner', body: body }),
+      body: JSON.stringify(editingPost
+        ? { body: body }
+        : { partner_id: state.partnerId, author_email: state.session.user.email, author_kind: 'partner', body: body }),
     });
-    var error = postRes.ok ? null : { message: (await postRes.text().catch(function(){return '';})) || ('Post failed (' + postRes.status + ')') };
+    var error = postRes.ok ? null : { message: (await postRes.text().catch(function(){return '';})) || ((editingPost ? 'Update' : 'Post') + ' failed (' + postRes.status + ')') };
     btn.disabled = false;
     if (error) { toast('Error: ' + error.message); return; }
-    $('new-post-body').value = '';
-    toast('Posted');
+    clearPostForm();
+    toast(editingPost ? 'Post updated' : 'Posted');
     await loadCommunity();
   });
 
@@ -1417,6 +1448,7 @@
     });
     var error = delRes.ok ? null : { message: (await delRes.text().catch(function(){return '';})) || ('Delete failed (' + delRes.status + ')') };
     if (error) { toast('Error: ' + error.message); return; }
+    if (state.editPostId === id) clearPostForm();
     toast('Deleted');
     await loadCommunity();
   }
