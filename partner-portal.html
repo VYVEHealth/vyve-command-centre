@@ -778,6 +778,16 @@
   // PM-XXX (finding D): all partner-content-upload calls are JWT-authenticated.
   // The EF derives the partner server-side for partner logins; admins pass
   // partner_id explicitly (demo/ops path).
+  /* PM-862: every PostgREST call from this portal must carry BOTH the anon apikey and the
+     signed-in bearer — partner RLS resolves through get_my_partner_id() -> auth.email(). */
+  function rlsHeaders(extra) {
+    var h = {
+      'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg',
+      'Authorization': 'Bearer ' + ((state.session && state.session.access_token) || ''),
+    };
+    for (var k in (extra || {})) h[k] = extra[k];
+    return h;
+  }
   function efHeaders() {
     var t = state.session && state.session.access_token;
     return { 'Authorization': 'Bearer ' + (t || ''), 'Content-Type': 'application/json' };
@@ -1341,7 +1351,7 @@
   // ── Community ─────────────────────────────────────────────────────────────
   async function loadCommunity() {
     if (!state.partnerId) return;
-    var hdrs = { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg' };
+    var hdrs = rlsHeaders({}); /* PM-862: partner-scoped RLS reads need the session too, or they silently return empty */
     var [subRes, postRes] = await Promise.all([
       fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_memberships?partner_id=eq.' + state.partnerId + '&select=id,member_email,joined_at,engagement_segment', { headers: hdrs }),
       fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_community_posts?partner_id=eq.' + state.partnerId + '&order=created_at.desc&limit=20&select=id,body,created_at,like_count,reply_count', { headers: hdrs }),
@@ -1380,10 +1390,14 @@
     var client = sb();
     var postRes = await fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_community_posts', {
       method: 'POST',
-      headers: { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg', 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      /* PM-862: this request carried only the anon apikey and NO Authorization bearer, so PostgREST
+         saw an anonymous caller. partner_own_posts_insert requires partner_id = get_my_partner_id(),
+         which resolves via auth.email() — null when anonymous — so every post was rejected by RLS and
+         surfaced as the generic "Post failed". */
+      headers: rlsHeaders({ 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }),
       body: JSON.stringify({ partner_id: state.partnerId, author_email: state.session.user.email, author_kind: 'partner', body: body }),
     });
-    var error = postRes.ok ? null : { message: 'Post failed' };
+    var error = postRes.ok ? null : { message: (await postRes.text().catch(function(){return '';})) || ('Post failed (' + postRes.status + ')') };
     btn.disabled = false;
     if (error) { toast('Error: ' + error.message); return; }
     $('new-post-body').value = '';
@@ -1395,9 +1409,9 @@
     if (!confirm('Delete this post?')) return;
     var client = sb();
     var delRes = await fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_community_posts?id=eq.' + id, {
-      method: 'DELETE', headers: { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg', 'Prefer': 'return=minimal' }
+      method: 'DELETE', headers: rlsHeaders({ 'Prefer': 'return=minimal' })
     });
-    var error = delRes.ok ? null : { message: 'Delete failed' };
+    var error = delRes.ok ? null : { message: (await delRes.text().catch(function(){return '';})) || ('Delete failed (' + delRes.status + ')') };
     if (error) { toast('Error: ' + error.message); return; }
     toast('Deleted');
     await loadCommunity();
@@ -1410,7 +1424,7 @@
       'https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/calendar_occurrences?partner_id=eq.' + state.partnerId +
       '&cancelled_at=is.null&starts_at=gte.' + encodeURIComponent(new Date().toISOString()) +
       '&order=starts_at.asc&limit=20&select=id,name,session_title,starts_at,ends_at,visibility,cancelled_at',
-      { headers: { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg' } }
+      { headers: rlsHeaders({}) }
     );
     renderSessions(res.ok ? await res.json() : []);
   }
@@ -1439,7 +1453,7 @@
   // ── Earnings ──────────────────────────────────────────────────────────────
   async function loadEarnings() {
     if (!state.partnerId) return;
-    var hdrs = { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg' };
+    var hdrs = rlsHeaders({}); /* PM-862: partner-scoped RLS reads need the session too, or they silently return empty */
     var [refRes, payRes] = await Promise.all([
       fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_memberships?partner_id=eq.' + state.partnerId + '&referred=eq.true&subscription_status=eq.active&select=id,subscription_value', { headers: hdrs }),
       fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_payouts?partner_id=eq.' + state.partnerId + '&order=period.desc&limit=12&select=id,period,gross,payout_amount,status,paid_at', { headers: hdrs }),
@@ -1519,7 +1533,7 @@
       try {
         var rr = await fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/rpc/resolve_broadcast_audience', {
           method: 'POST',
-          headers: { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg', 'Content-Type': 'application/json' },
+          headers: rlsHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify({ criteria: { type: 'partner_subscribers', partner_id: state.partnerId } }),
         });
         var rows = rr.ok ? await rr.json() : [];
@@ -1533,7 +1547,7 @@
     try {
       var res = await fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_scheduled_pushes', {
         method: 'POST',
-        headers: { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg', 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        headers: rlsHeaders({ 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }),
         body: JSON.stringify({ partner_id: state.partnerId, title: title, body: body, send_at: sendAt }),
       });
       if (res.ok || res.status === 201) {
@@ -1556,7 +1570,7 @@
     var res = await fetch(
       'https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_scheduled_pushes?partner_id=eq.' + state.partnerId +
       '&order=send_at.asc&limit=20&select=id,title,body,send_at,sent_at,cancelled_at,recipient_count,error',
-      { headers: { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg' } }
+      { headers: rlsHeaders({}) }
     );
     var rows = res.ok ? await res.json() : [];
     if (!rows.length) { el.innerHTML = '<div style="font-size:13px;color:var(--text-dim);">No scheduled pushes yet.</div>'; return; }
@@ -1580,7 +1594,7 @@
     if (!confirm('Cancel this scheduled push?')) return;
     await fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_scheduled_pushes?id=eq.' + id, {
       method: 'PATCH',
-      headers: { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg', 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      headers: rlsHeaders({ 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }),
       body: JSON.stringify({ cancelled_at: new Date().toISOString() }),
     });
     loadPushQueue();
@@ -1610,7 +1624,7 @@
     var btn = this; btn.disabled = true; result.textContent = 'Saving…';
     var res = await fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/calendar_occurrences', {
       method: 'POST',
-      headers: { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg', 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      headers: rlsHeaders({ 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }),
       body: JSON.stringify({
         partner_id:     state.partnerId,
         visibility:     'community',
