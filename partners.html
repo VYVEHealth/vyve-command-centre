@@ -1038,8 +1038,25 @@ async function openAppDetail(id){
 
 async function advancePartner(id,newStatus){
   if(newStatus==='live'){
+    /* PM-880: the old gate (safeguarding && gdpr && pct=100) was UNPASSABLE for the
+       PM-659/857 deferred-assessment cohort — those flags are false by design, so the
+       first real Go Live click bounced with only a toast (which Dean never saw).
+       New shape = the PM-857 agreed model: deferred cohort may go live via an EXPLICIT
+       confirm spelling out the posture, and doing so stamps
+       steps.assessments_deferred_at_golive permanently so CC always shows the truth.
+       Non-deferred partners keep the hard gate unchanged. Lewis's sign-off on the
+       posture itself remains outstanding — the confirm says so out loud. */
     const {data:prog}=await sb.from('partner_onboarding_progress').select('*').eq('partner_id',id).single();
-    if(!prog||!prog.safeguarding_passed||!prog.gdpr_passed||prog.pct_complete<100){
+    if(!prog){toast('Cannot go live: no onboarding record for this partner','error');return;}
+    const _s=prog.steps||{};
+    if(_s.modules_deferred){
+      if(!(_s.agreement_signed&&_s.identity_verified&&_s.profile_complete)){
+        toast('Cannot go live: agreement, identity and profile must be complete first','error');return;
+      }
+      if(!confirm('DEFERRED ASSESSMENTS \u2014 read before proceeding.\n\nThis partner\u2019s training modules, safeguarding assessment and GDPR assessment are DEFERRED by design (PM-659 cohort). Going live makes them visible to all members WITHOUT those assessments completed.\n\nThis posture is still awaiting Lewis\u2019s sign-off. Proceeding stamps \u201cassessments deferred at go-live\u201d permanently on this partner\u2019s record.\n\nGo live anyway?')){return;}
+      const {error:se}=await sb.from('partner_onboarding_progress').update({steps:{..._s,assessments_deferred_at_golive:new Date().toISOString()}}).eq('partner_id',id);
+      if(se){toast('Could not record the deferred-assessments stamp \u2014 go-live aborted: '+se.message,'error');return;}
+    }else if(!prog.safeguarding_passed||!prog.gdpr_passed||prog.pct_complete<100){
       toast('Cannot go live: safeguarding, GDPR and all 8 onboarding steps must be complete first','error');return;
     }
     if(!confirm('This will make the partner VISIBLE TO ALL MEMBERS. Confirm Dean and Lewis have both approved this partner before proceeding.')){return;}
@@ -1322,7 +1339,7 @@ async function loadPartnerApplication(p,targetId){
         <span style="font-size:13px;font-weight:700;white-space:nowrap">${pct}%</span>
       </div>
       <div>${chips}</div>
-      <div style="font-size:11px;color:var(--muted)">${prog.assessment_score!=null?`Assessment score ${prog.assessment_score}%${prog.assessment_passed_at?' (passed)':''} · `:''}${steps.modules_deferred?'Training modules deferred by design · ':''}${lastActive?'Last active in the wizard '+lastActive:''}</div>
+      <div style="font-size:11px;color:var(--muted)">${prog.assessment_score!=null?`Assessment score ${prog.assessment_score}%${prog.assessment_passed_at?' (passed)':''} · `:''}${steps.modules_deferred?'Training modules deferred by design · ':''}${steps.assessments_deferred_at_golive?`<span style="color:var(--amber);font-weight:700">WENT LIVE with assessments deferred (${new Date(steps.assessments_deferred_at_golive).toLocaleDateString('en-GB')})</span> · `:''}${lastActive?'Last active in the wizard '+lastActive:''}</div>
     </div>`;
   }
   html+=sec('About them',
