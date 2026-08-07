@@ -529,6 +529,7 @@
           <div style="display:flex;align-items:center;gap:10px;margin-top:12px;">
             <button class="btn btn-ghost" id="notify-preview-btn" type="button">Preview audience</button>
             <button class="btn btn-teal" id="notify-send-btn" type="button">Schedule push</button>
+            <button class="btn btn-ghost" id="notify-cancel-edit" type="button" style="display:none;">Cancel edit</button>
           </div>
           <div class="notify-result" id="notify-result"></div>
         </div>
@@ -1544,20 +1545,62 @@
 
     var sendAt = new Date(dateVal + 'T' + timeVal + ':00').toISOString();
     if (new Date(sendAt) <= new Date()) { result.textContent = 'Send time must be in the future.'; btn.disabled = false; return; }
+    /* PM-863: the same form now edits an existing pending push (state.editPushId) instead of only
+       creating new ones — previously a mistyped push could be cancelled but never corrected. */
+    var editing = state.editPushId;
     try {
-      var res = await fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_scheduled_pushes', {
-        method: 'POST',
+      var url = 'https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_scheduled_pushes'
+                + (editing ? ('?id=eq.' + editing) : '');
+      var res = await fetch(url, {
+        method: editing ? 'PATCH' : 'POST',
         headers: rlsHeaders({ 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }),
-        body: JSON.stringify({ partner_id: state.partnerId, title: title, body: body, send_at: sendAt }),
+        body: JSON.stringify(editing
+          ? { title: title, body: body, send_at: sendAt }
+          : { partner_id: state.partnerId, title: title, body: body, send_at: sendAt }),
       });
       if (res.ok || res.status === 201) {
-        result.textContent = 'Scheduled ✓ — ' + new Date(sendAt).toLocaleString('en-GB', { dateStyle:'medium', timeStyle:'short' });
-        $('notify-title').value = ''; $('notify-body').value = ''; $('notify-date').value = '';
-        loadPushQueue();
-      } else { result.textContent = 'Error scheduling — try again.'; }
+        result.textContent = (editing ? 'Updated ✓ — ' : 'Scheduled ✓ — ') + new Date(sendAt).toLocaleString('en-GB', { dateStyle:'medium', timeStyle:'short' });
+        clearPushForm();
+        await loadPushQueue();
+      } else {
+        var msg = await res.text().catch(function(){ return ''; });
+        result.textContent = 'Error ' + (editing ? 'updating' : 'scheduling') + ' — ' + (msg || res.status);
+      }
     } catch(e) { result.textContent = 'Error: ' + e.message; }
     btn.disabled = false;
   }
+
+  /* PM-863: edit / delete for pending pushes. */
+  function clearPushForm() {
+    state.editPushId = null;
+    $('notify-title').value = ''; $('notify-body').value = ''; $('notify-date').value = '';
+    $('notify-send-btn').textContent = 'Schedule push';
+    var c = $('notify-cancel-edit'); if (c) c.style.display = 'none';
+  }
+  window.editPush = function(id, title, body, sendAt) {
+    state.editPushId = id;
+    $('notify-title').value = title || '';
+    $('notify-body').value = body || '';
+    var d = new Date(sendAt);
+    var pad = function(x){ return String(x).padStart(2,'0'); };
+    $('notify-date').value = d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+    $('notify-time').value = pad(d.getHours()) + ':' + pad(d.getMinutes());
+    $('notify-send-btn').textContent = 'Update push';
+    var c = $('notify-cancel-edit'); if (c) c.style.display = '';
+    $('notify-result').textContent = 'Editing a scheduled push — change what you need and press Update.';
+    $('notify-title').scrollIntoView({ behavior:'smooth', block:'center' });
+  };
+  window.deletePush = async function(id) {
+    if (!confirm('Delete this scheduled push? It will not be sent.')) return;
+    var res = await fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/partner_scheduled_pushes?id=eq.' + id, {
+      method: 'DELETE', headers: rlsHeaders({ 'Prefer': 'return=minimal' }),
+    });
+    if (!res.ok) { toast('Could not delete — ' + (await res.text().catch(function(){return res.status;}))); return; }
+    if (state.editPushId === id) clearPushForm();
+    toast('Scheduled push deleted');
+    await loadPushQueue();
+  };
+  $('notify-cancel-edit').addEventListener('click', function(){ clearPushForm(); $('notify-result').textContent = ''; });
   $('notify-preview-btn').addEventListener('click', function(){ callNotify('preview'); });
   $('notify-send-btn').addEventListener('click', function(){
     if (!$('notify-date').value) { $('notify-result').textContent = 'Pick a send date first.'; return; }
@@ -1579,8 +1622,13 @@
       var status = r.cancelled_at ? '<span style="color:var(--text-dim);">Cancelled</span>'
         : r.sent_at ? '<span style="color:var(--success);">Sent (' + (r.recipient_count || 0) + ')</span>'
         : '<span style="color:var(--warning);">Pending — ' + when + '</span>';
-      var cancelBtn = (!r.sent_at && !r.cancelled_at)
-        ? '<button class="btn btn-ghost" style="padding:3px 10px;font-size:11px;" onclick="cancelPush(\'' + r.id + '\')">Cancel</button>' : '';
+      /* PM-863: pending pushes are editable and deletable, not just cancellable. */
+      var pending = !r.sent_at && !r.cancelled_at;
+      var jsStr = function(v){ return JSON.stringify(String(v == null ? '' : v)).replace(/"/g, '&quot;'); };
+      var cancelBtn = pending
+        ? '<button class="btn btn-ghost" style="padding:3px 10px;font-size:11px;" onclick="editPush(&quot;' + r.id + '&quot;,' + jsStr(r.title) + ',' + jsStr(r.body) + ',&quot;' + r.send_at + '&quot;)">Edit</button>'
+          + '<button class="btn btn-ghost" style="padding:3px 10px;font-size:11px;color:var(--danger);" onclick="deletePush(&quot;' + r.id + '&quot;)">Delete</button>'
+        : '';
       return '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);">'
         + '<div style="flex:1;min-width:0;">'
         + '<div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(r.title) + '</div>'
