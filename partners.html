@@ -171,7 +171,11 @@ tbody tr:last-child td{border-bottom:none}
 .kcol{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px;min-height:120px}
 .kcol .kh{display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--line)}
 .kcol .kh .c{background:var(--surface2);font-size:10px;padding:2px 8px;border-radius:10px;color:var(--muted-light)}
-.kcard{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:11px;margin-bottom:9px;cursor:pointer;transition:.15s}
+.kcard{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:11px;margin-bottom:9px;cursor:grab;transition:.15s}
+.kcard:active{cursor:grabbing}
+.kcard.dragging{opacity:.45;border-color:var(--mint)}
+.kcol.drop-target{border-color:var(--mint);background:rgba(77,170,170,.06)}
+.kcol .kdrop{border:1px dashed var(--mint);border-radius:11px;padding:12px;text-align:center;font-size:11.5px;color:var(--mint);margin-bottom:9px}
 .kcard:hover{border-color:var(--mint);transform:translateY(-1px)}
 .kcard .knm{font-size:12.5px;font-weight:700}
 .kcard .krole{font-size:10.5px;color:var(--muted);margin:2px 0 9px}
@@ -901,10 +905,15 @@ function renderPipeline(){
 
   document.getElementById('kanban').innerHTML=stages.map(stage=>{
     const cards=allPartners.filter(p=>p.status===stage);
-    return `<div class="kcol">
+    /* PM-859: cards drag ANY direction, including skipping stages and moving back — a wrong
+       advance was previously unrecoverable from the board (only Declined had a restore path). */
+    return `<div class="kcol" data-stage="${stage}"
+        ondragover="kanbanDragOver(event,this)" ondragleave="kanbanDragLeave(this)" ondrop="kanbanDrop(event,this)">
       <div class="kh">${labels[stage]}<span class="c">${cards.length}</span></div>
       ${cards.length?cards.map(p=>`
-        <div class="kcard" onclick="openAppDetail('${p.id}')">
+        <div class="kcard" draggable="true" data-pid="${p.id}"
+          ondragstart="kanbanDragStart(event,this)" ondragend="kanbanDragEnd(this)"
+          onclick="openAppDetail('${p.id}')">
           ${av(p,28)}
           <div class="knm">${esc(p.name)}</div>
           <div class="krole">${esc(p.role_title)}</div>
@@ -913,6 +922,72 @@ function renderPipeline(){
     </div>`;
   }).join('');
   setIcons(document.getElementById('kanban'));
+}
+
+/* ── PM-859: drag-and-drop stage moves (any direction, any distance) ────────────────
+   Forward, backward and skip are all the same operation — moveStage() owns the side effects
+   so a drag and a button click can never diverge. */
+let _dragPid=null;
+function kanbanDragStart(e,el){ _dragPid=el.dataset.pid; el.classList.add('dragging'); try{e.dataTransfer.setData('text/plain',_dragPid);e.dataTransfer.effectAllowed='move';}catch(_){} }
+function kanbanDragEnd(el){ el.classList.remove('dragging'); document.querySelectorAll('.kcol.drop-target').forEach(c=>c.classList.remove('drop-target')); }
+function kanbanDragOver(e,col){ e.preventDefault(); try{e.dataTransfer.dropEffect='move';}catch(_){} col.classList.add('drop-target'); }
+function kanbanDragLeave(col){ col.classList.remove('drop-target'); }
+async function kanbanDrop(e,col){
+  e.preventDefault(); col.classList.remove('drop-target');
+  const pid=_dragPid||(()=>{try{return e.dataTransfer.getData('text/plain');}catch(_){return null;}})();
+  _dragPid=null;
+  if(!pid) return;
+  const target=col.dataset.stage; const cur=partnerMap[pid]?.status;
+  if(!target||!cur||target===cur) return;
+  moveStage(pid,target);
+}
+
+/* Single entry point for every stage change. advancePartner() is the forward/button path and
+   delegates here, so provisioning, go-live gating and the backward-move consequences stay in
+   one place. */
+const STAGE_ORDER=['applied','vetting','interview','contract','onboarding','live'];
+async function moveStage(id,newStatus){
+  const p=partnerMap[id]; if(!p) return;
+  const cur=p.status;
+  const goingBack=STAGE_ORDER.indexOf(newStatus)>-1&&STAGE_ORDER.indexOf(cur)>STAGE_ORDER.indexOf(newStatus);
+  /* Moving BACK out of a stage that granted something has to undo it, or the partner keeps
+     portal access (or member visibility) they are no longer entitled to. */
+  let revokePortal=false;
+  if(goingBack&&cur==='onboarding'){
+    revokePortal=confirm('Move back to '+newStatus+'?\n\nThis partner has portal access. Click OK to ALSO revoke their partner portal login, or Cancel to move the stage but leave their access in place.');
+  }
+  if(goingBack&&cur==='live'){
+    if(!confirm('This partner is LIVE and visible to members. Moving them back to '+newStatus+' will hide them from the app. Continue?')) return;
+  }
+  /* Forward moves (including SKIPS, e.g. applied -> onboarding in one drag) go through
+     advancePartner so the go-live gate and Gate-A provisioning fire exactly as they do from
+     the detail buttons. Backward moves bypass those gates by design. */
+  if(!goingBack){ return advancePartner(id,newStatus); }
+  await applyStageChange(id,newStatus,{goingBack,revokePortal});
+}
+
+async function applyStageChange(id,newStatus,opts){
+  opts=opts||{};
+  const {error}=await sb.from('partner_partners').update({status:newStatus}).eq('id',id);
+  if(error){toast('Error: '+error.message,'error');return;}
+  await sb.from('partner_applications').update({status_changed_at:new Date().toISOString()}).eq('partner_id',id);
+
+  if(opts.revokePortal){
+    try{
+      const sess=await sb.auth.getSession();
+      const r=await fetch(SUPA_URL+'/functions/v1/partner-provision',{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+sess?.data?.session?.access_token,'Content-Type':'application/json'},
+        body:JSON.stringify({action:'deprovision',partner_id:id}),
+      });
+      toast(r.ok?('Moved back to '+newStatus+' — portal access revoked'):'Moved back, but revoking portal access failed','error');
+    }catch(e){ toast('Moved back, but revoking portal access errored: '+e.message,'error'); }
+  } else {
+    toast('Moved to '+newStatus);
+  }
+  partnerMap[id]={...partnerMap[id],status:newStatus};
+  allPartners=allPartners.map(p=>p.id===id?{...p,status:newStatus}:p);
+  renderPipeline(); renderOverview();
 }
 
 async function openAppDetail(id){
@@ -974,7 +1049,7 @@ async function advancePartner(id,newStatus){
   const {error}=await sb.from('partner_partners').update({status:newStatus}).eq('id',id);
   if(error){toast('Error: '+error.message,'error');return;}
   await sb.from('partner_applications').update({status_changed_at:new Date().toISOString()}).eq('partner_id',id);
-  // Gate A: provision partner web login when advancing to onboarding
+  // Gate A: provision partner portal access when moving to onboarding (forward OR skipped-to via drag)
   if(newStatus==='onboarding'){
     try{
       const sess=await sb.auth.getSession();
@@ -1023,7 +1098,7 @@ async function advancePartner(id,newStatus){
     toast('Moved to '+newStatus);
   }
   document.getElementById('appDetail').style.display='none';
-  // Refresh
+  // Refresh (shared with the drag path — PM-859)
   partnerMap[id]={...partnerMap[id],status:newStatus};
   allPartners=allPartners.map(p=>p.id===id?{...p,status:newStatus}:p);
   renderPipeline();
