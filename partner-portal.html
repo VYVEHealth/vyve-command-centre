@@ -100,6 +100,22 @@
     .img-drop { position:relative; border:1.5px dashed var(--border); border-radius:10px; height:110px; display:flex; align-items:center; justify-content:center; cursor:pointer; overflow:hidden; background:var(--bg-elevated,var(--card)); }
     .img-drop:hover { border-color: var(--vyve-teal); }
     .img-drop img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+    /* PM-860: avatar drop previews as a circle so the framing matches the app before saving. */
+    #avatar-drop { border-radius:50%; width:110px; margin:0 auto; }
+    /* ── PM-860 crop / reposition modal ── */
+    .crop-back { position:fixed; inset:0; background:rgba(4,10,10,.72); display:none; align-items:center; justify-content:center; z-index:9000; padding:18px; }
+    .crop-back.show { display:flex; }
+    .crop-box { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; width:100%; max-width:420px; }
+    .crop-box h3 { font-size:16px; margin-bottom:4px; }
+    .crop-box .crop-hint { font-size:12.5px; color:var(--text-muted); margin-bottom:14px; }
+    .crop-stage { position:relative; width:100%; background:#05080c; border-radius:10px; overflow:hidden; touch-action:none; cursor:grab; }
+    .crop-stage:active { cursor:grabbing; }
+    .crop-stage canvas { display:block; width:100%; height:100%; }
+    .crop-mask { position:absolute; inset:0; pointer-events:none; box-shadow:0 0 0 9999px rgba(4,10,10,.55); }
+    .crop-mask.circle { border-radius:50%; }
+    .crop-ctrls { display:flex; align-items:center; gap:10px; margin-top:14px; }
+    .crop-ctrls input[type=range] { flex:1; accent-color:var(--vyve-teal); }
+    .crop-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:16px; }
     .img-drop span { font-size:12px; color:var(--text-muted); position:relative; z-index:1; background:var(--card); padding:3px 9px; border-radius:8px; }
     .img-drop.uploading span { color: var(--vyve-teal); }
     .mini-phone { width:230px; height:470px; margin:0 auto; background:var(--card); border-radius:28px; border:1px solid var(--border); box-shadow:0 0 0 7px #05080c,0 0 0 8px #1c2630; overflow:hidden; display:flex; flex-direction:column; }
@@ -107,7 +123,9 @@
     .mini-scroll { flex:1; overflow-y:auto; }
     .mini-scroll::-webkit-scrollbar { width:0; }
     .mp-banner { height:84px; position:relative; }
-    .mp-av { width:50px; height:50px; border-radius:14px; border:3px solid var(--card); position:absolute; left:13px; bottom:-20px; display:flex; align-items:center; justify-content:center; font-size:17px; font-weight:800; color:#fff; background-size:cover; background-position:center; overflow:hidden; }
+    /* PM-860: the app renders partner avatars as CIRCLES (.pc-avatar / .comm-av border-radius:50%).
+       The portal preview was a rounded square, so what a partner arranged was not what members saw. */
+    .mp-av { width:50px; height:50px; border-radius:50%; border:3px solid var(--card); position:absolute; left:13px; bottom:-20px; display:flex; align-items:center; justify-content:center; font-size:17px; font-weight:800; color:#fff; background-size:cover; background-position:center; overflow:hidden; }
     .mp-av img { width:100%; height:100%; object-fit:cover; display:block; }
     .mp-info { padding:26px 13px 0; }
     .mp-info h4 { font-size:14px; font-weight:800; margin:0; }
@@ -291,6 +309,26 @@
 <body>
 
 <!-- Password gate -->
+<!-- PM-860: crop / reposition before upload -->
+<div class="crop-back" id="crop-back">
+  <div class="crop-box">
+    <h3 id="crop-title">Position your photo</h3>
+    <p class="crop-hint" id="crop-hint">Drag the image to move it, and use the slider to zoom. What you see inside the frame is exactly what members will see.</p>
+    <div class="crop-stage" id="crop-stage">
+      <canvas id="crop-canvas"></canvas>
+      <div class="crop-mask" id="crop-mask"></div>
+    </div>
+    <div class="crop-ctrls">
+      <span style="font-size:12px;color:var(--text-muted)">Zoom</span>
+      <input type="range" id="crop-zoom" min="1" max="4" step="0.01" value="1"/>
+    </div>
+    <div class="crop-actions">
+      <button class="btn btn-ghost" id="crop-cancel" type="button">Cancel</button>
+      <button class="btn btn-teal" id="crop-apply" type="button">Use this photo</button>
+    </div>
+  </div>
+</div>
+
 <div id="login-overlay">
   <div class="login-card">
     <div class="login-logo">VYVE</div>
@@ -906,9 +944,120 @@
     } catch (e) { toast('Error: ' + e.message); setDropPreview(kind, urlish(kind === 'avatar' ? state.avatarUrl : state.coverUrl)); }
     drop.classList.remove('uploading');
   }
+  /* ── PM-860: crop / reposition ────────────────────────────────────────────────
+     Output geometry is dictated by the APP, not the portal:
+       avatar — app masks to a circle (.pc-avatar/.comm-av border-radius:50%), so we export
+                a 1:1 square at 512px and preview it circular here;
+       cover  — app crops centrally with object-fit:cover at ~2.4:1 on grid cards and ~3.3:1
+                when featured, so 3:1 at 1200x400 sits between the two and loses least.
+     Uploading raw camera-roll images was the bug: a landscape photo became an off-centre circle
+     with the partner in the corner, and nothing in the portal could fix it. */
+  var CROP_SPEC = {
+    avatar: { ratio: 1,     outW: 512,  outH: 512, circle: true,  title: 'Position your profile photo',
+              hint: 'Drag to move, slide to zoom. Members see this as a circle in the app.' },
+    cover:  { ratio: 3,     outW: 1200, outH: 400, circle: false, title: 'Position your cover photo',
+              hint: 'Drag to move, slide to zoom. This is the banner across the top of your space.' },
+  };
+  var crop = { kind: null, img: null, scale: 1, min: 1, x: 0, y: 0, dragging: false, lastX: 0, lastY: 0, spec: null };
+
+  function cropDraw() {
+    var cv = $('crop-canvas'), ctx = cv.getContext('2d');
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    var w = crop.img.width * crop.scale, h = crop.img.height * crop.scale;
+    ctx.drawImage(crop.img, crop.x, crop.y, w, h);
+  }
+  function cropClamp() {
+    var cv = $('crop-canvas');
+    var w = crop.img.width * crop.scale, h = crop.img.height * crop.scale;
+    crop.x = Math.min(0, Math.max(cv.width - w, crop.x));
+    crop.y = Math.min(0, Math.max(cv.height - h, crop.y));
+  }
+  function openCropper(kind, file) {
+    var spec = CROP_SPEC[kind]; if (!spec) return;
+    var img = new Image();
+    img.onload = function() {
+      crop.kind = kind; crop.img = img; crop.spec = spec;
+      var stage = $('crop-stage'), cv = $('crop-canvas'), mask = $('crop-mask');
+      var boxW = stage.parentElement.clientWidth - 40;
+      var cw = Math.max(240, Math.min(360, boxW)), ch = Math.round(cw / spec.ratio);
+      stage.style.height = ch + 'px'; cv.width = cw; cv.height = ch;
+      mask.className = 'crop-mask' + (spec.circle ? ' circle' : '');
+      // cover-fit: smallest scale that fills the frame in both axes
+      crop.min = Math.max(cw / img.width, ch / img.height);
+      crop.scale = crop.min;
+      crop.x = (cw - img.width * crop.scale) / 2;
+      crop.y = (ch - img.height * crop.scale) / 2;
+      var z = $('crop-zoom'); z.min = '1'; z.max = '4'; z.value = '1';
+      $('crop-title').textContent = spec.title;
+      $('crop-hint').textContent = spec.hint;
+      cropDraw();
+      $('crop-back').classList.add('show');
+    };
+    img.onerror = function(){ toast('Could not read that image'); };
+    img.src = URL.createObjectURL(file);
+  }
+  function closeCropper() {
+    $('crop-back').classList.remove('show');
+    if (crop.img && crop.img.src.indexOf('blob:') === 0) URL.revokeObjectURL(crop.img.src);
+    crop.img = null; crop.kind = null;
+  }
+  $('crop-zoom').addEventListener('input', function() {
+    if (!crop.img) return;
+    var cv = $('crop-canvas');
+    var cx = cv.width / 2, cy = cv.height / 2;
+    var prev = crop.scale;
+    crop.scale = crop.min * parseFloat(this.value);
+    // keep the frame centre anchored while zooming
+    crop.x = cx - (cx - crop.x) * (crop.scale / prev);
+    crop.y = cy - (cy - crop.y) * (crop.scale / prev);
+    cropClamp(); cropDraw();
+  });
+  (function wireDrag(){
+    var stage = $('crop-stage');
+    function down(e){ if (!crop.img) return; crop.dragging = true; var p = e.touches ? e.touches[0] : e; crop.lastX = p.clientX; crop.lastY = p.clientY; }
+    function move(e){
+      if (!crop.dragging || !crop.img) return;
+      e.preventDefault();
+      var p = e.touches ? e.touches[0] : e;
+      var cv = $('crop-canvas'), k = cv.width / cv.getBoundingClientRect().width;
+      crop.x += (p.clientX - crop.lastX) * k; crop.y += (p.clientY - crop.lastY) * k;
+      crop.lastX = p.clientX; crop.lastY = p.clientY;
+      cropClamp(); cropDraw();
+    }
+    function up(){ crop.dragging = false; }
+    stage.addEventListener('mousedown', down); window.addEventListener('mousemove', move); window.addEventListener('mouseup', up);
+    stage.addEventListener('touchstart', down, {passive:true}); stage.addEventListener('touchmove', move, {passive:false}); stage.addEventListener('touchend', up);
+  })();
+  $('crop-cancel').addEventListener('click', closeCropper);
+  $('crop-apply').addEventListener('click', function() {
+    if (!crop.img) return;
+    var spec = crop.spec, cv = $('crop-canvas');
+    // Map the on-screen frame to the output canvas at full export resolution.
+    var out = document.createElement('canvas');
+    out.width = spec.outW; out.height = spec.outH;
+    var k = spec.outW / cv.width;
+    var octx = out.getContext('2d');
+    octx.fillStyle = '#0D2B2B'; octx.fillRect(0, 0, out.width, out.height);
+    octx.drawImage(crop.img, crop.x * k, crop.y * k, crop.img.width * crop.scale * k, crop.img.height * crop.scale * k);
+    var kind = crop.kind;
+    out.toBlob(function(blob) {
+      if (!blob) { toast('Could not process that image'); return; }
+      var f = new File([blob], kind + '.jpg', { type: 'image/jpeg' });
+      closeCropper();
+      uploadSpaceImage(kind, f);
+    }, 'image/jpeg', 0.9);
+  });
+
   ['avatar','cover'].forEach(function(kind){
     $(kind + '-drop').addEventListener('click', function(){ $(kind + '-file').click(); });
-    $(kind + '-file').addEventListener('change', function(e){ uploadSpaceImage(kind, e.target.files[0]); e.target.value = ''; });
+    /* PM-860: every image now goes through the cropper — nothing reaches storage un-framed. */
+    $(kind + '-file').addEventListener('change', function(e){
+      var f = e.target.files[0]; e.target.value = '';
+      if (!f) return;
+      if (!/^image\//.test(f.type)) { toast('Please choose an image file'); return; }
+      if (f.size > 15 * 1024 * 1024) { toast('Image too large — 15MB max'); return; }
+      openCropper(kind, f);
+    });
   });
 
   // ── Save profile ──────────────────────────────────────────────────────────
