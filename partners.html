@@ -1239,10 +1239,21 @@ async function loadPartnerMembers(p){
     </tr>`).join('')}</tbody></table>`:'<div class="empty-state">No members yet</div>';
 }
 
+async function loadPartnerBankLine(p){
+  /* PM-876: finance-run readiness — admins see WHETHER details are on file (masked last-4), full details stay behind the admin RLS read. */
+  try{
+    const {data}=await sb.from('partner_bank_details').select('account_name,account_number,updated_at').eq('partner_id',p.id).maybeSingle();
+    const el=document.getElementById('pd-bank-line');
+    if(!el)return;
+    el.innerHTML=data
+      ?`<span style="color:var(--mint)">&#10003; Payout details on file</span> — ${esc(data.account_name)}, acct ••••${String(data.account_number).slice(-4)} <span class="muted">(updated ${new Date(data.updated_at).toLocaleDateString('en-GB')})</span>`
+      :`<span style="color:var(--warning)">&#9888; No payout details yet</span> — the partner adds these in their portal (Earnings &rarr; Payout details)`;
+  }catch(_){}
+}
 async function loadPartnerRevenue(p){
   const {data}=await sb.from('partner_payouts').select('*').eq('partner_id',p.id).order('period',{ascending:false});
   const items=data||[];
-  document.getElementById('pd-revenue').innerHTML=items.length?`
+  document.getElementById('pd-revenue').innerHTML='<div id="pd-bank-line" style="font-size:12.5px;margin-bottom:12px;line-height:1.5"></div>'+(items.length?`
     <table><thead><tr><th>Period</th><th>Subs</th><th>Gross</th><th>Share</th><th>Payout</th><th>Status</th></tr></thead>
     <tbody>${items.map(py=>`<tr>
       <td>${py.period}</td>
@@ -1251,7 +1262,8 @@ async function loadPartnerRevenue(p){
       <td>${py.share_pct}%</td>
       <td class="num hl">£${Number(py.payout_amount).toLocaleString()}</td>
       <td><span class="pill ${py.status==='paid'?'p-live':'p-review'}">${py.status}</span></td>
-    </tr>`).join('')}</tbody></table>`:'<div class="empty-state">No payouts yet</div>';
+    </tr>`).join('')}</tbody></table>`:'<div class="empty-state">No payouts yet</div>');
+  loadPartnerBankLine(p);
 
   document.getElementById('pd-programs').innerHTML='<div class="empty-state">Programs feature coming soon</div>';
 }
@@ -1824,12 +1836,18 @@ async function runPayouts(){
   // members actually pay (partner_memberships.subscription_value, populated by
   // stripe-webhook / stripe-reconcile). Payout = gross x revenue share. This matches
   // the partner-facing earnings figure — no MRR estimation, no session weighting.
+  // PM-876 (Dean definition): an attributed sub is a member who came through the
+  // partner AND IS PAYING — referred + active + a real subscription_value. Partners
+  // with £0 gross generate NO row at all (a £0 pending payout is ledger noise the
+  // finance run doesn't need; the June seed rows this replaced showed every partner
+  // with a phantom "1 attributed sub").
   const rows=live.map(p=>{
-    const refs=allMemberships.filter(m=>m.partner_id===p.id&&m.referred);
+    const refs=allMemberships.filter(m=>m.partner_id===p.id&&m.referred&&m.subscription_status==='active'&&Number(m.subscription_value)>0);
     const gross=Math.round(refs.reduce((s,m)=>s+(Number(m.subscription_value)||0),0)*100)/100;
     const payout=Math.round(gross*(p.revenue_share_pct/100)*100)/100;
     return{partner_id:p.id,period,attributed_subscriptions:refs.length,gross,share_pct:p.revenue_share_pct,payout_amount:payout,status:'pending'};
-  });
+  }).filter(r=>r.gross>0);
+  if(!rows.length){toast('No attributed paying members this period — nothing to generate');return;}
   const {error}=await sb.from('partner_payouts').upsert(rows,{onConflict:'partner_id,period'});
   if(error){toast(error.message,'error');return;}
   const {data}=await sb.from('partner_payouts').select('*').order('period',{ascending:false});
