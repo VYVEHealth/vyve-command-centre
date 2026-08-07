@@ -154,7 +154,14 @@
     }
     .field input:focus, .field textarea:focus, .field select:focus { border-color: var(--vyve-teal); }
     .field textarea { resize: vertical; min-height: 90px; }
-    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    /* PM-859: native date/time inputs carry an intrinsic min-width wider than the grid column, and
+       grid items default to min-width:auto — so the row refused to shrink and overflowed its parent
+       (date/time pills spilling out of the Notify community panel and the Schedule a session card).
+       min-width:0 on the row and its children lets the columns actually shrink to fit. */
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; min-width: 0; }
+    .field-row > * { min-width: 0; }
+    .field input[type=date], .field input[type=time] { min-width: 0; max-width: 100%; -webkit-appearance: none; appearance: none; }
+    .card, .notify-panel { overflow: hidden; }
     .field-hint { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
 
     /* Buttons */
