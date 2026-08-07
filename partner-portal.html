@@ -526,6 +526,9 @@
             <div class="field" style="margin-bottom:0"><label>Send time</label><input id="notify-time" type="time" value="09:00"/></div>
           </div>
           <p style="font-size:11px;color:var(--text-dim);margin-top:6px;">Goes only to members subscribed to your community. Delivered within 15 minutes of the scheduled time.</p>
+          <!-- PM-865: audience was only visible if you pressed Preview. It is the single most useful
+               number on this panel, so it now loads with the tab and refreshes after every change. -->
+          <div id="notify-audience" style="font-size:12.5px;color:var(--vyve-teal);margin-top:8px;font-weight:600;">Checking your audience…</div>
           <div style="display:flex;align-items:center;gap:10px;margin-top:12px;">
             <button class="btn btn-ghost" id="notify-preview-btn" type="button">Preview audience</button>
             <button class="btn btn-teal" id="notify-send-btn" type="button">Schedule push</button>
@@ -840,7 +843,7 @@
     // loadPartnerData sets state.partnerId; every other loader needs it —
     // chain, don't race (un-awaited parallel calls made loadContent bail early).
     await loadPartnerData();
-    await Promise.all([loadContent(), loadCommunity(), loadPushQueue(), loadSessions(), loadEarnings()]);
+    await Promise.all([loadContent(), loadCommunity(), loadPushQueue(), loadAudience(), loadSessions(), loadEarnings()]);
   }
 
   // ── Load partner profile ──────────────────────────────────────────────────
@@ -1524,22 +1527,16 @@
     var dateVal = $('notify-date').value;
     var timeVal = $('notify-time').value || '09:00';
     var result  = $('notify-result');
-    if (!title || !body) { result.textContent = 'Title and message required.'; return; }
+    if (mode === 'send' && (!title || !body)) { result.textContent = 'Title and message required.'; return; }
     if (mode === 'send' && !dateVal) { result.textContent = 'Pick a send date.'; return; }
     var btn = mode === 'preview' ? $('notify-preview-btn') : $('notify-send-btn');
     btn.disabled = true;
     result.textContent = mode === 'preview' ? 'Checking…' : 'Scheduling…';
 
     if (mode === 'preview') {
-      try {
-        var rr = await fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/rpc/resolve_broadcast_audience', {
-          method: 'POST',
-          headers: rlsHeaders({ 'Content-Type': 'application/json' }),
-          body: JSON.stringify({ criteria: { type: 'partner_subscribers', partner_id: state.partnerId } }),
-        });
-        var rows = rr.ok ? await rr.json() : [];
-        result.textContent = 'Audience: ' + rows.length + ' member' + (rows.length !== 1 ? 's' : '') + ' subscribed to your community.';
-      } catch(e) { result.textContent = 'Error: ' + e.message; }
+      /* PM-865: the audience line is always on screen — Preview just refreshes it. */
+      await loadAudience();
+      result.textContent = 'Audience refreshed.';
       btn.disabled = false; return;
     }
 
@@ -1607,6 +1604,26 @@
     callNotify('send');
   });
 
+  /* PM-865: resolve the live audience for this partner's community. */
+  async function loadAudience() {
+    var el = $('notify-audience');
+    if (!el || !state.partnerId) return;
+    try {
+      var rr = await fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/rest/v1/rpc/resolve_broadcast_audience', {
+        method: 'POST',
+        headers: rlsHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ criteria: { type: 'partner_subscribers', partner_id: state.partnerId } }),
+      });
+      if (!rr.ok) { el.textContent = 'Could not check your audience right now.'; return; }
+      var rows = await rr.json();
+      state.audienceCount = Array.isArray(rows) ? rows.length : 0;
+      el.textContent = state.audienceCount === 0
+        ? 'No members have joined your community yet — pushes will reach nobody until they do.'
+        : 'Target audience: ' + state.audienceCount + ' member' + (state.audienceCount === 1 ? '' : 's') + ' subscribed to your community.';
+      el.style.color = state.audienceCount === 0 ? 'var(--warning)' : 'var(--vyve-teal)';
+    } catch (e) { el.textContent = 'Could not check your audience right now.'; }
+  }
+
   async function loadPushQueue() {
     var el = $('push-queue-list');
     if (!el || !state.partnerId) return;
@@ -1621,7 +1638,8 @@
       var when = new Date(r.send_at).toLocaleString('en-GB', { dateStyle:'medium', timeStyle:'short' });
       var status = r.cancelled_at ? '<span style="color:var(--text-dim);">Cancelled</span>'
         : r.sent_at ? '<span style="color:var(--success);">Sent (' + (r.recipient_count || 0) + ')</span>'
-        : '<span style="color:var(--warning);">Pending — ' + when + '</span>';
+        : '<span style="color:var(--warning);">Pending — ' + when + '</span>'
+          + (state.audienceCount != null ? '<span style="color:var(--text-dim);"> · to ' + state.audienceCount + ' member' + (state.audienceCount === 1 ? '' : 's') + '</span>' : '');
       /* PM-863: pending pushes are editable and deletable, not just cancellable. */
       var pending = !r.sent_at && !r.cancelled_at;
       var jsStr = function(v){ return JSON.stringify(String(v == null ? '' : v)).replace(/"/g, '&quot;'); };
