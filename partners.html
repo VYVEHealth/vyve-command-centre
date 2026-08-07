@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <style>
 /* PM-762: tokens-v2 value sweep — local token NAMES preserved (PM-753
    precedent), values mapped to the approved brand family, dual-theme.
@@ -1544,23 +1545,31 @@ function renderPartnerSettings(p){
     <div class="card" style="max-width:480px">
       <div class="card-h"><h3>Settings</h3></div>
 
+      <!-- PM-878: the pay-now "partner payment link" section is RETIRED (spec v2.1 — /join
+           is account creation, the link is DERIVED from the slug and exists automatically).
+           payment_link_url column soft-killed, not deleted. Coupon field KEPT: Piece 2's
+           EF-minted conversion Checkout Session attaches this Stripe coupon. -->
       <div style="margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--line)">
-        <label style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:6px">Partner payment link</label>
-        <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">The Stripe payment link for this partner — £10 off forever pre-applied. This is what you give the partner to share. Create the link in Stripe (or via the admin), then paste the URL here.</p>
-        <div style="display:flex;gap:8px;align-items:center">
-          <input type="url" id="ps-plink" value="${p.payment_link_url||''}" placeholder="https://buy.stripe.com/…" style="flex:1;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--white);font-size:14px;font-family:var(--font)">
-          <button class="tb-btn primary" onclick="savePaymentLink('${p.id}')">Save</button>
+        <label style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:6px">Referral link &amp; QR</label>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Derived from the partner's slug — exists automatically, nothing to set up. Members who use it get a free week with attribution locked to this partner. The same link and QR show in the partner's own portal.</p>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
+          <code id="ps-joinlink" style="flex:1;font-size:12.5px;color:var(--mint);word-break:break-all;">https://www.vyvehealth.co.uk/join/${p.slug||''}</code>
+          <button class="tb-btn" onclick="copyJoinLink()">Copy</button>
         </div>
-        ${p.payment_link_url ? `<div style="margin-top:8px;font-size:12px;color:var(--mint)">&#10003; Link ready — <a href="${p.payment_link_url}" target="_blank" style="color:var(--mint)">${p.payment_link_url}</a></div>` : `<div style="margin-top:8px;font-size:12px;color:var(--amber)">&#9888; No payment link yet — partner cannot earn referrals until this is set</div>`}
+        <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+          <div id="ps-qr" style="background:#fff;padding:6px;border-radius:8px;line-height:0;"></div>
+          <button class="tb-btn" onclick="downloadPartnerQr('${(p.slug||'partner')}')">Download QR (PNG)</button>
+        </div>
+        <div style="margin-top:8px;font-size:12px;color:var(--muted)">Spoken/typed code: <b style="color:var(--mint)">${p.slug||'—'}</b></div>
       </div>
 
       <div style="margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--line)">
-        <label style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:6px">Stripe coupon ID (for attribution tracking)</label>
+        <label style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:6px">Stripe coupon (applied at conversion)</label>
         <div style="display:flex;gap:8px;align-items:center">
           <input type="text" id="ps-promo" value="${p.stripe_promo_code||''}" placeholder="e.g. MENTOGETHERCIC" style="flex:1;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--white);font-size:14px;font-family:var(--font);text-transform:uppercase;letter-spacing:.06em">
           <button class="tb-btn primary" onclick="savePromoCode('${p.id}')">Save</button>
         </div>
-        <div style="margin-top:6px;font-size:12px;color:var(--muted)">Must match the Stripe coupon ID attached to the payment link above.</div>
+        <div style="margin-top:6px;font-size:12px;color:var(--muted)">The Stripe Coupon object this partner's members get at £10/month conversion — used by the minted Checkout Session (attribution Piece 2).</div>
       </div>
 
       <div style="margin-bottom:16px">
@@ -1577,17 +1586,35 @@ function renderPartnerSettings(p){
         </label>
       </div>
     </div>`;
+  renderPartnerQr(p);
 }
 
-async function savePaymentLink(id){
-  const url = (document.getElementById('ps-plink').value || '').trim();
-  if (!url) { toast('Enter a payment link URL', 'error'); return; }
-  const {error} = await sb.from('partner_partners').update({payment_link_url: url}).eq('id', id);
-  if(error){ toast(error.message,'error'); return; }
-  partnerMap[id] = {...partnerMap[id], payment_link_url: url};
-  allPartners = allPartners.map(p => p.id===id ? {...p, payment_link_url: url} : p);
-  toast('Payment link saved');
-  renderPartnerSettings(partnerMap[id]);
+/* PM-878: QR rendered client-side from the derived join link — never stored, never stale. */
+function renderPartnerQr(p){
+  try{
+    if(!window.qrcode||!p.slug)return;
+    const url='https://www.vyvehealth.co.uk/join/'+p.slug;
+    const qr=window.qrcode(0,'M');qr.addData(url);qr.make();
+    const el=document.getElementById('ps-qr');
+    if(!el)return;
+    el.innerHTML=qr.createImgTag(4,8);
+    const img=el.querySelector('img');
+    if(img){img.style.width='112px';img.style.height='112px';img.style.imageRendering='pixelated';img.alt='Join QR';}
+  }catch(_){}
+}
+function copyJoinLink(){
+  const el=document.getElementById('ps-joinlink');
+  if(!el)return;
+  navigator.clipboard.writeText(el.textContent.trim()).then(()=>toast('Link copied'));
+}
+function downloadPartnerQr(slug){
+  const img=document.querySelector('#ps-qr img');
+  if(!img){toast('QR not ready','error');return;}
+  const c=document.createElement('canvas');const size=640;c.width=size;c.height=size;
+  const ctx=c.getContext('2d');ctx.imageSmoothingEnabled=false;
+  ctx.fillStyle='#ffffff';ctx.fillRect(0,0,size,size);
+  ctx.drawImage(img,0,0,size,size);
+  const a=document.createElement('a');a.href=c.toDataURL('image/png');a.download='vyve-join-'+slug+'.png';a.click();
 }
 
 async function savePromoCode(id){
