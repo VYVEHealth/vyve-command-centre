@@ -1631,10 +1631,10 @@ function renderContent(){
       <div class="th" style="${c.thumbnail_url?`background-image:url('${c.thumbnail_url}');background-size:cover;background-position:center`:`background:rgba(77,170,170,.08);color:${typeColors[c.type]||'var(--muted)'}`}">${c.thumbnail_url?'':`<span data-i="${icon}"></span>`}</div>
       <div style="flex:1"><div class="ct">${esc(c.title)}</div><div class="cs">${esc(pName)} · ${c.type.replace('_',' ')} · ${when} · goes live ${c.publish_at?new Date(c.publish_at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'—'}${c.description?' — '+esc(c.description.slice(0,60)):''}</div></div>
       ${showActions?`<div class="row-actions">
-        ${c.media_url?`<button class="icon-btn" onclick="downloadPartnerFile('${c.id}')" title="Download to your Mac"><span data-i="download"></span></button>`:''}
+        ${c.media_url?`<button class="icon-btn" onclick="watchPartnerFile('${c.id}')" title="Watch here"><span data-i="play"></span></button><button class="icon-btn" onclick="downloadPartnerFile('${c.id}')" title="Download to your Mac"><span data-i="download"></span></button>`:''}
         <button class="icon-btn btn-approve" onclick="moderateContent('${c.id}','approved')" title="Approve"><span data-i="check"></span></button>
         <button class="icon-btn btn-reject" onclick="moderateContent('${c.id}','returned')" title="Return"><span data-i="x"></span></button>
-      </div>`:`<div class="row-actions">${c.media_url?`<button class="icon-btn" onclick="downloadPartnerFile('${c.id}')" title="Download to your Mac"><span data-i="download"></span></button>`:''}<span class="pill ${c.moderation_status==='approved'?'p-live':c.moderation_status==='flagged'?'p-suspended':'p-draft'}">${c.moderation_status}</span></div>`}
+      </div>`:`<div class="row-actions">${c.media_url?`<button class="icon-btn" onclick="watchPartnerFile('${c.id}')" title="Watch here"><span data-i="play"></span></button><button class="icon-btn" onclick="downloadPartnerFile('${c.id}')" title="Download to your Mac"><span data-i="download"></span></button>`:''}<span class="pill ${c.moderation_status==='approved'?'p-live':c.moderation_status==='flagged'?'p-suspended':'p-draft'}">${c.moderation_status}</span></div>`}
     </div>`;
   }
 
@@ -1649,6 +1649,39 @@ function renderContent(){
   render('cm-programs',programs,false);
 }
 
+/* PM-877: watch in place — same signed-URL gate as download, but disposition:'inline'
+   (v9 signs inline for 1h so playback range-requests outlive the token) into a modal
+   <video>. Non-video media falls back to opening the inline URL in a new tab. */
+async function watchPartnerFile(id){
+  const c=allContent.find(x=>x.id===id);
+  if(!c||!c.media_url){toast('No file attached to this item');return;}
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+    const res=await fetch(`${SUPA_URL}/functions/v1/partner-file-url`,{method:'POST',headers:{'Authorization':`Bearer ${session.access_token}`,'apikey':SUPA_ANON,'Content-Type':'application/json'},body:JSON.stringify({path:c.media_url,bucket:'partner-content',disposition:'inline'})});
+    const jr=await res.json();
+    if(!res.ok||!jr.signedUrl)throw new Error(jr.error||'request failed');
+    const isVideo=c.type==='video'||/\.(mp4|mov|m4v|webm)(\?|$)/i.test(c.media_url);
+    if(!isVideo){window.open(jr.signedUrl,'_blank');return;}
+    let m=document.getElementById('cm-player');
+    if(!m){
+      m=document.createElement('div');m.id='cm-player';
+      m.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(6,20,20,.92);display:flex;align-items:center;justify-content:center;flex-direction:column;padding:24px;';
+      m.innerHTML='<div id="cm-player-title" style="color:#fff;font-weight:700;font-size:15px;margin-bottom:12px;max-width:900px;text-align:center;"></div>'
+        +'<video id="cm-player-video" controls autoplay playsinline style="max-width:min(900px,95vw);max-height:78vh;border-radius:12px;background:#000;box-shadow:0 8px 40px rgba(0,0,0,.5);"></video>'
+        +'<button id="cm-player-close" style="margin-top:14px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:#fff;padding:9px 22px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Close</button>';
+      document.body.appendChild(m);
+      const close=()=>{const v=document.getElementById('cm-player-video');try{v.pause();v.removeAttribute('src');v.load();}catch(_){}m.style.display='none';};
+      m.addEventListener('click',e=>{if(e.target===m)close();});
+      document.getElementById('cm-player-close').addEventListener('click',close);
+      document.addEventListener('keydown',e=>{if(e.key==='Escape'&&m.style.display!=='none')close();});
+    }
+    document.getElementById('cm-player-title').textContent=c.title||'';
+    const v=document.getElementById('cm-player-video');
+    v.src=jr.signedUrl;
+    m.style.display='flex';
+    v.play().catch(()=>{});
+  }catch(e){toast('Could not load video: '+(e.message||e));}
+}
 async function downloadPartnerFile(id){
   const c=allContent.find(x=>x.id===id);
   if(!c||!c.media_url){toast('No file attached to this item');return;}
