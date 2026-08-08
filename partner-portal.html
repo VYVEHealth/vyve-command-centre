@@ -145,6 +145,12 @@
     }
     .pp-tab:hover { color: var(--text); }
     .pp-tab.active { color: var(--vyve-teal); border-bottom-color: var(--vyve-teal); font-weight: 600; }
+    .faq { border-bottom: 1px solid var(--border); }
+    .faq summary { cursor: pointer; padding: 13px 4px; font-size: 14px; font-weight: 600; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary::after { content: '+'; color: var(--vyve-teal-light); font-size: 17px; font-weight: 400; }
+    .faq[open] summary::after { content: '\2212'; }
+    .faq-a { padding: 0 4px 14px; font-size: 13.5px; color: var(--text-muted); line-height: 1.65; }
 
     /* Content area */
     .pp-content { flex: 1; padding: 28px 24px; max-width: 900px; width: 100%; margin: 0 auto; }
@@ -366,6 +372,7 @@
     <button class="pp-tab" data-tab="sessions" type="button">Sessions</button>
     <button class="pp-tab" data-tab="earnings" type="button">Earnings</button>
     <button class="pp-tab" data-tab="bookings" type="button">Bookings</button>
+    <button class="pp-tab" data-tab="help" type="button">Help</button>
   </div>
 
   <div class="pp-content">
@@ -692,6 +699,44 @@
 
 
     <!-- ── BOOKINGS (PM-812 B1) ── -->
+    <!-- PM-882: Help tab — FAQ (current-truth of the partner model, [LEWIS COPY PASS])
+         + "message us" form via the partner-support EF (rate-limited, logged, emailed
+         to team@ with reply-to the partner). -->
+    <div class="pp-panel" id="panel-help">
+      <div class="card">
+        <div class="card-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Frequently asked questions
+        </div>
+        <div class="faq-list">
+          <details class="faq"><summary>How does my referral link work?</summary><div class="faq-a">Your link (shown on the Earnings tab, with a QR code) takes people to a simple account-creation page — email and password, no payment details. Their signup is attributed to you the moment the account is created, before they even install the app. Anyone who joins through it, or types your code at signup in the app, counts as yours.</div></details>
+          <details class="faq"><summary>When does my link start working?</summary><div class="faq-a">The moment your space goes live. Before that, the link shows an "invite not active" message — you can still prepare posters and posts, and it switches on automatically at go-live.</div></details>
+          <details class="faq"><summary>What do members get when they join through me?</summary><div class="faq-a">A free first week with everything unlocked — no payment details up front. After the week, they can continue at your partner rate of &pound;10 a month, applied automatically. They never need to remember a code.</div></details>
+          <details class="faq"><summary>How do I earn?</summary><div class="faq-a">You earn your agreed share (standard 50%) of what each of your referred members actually pays, every month they stay subscribed. The Earnings tab shows your funnel — on free trial, paying, and trial-ended — and your estimated monthly earnings.</div></details>
+          <details class="faq"><summary>How and when do I get paid?</summary><div class="faq-a">Monthly, by bank transfer from VYVE. Add your bank details in the Payout details card on the Earnings tab — only VYVE's finance team can see them. Your payout history appears on the same tab.</div></details>
+          <details class="faq"><summary>What about bookings?</summary><div class="faq-a">Members can book your 1:1 services from your space. You keep 100% of booking revenue minus payment processing fees. Set your services, availability and blocked dates on the Bookings tab.</div></details>
+          <details class="faq"><summary>What happens to content I upload?</summary><div class="faq-a">Everything you publish — videos, posts, session content — goes through a quick VYVE review before members can see it. You'll see the status against each item on the My Content tab. Therapy-related services also need clinical approval before they're bookable.</div></details>
+          <details class="faq"><summary>Can I see who my members are?</summary><div class="faq-a">No — member privacy comes first, always. You see your numbers (trial, paying, lapsed), never identities. When you want to reach lapsed members, use the nudge button on the Earnings tab: we email them on your behalf, letting them know you asked us to check in.</div></details>
+          <details class="faq"><summary>What does "send a nudge" actually send?</summary><div class="faq-a">A friendly email from VYVE to your lapsed members — "you joined through {your name}, and they asked us to check in" — with a link to pick up where they left off at your rate. One nudge batch per day, and each member is nudged at most once a month, so nobody gets spammed.</div></details>
+          <details class="faq"><summary>Something else?</summary><div class="faq-a">Message us below — it goes straight to the VYVE team and we'll reply to your email. For anything urgent: team@vyvehealth.co.uk.</div></details>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Message us
+        </div>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">Stuck, spotted a problem, or need something changed? Send it here — it goes straight to the VYVE team and we reply to your email.</p>
+        <div style="max-width:520px;">
+          <div style="margin-bottom:10px;"><label class="bk-lbl">Subject (optional)</label><input type="text" id="sup-subject" maxlength="200" placeholder="e.g. My QR code on a poster"/></div>
+          <div style="margin-bottom:12px;"><label class="bk-lbl">Message</label><textarea id="sup-message" rows="5" maxlength="4000" placeholder="Tell us what's going on..." style="width:100%;resize:vertical;"></textarea></div>
+          <button class="btn btn-primary" id="sup-send-btn" type="button" style="font-size:13px;">Send message</button>
+          <div id="sup-msg" style="margin-top:8px;font-size:12.5px;color:var(--text-muted);"></div>
+        </div>
+      </div>
+    </div>
+
     <div class="pp-panel" id="panel-bookings">
 
       <div class="card">
@@ -1665,6 +1710,27 @@
       toast('Payout details saved');
       loadBankDetails();
     } catch (e) { msg.textContent = 'Connection problem — try again.'; }
+    finally { this.disabled = false; }
+  });
+
+  $('sup-send-btn').addEventListener('click', async function() {
+    var msg = $('sup-message').value.trim();
+    var out = $('sup-msg');
+    if (msg.length < 3) { out.textContent = 'Write a message first.'; return; }
+    this.disabled = true; out.textContent = 'Sending\u2026';
+    try {
+      var r = await fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/functions/v1/partner-support', {
+        method: 'POST',
+        headers: rlsHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ subject: $('sup-subject').value.trim(), message: msg })
+      });
+      var j = null; try { j = await r.json(); } catch (_) {}
+      if (r.status === 429) { out.textContent = (j && j.message) || 'Limit reached for today \u2014 email team@vyvehealth.co.uk for anything urgent.'; return; }
+      if (!r.ok || !j || !j.ok) { out.textContent = 'Could not send \u2014 try again, or email team@vyvehealth.co.uk.'; return; }
+      $('sup-subject').value = ''; $('sup-message').value = '';
+      out.textContent = j.email_sent ? 'Sent \u2014 we\u2019ll reply to your email.' : 'Sent and logged \u2014 we\u2019ll reply to your email.';
+      toast('Message sent');
+    } catch (e) { out.textContent = 'Connection problem \u2014 try again.'; }
     finally { this.disabled = false; }
   });
 
