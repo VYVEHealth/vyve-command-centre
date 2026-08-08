@@ -740,7 +740,7 @@ function toast(msg,type=''){
 }
 
 /* ── NAV ───────────────────────────────────────────────── */
-let allSupport=[];
+let allSupport=[];let allSupportReplies=[];
 function renderSupport(){
   const nb=document.getElementById('nb-support');
   const open=allSupport.filter(m=>m.status==='open').length;
@@ -761,12 +761,38 @@ function renderSupport(){
       </div>
       ${m.subject?`<div style="font-size:13px;font-weight:600;margin-bottom:6px">${esc(m.subject)}</div>`:''}
       <div style="font-size:13.5px;line-height:1.6;white-space:pre-wrap;color:var(--muted-light)">${esc(m.message)}</div>
+      ${allSupportReplies.filter(r=>r.message_id===m.id).map(r=>{
+        const admin=r.sender_role==='admin';
+        const rw=new Date(r.created_at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+        return `<div style="margin-top:8px;margin-left:${admin?'22px':'0'};padding:8px 12px;border-radius:8px;font-size:13px;line-height:1.55;white-space:pre-wrap;${admin?'background:rgba(77,170,170,.10);border:1px solid rgba(77,170,170,.25)':'background:var(--surface);border:1px solid var(--line)'}">
+          <div style="font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:${admin?'var(--mint)':'var(--muted)'};margin-bottom:4px">${admin?'VYVE ('+esc(r.sender_email)+')':'Partner'} \u00b7 ${rw}</div>${esc(r.body)}</div>`;
+      }).join('')}
+      <div style="display:flex;gap:8px;margin-top:10px;align-items:flex-start">
+        <textarea rows="2" maxlength="4000" placeholder="Reply to the partner\u2026" data-reply="${m.id}" style="flex:1;resize:vertical;background:var(--surface);border:1px solid var(--line);border-radius:8px;color:var(--white);padding:8px 10px;font-family:var(--font);font-size:13px"></textarea>
+        <button class="tb-btn primary" onclick="sendSupportReply('${m.id}',this)" style="flex:none">Send reply</button>
+      </div>
       <div style="display:flex;gap:8px;margin-top:10px">
-        ${m.status!=='replied'?`<button class="tb-btn" onclick="setSupportStatus('${m.id}','replied')">Mark replied</button>`:''}
         ${m.status!=='closed'?`<button class="tb-btn" onclick="setSupportStatus('${m.id}','closed')">Close</button>`:`<button class="tb-btn" onclick="setSupportStatus('${m.id}','open')">Reopen</button>`}
       </div>
     </div>`;
   }).join('');
+}
+async function sendSupportReply(id,btn){
+  const ta=document.querySelector(`textarea[data-reply="${id}"]`);
+  const text=(ta&&ta.value||'').trim();
+  if(!text){if(ta)ta.focus();return;}
+  btn.disabled=true;
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+    const r=await fetch(`${SUPA_URL}/functions/v1/partner-support`,{method:'POST',headers:{'Authorization':`Bearer ${session.access_token}`,'apikey':SUPA_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'reply',message_id:id,body:text})});
+    const j=await r.json().catch(()=>null);
+    if(!r.ok||!j||!j.ok){toast((j&&j.error)||'Reply failed','error');return;}
+    allSupportReplies.push({message_id:id,sender_role:'admin',sender_email:(session.user&&session.user.email)||'admin',body:text,created_at:new Date().toISOString()});
+    const m=allSupport.find(x=>x.id===id); if(m)m.status='replied';
+    renderSupport();
+    toast(j.email_sent?'Reply sent \u2014 partner emailed':'Reply saved \u2014 partner email failed, they\u2019ll see it in their portal');
+  }catch(e){toast('Reply failed \u2014 '+(e.message||e),'error');}
+  finally{btn.disabled=false;}
 }
 async function setSupportStatus(id,status){
   const {error}=await sb.from('partner_support_messages').update({status}).eq('id',id);
@@ -859,14 +885,16 @@ function showApp(){
 
 /* ── DATA LOADING ──────────────────────────────────────── */
 async function loadAll(){
-  const [pr,mr,cr,pyr,sm]=await Promise.all([
+  const [pr,mr,cr,pyr,sm,sr]=await Promise.all([
     sb.from('partner_partners').select('*').order('created_at'),
     sb.from('partner_memberships').select('*'),
     sb.from('partner_content_items').select('*').order('created_at',{ascending:false}),
     sb.from('partner_payouts').select('*').order('period',{ascending:false}),
     sb.from('partner_support_messages').select('*').order('created_at',{ascending:false}),
+    sb.from('partner_support_replies').select('*').order('created_at',{ascending:true}),
   ]);
   allSupport=sm.data||[];
+  allSupportReplies=sr.data||[];
   allPartners=pr.data||[];
   allMemberships=mr.data||[];
   allContent=cr.data||[];
