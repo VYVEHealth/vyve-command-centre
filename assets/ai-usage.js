@@ -14,7 +14,7 @@
 
   async function aiGetJwt(){
     try{var r=localStorage.getItem('vyve-cc-supabase-auth');if(r){var p=JSON.parse(r);var at=p&&(p.access_token||(p.data&&p.data.session&&p.data.session.access_token)||(p.session&&p.session.access_token));if(at)return at;}}catch(_){}
-    if(window.VYVE_SUPABASE){try{var d=await window.VYVE_SUPABASE.client().auth.getSession();if(d&&d.data&&d.data.session&&d.data.session.access_token)return d.data.session.access_token;}catch(_){}}
+    if(window.VYVE_SUPABASE){try{var d=await window.VYVE_SUPABASE.getClient().auth.getSession();if(d&&d.data&&d.data.session&&d.data.session.access_token)return d.data.session.access_token;}catch(_){}}
     return null;
   }
   var _tt;function aiToast(m){var t=$('toast');if(!t)return;t.textContent=m;t.classList.add('show');clearTimeout(_tt);_tt=setTimeout(function(){t.classList.remove('show');},3200);}

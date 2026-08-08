@@ -72,7 +72,7 @@ async function usageGetJwt() {
   } catch (_) {}
   if (window.VYVE_SUPABASE) {
     try {
-      const { data } = await window.VYVE_SUPABASE.client().auth.getSession();
+      const { data } = await window.VYVE_SUPABASE.getClient().auth.getSession();
       if (data?.session?.access_token) return data.session.access_token;
     } catch (_) {}
   }

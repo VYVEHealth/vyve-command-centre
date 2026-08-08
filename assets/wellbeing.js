@@ -19,7 +19,7 @@
 
   async function wbGetJwt(){
     try{ var r=localStorage.getItem('vyve-cc-supabase-auth'); if(r){var p=JSON.parse(r);var at=p&&(p.access_token||(p.data&&p.data.session&&p.data.session.access_token)||(p.session&&p.session.access_token));if(at)return at;} }catch(_){}
-    if(window.VYVE_SUPABASE){try{var d=await window.VYVE_SUPABASE.client().auth.getSession();if(d&&d.data&&d.data.session&&d.data.session.access_token)return d.data.session.access_token;}catch(_){}}
+    if(window.VYVE_SUPABASE){try{var d=await window.VYVE_SUPABASE.getClient().auth.getSession();if(d&&d.data&&d.data.session&&d.data.session.access_token)return d.data.session.access_token;}catch(_){}}
     return null;
   }
 
@@ -243,7 +243,7 @@
       var diff = Math.round((topAvgWb - botAvgWb) * 10) / 10;
       html += '<div style="margin-top:10px;padding:10px 14px;background:var(--surface-2);border-radius:8px;font-size:11px;color:var(--text-muted)">';
       if (diff > 0) html += '<strong style="color:var(--success)">Positive signal:</strong> The 3 most active members average wellbeing ' + topAvgWb.toFixed(1) + ' vs ' + botAvgWb.toFixed(1) + ' for the least active — a +' + diff + ' difference. Small sample (n=' + rows.length + '), but directionally consistent with the VYVE hypothesis.';
-      else if (diff < 0) html += '<strong style="color:var(--warning)">No positive signal yet:</strong> Most active members don't show higher wellbeing scores yet. Sample is small (n=' + rows.length + ') — this may reverse as more members check in.';
+      else if (diff < 0) html += '<strong style="color:var(--warning)">No positive signal yet:</strong> Most active members don\'t show higher wellbeing scores yet. Sample is small (n=' + rows.length + ') — this may reverse as more members check in.';
       else html += 'No clear correlation direction yet — need more data (n=' + rows.length + ').';
       html += '</div>';
     }

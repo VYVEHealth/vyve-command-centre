@@ -1,4 +1,6 @@
-// app-health.js — world-class monitoring dashboard v2 (PM-XXX)
+// app-health.js — world-class monitoring dashboard v3 (PM-882: IIFE-wrapped for SPA re-entry, getClient() fix, stale-run guards)
+(function(){
+'use strict';
 const SB_URL  = 'https://ixjfklpckgxrwjlfsaaz.supabase.co';
 const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg';
 const EF_BASE = SB_URL + '/functions/v1';
@@ -43,7 +45,7 @@ async function getJwt() {
   } catch(_) {}
   if (window.VYVE_SUPABASE) {
     try {
-      const { data } = await window.VYVE_SUPABASE.client().auth.getSession();
+      const { data } = await window.VYVE_SUPABASE.getClient().auth.getSession();
       if (data?.session?.access_token) return data.session.access_token;
     } catch(_) {}
   }
@@ -518,8 +520,9 @@ async function loadErrors() {
       .map(g => ({...g, members_hit:g.members.size}))
       .sort((a,b) => b.members_hit-a.members_hit || b.occurrences-a.occurrences);
 
-    setEl('live-count', liveRows.length);
     const lp = document.getElementById('live-count-pill');
+    if (!lp) return; // page navigated away mid-fetch — abandon this run
+    setEl('live-count', liveRows.length);
     lp.className = liveRows.length ? 'pill pill-live' : 'pill pill-ok';
     lp.innerHTML = '<span class="pill-dot"></span> '+(liveRows.length||'0')+' active';
 
@@ -527,12 +530,13 @@ async function loadErrors() {
 
     // Update overview tab count
     const tc = document.getElementById('tc-overview');
+    if (!tc) return;
     if (liveRows.length > 0) { tc.textContent=liveRows.length; tc.className='tab-count'; }
     else { tc.textContent='✓'; tc.className='tab-count ok'; }
 
     // Headline errors cell
     const errCell = document.getElementById('hl-errors-cell');
-    errCell.className = 'stat-cell'+(liveRows.length>0?' alert':'');
+    if (errCell) errCell.className = 'stat-cell'+(liveRows.length>0?' alert':'');
     setEl('hl-errors', liveRows.length.toString());
     setEl('hl-errors-sub', liveRows.length>0 ? 'high+critical unresolved' : 'All clear');
 
@@ -554,12 +558,14 @@ async function loadErrors() {
     const settledRows = Object.values(sg)
       .map(g=>({...g,members_hit:g.members.size}))
       .sort((a,b)=>b.occurrences-a.occurrences);
+    if (!document.getElementById('settled-count-pill')) return; // page gone
     setEl('settled-count-pill', settledRows.length+' items');
     renderErrors(settledRows, 'settled-errors-list', false);
 
   } catch(e) {
     console.error('loadErrors:', e);
-    document.getElementById('live-errors-list').innerHTML = '<div class="empty-state">Error loading: '+esc(e.message)+'</div>';
+    const lel = document.getElementById('live-errors-list');
+    if (lel) lel.innerHTML = '<div class="empty-state">Error loading: '+esc(e.message)+'</div>';
   }
 }
 
@@ -567,6 +573,7 @@ async function loadErrors() {
 async function loadCache() {
   try {
     const rows = await sbGet('cc_app_health', {'select':'*','id':'eq.1'});
+    if (!document.getElementById('refresh-text')) return; // page navigated away mid-fetch
     const row = rows && rows[0];
     if (!row) {
       setEl('refresh-text', 'Cache empty — click Refresh cache');
@@ -586,7 +593,7 @@ async function loadCache() {
     const hkStale = hl.hk_stale || 0;
     setEl('hl-hk-sub', hkStale > 0 ? hkStale+' stale (>48h)' : 'All synced recently');
     const hkCell = document.getElementById('hl-hk-cell');
-    hkCell.className = 'stat-cell' + (hkStale > (hl.hk_connected||0)*0.5 ? ' warn' : '');
+    if (hkCell) hkCell.className = 'stat-cell' + (hkStale > (hl.hk_connected||0)*0.5 ? ' warn' : '');
     setEl('hl-ai', hl.ai_calls_24h ?? '—');
 
     // Trend chart
@@ -715,7 +722,9 @@ async function openDetail(fp, type, sev) {
     btn.textContent = resolved===total ? 'All resolved' : 'Mark all resolved';
     btn.disabled = resolved===total;
 
-    document.getElementById('modal-body').innerHTML = rows.map(r => {
+    const mb = document.getElementById('modal-body');
+    if (!mb) return;
+    mb.innerHTML = rows.map(r => {
       const detail = r.details ? '<div class="instance-detail">'+esc(r.details).substring(0,500)+'</div>' : '';
       return `<div class="instance-row">
         <div style="display:flex;justify-content:space-between;align-items:center">
@@ -734,7 +743,8 @@ async function openDetail(fp, type, sev) {
       </div>`;
     }).join('');
   } catch(e) {
-    document.getElementById('modal-body').innerHTML = '<div class="empty-state">Error: '+esc(e.message)+'</div>';
+    const mbe = document.getElementById('modal-body');
+    if (mbe) mbe.innerHTML = '<div class="empty-state">Error: '+esc(e.message)+'</div>';
   }
 }
 
@@ -782,4 +792,19 @@ function showPageError(msg) {
     console.error('app-health boot:', e);
     showPageError('App Health failed to load: ' + (e && e.message ? e.message : e));
   }
+})();
+
+// ── Globals for inline onclick handlers (page HTML + generated rows) ─────
+window.showTab = showTab;
+window.toggleTheme = toggleTheme;
+window.triggerRefresh = triggerRefresh;
+window.bulkResolveOld = bulkResolveOld;
+window.bulkResolveSettled = bulkResolveSettled;
+window.toggleSettled = toggleSettled;
+window.usagePage = usagePage;
+window.openDetail = openDetail;
+window.resolveGroup = resolveGroup;
+window.closeDetailModal = closeDetailModal;
+window.closeModal = closeModal;
+window.resolveModalGroup = resolveModalGroup;
 })();

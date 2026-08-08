@@ -33,7 +33,7 @@
     } catch(_) {}
     if (window.VYVE_SUPABASE) {
       try {
-        var d = await window.VYVE_SUPABASE.client().auth.getSession();
+        var d = await window.VYVE_SUPABASE.getClient().auth.getSession();
         if (d && d.data && d.data.session && d.data.session.access_token) return d.data.session.access_token;
       } catch(_) {}
     }
