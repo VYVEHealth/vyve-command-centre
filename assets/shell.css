@@ -1680,3 +1680,82 @@ kbd {
   color: var(--text-muted);
   padding: 6px 0;
 }
+
+
+/* =====================================================================
+   PM-883 — Unified shell: persistent desktop rail + mobile bottom tabs
+   (Dean-approved mockup, 2026-08-08). Domains live in the rail; the
+   top-nav tab row is retired at all widths.
+   ===================================================================== */
+
+/* Domain tabs retired — rail is the single level-1 nav */
+.topnav-tabs { display: none !important; }
+
+/* ---- Desktop (>900px): rail is persistent, hamburger collapses it ---- */
+@media (min-width: 901px) {
+  aside.sidebar {
+    transform: none;
+    transition: width var(--t-base);
+  }
+  aside.sidebar.open { box-shadow: none; }
+  .sidebar-overlay, .sidebar-overlay.open { opacity: 0; pointer-events: none; }
+  .app-body { margin-left: 280px; transition: margin-left var(--t-base); }
+  /* Rail carries the brand — hide the duplicate in the top bar */
+  .topnav-logo { display: none; }
+
+  /* Collapsed rail: icon-only */
+  html.rail-collapsed aside.sidebar { width: 76px; overflow-x: hidden; }
+  html.rail-collapsed .app-body { margin-left: 76px; }
+  html.rail-collapsed .brand { padding: 20px 0 14px; text-align: center; }
+  html.rail-collapsed .brand-title { font-size: 15px; }
+  html.rail-collapsed .brand-sub,
+  html.rail-collapsed .brand-tagline,
+  html.rail-collapsed .nav-section-label,
+  html.rail-collapsed .nav-item span,
+  html.rail-collapsed .sidebar-footer .email,
+  html.rail-collapsed .sidebar-footer button,
+  html.rail-collapsed .sidebar-footer .footer-version { display: none; }
+  html.rail-collapsed .nav-item { justify-content: center; padding: 10px 0; gap: 0; }
+  html.rail-collapsed .nav-item.active::before { left: 0; }
+  html.rail-collapsed .nav-section { padding: 10px 8px 0; }
+  html.rail-collapsed .sidebar-footer { padding: 14px 0 18px; display: flex; justify-content: center; }
+  html.rail-collapsed .sidebar-footer .user-block { justify-content: center; }
+}
+
+/* ---- Mobile (≤900px): drawer unchanged + bottom tab bar ---- */
+.bottom-tabs { display: none; }
+@media (max-width: 900px) {
+  .bottom-tabs {
+    display: flex;
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: var(--z-topbar);
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    justify-content: space-around;
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+  }
+  .bottom-tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 4px 10px;
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: var(--fw-medium);
+    border-radius: var(--r-sm);
+    min-width: 52px;
+    background: none;
+    border: 0;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .bottom-tab svg {
+    width: 19px; height: 19px;
+    stroke: currentColor; fill: none;
+    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+  }
+  .bottom-tab.active { color: var(--vyve-gold); }
+  .content { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+}

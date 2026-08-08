@@ -12,7 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 
   <link rel="stylesheet" href="assets/tokens.css"/>
-  <link rel="stylesheet" href="assets/shell.css?v=PM-796"/>
+  <link rel="stylesheet" href="assets/shell.css?v=PM-883"/>
   <link rel="stylesheet" href="assets/components.css"/>
   <!-- Theme boot: apply before first paint to avoid flash -->
   <script>
@@ -21,6 +21,10 @@
       if (stored === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
       else if (stored === 'light') document.documentElement.setAttribute('data-theme', 'light');
       // 'system' or null: no data-theme set, CSS media query handles it
+      // PM-883: restore collapsed-rail preference before first paint (class on <html>)
+      if (localStorage.getItem('vyve-cc-rail') === 'collapsed') {
+        document.documentElement.classList.add('rail-collapsed');
+      }
     })();
   </script>
 </head>
@@ -138,6 +142,30 @@
     </main>
     </div><!-- /.app-body -->
   </div>
+
+  <!-- PM-883: mobile bottom tab bar (hidden >900px via shell.css) -->
+  <nav class="bottom-tabs" id="bottom-tabs" aria-label="Primary">
+    <a class="bottom-tab" href="#/home" data-domain="home">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+      <span>Home</span>
+    </a>
+    <a class="bottom-tab" href="#/domain-analytics" data-domain="analytics">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+      <span>Analytics</span>
+    </a>
+    <a class="bottom-tab" href="#/domain-members" data-domain="members">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>Members</span>
+    </a>
+    <a class="bottom-tab" href="#/domain-partners" data-domain="partners">
+      <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+      <span>Partners</span>
+    </a>
+    <button class="bottom-tab" id="bottom-tab-more" type="button" data-domain="more">
+      <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/></svg>
+      <span>More</span>
+    </button>
+  </nav>
 
   <!-- Quick-search overlay -->
   <div class="quick-search" id="quick-search" aria-hidden="true">
@@ -292,7 +320,13 @@
       function open(){ if (sb) sb.classList.add('open'); if (ov) ov.classList.add('open'); }
       function close(){ if (sb) sb.classList.remove('open'); if (ov) ov.classList.remove('open'); }
       function toggle(){ if (sb && sb.classList.contains('open')) close(); else open(); }
-      if (btn) btn.addEventListener('click', toggle);
+      // PM-883: on desktop the rail is persistent — hamburger collapses it instead
+      function isDesktop(){ return window.innerWidth > 900; }
+      function toggleRail(){
+        var collapsed = document.documentElement.classList.toggle('rail-collapsed');
+        localStorage.setItem('vyve-cc-rail', collapsed ? 'collapsed' : 'open');
+      }
+      if (btn) btn.addEventListener('click', function(){ isDesktop() ? toggleRail() : toggle(); });
       if (ov)  ov.addEventListener('click', close);
       window.addEventListener('vyve:page', close);
       document.addEventListener('keydown', function(e){ if (e.key === 'Escape') close(); });
@@ -320,6 +354,43 @@
         }
         touchTracking = false;
       }, { passive: true });
+    })();
+
+    // PM-883: bottom tab bar — active state follows the current page's domain
+    (function(){
+      var bar = document.getElementById('bottom-tabs');
+      if (!bar) return;
+      var more = document.getElementById('bottom-tab-more');
+      if (more) more.addEventListener('click', function(){
+        var sb = document.getElementById('sidebar');
+        var ov = document.getElementById('sidebar-overlay');
+        if (sb) sb.classList.add('open');
+        if (ov) ov.classList.add('open');
+      });
+      var SECTION_TO_DOMAIN = {
+        'VYVE': 'home', 'Analytics': 'analytics', 'Members': 'members',
+        'Partners': 'partners', 'Run the Business': 'more', 'Employers': 'more', 'System': 'more'
+      };
+      function domainForSlug(slug){
+        if (slug === 'home') return 'home';
+        if (slug.indexOf('domain-') === 0) return slug.slice(7);
+        var nav = window.VYVE_NAV || [];
+        for (var i=0;i<nav.length;i++){
+          for (var j=0;j<nav[i].items.length;j++){
+            if (nav[i].items[j].slug === slug) return SECTION_TO_DOMAIN[nav[i].section] || 'more';
+          }
+        }
+        return 'more';
+      }
+      function paint(slug){
+        var d = domainForSlug(slug || 'home');
+        var tabs = bar.querySelectorAll('.bottom-tab');
+        for (var i=0;i<tabs.length;i++){
+          tabs[i].classList.toggle('active', tabs[i].getAttribute('data-domain') === d);
+        }
+      }
+      window.addEventListener('vyve:page', function(e){ paint(e.detail && e.detail.slug); });
+      paint((location.hash || '').replace(/^#\/?/, '').split('/')[0]);
     })();
   </script>
 </body>
