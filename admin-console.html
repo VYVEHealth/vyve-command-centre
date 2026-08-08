@@ -589,7 +589,9 @@ table.members tr:last-child td{border-bottom:0}
 // Supabase client
 const SUPABASE_URL = 'https://ixjfklpckgxrwjlfsaaz.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg';
-const supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true, storageKey: 'vyve-cc-supabase-auth' }
+});
 
 // State
 let currentUser = null;
