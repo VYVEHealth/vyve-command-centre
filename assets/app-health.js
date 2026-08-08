@@ -106,11 +106,17 @@ function scheduleThresholdMs(schedule) {
   return 26 * 3600000;                                     // daily default
 }
 
+// PM-886: lateness is judged against the SNAPSHOT time, not wall-clock now.
+// The cron data is an hourly cc_app_health snapshot — comparing its last_run
+// values to Date.now() marked every short-interval job Late/Overdue whenever
+// the cache was older than the job's interval (guaranteed false alarms).
+let _cronAsOf = null;
+
 function cronJobStatus(job) {
   if (!job.active) return { cls: 'off', label: 'Disabled', sub: 'Not active' };
   if (!job.last_run_at) return { cls: 'warn', label: 'Never run', sub: 'No history' };
   if (job.last_status === 'failed') return { cls: 'dead', label: 'Failed', sub: timeAgo(job.last_run_at) };
-  const age = Date.now() - new Date(job.last_run_at).getTime();
+  const age = (_cronAsOf || Date.now()) - new Date(job.last_run_at).getTime();
   const thresh = scheduleThresholdMs(job.schedule);
   if (age > thresh * 2.5) return { cls: 'dead', label: 'Overdue', sub: timeAgo(job.last_run_at) };
   if (age > thresh * 1.4) return { cls: 'warn', label: 'Late',    sub: timeAgo(job.last_run_at) };
@@ -579,6 +585,7 @@ async function loadCache() {
       setEl('refresh-text', 'Cache empty — click Refresh cache');
       return;
     }
+    _cronAsOf = row.refreshed_at ? new Date(row.refreshed_at).getTime() : null;
     const refreshed = row.refreshed_at ? timeAgo(row.refreshed_at) : '—';
     setEl('refresh-text', 'Cache refreshed '+refreshed);
 
