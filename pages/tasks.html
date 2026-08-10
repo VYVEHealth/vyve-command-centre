@@ -317,7 +317,7 @@
         '<div class="form-row cols-3"><div class="form-group"><label>Stage</label><select id="tkf-stage"><option value="todo">To do</option><option value="doing">Doing</option><option value="blocked">Blocked</option><option value="done">Done</option></select></div><div class="form-group"><label>Priority</label><select id="tkf-priority"><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></div><div class="form-group"><label>Due date</label><input type="date" id="tkf-due" value="' + (t.due_date || '') + '"/></div></div>' +
         '<div class="form-row cols-2"><div class="form-group"><label>Assignee</label><select id="tkf-assignee">' + assigneeOptions + '</select></div><div class="form-group"><label>Pillar</label><select id="tkf-pillar"><option value="">—</option><option value="physical">Physical</option><option value="mental">Mental</option><option value="social">Social</option><option value="business">Business</option></select></div></div>' +
         '<div class="form-row"><div class="form-group"><label>Notes</label><textarea id="tkf-notes" rows="4">' + escape(t.notes || '') + '</textarea></div></div>' +
-        (isEdit ? '<div class="form-row"><div class="form-group"><label>Attachments</label><div id="tkf-attachments" style="margin-bottom:8px"><span style="color:var(--text-muted);font-size:12px">Loading…</span></div><div style="display:flex;align-items:center;gap:8px"><input type="file" id="tkf-file-input" style="display:none"/><button class="btn btn-sm" id="tkf-choose-btn" type="button">Choose file…</button><span id="tkf-file-name" style="flex:1;font-size:12px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">No file chosen</span><button class="btn btn-sm" id="tkf-upload-btn" type="button">Upload</button></div></div></div>' : '') +
+        (isEdit ? '<div class="form-row"><div class="form-group"><label>Attachments</label><div id="tkf-attachments" style="margin-bottom:8px"><span style="color:var(--text-muted);font-size:12px">Loading…</span></div><div style="display:flex;align-items:center;gap:8px"><input type="file" id="tkf-file-input" style="display:none"/><button class="btn btn-sm" id="tkf-choose-btn" type="button">+ Add file</button><span id="tkf-file-name" style="flex:1;font-size:12px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Files upload as soon as you pick them</span></div></div></div>' : '') +
         '<div style="display:flex;justify-content:space-between;gap:8px">' +
           (isEdit && state.isAdmin ? '<button class="btn" id="tkf-del" style="color:var(--danger);border-color:rgba(224,96,96,.3)">Delete</button>' : '<span></span>') +
           '<button class="btn btn-primary" id="tkf-save">' + (isEdit ? 'Save' : 'Create') + '</button>' +
@@ -437,49 +437,44 @@
         var chooseBtn = document.getElementById('tkf-choose-btn');
         var fileNameEl = document.getElementById('tkf-file-name');
         var fileInputEl = document.getElementById('tkf-file-input');
+
+        async function doUpload(file){
+          if (!file) return;
+          chooseBtn.disabled = true;
+          if (fileNameEl) fileNameEl.textContent = 'Uploading ' + file.name + '\u2026';
+          try {
+            var jwt = await getJwt();
+            var r1 = await fetch(EF_URL, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt}, body: JSON.stringify({action:'upload',task_id:t.id,file_name:file.name,mime_type:file.type}) });
+            var d1 = await r1.json();
+            if (!d1.upload_url){ throw new Error(d1.error || 'No upload URL'); }
+            var r2 = await fetch(d1.upload_url, { method:'PUT', headers:{'Content-Type': file.type || 'application/octet-stream', 'x-upsert':'false'}, body: file });
+            if (!r2.ok){ throw new Error('Storage PUT failed: ' + r2.status); }
+            var ins = await S.client.from('cc_task_attachments').insert({
+              task_id: t.id,
+              uploaded_by: state.me,
+              file_name: file.name,
+              storage_path: d1.storage_path,
+              file_size: file.size,
+              mime_type: file.type || null
+            });
+            if (ins.error) throw new Error(ins.error.message);
+            if (VYVE_UI && VYVE_UI.toast) VYVE_UI.toast('Uploaded: ' + file.name, 'success');
+            if (fileNameEl) fileNameEl.textContent = 'Uploaded \u2713 \u2014 add another?';
+            await loadAttachments();
+          } catch(e){
+            if (fileNameEl) fileNameEl.textContent = 'Upload failed \u2014 try again';
+            alert('Upload failed: ' + (e.message || 'unknown'));
+          } finally {
+            chooseBtn.disabled = false;
+            fileInputEl.value = '';
+          }
+        }
+
         if (chooseBtn && fileInputEl){
           chooseBtn.addEventListener('click', function(){ fileInputEl.click(); });
           fileInputEl.addEventListener('change', function(){
             var f = fileInputEl.files && fileInputEl.files[0];
-            if (fileNameEl) fileNameEl.textContent = f ? f.name : 'No file chosen';
-          });
-        }
-        var uploadBtn = document.getElementById('tkf-upload-btn');
-        if (uploadBtn){
-          uploadBtn.addEventListener('click', async function(){
-            var fileInput = document.getElementById('tkf-file-input');
-            var file = fileInput && fileInput.files && fileInput.files[0];
-            if (!file){ fileInput && fileInput.click(); return; }
-            uploadBtn.disabled = true;
-            uploadBtn.textContent = 'Uploading…';
-            try {
-              var jwt = await getJwt();
-              // 1. Get signed upload URL
-              var r1 = await fetch(EF_URL, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt}, body: JSON.stringify({action:'upload',task_id:t.id,file_name:file.name,mime_type:file.type}) });
-              var d1 = await r1.json();
-              if (!d1.upload_url){ throw new Error(d1.error || 'No upload URL'); }
-              // 2. PUT file to signed URL
-              var r2 = await fetch(d1.upload_url, { method:'PUT', headers:{'Content-Type': file.type || 'application/octet-stream', 'x-upsert':'false'}, body: file });
-              if (!r2.ok){ throw new Error('Storage PUT failed: ' + r2.status); }
-              // 3. Insert attachment row
-              var ins = await S.client.from('cc_task_attachments').insert({
-                task_id: t.id,
-                uploaded_by: state.me,
-                file_name: file.name,
-                storage_path: d1.storage_path,
-                file_size: file.size,
-                mime_type: file.type || null
-              });
-              if (ins.error) throw new Error(ins.error.message);
-              if (VYVE_UI && VYVE_UI.toast) VYVE_UI.toast('Uploaded: ' + file.name, 'success');
-              fileInput.value = ''; if (fileNameEl) fileNameEl.textContent = 'No file chosen';
-              await loadAttachments();
-            } catch(e){
-              alert('Upload failed: ' + (e.message || 'unknown'));
-            } finally {
-              uploadBtn.disabled = false;
-              uploadBtn.textContent = 'Upload';
-            }
+            if (f) doUpload(f);
           });
         }
       }
