@@ -1042,6 +1042,29 @@
     document.addEventListener('input', function(e){ if (e.target && e.target.id === id) syncMyPhone(); });
   });
 
+  /* PM-902: tell VYVE when something breaks in the browser. Every failure in the
+     Vanessa incident (cover 413, dropped video) died here and reached us days later
+     from the partner. Fire-and-forget — reporting must never disturb the user or
+     throw inside a catch block. */
+  function reportError(context, message, detail, severity) {
+    try {
+      fetch(_SUPA_URL + '/functions/v1/report-error', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        keepalive: true,
+        body: JSON.stringify({
+          surface: 'partner-portal',
+          context: context,
+          severity: severity || 'critical',
+          message: String(message || '').slice(0, 500),
+          detail: detail || null,
+          actor_email: (state.session && state.session.user && state.session.user.email) || null,
+          partner_id: state.partnerId || null
+        })
+      }).catch(function(){});
+    } catch (_) {}
+  }
+
   // ── My Space image uploads: partner-content-upload sign-thumb (PUBLIC bucket) ──
   async function uploadSpaceImage(kind, file) {
     if (!file || !state.partnerId) return;
@@ -1070,7 +1093,12 @@
       if (kind === 'avatar') state.avatarUrl = d.public_url; else state.coverUrl = d.public_url;
       setDropPreview(kind, d.public_url); syncMyPhone();
       toast(kind === 'avatar' ? 'Profile photo updated' : 'Cover photo updated');
-    } catch (e) { toast('Error: ' + e.message); setDropPreview(kind, urlish(kind === 'avatar' ? state.avatarUrl : state.coverUrl)); }
+    } catch (e) {
+      var tooBig = /\(413\)|Payload too large|exceeded the maximum/i.test(e.message || '');
+      toast(tooBig ? 'That image is too large — 8MB max. Try a smaller export.' : ('Error: ' + e.message));
+      reportError(kind === 'avatar' ? 'avatar-upload' : 'cover-upload', e.message, { file_mb: +(file.size/1048576).toFixed(1), file_type: file.type, too_big: tooBig });
+      setDropPreview(kind, urlish(kind === 'avatar' ? state.avatarUrl : state.coverUrl));
+    }
     drop.classList.remove('uploading');
   }
   /* ── PM-860: crop / reposition ────────────────────────────────────────────────
@@ -1403,6 +1431,7 @@
     if (!file) return false;
     if (file.size > MAX_UPLOAD_BYTES) {
       toast('That video is ' + (file.size/1073741824).toFixed(2) + 'GB — the limit is 2GB. Please trim or compress it first.');
+      reportError('video-too-large', 'File exceeds max upload size', { file_mb: +(file.size/1048576).toFixed(1), file_type: file.type }, 'warn');
       return false;
     }
     state.uploadFile = file;
@@ -1514,7 +1543,17 @@
       await loadContent();
 
     } catch(e) {
-      toast('Upload error: ' + e.message);
+      var pct = parseInt(($('upload-bar').style.width || '0'), 10) || 0;
+      var msg = /Upload failed: 0|NetworkError|Failed to fetch|network/i.test(e.message || '')
+        ? 'Upload interrupted at ' + pct + '% — usually a connection drop. Try again on wifi and we\u2019ll pick it up.'
+        : 'Upload error: ' + e.message;
+      toast(msg);
+      reportError('video-upload', e.message, {
+        progress_pct: pct,
+        file_mb: state.uploadFile ? +(state.uploadFile.size/1048576).toFixed(1) : null,
+        file_type: state.uploadFile ? state.uploadFile.type : null,
+        is_welcome: state.welcomeMode === true
+      });
     }
     btn.disabled = false; btn.textContent = 'Submit for review';
   });
