@@ -319,8 +319,11 @@
         var html = '<option value="">View as\u2026 (me)</option>';
         people.forEach(function(p){
           if (p.email === me.email) return;
-          var nm = (p.notes || '').split('\u2014')[0].trim() || p.email;
-          html += '<option value="' + p.email + '"' + (current === p.email ? ' selected' : '') + '>' + nm + ' (' + p.role + ')</option>';
+          var n = (p.notes || '');
+          var di = n.indexOf('\u2014');
+          var nm = (di >= 0 ? n.slice(0, di) : n).trim() || p.email;
+          var title = di >= 0 ? n.slice(di + 1).trim().split('(')[0].trim() : '';
+          html += '<option value="' + p.email + '"' + (current === p.email ? ' selected' : '') + '>' + nm + ' (' + (title || p.role) + ')</option>';
         });
         sel.innerHTML = html;
         sel.style.display = 'inline-block';
