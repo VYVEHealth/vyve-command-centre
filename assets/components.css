@@ -1021,3 +1021,22 @@ table.tbl tr:hover td { background: var(--bg-alt); }
   accent-color: var(--accent);
   background: transparent;
 }
+
+/* =====================================================================
+   PM-923 — CC mobile audit, systemic fixes (Dean device report, 3 pages;
+   full findings in VYVEBrain playbooks/cc-mobile-audit.md).
+   (1) 21 tables across 14 pages had no .m-scroll wrapper and clipped:
+       on mobile every table becomes its own horizontal scroller.
+   (2) .tab-bar (app-health, intel, sessions, settings, strategy, usage)
+       clipped its overflow: it now swipes.
+   (3) media elements clamp to the viewport.
+   Escape hatch: table.no-mscroll opts out.
+   ===================================================================== */
+@media (max-width: 900px) {
+  .page table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+  .page table.no-mscroll { display: table; }
+  .tab-bar { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; scrollbar-width: none; }
+  .tab-bar::-webkit-scrollbar { display: none; }
+  .tab-btn { white-space: nowrap; flex: 0 0 auto; }
+  .page img, .page canvas, .page svg, .page video { max-width: 100%; height: auto; }
+}
