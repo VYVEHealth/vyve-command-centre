@@ -1040,3 +1040,13 @@ table.tbl tr:hover td { background: var(--bg-alt); }
   .tab-btn { white-space: nowrap; flex: 0 0 auto; }
   .page img, .page canvas, .page svg, .page video { max-width: 100%; height: auto; }
 }
+
+/* =====================================================================
+   PM-927 — .tab-bar swipe was dead everywhere (Dean device report):
+   base .tab-bar has width:fit-content, so the strip sizes to its buttons
+   and never overflows internally — overflow-x:auto had nothing to scroll.
+   Clamp to the viewport on mobile so the strip actually scrolls.
+   ===================================================================== */
+@media (max-width: 900px) {
+  .tab-bar { max-width: 100%; }
+}

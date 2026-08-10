@@ -42,6 +42,11 @@
 #page-partner-management .app { display: block; }
 #page-partner-management .pt-main { margin: 0; width: 100%; }
 #page-partner-management .pt-viewbar { margin-bottom: 16px; }
+/* PM-927: three internal users — wrap the view pills on mobile so every view
+   is visible with zero gestures (overrides the shared nowrap-swipe pattern). */
+@media (max-width: 900px) {
+  #page-partner-management .pt-viewbar { flex-wrap: wrap; overflow-x: visible; }
+}
 #page-partner-management #gate { min-height: 40vh; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script><script>
