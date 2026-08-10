@@ -1,4 +1,8 @@
 <div class="page active" id="page-partner-management">
+<!-- PM-926: compat stubs — the ported script's showApp() writes the signed-in name/avatar
+     into the old sidebar footer (#sf-nm/#sf-av) which the port removed; without these the
+     null deref killed showApp before loadAll(), leaving every KPI blank (Dean's screenshots). -->
+<div style="display:none" aria-hidden="true"><span id="sf-av"></span><span id="sf-nm"></span></div>
 <style>
 #page-partner-management{
   --success:#2D9E4A;--warning:#E09B3D;--danger:#E06060;
