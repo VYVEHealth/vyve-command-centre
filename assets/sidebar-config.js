@@ -23,7 +23,8 @@ window.VYVE_NAV = [
   {
     section: "VYVE",
     items: [
-      { slug: "home", label: "Home", icon: "grid", status: "live" }
+      { slug: "home", label: "Home", icon: "grid", status: "live" },
+      { slug: "inbox", area: "partners", label: "Inbox", icon: "mail", status: "live", desc: "Partner messages, answered like a conversation." }
     ]
   },
   // ---------- Run the Business ----------
@@ -105,6 +106,7 @@ window.VYVE_ICONS = {
   "search":       '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>',
   "radar":        '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 12 L12 4"/><path d="M12 12 L18.5 8"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>',
   "eye":          '<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+  "mail":         '<svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>',
   "grid":         '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>',
   "trending-up":  '<svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>',
   "briefcase":    '<svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>',

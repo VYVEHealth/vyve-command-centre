@@ -1,493 +1,266 @@
-<div class="page active" id="page-inbox">
-  <div class="page-hero">
-    <div class="eyebrow">What needs you today</div>
-    <h1 class="page-title">Inbox</h1>
-    <p class="page-sub">Everything assigned to you, awaiting you, or at risk of slipping. Clear it; close the day.</p>
-    <div class="hero-actions">
-      <button class="btn btn-ghost btn-sm" id="inbox-refresh" type="button">↻ Refresh</button>
-      <button class="btn btn-ghost btn-sm" id="inbox-mark-all" type="button">Mark all read</button>
+<!-- =====================================================================
+     VYVE Command Centre — Inbox (PM-910)
+     Messenger-style partner support: thread list + chat view + reply.
+     Data: partner_support_messages / partner_support_replies (admin RLS);
+     replies go through the partner-support EF (emails + limits enforced).
+     ===================================================================== -->
+<style>
+.ib-wrap{display:grid;grid-template-columns:320px 1fr;gap:0;border:1px solid var(--border);border-radius:16px;background:var(--surface);box-shadow:var(--shadow-md);overflow:hidden;min-height:560px;height:calc(100vh - 220px)}
+.ib-list{border-right:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column}
+.ib-list-head{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.ib-list-head h3{font-size:14px;font-weight:700}
+.ib-count{font-size:11px;font-weight:700;background:var(--danger-pale,#fbe9e9);color:var(--danger,#c0392b);border-radius:99px;padding:2px 9px}
+.ib-thread{padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;gap:10px;align-items:flex-start}
+.ib-thread:hover{background:var(--surface-2)}
+.ib-thread.active{background:var(--accent-pale)}
+.ib-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--vyve-teal,#4DAAAA),var(--vyve-teal-light,#6FB8B8));color:#fff;display:grid;place-items:center;font-size:12px;font-weight:700;flex-shrink:0;text-transform:uppercase}
+.ib-tmain{flex:1;min-width:0}
+.ib-tname{font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px}
+.ib-tsnip{font-size:12px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.ib-ttime{font-size:10.5px;color:var(--text-dim);font-family:var(--font-mono);flex-shrink:0}
+.ib-dot{width:8px;height:8px;border-radius:50%;background:var(--danger,#c0392b);flex-shrink:0}
+.ib-chip{font-size:9.5px;font-weight:700;border-radius:99px;padding:1px 7px;text-transform:uppercase;letter-spacing:.06em}
+.ib-chip.open{background:var(--danger-pale,#fbe9e9);color:var(--danger,#c0392b)}
+.ib-chip.replied{background:var(--success-pale,#e7f5e7);color:var(--success,#3a9c3a)}
+.ib-chip.closed{background:var(--surface-2);color:var(--text-muted)}
+.ib-conv{display:flex;flex-direction:column;min-width:0}
+.ib-conv-head{padding:13px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.ib-conv-head .ib-back{display:none;background:none;border:0;font-size:18px;cursor:pointer;color:var(--text)}
+.ib-conv-title{flex:1;min-width:0}
+.ib-conv-title b{font-size:14.5px}
+.ib-conv-sub{font-size:11.5px;color:var(--text-muted)}
+.ib-msgs{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:10px;background:var(--bg)}
+.ib-bubble{max-width:76%;padding:10px 14px;border-radius:16px;font-size:13.5px;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+.ib-bubble.partner{align-self:flex-start;background:var(--surface);border:1px solid var(--border);border-bottom-left-radius:5px}
+.ib-bubble.admin{align-self:flex-end;background:var(--vyve-teal,#4DAAAA);color:#fff;border-bottom-right-radius:5px}
+.ib-meta{font-size:10px;color:var(--text-dim);margin-top:5px;font-family:var(--font-mono)}
+.ib-bubble.admin .ib-meta{color:rgba(255,255,255,.75)}
+.ib-compose{border-top:1px solid var(--border);padding:12px 14px;display:flex;gap:10px;align-items:flex-end;background:var(--surface)}
+.ib-compose textarea{flex:1;resize:none;border:1px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text);padding:10px 12px;font-size:13.5px;font-family:inherit;min-height:44px;max-height:140px}
+.ib-empty{display:grid;place-items:center;color:var(--text-muted);font-size:13.5px;height:100%;padding:30px;text-align:center}
+@media(max-width:820px){
+  .ib-wrap{grid-template-columns:1fr;height:calc(100vh - 190px)}
+  .ib-wrap.showing-conv .ib-list{display:none}
+  .ib-wrap:not(.showing-conv) .ib-conv{display:none}
+  .ib-conv-head .ib-back{display:block}
+  .ib-bubble{max-width:88%}
+}
+</style>
+
+<div class="hm-head" style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px">
+  <div>
+    <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:6px">Messages</div>
+    <div style="font-size:25px;font-weight:700;letter-spacing:-.015em">Inbox</div>
+    <div style="font-size:13px;color:var(--text-muted)">Partner messages, answered like a conversation. Replies also email the partner.</div>
+  </div>
+</div>
+
+<div class="ib-wrap" id="ib-wrap">
+  <div class="ib-list">
+    <div class="ib-list-head"><h3>Conversations</h3><span class="ib-count" id="ib-open-count" style="display:none">0</span></div>
+    <div id="ib-threads"><div class="ib-empty">Loading…</div></div>
+  </div>
+  <div class="ib-conv">
+    <div class="ib-conv-head" id="ib-conv-head" style="display:none">
+      <button class="ib-back" id="ib-back" type="button" aria-label="Back">&larr;</button>
+      <span class="ib-av" id="ib-conv-av">?</span>
+      <div class="ib-conv-title"><b id="ib-conv-name">—</b><div class="ib-conv-sub" id="ib-conv-sub"></div></div>
+      <span class="ib-chip open" id="ib-conv-chip">open</span>
+      <button class="btn btn-ghost btn-sm" id="ib-close-btn" type="button" title="Close this conversation">Close</button>
     </div>
-  </div>
-
-  <!-- Counts row -->
-  <div class="inbox-counts">
-    <button class="inbox-count active" data-filter="all">
-      <span class="num" id="cnt-all">0</span>
-      <span class="lbl">All</span>
-    </button>
-    <button class="inbox-count" data-filter="overdue">
-      <span class="num danger" id="cnt-overdue">0</span>
-      <span class="lbl">Overdue</span>
-    </button>
-    <button class="inbox-count" data-filter="today">
-      <span class="num" id="cnt-today">0</span>
-      <span class="lbl">Today</span>
-    </button>
-    <button class="inbox-count" data-filter="this-week">
-      <span class="num" id="cnt-week">0</span>
-      <span class="lbl">This week</span>
-    </button>
-    <button class="inbox-count" data-filter="mentions">
-      <span class="num" id="cnt-mentions">0</span>
-      <span class="lbl">Mentions</span>
-    </button>
-    <button class="inbox-count" data-filter="blocked">
-      <span class="num warn" id="cnt-blocked">0</span>
-      <span class="lbl">Blocked</span>
-    </button>
-    <button class="inbox-count" data-filter="stalled">
-      <span class="num warn" id="cnt-stalled">0</span>
-      <span class="lbl">Stalled deals</span>
-    </button>
-  </div>
-
-  <!-- Items list -->
-  <div class="card" style="padding:0;overflow:hidden">
-    <div id="inbox-list" class="inbox-list">
-      <div class="empty" style="padding:48px 24px">
-        <span class="spinner"></span>
-        <h3 style="margin-top:14px">Loading inbox</h3>
-      </div>
+    <div class="ib-msgs" id="ib-msgs"><div class="ib-empty">Pick a conversation on the left.<br/>New partner messages push to your phone the moment they arrive.</div></div>
+    <div class="ib-compose" id="ib-compose" style="display:none">
+      <textarea id="ib-text" placeholder="Write a reply…" rows="1"></textarea>
+      <button class="btn btn-primary" id="ib-send" type="button">Send</button>
     </div>
   </div>
 </div>
 
-<style>
-.inbox-counts {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 10px;
-  margin-bottom: 22px;
-}
-@media (max-width: 1100px) { .inbox-counts { grid-template-columns: repeat(4, 1fr); } }
-@media (max-width: 640px)  { .inbox-counts { grid-template-columns: repeat(2, 1fr); } }
-
-.inbox-count {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  padding: 14px 12px 12px;
-  cursor: pointer;
-  text-align: center;
-  font-family: inherit;
-  transition: border-color var(--t-fast), box-shadow var(--t-fast);
-}
-.inbox-count:hover { border-color: var(--border-strong); }
-.inbox-count.active {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--vyve-teal-pale);
-}
-.inbox-count .num {
-  font-family: var(--font-head);
-  font-size: var(--fs-2xl);
-  font-weight: var(--fw-bold);
-  color: var(--text);
-  line-height: 1;
-  display: block;
-  letter-spacing: var(--ls-tight);
-}
-.inbox-count .num.danger { color: var(--danger); }
-.inbox-count .num.warn   { color: var(--warning); }
-.inbox-count .lbl {
-  display: block;
-  margin-top: 6px;
-  font-size: var(--fs-xxs);
-  font-weight: var(--fw-bold);
-  letter-spacing: var(--ls-wide);
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-.inbox-list { background: var(--surface); }
-.inbox-item {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 14px 22px;
-  border-bottom: 1px solid var(--border);
-  cursor: pointer;
-  transition: background var(--t-fast);
-}
-.inbox-item:last-child { border-bottom: 0; }
-.inbox-item:hover { background: var(--bg-alt); }
-.inbox-item-icon {
-  width: 32px; height: 32px;
-  border-radius: var(--r-sm);
-  background: var(--surface-2);
-  color: var(--text-muted);
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-}
-.inbox-item.kind-overdue .inbox-item-icon { background: var(--danger-pale); color: var(--danger); }
-.inbox-item.kind-today .inbox-item-icon   { background: var(--vyve-teal-pale); color: var(--vyve-teal); }
-.inbox-item.kind-blocked .inbox-item-icon { background: var(--warning-pale); color: #8A5E1F; }
-.inbox-item.kind-mention .inbox-item-icon { background: var(--info-pale); color: var(--info); }
-.inbox-item.kind-stalled .inbox-item-icon { background: var(--warning-pale); color: #8A5E1F; }
-.inbox-item-icon svg {
-  width: 16px; height: 16px;
-  stroke: currentColor; fill: none;
-  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
-}
-.inbox-item-main { flex: 1; min-width: 0; }
-.inbox-item-title {
-  font-size: var(--fs-base);
-  font-weight: var(--fw-medium);
-  color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.inbox-item-sub {
-  font-size: var(--fs-xs);
-  color: var(--text-muted);
-  margin-top: 3px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.inbox-item-sub .type-pill {
-  display: inline-flex;
-  align-items: center;
-  padding: 1px 7px;
-  border-radius: var(--r-pill);
-  background: var(--surface-2);
-  font-size: 10px;
-  font-weight: var(--fw-bold);
-  letter-spacing: var(--ls-wide);
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-.inbox-item-meta {
-  font-size: var(--fs-xs);
-  color: var(--text-muted);
-  flex-shrink: 0;
-  text-align: right;
-}
-.inbox-item-meta .meta-badge {
-  font-weight: var(--fw-semi);
-}
-.inbox-item-meta .meta-badge.danger { color: var(--danger); }
-.inbox-item-meta .meta-badge.warn   { color: var(--warning); }
-
-.inbox-section-label {
-  padding: 16px 22px 8px;
-  font-size: var(--fs-xxs);
-  font-weight: var(--fw-bold);
-  letter-spacing: var(--ls-mega);
-  text-transform: uppercase;
-  color: var(--text-muted);
-  background: var(--bg-alt);
-  border-bottom: 1px solid var(--border);
-}
-.inbox-empty {
-  padding: 64px 24px;
-  text-align: center;
-  color: var(--text-muted);
-}
-.inbox-empty h3 {
-  font-family: var(--font-head);
-  font-size: var(--fs-lg);
-  color: var(--text);
-  margin-bottom: 8px;
-}
-.inbox-empty p {
-  font-size: var(--fs-sm);
-  max-width: 360px;
-  margin: 0 auto;
-}
-</style>
-
 <script>
 (function(){
-  if (!window.VYVE_DATA || !window.VYVE_ENTITIES) {
-    console.error('[Inbox] dependencies missing');
-    return;
-  }
-  var D = window.VYVE_DATA;
-  var E = window.VYVE_ENTITIES;
-  var N = window.VYVE_NOTIFS;
-  var ICONS = window.VYVE_ICONS || {};
+  'use strict';
+  var S = window.VYVE_SUPABASE;
+  var EF = 'https://ixjfklpckgxrwjlfsaaz.supabase.co/functions/v1/partner-support';
+  var state = { threads: [], replies: {}, partners: {}, current: null };
 
   function el(id){ return document.getElementById(id); }
-  function escape(s){
-    return String(s == null ? '' : s)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+  function initials(name){
+    var parts = String(name || '?').trim().split(/\s+/);
+    return (parts[0] ? parts[0][0] : '?') + (parts[1] ? parts[1][0] : '');
+  }
+  function ago(iso){
+    var s = (Date.now() - new Date(iso).getTime()) / 1000;
+    if (s < 60) return 'now';
+    if (s < 3600) return Math.floor(s/60) + 'm';
+    if (s < 86400) return Math.floor(s/3600) + 'h';
+    return Math.floor(s/86400) + 'd';
+  }
+  function fmtTime(iso){
+    var d = new Date(iso);
+    return d.toLocaleDateString('en-GB', { day:'numeric', month:'short' }) + ' ' +
+      ('0'+d.getHours()).slice(-2) + ':' + ('0'+d.getMinutes()).slice(-2);
   }
 
-  var currentFilter = 'all';
+  async function fetchAll(){
+    var mr = await S.client.from('partner_support_messages')
+      .select('id,partner_id,sender_email,subject,message,status,created_at')
+      .order('created_at', { ascending: false });
+    state.threads = mr.error ? [] : (mr.data || []);
 
-  // ---------- Aggregator ----------
-  // Builds a unified list of inbox items from across the hub.
-  function buildItems(){
-    var today = D.startOfDay();
-    var weekFromNow = new Date(today.getTime() + 7 * 86400000);
-    var items = [];
-
-    function pushItem(entry){ items.push(entry); }
-
-    // Actions
-    D.actions.all().forEach(function(a){
-      if (a.status === 'done') return;
-      var due = D.parseDate(a.due);
-      if (a.status === 'blocked') {
-        pushItem({
-          kind: 'blocked', priority: 1,
-          type: 'action', id: a.id,
-          title: a.text || 'Untitled action',
-          sub: (a.member_name || ''),
-          meta: 'Blocked',
-          metaClass: 'warn',
-          when: due, route: '#/action-plans'
-        });
-      } else if (due && due < today) {
-        pushItem({
-          kind: 'overdue', priority: 0,
-          type: 'action', id: a.id,
-          title: a.text || 'Untitled action',
-          sub: (a.member_name || ''),
-          meta: Math.ceil((today - due) / 86400000) + 'd overdue',
-          metaClass: 'danger',
-          when: due, route: '#/action-plans'
-        });
-      } else if (due && due >= today && due <= weekFromNow) {
-        var days = Math.ceil((due - today) / 86400000);
-        pushItem({
-          kind: days === 0 ? 'today' : 'week', priority: 2,
-          type: 'action', id: a.id,
-          title: a.text || 'Untitled action',
-          sub: (a.member_name || ''),
-          meta: days === 0 ? 'Today' : days + 'd',
-          when: due, route: '#/action-plans'
-        });
-      }
+    var rr = await S.client.from('partner_support_replies')
+      .select('message_id,sender_role,sender_email,body,created_at')
+      .order('created_at', { ascending: true });
+    state.replies = {};
+    (rr.error ? [] : (rr.data || [])).forEach(function(r){
+      (state.replies[r.message_id] = state.replies[r.message_id] || []).push(r);
     });
 
-    // Tasks
-    D.tasks.all().forEach(function(t){
-      if (t.status === 'done' || t.status === 'complete') return;
-      var due = D.parseDate(t.due);
-      if (due && due < today) {
-        pushItem({
-          kind: 'overdue', priority: 0,
-          type: 'task', id: t.id,
-          title: t.title || 'Untitled task',
-          sub: t.owner || '',
-          meta: Math.ceil((today - due) / 86400000) + 'd overdue',
-          metaClass: 'danger',
-          when: due, route: '#/tasks'
-        });
-      } else if (due && due >= today && due <= weekFromNow) {
-        var days = Math.ceil((due - today) / 86400000);
-        pushItem({
-          kind: days === 0 ? 'today' : 'week', priority: 2,
-          type: 'task', id: t.id,
-          title: t.title || 'Untitled task',
-          sub: t.owner || '',
-          meta: days === 0 ? 'Today' : days + 'd',
-          when: due, route: '#/tasks'
-        });
-      }
-    });
-
-    // Compliance
-    D.compliance.dueSoon(30).forEach(function(c){
-      var due = D.parseDate(c.due);
-      if (!due) return;
-      var days = Math.ceil((due - today) / 86400000);
-      if (days < 0) {
-        pushItem({
-          kind: 'overdue', priority: 0,
-          type: 'compliance', id: c.id,
-          title: c.title || c.area || 'Compliance item',
-          sub: c.area || '',
-          meta: Math.abs(days) + 'd overdue',
-          metaClass: 'danger',
-          when: due, route: '#/compliance'
-        });
-      } else if (days <= 7) {
-        pushItem({
-          kind: days === 0 ? 'today' : 'week', priority: 2,
-          type: 'compliance', id: c.id,
-          title: c.title || c.area || 'Compliance item',
-          sub: c.area || '',
-          meta: days === 0 ? 'Today' : days + 'd',
-          when: due, route: '#/compliance'
-        });
-      }
-    });
-
-    // Sessions today/tomorrow
-    D.sessions.todayAndTomorrow().forEach(function(s){
-      var d = D.parseDate(s.date);
-      if (!d) return;
-      var isToday = d.toDateString() === new Date().toDateString();
-      var time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-      pushItem({
-        kind: isToday ? 'today' : 'week', priority: 2,
-        type: 'session', id: s.id,
-        title: s.title || 'Session',
-        sub: (s.client || s.attendees || '') + ' \u00b7 ' + (isToday ? 'Today' : 'Tomorrow') + ' ' + time,
-        meta: isToday ? 'Today' : 'Tmrw',
-        when: d, route: '#/sessions'
-      });
-    });
-
-    // Stalled deals (no update in 14d, not closed)
-    D.deals.all().forEach(function(deal){
-      var stage = (deal.stage || '').toLowerCase();
-      if (stage === 'closed-won' || stage === 'closed-lost') return;
-      var updatedAt = D.parseDate(deal.updated_at || deal.last_activity || deal.created_at);
-      if (!updatedAt) return;
-      var daysSince = Math.floor((today - updatedAt) / 86400000);
-      if (daysSince >= 14) {
-        pushItem({
-          kind: 'stalled', priority: 3,
-          type: 'deal', id: deal.id,
-          title: deal.company || deal.title || 'Deal',
-          sub: deal.stage || '',
-          meta: daysSince + 'd silent',
-          metaClass: 'warn',
-          when: updatedAt, route: '#/crm'
-        });
-      }
-    });
-
-    // Mentions for current user (last 14 days)
-    if (N) {
-      var meHandle = N.currentHandle();
-      var unreadMentions = N.list({ kind: 'mention', unreadOnly: true });
-      unreadMentions.forEach(function(notif){
-        pushItem({
-          kind: 'mention', priority: 1,
-          type: notif.entity_type, id: notif.entity_id,
-          title: '@' + meHandle + ' \u2014 ' + (notif.body_excerpt || ''),
-          sub: 'Mentioned by ' + notif.from,
-          meta: D.relTime(new Date(notif.created_at)),
-          when: new Date(notif.created_at),
-          route: '#/' + (notif.entity_type ? E.get(notif.entity_type) && E.get(notif.entity_type).route.replace('#/', '') : 'brief'),
-          notif_id: notif.id
-        });
-      });
+    var ids = {};
+    state.threads.forEach(function(t){ if (t.partner_id) ids[t.partner_id] = true; });
+    var idList = Object.keys(ids);
+    state.partners = {};
+    if (idList.length){
+      var pr = await S.client.from('partner_partners').select('id,name,slug').in('id', idList);
+      (pr.error ? [] : (pr.data || [])).forEach(function(p){ state.partners[p.id] = p; });
     }
-
-    return items;
   }
 
-  // ---------- Filtering ----------
-  function filterItems(items, filter){
-    if (filter === 'all') return items;
-    if (filter === 'overdue')   return items.filter(function(i){ return i.kind === 'overdue'; });
-    if (filter === 'today')     return items.filter(function(i){ return i.kind === 'today'; });
-    if (filter === 'this-week') return items.filter(function(i){ return i.kind === 'today' || i.kind === 'week'; });
-    if (filter === 'mentions')  return items.filter(function(i){ return i.kind === 'mention'; });
-    if (filter === 'blocked')   return items.filter(function(i){ return i.kind === 'blocked'; });
-    if (filter === 'stalled')   return items.filter(function(i){ return i.kind === 'stalled'; });
-    return items;
+  function lastActivity(t){
+    var reps = state.replies[t.id] || [];
+    return reps.length ? reps[reps.length - 1] : { body: t.message, created_at: t.created_at, sender_role: 'partner' };
   }
-
-  // ---------- Render ----------
-  function iconFor(item){
-    var entityDef = E.get(item.type);
-    var iconName = entityDef ? entityDef.icon : 'check-square';
-    return ICONS[iconName] || ICONS['check-square'] || '';
-  }
-
-  function renderItem(item){
-    var def = E.get(item.type);
-    var typeLabel = def ? def.label : item.type;
-    return '<div class="inbox-item kind-' + item.kind + '" data-route="' + item.route + '" data-notif-id="' + (item.notif_id || '') + '">' +
-      '<div class="inbox-item-icon">' + iconFor(item) + '</div>' +
-      '<div class="inbox-item-main">' +
-        '<div class="inbox-item-title">' + escape(item.title) + '</div>' +
-        '<div class="inbox-item-sub">' +
-          '<span class="type-pill">' + escape(typeLabel) + '</span>' +
-          (item.sub ? '<span>' + escape(item.sub) + '</span>' : '') +
-        '</div>' +
-      '</div>' +
-      '<div class="inbox-item-meta">' +
-        '<span class="meta-badge ' + (item.metaClass || '') + '">' + escape(item.meta) + '</span>' +
-      '</div>' +
-    '</div>';
+  function partnerName(t){
+    var p = state.partners[t.partner_id];
+    return (p && p.name) || t.sender_email || 'Unknown partner';
   }
 
   function renderList(){
-    var items = buildItems();
-    // Sort: priority asc (overdue first), then nearest due first
-    items.sort(function(a, b){
-      if (a.priority !== b.priority) return a.priority - b.priority;
-      var aT = a.when ? a.when.getTime() : 0;
-      var bT = b.when ? b.when.getTime() : 0;
-      return aT - bT;
+    var host = el('ib-threads');
+    // sort: open first, then most recent activity
+    var sorted = state.threads.slice().sort(function(a, b){
+      if ((a.status === 'open') !== (b.status === 'open')) return a.status === 'open' ? -1 : 1;
+      return new Date(lastActivity(b).created_at) - new Date(lastActivity(a).created_at);
     });
+    var open = state.threads.filter(function(t){ return t.status === 'open'; }).length;
+    var badge = el('ib-open-count');
+    badge.textContent = open;
+    badge.style.display = open ? 'inline-flex' : 'none';
 
-    // Update counts
-    el('cnt-all').textContent      = items.length;
-    el('cnt-overdue').textContent  = items.filter(function(i){ return i.kind === 'overdue'; }).length;
-    el('cnt-today').textContent    = items.filter(function(i){ return i.kind === 'today'; }).length;
-    el('cnt-week').textContent     = items.filter(function(i){ return i.kind === 'today' || i.kind === 'week'; }).length;
-    el('cnt-mentions').textContent = items.filter(function(i){ return i.kind === 'mention'; }).length;
-    el('cnt-blocked').textContent  = items.filter(function(i){ return i.kind === 'blocked'; }).length;
-    el('cnt-stalled').textContent  = items.filter(function(i){ return i.kind === 'stalled'; }).length;
-
-    var filtered = filterItems(items, currentFilter);
-    var listEl = el('inbox-list');
-
-    if (!filtered.length) {
-      listEl.innerHTML = '<div class="inbox-empty">' +
-        '<h3>Inbox zero</h3>' +
-        '<p>Nothing pending in this view. Switch the filter above or get on with the work.</p>' +
-      '</div>';
+    if (!sorted.length){
+      host.innerHTML = '<div class="ib-empty">No conversations yet.<br/>When a partner messages from their portal, it lands here.</div>';
       return;
     }
-
-    // Group by kind
-    var groups = [
-      { kind: 'overdue', label: 'Overdue' },
-      { kind: 'blocked', label: 'Blocked on you' },
-      { kind: 'mention', label: 'Mentions' },
-      { kind: 'today', label: 'Today' },
-      { kind: 'week', label: 'This week' },
-      { kind: 'stalled', label: 'Stalled deals' }
-    ];
-
-    var html = '';
-    groups.forEach(function(g){
-      var groupItems = filtered.filter(function(i){ return i.kind === g.kind; });
-      if (!groupItems.length) return;
-      html += '<div class="inbox-section-label">' + g.label + ' \u00b7 ' + groupItems.length + '</div>';
-      html += groupItems.map(renderItem).join('');
-    });
-
-    listEl.innerHTML = html;
-
-    // Wire clicks: navigate AND mark the underlying notif as read
-    listEl.querySelectorAll('.inbox-item').forEach(function(row){
-      row.addEventListener('click', function(){
-        var notifId = row.getAttribute('data-notif-id');
-        if (notifId && N) N.markRead(notifId);
-        var route = row.getAttribute('data-route');
-        if (route) location.hash = route;
-      });
+    host.innerHTML = sorted.map(function(t){
+      var la = lastActivity(t);
+      var snip = (la.sender_role === 'admin' ? 'You: ' : '') + la.body;
+      return '<div class="ib-thread' + (state.current === t.id ? ' active' : '') + '" data-id="' + t.id + '">' +
+        '<span class="ib-av">' + esc(initials(partnerName(t))) + '</span>' +
+        '<div class="ib-tmain"><div class="ib-tname">' + esc(partnerName(t)) +
+        (t.status === 'open' ? '<span class="ib-dot" title="Awaiting your reply"></span>' : '') + '</div>' +
+        '<div class="ib-tsnip">' + esc(snip) + '</div></div>' +
+        '<span class="ib-ttime">' + ago(la.created_at) + '</span></div>';
+    }).join('');
+    host.querySelectorAll('.ib-thread').forEach(function(n){
+      n.addEventListener('click', function(){ openThread(n.getAttribute('data-id')); });
     });
   }
 
-  // ---------- Wire ----------
-  el('inbox-refresh').addEventListener('click', renderList);
-  el('inbox-mark-all').addEventListener('click', function(){
-    if (N) N.markAllRead();
+  function renderConv(){
+    var t = state.threads.find(function(x){ return x.id === state.current; });
+    if (!t) return;
+    el('ib-conv-head').style.display = 'flex';
+    el('ib-compose').style.display = (t.status === 'closed') ? 'none' : 'flex';
+    el('ib-conv-av').textContent = initials(partnerName(t));
+    el('ib-conv-name').textContent = partnerName(t);
+    el('ib-conv-sub').textContent = (t.subject ? t.subject + ' · ' : '') + t.sender_email;
+    var chip = el('ib-conv-chip');
+    chip.textContent = t.status;
+    chip.className = 'ib-chip ' + t.status;
+    el('ib-close-btn').style.display = (t.status === 'closed') ? 'none' : 'inline-flex';
+
+    var msgs = [{ sender_role: 'partner', body: t.message, created_at: t.created_at, sender_email: t.sender_email }]
+      .concat(state.replies[t.id] || []);
+    el('ib-msgs').innerHTML = msgs.map(function(m){
+      var who = m.sender_role === 'admin' ? 'admin' : 'partner';
+      var label = who === 'admin' ? ('VYVE · ' + esc(m.sender_email || '')) : esc(partnerName(t));
+      return '<div class="ib-bubble ' + who + '">' + esc(m.body) +
+        '<div class="ib-meta">' + label + ' · ' + fmtTime(m.created_at) + '</div></div>';
+    }).join('');
+    var box = el('ib-msgs');
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function openThread(id){
+    state.current = id;
+    el('ib-wrap').classList.add('showing-conv');
     renderList();
-  });
-  document.querySelectorAll('.inbox-count').forEach(function(btn){
-    btn.addEventListener('click', function(){
-      document.querySelectorAll('.inbox-count').forEach(function(b){ b.classList.remove('active'); });
-      btn.classList.add('active');
-      currentFilter = btn.getAttribute('data-filter');
+    renderConv();
+  }
+
+  async function sendReply(){
+    var t = state.threads.find(function(x){ return x.id === state.current; });
+    var ta = el('ib-text');
+    var text = (ta.value || '').trim();
+    if (!t || !text) return;
+    var btn = el('ib-send');
+    btn.disabled = true; btn.textContent = 'Sending…';
+    try {
+      var sess = await S.client.auth.getSession();
+      var jwt = sess && sess.data && sess.data.session && sess.data.session.access_token;
+      var r = await fetch(EF, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + jwt },
+        body: JSON.stringify({ action: 'reply', message_id: t.id, body: text })
+      });
+      var d = await r.json();
+      if (!r.ok || !d.ok) throw new Error(d.error || ('HTTP ' + r.status));
+      ta.value = '';
+      await fetchAll();
+      renderList();
+      renderConv();
+      if (window.VYVE_UI && window.VYVE_UI.toast) window.VYVE_UI.toast('Reply sent — the partner has been emailed', 'success');
+    } catch(e){
+      alert('Reply failed: ' + (e.message || 'unknown'));
+    } finally {
+      btn.disabled = false; btn.textContent = 'Send';
+    }
+  }
+
+  async function closeThread(){
+    var t = state.threads.find(function(x){ return x.id === state.current; });
+    if (!t) return;
+    if (!confirm('Close this conversation? The partner can still reply, which reopens it.')) return;
+    var res = await S.client.from('partner_support_messages').update({ status: 'closed' }).eq('id', t.id);
+    if (res.error){ alert('Close failed: ' + res.error.message); return; }
+    await fetchAll();
+    renderList();
+    renderConv();
+  }
+
+  async function boot(){
+    if (!S || !S.isReady || !S.isReady()){ if (S && S.onReady) S.onReady(boot); return; }
+    await fetchAll();
+    renderList();
+    el('ib-send').addEventListener('click', sendReply);
+    el('ib-text').addEventListener('keydown', function(e){
+      if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendReply(); }
+    });
+    el('ib-close-btn').addEventListener('click', closeThread);
+    el('ib-back').addEventListener('click', function(){
+      el('ib-wrap').classList.remove('showing-conv');
+      state.current = null;
       renderList();
     });
-  });
-
-  renderList();
+    // gentle live-ish refresh while the page is open
+    setInterval(async function(){
+      if (document.hidden) return;
+      var cur = state.current;
+      await fetchAll();
+      renderList();
+      if (cur) renderConv();
+    }, 30000);
+  }
+  boot();
 })();
 </script>

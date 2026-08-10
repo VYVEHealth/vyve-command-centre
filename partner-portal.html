@@ -379,18 +379,6 @@
 
     <!-- ── PROFILE ── -->
     <div class="pp-panel active" id="panel-profile">
-      <!-- PM-904: sign / re-sign the partner agreement from the portal. The agreement was
-           only ever written by the wizard's submit; April signed on screen, got rate-limited
-           out of submit (PM-903), and landed in onboarding with nothing on file. This card
-           appears whenever no signed agreement exists. -->
-      <div class="card" id="agreement-card" style="display:none;border:1px solid rgba(224,155,61,0.35);">
-        <div class="card-title">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-          Your partner agreement
-        </div>
-        <div id="agreement-body"></div>
-      </div>
-
       <div class="card">
         <div class="card-title">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -759,7 +747,7 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           Message us
         </div>
-        <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">Stuck, spotted a problem, or need something changed? Send it here — it goes straight to the VYVE team and we reply to your email.</p>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">Stuck, spotted a problem, or need something changed? Send it here — it goes straight to the VYVE team, who are notified the moment it arrives. <b>We aim to respond within 24 hours.</b> You\u2019ll get our reply here and by email.</p>
         <div style="max-width:520px;">
           <div style="margin-bottom:10px;"><label class="bk-lbl">Subject (optional)</label><input type="text" id="sup-subject" maxlength="200" placeholder="e.g. My QR code on a poster"/></div>
           <div style="margin-bottom:12px;"><label class="bk-lbl">Message</label><textarea id="sup-message" rows="5" maxlength="4000" placeholder="Tell us what's going on..." style="width:100%;resize:vertical;"></textarea></div>
@@ -969,7 +957,7 @@
     // loadPartnerData sets state.partnerId; every other loader needs it —
     // chain, don't race (un-awaited parallel calls made loadContent bail early).
     await loadPartnerData();
-    await Promise.all([loadContent(), loadCommunity(), loadPushQueue(), loadAudience(), loadSessions(), loadEarnings(), loadSupportThreads(), loadAgreement()]);
+    await Promise.all([loadContent(), loadCommunity(), loadPushQueue(), loadAudience(), loadSessions(), loadEarnings(), loadSupportThreads()]);
   }
 
   // ── Load partner profile ──────────────────────────────────────────────────
@@ -1030,51 +1018,6 @@
 
   // ── My Space live phone preview ─────────────────────────────────────────
   function _mpEsc(x) { var d = document.createElement('div'); d.textContent = x || ''; return d.innerHTML; }
-  /* PM-904: agreement status + sign flow. */
-  async function loadAgreement() {
-    var card = $('agreement-card'); if (!card) return;
-    try {
-      var r = await fetch(_SUPA_URL + '/functions/v1/partner-agreement', {
-        method: 'POST', headers: efHeaders(), body: JSON.stringify({ action: 'status' })
-      });
-      var s = await r.json().catch(function(){ return {}; });
-      if (!r.ok) { card.style.display = 'none'; return; }
-      if (s.signed) {
-        card.style.display = 'block';
-        card.style.border = '1px solid var(--border)';
-        $('agreement-body').innerHTML = '<p style="font-size:13px;color:var(--text-muted);">&#10003; <b style="color:var(--vyve-teal-light);">Signed</b> by ' + escHtml(s.legal_name || '') + ' on ' + new Date(s.signed_at).toLocaleDateString('en-GB') + ' &middot; ' + (s.rev_share_pct || 50) + '% revenue share.' + (s.has_copy ? ' A copy was emailed to you.' : '') + '</p>';
-        return;
-      }
-      card.style.display = 'block';
-      $('agreement-body').innerHTML =
-        '<p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">We don\u2019t have your signed agreement on file \u2014 this can happen if something went wrong during your application. Signing here takes a moment and we\u2019ll email you a copy. <a href="https://www.vyvehealth.co.uk/partner-onboarding.html#contractPane" target="_blank" rel="noopener" style="color:var(--vyve-teal-light);">Read the agreement</a>.</p>'
-        + '<div style="max-width:460px;">'
-        + '<div style="margin-bottom:10px;"><label class="bk-lbl">Your full legal name</label><input type="text" id="ag-legal" maxlength="160" placeholder="As it should appear on the agreement"/></div>'
-        + '<div style="margin-bottom:10px;"><label class="bk-lbl">Type your name to sign</label><input type="text" id="ag-sig" maxlength="160" placeholder="Your signature"/></div>'
-        + '<label style="display:flex;gap:9px;align-items:flex-start;font-size:13px;color:var(--text-muted);margin-bottom:12px;cursor:pointer;"><input type="checkbox" id="ag-accept" style="margin-top:3px;flex:none;"/><span>I have read and agree to the VYVE Partner Agreement, including the ' + (s.rev_share_pct || 50) + '% revenue share.</span></label>'
-        + '<button class="btn btn-teal" id="ag-sign-btn" type="button" style="font-size:13px;">Sign agreement</button>'
-        + '<div id="ag-msg" style="margin-top:8px;font-size:12.5px;color:var(--text-muted);"></div>'
-        + '</div>';
-      $('ag-sign-btn').addEventListener('click', async function() {
-        var legal = $('ag-legal').value.trim(), sig = $('ag-sig').value.trim(), msg = $('ag-msg');
-        if (legal.length < 2) { msg.textContent = 'Enter your full legal name.'; return; }
-        if (sig.length < 2) { msg.textContent = 'Type your name to sign.'; return; }
-        if (!$('ag-accept').checked) { msg.textContent = 'Please confirm you agree to the terms.'; return; }
-        this.disabled = true; msg.textContent = 'Signing\u2026';
-        try {
-          var rr = await fetch(_SUPA_URL + '/functions/v1/partner-agreement', {
-            method: 'POST', headers: efHeaders(),
-            body: JSON.stringify({ action: 'sign', legal_name: legal, signature: sig, rev_share_accepted: true })
-          });
-          var jj = await rr.json().catch(function(){ return {}; });
-          if (!rr.ok || !jj.ok) { msg.textContent = (jj && jj.message) || 'Could not save \u2014 try again, or email team@vyvehealth.co.uk.'; this.disabled = false; return; }
-          toast(jj.email_sent ? 'Agreement signed \u2014 copy emailed to you' : 'Agreement signed');
-          loadAgreement();
-        } catch (e) { msg.textContent = 'Connection problem \u2014 try again.'; this.disabled = false; }
-      });
-    } catch (e) { card.style.display = 'none'; }
-  }
-
   function syncMyPhone() {
     var el = $('myspace-phone'); if (!el) return;
     var name = $('profile-name').value.trim() || 'Your name';
