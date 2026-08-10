@@ -399,6 +399,24 @@
             res = await S.client.from(TABLE).insert(record);
           }
           if (res.error){ alert('Save failed: ' + res.error.message); return; }
+
+          // PM-913: "You've been assigned a task" — notify newly added assignees
+          if (window.VYVE_NOTIFS){
+            try {
+              var prev = isEdit ? asgList(t).map(function(a){ return (a||'').toLowerCase(); }) : [];
+              var added = (record.assignees || []).filter(function(a){ return prev.indexOf((a||'').toLowerCase()) < 0; });
+              if (added.length){
+                var recips = await VYVE_NOTIFS.expandTeam(added);
+                await VYVE_NOTIFS.notify(recips, {
+                  type: 'task',
+                  title: 'You\u2019ve been assigned a task: ' + record.title,
+                  body: record.due_date ? ('Due ' + record.due_date) : null,
+                  route: '#/tasks',
+                  dedupeKey: 'taskassign:' + (t.id || Date.now())
+                });
+              }
+            } catch(e){ console.warn('[tasks] assign notify failed', e); }
+          }
           if (modal.draft) modal.draft.clear();
           modal.close();
           if (VYVE_UI && VYVE_UI.toast) VYVE_UI.toast(isEdit ? 'Task updated' : 'Task created', 'success');

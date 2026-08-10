@@ -442,6 +442,58 @@
     });
 
     setTimeout(function(){
+      // PM-913: RSVP — invited people respond; the owner sees the tally.
+      if (isEdit){
+        (async function(){
+          var meL = (state.me || '').toLowerCase();
+          var att = attList(initial);
+          var invited = att.indexOf(meL) >= 0 || att.indexOf('team@vyvehealth.co.uk') >= 0;
+          var isOwner = initial.owner_email === state.me;
+          if (!invited && !isOwner) return;
+          var rres = await S.client.from('cc_event_rsvps').select('email,response').eq('event_id', initial.id);
+          var rsvps = rres.error ? [] : (rres.data || []);
+          var mineR = (rsvps.find(function(r){ return r.email === meL; }) || {}).response || '';
+          var host = document.createElement('div');
+          host.id = 'ev-rsvp-block';
+          host.style.cssText = 'margin:2px 0 14px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)';
+          var counts = { going: 0, maybe: 0, no: 0 };
+          rsvps.forEach(function(r){ if (counts[r.response] !== undefined) counts[r.response]++; });
+          var tally = counts.going + ' going · ' + counts.maybe + ' maybe · ' + counts.no + ' can\u2019t make it';
+          var btn = function(val, label){
+            var on = mineR === val;
+            return '<button type="button" class="btn btn-sm ev-rsvp" data-r="' + val + '" style="' + (on ? 'background:var(--accent);color:#fff;border-color:var(--accent)' : '') + '">' + label + '</button>';
+          };
+          host.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">' +
+            (invited ? '<span style="display:flex;gap:6px">' + btn('going','Going') + btn('maybe','Maybe') + btn('no','Can\u2019t make it') + '</span>' : '<span></span>') +
+            '<span style="font-size:12px;color:var(--text-muted)">' + tally + '</span></div>';
+          var anchor = document.getElementById('ev-title');
+          if (anchor && anchor.closest('.form-row')) anchor.closest('.form-row').after(host);
+          host.querySelectorAll('.ev-rsvp').forEach(function(b){
+            b.addEventListener('click', async function(){
+              var val = b.getAttribute('data-r');
+              var up = await S.client.from('cc_event_rsvps').upsert({ event_id: initial.id, email: meL, response: val, updated_at: new Date().toISOString() });
+              if (up.error){ alert('RSVP failed: ' + up.error.message); return; }
+              if (window.VYVE_NOTIFS && initial.owner_email && initial.owner_email !== state.me){
+                var word = { going: 'is going to', maybe: 'might make', no: 'can\u2019t make' }[val];
+                VYVE_NOTIFS.notify([initial.owner_email], {
+                  type: 'rsvp',
+                  title: meL + ' ' + word + ' ' + initial.title,
+                  route: '#/calendar',
+                  dedupeKey: 'rsvp:' + initial.id + ':' + meL + ':' + val
+                });
+              }
+              mineR = val;
+              host.querySelectorAll('.ev-rsvp').forEach(function(x){
+                var on = x.getAttribute('data-r') === val;
+                x.style.background = on ? 'var(--accent)' : '';
+                x.style.color = on ? '#fff' : '';
+                x.style.borderColor = on ? 'var(--accent)' : '';
+              });
+              if (VYVE_UI && VYVE_UI.toast) VYVE_UI.toast('Response saved', 'success');
+            });
+          });
+        })();
+      }
       if (initial.visibility) document.getElementById('ev-visibility').value = initial.visibility;
       var repSel = document.getElementById('ev-repeat');
       if (repSel) repSel.addEventListener('change', function(){
@@ -510,6 +562,21 @@
             }
           }
           if (res.error){ alert('Save failed: ' + res.error.message); return; }
+
+          // PM-913: notify invitees on create ("Lewis invited you: Sage prep — Thu 2pm")
+          if (!isEdit && record.attendees && window.VYVE_NOTIFS){
+            try {
+              var invitees = await VYVE_NOTIFS.expandTeam(attList(record));
+              var whenTxt = new Date(record.start_at).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + ' ' + fmtTime(new Date(record.start_at));
+              await VYVE_NOTIFS.notify(invitees, {
+                type: 'event',
+                title: (state.me || 'Someone') + ' invited you: ' + record.title,
+                body: whenTxt + (record.location ? ' · ' + record.location : ''),
+                route: '#/calendar',
+                dedupeKey: 'evinvite:' + (savedRow ? savedRow.id : Date.now())
+              });
+            } catch(e){ console.warn('[calendar] invite notify failed', e); }
+          }
           if (modal.draft) modal.draft.clear();
           modal.close();
           if (VYVE_UI && VYVE_UI.toast) VYVE_UI.toast(isEdit ? 'Event updated' : 'Event created', 'success');
