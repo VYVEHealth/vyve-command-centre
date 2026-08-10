@@ -2,7 +2,7 @@
   <div class="page-hero">
     <div class="eyebrow">Schedule</div>
     <h1 class="page-title">Calendar</h1>
-    <p class="page-sub">Team events, sessions and meetings in one shared view. Generate Google Meet links and invite attendees.</p>
+    <p class="page-sub">The business calendar — meetings and events, with invites. Live sessions stay out of the way until you toggle them on.</p>
     <div class="hero-actions">
       <button class="btn btn-primary" id="cal-add" style="display:none">New event</button>
     </div>
@@ -48,6 +48,9 @@
           <button class="seg-btn active" data-scope="team">Team</button>
           <button class="seg-btn" data-scope="all">All</button>
         </div>
+        <label style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--text-muted);cursor:pointer;background:var(--surface-2);border-radius:var(--r-md);padding:7px 12px">
+          <input type="checkbox" id="cal-show-sessions" style="accent-color:var(--accent)"/> Show sessions
+        </label>
         <span style="font-size:12px;color:var(--text-muted)" id="cal-current-email"></span>
       </div>
     </div>
@@ -147,7 +150,9 @@
     events: [],
     sessions: [],          // calendar_occurrences rows
     me: null,              // current admin email
-    isAdmin: false         // set in boot() from VYVE_USER.role
+    isAdmin: false,        // set in boot() from VYVE_USER.role
+    showSessions: false,   // PM-911: sessions hidden until toggled on
+    admins: []             // attendee picker options
   };
 
   function show(id){ document.getElementById(id).style.display = ''; }
@@ -185,6 +190,16 @@
       .eq('active', true).is('cancelled_at', null)
       .order('starts_at', { ascending: true });
     state.sessions = sesRes.error ? [] : (sesRes.data || []);
+
+    if (!state.admins.length){
+      var ar = await S.client.from('admin_users').select('email,role,notes').eq('active', true).order('role').order('email');
+      state.admins = ar.error ? [] : (ar.data || []);
+    }
+  }
+
+  // attendees column is CSV text (kept for the gcal sync payload) — normalise
+  function attList(e){
+    return String(e && e.attendees || '').split(',').map(function(a){ return a.trim().toLowerCase(); }).filter(Boolean);
   }
 
   function eventsForDay(d){
@@ -194,7 +209,7 @@
       return sa.toISOString().slice(0,10) === key && visibilityMatches(e);
     }).map(function(e){ return { kind: 'event', ref: e, start: new Date(e.start_at), end: new Date(e.end_at), title: e.title, meet: e.meet_url, type: e.visibility === 'private' ? 'private' : 'team' }; });
 
-    var fromSessions = state.sessions.filter(function(s){
+    var fromSessions = (state.showSessions ? state.sessions : []).filter(function(s){
       var st = s.starts_at ? new Date(s.starts_at) : null;
       return st && st.toISOString().slice(0,10) === key;
     }).map(function(s){
@@ -212,8 +227,21 @@
   }
 
   function visibilityMatches(e){
+    // PM-911: team personas (and admin previews of them) see events they own,
+    // are invited to (directly or via team@), or open team-wide events.
+    var A = window.VYVE_ACL;
+    if (A && A.effective){
+      var eff = A.effective();
+      if (eff.serverRole && eff.serverRole !== 'admin'){
+        var em = (eff.email || '').toLowerCase();
+        if (e.owner_email === eff.email) return true;
+        var att = attList(e);
+        if (att.length) return att.indexOf(em) >= 0 || att.indexOf('team@vyvehealth.co.uk') >= 0;
+        return e.visibility !== 'private';
+      }
+    }
     if (state.scope === 'all') return true;
-    if (state.scope === 'mine') return e.owner_email === state.me;
+    if (state.scope === 'mine') return e.owner_email === state.me || attList(e).indexOf((state.me || '').toLowerCase()) >= 0;
     // team: show team + shared events for everyone, private only for owner
     if (e.visibility === 'private') return e.owner_email === state.me;
     return true;
@@ -339,7 +367,7 @@
         html += '<div class="cal-agenda-event" data-evt="' + ev.kind + ':' + ev.ref.id + '">' +
           '<div class="cal-agenda-time">' + time + '</div>' +
           '<div class="cal-agenda-stripe ' + ev.type + '"></div>' +
-          '<div class="cal-agenda-main"><div class="cal-agenda-title">' + escape(ev.title) + '</div><div class="cal-agenda-sub">' + (ev.kind === 'session' ? 'Session' : ('Event · ' + (ev.ref.owner_email || ''))) + (ev.ref.location ? ' · ' + escape(ev.ref.location) : '') + '</div></div>' +
+          '<div class="cal-agenda-main"><div class="cal-agenda-title">' + escape(ev.title) + '</div><div class="cal-agenda-sub">' + (ev.kind === 'session' ? 'Session' : ('Event · ' + (ev.ref.owner_email || ''))) + (ev.ref.location ? ' · ' + escape(ev.ref.location) : '') + (ev.kind === 'event' && attList(ev.ref).length ? ' · ' + (attList(ev.ref).indexOf('team@vyvehealth.co.uk') >= 0 ? 'whole team invited' : attList(ev.ref).length + ' invited') : '') + '</div></div>' +
           meetIcon +
         '</div>';
       });
@@ -376,7 +404,20 @@
         '<div class="form-row"><div class="form-group"><label>Title</label><input id="ev-title" value="' + escape(initial.title || '') + '"/></div></div>' +
         '<div class="form-row cols-2"><div class="form-group"><label>Start</label><input id="ev-start" type="datetime-local" value="' + toLocalDateTime(start) + '"/></div><div class="form-group"><label>End</label><input id="ev-end" type="datetime-local" value="' + toLocalDateTime(end) + '"/></div></div>' +
         '<div class="form-row cols-2"><div class="form-group"><label>Visibility</label><select id="ev-visibility"><option value="team">Team (all admins)</option><option value="private">Private (just you)</option><option value="shared">Shared (team + attendees)</option></select></div><div class="form-group"><label>Location</label><input id="ev-location" value="' + escape(initial.location || '') + '" placeholder="Address, room, or blank"/></div></div>' +
-        '<div class="form-row"><div class="form-group"><label>Attendees (comma-separated emails)</label><input id="ev-attendees" value="' + escape(initial.attendees || '') + '" placeholder="optional"/></div></div>' +
+        (function(){
+          var cur = attList(initial);
+          function ck(email, label){
+            var on = cur.indexOf(email.toLowerCase()) >= 0;
+            return '<label style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:8px;cursor:pointer;font-size:12.5px"><input type="checkbox" class="ev-att" value="' + escape(email) + '"' + (on ? ' checked' : '') + '/> ' + escape(label) + '</label>';
+          }
+          return '<div class="form-row"><div class="form-group"><label>Invite</label><div style="max-height:150px;overflow:auto;border:1px solid var(--border);border-radius:10px;padding:4px">' +
+            ck('team@vyvehealth.co.uk', 'Whole team') +
+            state.admins.filter(function(a){ return a.email !== 'team@vyvehealth.co.uk' && a.role !== 'partner'; }).map(function(a){
+              var nm = (a.notes || '').split('\u2014')[0].trim() || a.email;
+              return ck(a.email, nm + ' (' + a.role + ')');
+            }).join('') +
+            '</div><div style="font-size:11px;color:var(--text-muted);margin-top:5px">Invited people see this event on their calendar and home. No ticks = visible to the whole team.</div></div></div>';
+        })() +
         '<div class="form-row"><div class="form-group"><label>Google Meet link</label><div style="display:flex;gap:6px"><input id="ev-meet" value="' + escape(initial.meet_url || '') + '" placeholder="meet.google.com/..." style="flex:1"/><button type="button" class="btn btn-ghost btn-sm" id="ev-meet-gen" title="Open meet.google.com/new in a new tab; copy the link back here">Generate</button></div></div></div>' +
         '<div class="form-row"><div class="form-group"><label>Description</label><textarea id="ev-desc" rows="3">' + escape(initial.description || '') + '</textarea></div></div>' +
         '<div style="display:flex;justify-content:space-between;gap:8px">' +
@@ -403,7 +444,7 @@
           location: document.getElementById('ev-location').value.trim() || null,
           meet_url: document.getElementById('ev-meet').value.trim() || null,
           visibility: document.getElementById('ev-visibility').value,
-          attendees: document.getElementById('ev-attendees').value.trim() || null,
+          attendees: (function(){ var v = []; document.querySelectorAll('.ev-att:checked').forEach(function(c){ v.push(c.value); }); return v.length ? v.join(', ') : null; })(),
           updated_at: new Date().toISOString()
         };
         try {
@@ -504,6 +545,8 @@
         b.classList.add('active'); state.view = b.getAttribute('data-view'); renderCurrent();
       });
     });
+    var ss = document.getElementById('cal-show-sessions');
+    if (ss) ss.addEventListener('change', function(){ state.showSessions = ss.checked; renderCurrent(); });
     document.querySelectorAll('#page-calendar .seg-btn[data-scope]').forEach(function(b){
       b.addEventListener('click', function(){
         document.querySelectorAll('#page-calendar .seg-btn[data-scope]').forEach(function(x){ x.classList.remove('active'); });
