@@ -1004,3 +1004,20 @@ table.tbl tr:hover td { background: var(--bg-alt); }
   .content{padding:16px 12px 56px}
   .modal{width:96%;max-height:94vh;padding:20px 16px}
 }
+
+/* =====================================================================
+   PM-921 — Checkboxes/radios inside .form-group were caught by the
+   generic input rule (width:100%, padding, surface background), turning
+   them into full-width blocks that crushed their labels to zero width —
+   the invisible assignee names in the task modal (Dean device report).
+   ===================================================================== */
+.form-group input[type="checkbox"],
+.form-group input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  flex: 0 0 auto;
+  border-radius: 4px;
+  accent-color: var(--accent);
+  background: transparent;
+}
