@@ -450,7 +450,7 @@
           var invited = att.indexOf(meL) >= 0 || att.indexOf('team@vyvehealth.co.uk') >= 0;
           var isOwner = initial.owner_email === state.me;
           if (!invited && !isOwner) return;
-          var rres = await S.client.from('cc_event_rsvps').select('email,response').eq('event_id', initial.id);
+          var rres = await S.client.from('cc_event_rsvps').select('email,response,comment').eq('event_id', initial.id);
           var rsvps = rres.error ? [] : (rres.data || []);
           var mineR = (rsvps.find(function(r){ return r.email === meL; }) || {}).response || '';
           var host = document.createElement('div');
@@ -463,23 +463,32 @@
             var on = mineR === val;
             return '<button type="button" class="btn btn-sm ev-rsvp" data-r="' + val + '" style="' + (on ? 'background:var(--accent);color:#fff;border-color:var(--accent)' : '') + '">' + label + '</button>';
           };
+          var noteRows = rsvps.filter(function(r){ return r.comment; }).map(function(r){
+            var w = { going: 'going', maybe: 'maybe', no: 'can\u2019t make it' }[r.response] || r.response;
+            return '<div style="font-size:12px;color:var(--text-muted);margin-top:4px">' + escape(r.email) + ' · ' + w + ' \u2014 \u201c' + escape(r.comment) + '\u201d</div>';
+          }).join('');
           host.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">' +
             (invited ? '<span style="display:flex;gap:6px">' + btn('going','Going') + btn('maybe','Maybe') + btn('no','Can\u2019t make it') + '</span>' : '<span></span>') +
-            '<span style="font-size:12px;color:var(--text-muted)">' + tally + '</span></div>';
+            '<span style="font-size:12px;color:var(--text-muted)">' + tally + '</span></div>' +
+            (invited ? '<input id="ev-rsvp-note" placeholder="Add a note with your response (optional)" value="' + escape((rsvps.find(function(r){ return r.email === meL; }) || {}).comment || '') + '" style="width:100%;margin-top:8px;padding:7px 9px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-size:12px"/>' : '') +
+            noteRows;
           var anchor = document.getElementById('ev-title');
           if (anchor && anchor.closest('.form-row')) anchor.closest('.form-row').after(host);
           host.querySelectorAll('.ev-rsvp').forEach(function(b){
             b.addEventListener('click', async function(){
               var val = b.getAttribute('data-r');
-              var up = await S.client.from('cc_event_rsvps').upsert({ event_id: initial.id, email: meL, response: val, updated_at: new Date().toISOString() });
+              var noteEl = document.getElementById('ev-rsvp-note');
+              var note = noteEl ? (noteEl.value || '').trim() : '';
+              var up = await S.client.from('cc_event_rsvps').upsert({ event_id: initial.id, email: meL, response: val, comment: note || null, updated_at: new Date().toISOString() });
               if (up.error){ alert('RSVP failed: ' + up.error.message); return; }
               if (window.VYVE_NOTIFS && initial.owner_email && initial.owner_email !== state.me){
                 var word = { going: 'is going to', maybe: 'might make', no: 'can\u2019t make' }[val];
                 VYVE_NOTIFS.notify([initial.owner_email], {
                   type: 'rsvp',
                   title: meL + ' ' + word + ' ' + initial.title,
+                  body: note || null,
                   route: '#/calendar',
-                  dedupeKey: 'rsvp:' + initial.id + ':' + meL + ':' + val
+                  dedupeKey: 'rsvp:' + initial.id + ':' + meL + ':' + val + ':' + Date.now()
                 });
               }
               mineR = val;
@@ -573,7 +582,8 @@
                 title: (state.me || 'Someone') + ' invited you: ' + record.title,
                 body: whenTxt + (record.location ? ' · ' + record.location : ''),
                 route: '#/calendar',
-                dedupeKey: 'evinvite:' + (savedRow ? savedRow.id : Date.now())
+                dedupeKey: 'evinvite:' + (savedRow ? savedRow.id : Date.now()),
+                data: savedRow ? { event_id: savedRow.id, owner_email: state.me, title: record.title } : undefined
               });
             } catch(e){ console.warn('[calendar] invite notify failed', e); }
           }
