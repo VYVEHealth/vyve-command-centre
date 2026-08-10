@@ -301,6 +301,23 @@ tbody tr:last-child td{border-bottom:none}
   .g4{grid-template-columns:1fr}
   .topbar .tb-btn{flex:1 1 auto;justify-content:center}
 }
+
+/* PM-904: member preview on the CC Profile tab — same phone mock the partner sees in
+   their portal, so admins edit against the real member-facing result, not a form. */
+.mini-phone{width:230px;height:470px;margin:0 auto;background:var(--card);border-radius:28px;border:1px solid var(--line);box-shadow:0 0 0 7px #05080c,0 0 0 8px #1c2630;overflow:hidden;display:flex;flex-direction:column}
+.mini-notch{height:18px;background:#05080c;width:88px;margin:0 auto;border-radius:0 0 11px 11px;flex:none}
+.mini-scroll{flex:1;overflow-y:auto}
+.mini-scroll::-webkit-scrollbar{width:0}
+.mp-banner{height:84px;position:relative}
+.mp-av{width:50px;height:50px;border-radius:50%;border:3px solid var(--card);position:absolute;left:13px;bottom:-20px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:#fff;background-size:cover;background-position:center;overflow:hidden}
+.mp-av img{width:100%;height:100%;object-fit:cover;display:block}
+.mp-info{padding:26px 13px 0}
+.mp-info h4{font-size:14px;font-weight:800;margin:0}
+.mp-info .r{font-size:10.5px;color:var(--mint);font-weight:600}
+.mp-sec{padding:10px 13px;border-top:1px solid var(--line)}
+.mp-sec:first-of-type{border-top:none}
+.mp-sec h5{font-size:10.5px;font-weight:700;margin:0 0 4px}
+.mp-sec p{font-size:10.5px;color:var(--muted);margin:0;line-height:1.5}
 </style>
 <script>
 /* PM-888: kill the sign-in flash — persisted CC session hides the gate
@@ -1267,6 +1284,35 @@ async function loadPartnerAccessLine(p){
     }
   }catch(_){/* additive */}
 }
+/* PM-904: mirror of the portal's syncMyPhone — same markup, same classes, so both
+   sides show one truth. Reads the live form inputs so the preview updates as you type. */
+function _mpEsc(s){ const d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
+function syncAdminPhone(p){
+  const el=document.getElementById('pd-phone'); if(!el) return;
+  const val=(id,fb)=>{ const e=document.getElementById(id); return ((e&&e.value)||'').trim()||fb; };
+  const name=val('pp-name', p.name||'Partner name');
+  const role=val('pp-role', p.role_title||'Role / tagline');
+  const bio =val('pp-bio', p.bio||'Their bio will appear here as members read it.');
+  const why =val('pp-why','');
+  const feel=val('pp-feel','');
+  const av=urlish(p.avatar_url), cov=urlish(p.cover_url);
+  const init=initials(name);
+  const banner=cov?`background:linear-gradient(120deg,rgba(27,120,120,.25),rgba(13,43,43,.18)),url('${cov}') center/cover no-repeat`
+                  :`background:linear-gradient(120deg,${PILLAR_COL[p.pillar]||'#1B7878'},#0F4C4C)`;
+  el.innerHTML =
+    `<div class="mp-banner" style="${banner}"><div class="mp-av" style="background:${PILLAR_COL[p.pillar]||'#1B7878'}">${av?`<img src="${av}">`:init}</div></div>`
+    + `<div class="mp-info"><h4>${_mpEsc(name)}</h4><div class="r">${_mpEsc(role)}</div></div>`
+    + `<div class="mp-sec"><h5>About</h5><p>${_mpEsc(bio)}</p></div>`
+    + (why?`<div class="mp-sec"><h5>Reason for being here</h5><p>${_mpEsc(why)}</p></div>`:'')
+    + (feel?`<div class="mp-sec"><h5>Community feel</h5><p>${_mpEsc(feel)}</p></div>`:'')
+    + `<div class="mp-sec"><h5>Upcoming</h5><p>Their next live session will show here.</p></div>`;
+}
+document.addEventListener('input', function(e){
+  if(!e.target||!e.target.id) return;
+  if(['pp-name','pp-role','pp-bio','pp-why','pp-feel'].indexOf(e.target.id)<0) return;
+  const p = currentDetailId ? partnerMap[currentDetailId] : null;
+  if(p) syncAdminPhone(p);
+});
 function openPartner(id){
   currentDetailId=id;
   const p=partnerMap[id]; if(!p)return;
@@ -1627,7 +1673,13 @@ function renderPartnerProfile(p){
         </div>
       </div>
     </div>
+    <div class="card mt">
+      <div class="card-h"><h3>Member preview</h3></div>
+      <div style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:10px">Exactly what members see in the app</div>
+      <div class="mini-phone"><div class="mini-notch"></div><div class="mini-scroll" id="pd-phone"></div></div>
+    </div>
     <div class="card mt" style="padding:12px 16px;font-size:12px;color:var(--muted)">Changes here are live in the member app immediately. Partners can also edit their own space in the partner portal — edits on either side overwrite the other.</div>`;
+  syncAdminPhone(p);
 }
 
 async function adminUploadImage(kind,id,file){
