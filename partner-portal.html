@@ -496,7 +496,7 @@
           <div class="field">
             <label>Go-live date &amp; time <span style="font-weight:400;color:var(--text-dim);">(optional)</span></label>
             <input id="upload-publish-at" type="datetime-local"/>
-            <div class="field-hint" style="color:var(--vyve-teal-light);">Leave blank to add this straight to your library — visible to your community as soon as the VYVE team approves it. Or pick a date (at least 48 hours away) to schedule it.</div>
+            <div class="field-hint" style="color:var(--vyve-teal-light);">Leave blank and it lands in your library once approved — you choose when to push it to your space. Or pick a date (at least 48 hours away) to schedule it.</div>
           </div>
           <div id="upload-progress" style="display:none;margin-bottom:12px;">
             <div style="background:var(--surface-3);border-radius:4px;height:6px;overflow:hidden;">
@@ -1258,13 +1258,13 @@
     if (st === 'returned') return { cls:'chip-returned', label:'Returned', meta:'Returned by VYVE — make changes and resubmit', editable:false };
     if (st === 'flagged')  return { cls:'chip-returned', label:'Flagged',  meta:'Flagged for review by VYVE', editable:false };
     if (st === 'approved') {
-      if (!pub) return { cls:'chip-live', label:'Live', meta:'In your library — visible to your community', editable:false };
+      if (!pub) return { cls:'chip-approved', label:'In your library', meta:'Approved — push it to your space whenever you\u2019re ready', editable:false, pushable:true };
       if (future) return { cls:'chip-scheduled', label:'Scheduled · '+fmtDateTime(item.publish_at), meta:'Approved · goes live '+fmtDateTime(item.publish_at), editable:false };
       return { cls:'chip-live', label:'Live', meta:'Live since '+fmtDateTime(item.publish_at)+' · visible to your community', editable:false };
     }
     // in_review / draft — always "Pending approval"; partner can still edit until VYVE acts
     var meta = pub ? ('Uploaded '+fmtDate(item.created_at)+' · scheduled for '+fmtDateTime(item.publish_at))
-                   : ('Uploaded '+fmtDate(item.created_at)+' · library — visible once approved');
+                   : ('Uploaded '+fmtDate(item.created_at)+' · to your library once approved');
     return { cls:'chip-review', label:'Pending approval', meta:meta, editable:true };
   }
 
@@ -1284,7 +1284,7 @@
         state.welcomeMode = true;
         var t = $('upload-title'); if (t && !t.value.trim()) t.value = 'Welcome to VYVE';
         var z = $('upload-zone'); if (z) z.scrollIntoView({ behavior:'smooth', block:'center' });
-        toast('Pick your video below — it goes straight to your library once approved');
+        toast('Pick your video below — it goes live in your space as soon as it\u2019s approved');
       });
     } else if (w.moderation_status === 'approved') {
       body.innerHTML = '<p style="font-size:13px;color:var(--text-muted);">&#10003; <b style="color:var(--vyve-teal-light);">Your welcome video is live.</b> Want a fresh one? Upload a new video below and let us know via Help &mdash; we\u2019ll swap it over.</p>';
@@ -1316,6 +1316,9 @@
         ? '<div class="content-thumb" style="background-image:url(\''+escAttr(item.thumbnail_url)+'\');background-size:cover;background-position:center;"></div>'
         : filmThumb;
       var editBtn = s.editable ? '<button class="content-edit-btn" title="Edit details" data-edit="'+item.id+'" type="button">'+pencil+'</button>' : '';
+      /* PM-901: approved library items get an explicit push — going live in the
+         partner's space is THEIR act, approval is only VYVE's gate. */
+      var pushBtn = s.pushable ? '<button class="btn btn-teal" data-push="'+item.id+'" type="button" style="font-size:12px;padding:7px 14px;flex:none;">Push to my space</button>' : '';
       var editor = s.editable
         ? '<div class="edit-row" id="edit-'+item.id+'" style="display:none;">'
           + '<div class="field" style="margin-bottom:10px;"><label>Title</label><input type="text" id="edit-title-'+item.id+'" value="'+escAttr(item.title)+'"/></div>'
@@ -1327,9 +1330,25 @@
       return '<div style="'+(last?'':'border-bottom:1px solid var(--border);')+'">'
         + '<div class="content-item" style="border-bottom:none;">'+thumb
         + '<div class="content-info"><div class="content-info-title">'+escHtml(item.title)+'</div><div class="content-info-meta">'+s.meta+'</div></div>'
-        + '<div class="content-actions">'+editBtn+'<span class="mod-chip '+s.cls+'">'+s.label+'</span></div></div>'
+        + '<div class="content-actions">'+editBtn+pushBtn+'<span class="mod-chip '+s.cls+'">'+s.label+'</span></div></div>'
         + editor + '</div>';
     }).join('');
+    el.querySelectorAll('[data-push]').forEach(function(btn) {
+      btn.addEventListener('click', async function() {
+        if (!confirm('Push this video to your space now? Your community will see it straight away.')) return;
+        btn.disabled = true; btn.textContent = 'Pushing\u2026';
+        try {
+          var r = await fetch(_SUPA_URL + '/functions/v1/partner-content-upload', {
+            method: 'POST', headers: efHeaders(),
+            body: JSON.stringify({ action: 'publish', id: btn.getAttribute('data-push'), partner_id: state.partnerId })
+          });
+          var j = await r.json().catch(function(){ return {}; });
+          if (!r.ok || j.error) { toast(j.error || 'Could not push \u2014 try again', 'error'); btn.disabled = false; btn.textContent = 'Push to my space'; return; }
+          toast('Live in your space');
+          await loadContent();
+        } catch (e) { toast('Connection problem \u2014 try again', 'error'); btn.disabled = false; btn.textContent = 'Push to my space'; }
+      });
+    });
     el.querySelectorAll('[data-edit]').forEach(function(b){ b.addEventListener('click', function(){ var r = $('edit-'+b.getAttribute('data-edit')); r.style.display = (r.style.display === 'none' ? 'block' : 'none'); }); });
     el.querySelectorAll('[data-edit-cancel]').forEach(function(b){ b.addEventListener('click', function(){ $('edit-'+b.getAttribute('data-edit-cancel')).style.display = 'none'; }); });
     el.querySelectorAll('[data-edit-save]').forEach(function(b){ b.addEventListener('click', function(){ saveEdit(b.getAttribute('data-edit-save')); }); });
