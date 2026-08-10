@@ -30,67 +30,67 @@ window.VYVE_NAV = [
   {
     section: "Run the Business",
     items: [
-      { slug: "crm" area: "sales",       label: "Sales Pipeline",      icon: "users",        status: "live", desc: "Stage-grouped leads on cc_leads. Won leads auto-create clients." },
-      { slug: "finance" area: "finance",   label: "Finance",             icon: "trending-up",  status: "live", desc: "Live billed MRR, the \u00a36K target bar, snapshots and runway." },
-      { slug: "invoicing" area: "invoicing", label: "Invoicing",           icon: "file-text",    status: "live", desc: "Raise, track and mark invoices paid." },
-      { slug: "investor" area: "investors",  label: "Investors & Grants",  icon: "target",       status: "live", desc: "Funding pipeline and the grant calendar." },
-      { slug: "content" area: "content",   label: "Content",             icon: "edit",         status: "live", desc: "Plan and approve posts before Metricool publishes." },
-      { slug: "podcast" area: "podcast",   label: "Podcast",             icon: "mic",          status: "live", desc: "Episode tracker \u2014 planned, recorded, published." },
-      { slug: "tasks" area: "tasks",     label: "Tasks",               icon: "check-square", status: "live", desc: "The shared team task board." },
-      { slug: "documents" area: "documents", label: "Documents",           icon: "folder",       status: "skeleton", desc: "Internal docs and files." },
-      { slug: "calendar" area: "calendar",  label: "Calendar",            icon: "calendar",     status: "live", desc: "The operating calendar \u2014 sessions, deadlines, events." },
-      { href: "https://app.metricool.co area: "social",/evolution/instagram?blogId=5565297&userId=4317867", label: "Social Media", icon: "share", external: true },
-      { href: "https://riverside.f area: "content",/dashboard/home", label: "Riverside", icon: "video", external: true },
-      { href: "https://drive.google.co area: "documents",/drive/u/1/home", label: "Shared Documents", icon: "drive", external: true }
+      { slug: "crm", area: "sales",       label: "Sales Pipeline",      icon: "users",        status: "live", desc: "Stage-grouped leads on cc_leads. Won leads auto-create clients." },
+      { slug: "finance", area: "finance",   label: "Finance",             icon: "trending-up",  status: "live", desc: "Live billed MRR, the \u00a36K target bar, snapshots and runway." },
+      { slug: "invoicing", area: "invoicing", label: "Invoicing",           icon: "file-text",    status: "live", desc: "Raise, track and mark invoices paid." },
+      { slug: "investor", area: "investors",  label: "Investors & Grants",  icon: "target",       status: "live", desc: "Funding pipeline and the grant calendar." },
+      { slug: "content", area: "content",   label: "Content",             icon: "edit",         status: "live", desc: "Plan and approve posts before Metricool publishes." },
+      { slug: "podcast", area: "podcast",   label: "Podcast",             icon: "mic",          status: "live", desc: "Episode tracker \u2014 planned, recorded, published." },
+      { slug: "tasks", area: "tasks",     label: "Tasks",               icon: "check-square", status: "live", desc: "The shared team task board." },
+      { slug: "documents", area: "documents", label: "Documents",           icon: "folder",       status: "skeleton", desc: "Internal docs and files." },
+      { slug: "calendar", area: "calendar",  label: "Calendar",            icon: "calendar",     status: "live", desc: "The operating calendar \u2014 sessions, deadlines, events." },
+      { href: "https://app.metricool.com/evolution/instagram?blogId=5565297&userId=4317867", area: "social", label: "Social Media", icon: "share", external: true },
+      { href: "https://riverside.fm/dashboard/home", area: "content", label: "Riverside", icon: "video", external: true },
+      { href: "https://drive.google.com/drive/u/1/home", area: "documents", label: "Shared Documents", icon: "drive", external: true }
     ]
   },
   // ---------- Members ----------
   {
     section: "Members",
     items: [
-      { href: "/admin-console.html" area: "members", label: "Member Admin", icon: "users", external: false, desc: "Member list, detail and edit \u2014 the members admin surface." },
-      { slug: "broadcast" area: "members",    label: "Broadcast",    icon: "share", status: "live", desc: "Push notifications to member devices." },
-      { slug: "active-users" area: "members", label: "Active Users", icon: "users", status: "live", desc: "Who\u2019s in the app right now." },
-      { slug: "complaints" area: "complaints",   label: "Complaints",   icon: "shield", status: "live", desc: "Member reports from Help & Support \u2014 triage and resolve." }
+      { href: "/admin-console.html", area: "members", label: "Member Admin", icon: "users", external: false, desc: "Member list, detail and edit \u2014 the members admin surface." },
+      { slug: "broadcast", area: "members",    label: "Broadcast",    icon: "share", status: "live", desc: "Push notifications to member devices." },
+      { slug: "active-users", area: "members", label: "Active Users", icon: "users", status: "live", desc: "Who\u2019s in the app right now." },
+      { slug: "complaints", area: "complaints",   label: "Complaints",   icon: "shield", status: "live", desc: "Member reports from Help & Support \u2014 triage and resolve." }
     ]
   },
   // ---------- Partners ----------
   {
     section: "Partners",
     items: [
-      { href: "/partners.html" area: "partners",       label: "Partner Management", icon: "link",  external: false, desc: "Pipeline, go-live gates, moderation and payouts." },
-      { href: "/partner-portal.html" area: "partners", label: "Partner Portal",     icon: "video", external: false, desc: "What partners see \u2014 content, publishing, notify." },
-      { slug: "bookings" area: "partners",             label: "Bookings",           icon: "calendar", status: "live", desc: "Employer expert requests to confirm + the booking ledger." }
+      { href: "/partners.html", area: "partners",       label: "Partner Management", icon: "link",  external: false, desc: "Pipeline, go-live gates, moderation and payouts." },
+      { href: "/partner-portal.html", area: "partners", label: "Partner Portal",     icon: "video", external: false, desc: "What partners see \u2014 content, publishing, notify." },
+      { slug: "bookings", area: "partners",             label: "Bookings",           icon: "calendar", status: "live", desc: "Employer expert requests to confirm + the booking ledger." }
     ]
   },
   // ---------- Employers ----------
   {
     section: "Employers",
     items: [
-      { slug: "employers" area: "employers", label: "Employer Accounts", icon: "briefcase", status: "live", desc: "Provision logins, seat counts and benchmark figures." },
-      { href: "https://www.vyvehealth.co.uk/employer-portal.html" area: "employers", label: "Employer Portal (live)", icon: "briefcase", external: true, desc: "The live employer dashboard \u2014 aggregate only, no PII." },
-      { href: "https://www.vyvehealth.co.uk/employer-portal.html?demo=1" area: "employers", label: "Sales Demo", icon: "eye", external: true, desc: "The demo employer dashboard for prospect calls." }
+      { slug: "employers", area: "employers", label: "Employer Accounts", icon: "briefcase", status: "live", desc: "Provision logins, seat counts and benchmark figures." },
+      { href: "https://www.vyvehealth.co.uk/employer-portal.html", area: "employers", label: "Employer Portal (live)", icon: "briefcase", external: true, desc: "The live employer dashboard \u2014 aggregate only, no PII." },
+      { href: "https://www.vyvehealth.co.uk/employer-portal.html?demo=1", area: "employers", label: "Sales Demo", icon: "eye", external: true, desc: "The demo employer dashboard for prospect calls." }
     ]
   },
   // ---------- Analytics ----------
   {
     section: "Analytics",
     items: [
-      { slug: "app-health" area: "analytics",     label: "App Health",         icon: "activity",    status: "live" },
-      { slug: "usage" area: "analytics",          label: "Overview & Members", icon: "grid",        status: "live" },
-      { slug: "retention" area: "analytics",      label: "Retention",          icon: "trending-up", status: "live" },
-      { slug: "activity-depth" area: "analytics", label: "Activity Depth",     icon: "bar-chart",   status: "live" },
-      { slug: "wellbeing" area: "analytics",      label: "Wellbeing",          icon: "heart",       status: "live" },
-      { slug: "platform" area: "analytics",       label: "Platform & UX",      icon: "monitor",     status: "live" },
-      { slug: "revenue" area: "analytics",        label: "Revenue",            icon: "trending-up", status: "live" },
-      { slug: "ai-usage" area: "analytics",       label: "AI Usage",           icon: "cpu",         status: "live" }
+      { slug: "app-health", area: "analytics",     label: "App Health",         icon: "activity",    status: "live" },
+      { slug: "usage", area: "analytics",          label: "Overview & Members", icon: "grid",        status: "live" },
+      { slug: "retention", area: "analytics",      label: "Retention",          icon: "trending-up", status: "live" },
+      { slug: "activity-depth", area: "analytics", label: "Activity Depth",     icon: "bar-chart",   status: "live" },
+      { slug: "wellbeing", area: "analytics",      label: "Wellbeing",          icon: "heart",       status: "live" },
+      { slug: "platform", area: "analytics",       label: "Platform & UX",      icon: "monitor",     status: "live" },
+      { slug: "revenue", area: "analytics",        label: "Revenue",            icon: "trending-up", status: "live" },
+      { slug: "ai-usage", area: "analytics",       label: "AI Usage",           icon: "cpu",         status: "live" }
     ]
   },
   // ---------- System ----------
   {
     section: "System",
     items: [
-      { slug: "settings" area: "system", label: "Settings", icon: "settings", status: "live" }
+      { slug: "settings", area: "system", label: "Settings", icon: "settings", status: "live" }
     ]
   }
 ];

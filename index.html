@@ -308,7 +308,9 @@
         var A = window.VYVE_ACL;
         if (!S || !A || !S.client || !A.setViewAsRow) return;
         var me = await S.getCurrentAdmin();
-        if (!me || me.role !== 'admin') return; // admins only
+        // Areas are now known — repaint nav for everyone (team members' slices arrive here)
+        if (window.VYVE_ROUTER && window.VYVE_ROUTER.rerenderChrome) window.VYVE_ROUTER.rerenderChrome();
+        if (!me || me.role !== 'admin') return; // view-as itself is admins only
         booted = true;
         var sel = document.getElementById('viewas-select');
         var res = await S.client.from('admin_users').select('email,role,areas,notes').eq('active', true).order('role').order('email');
