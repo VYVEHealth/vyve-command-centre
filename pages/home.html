@@ -287,8 +287,13 @@
       var in7 = new Date(now.getTime() + 7*86400000).toISOString().slice(0,10);
       var dayStart = new Date(now); dayStart.setHours(0,0,0,0);
       var dayEnd = new Date(dayStart.getTime() + 86400000);
-      var tRes = await S.client.from('cc_tasks').select('id,title,stage,priority,due_date,pillar').eq('assignee', em).neq('stage','done').order('due_date', { ascending: true, nullsFirst: false }).limit(8);
-      var tasks = tRes.data || [];
+      var tRes = await S.client.from('cc_tasks').select('id,title,stage,priority,due_date,pillar,assignee,assignees').neq('stage','done').order('due_date', { ascending: true, nullsFirst: false }).limit(100);
+      var meL = (em || '').toLowerCase();
+      function mineTask(t){
+        var list = (Array.isArray(t.assignees) && t.assignees.length) ? t.assignees : (t.assignee ? [t.assignee] : []);
+        return list.some(function(a){ a = (a || '').toLowerCase(); return a === meL || a === 'team@vyvehealth.co.uk'; });
+      }
+      var tasks = (tRes.data || []).filter(mineTask).slice(0, 8);
       var due = tasks.filter(function(t){ return t.due_date && t.due_date <= in7; });
       el('p-open').textContent = tasks.length;
       el('p-open-sub').textContent = tasks.length ? 'Assigned to you' : 'All clear';

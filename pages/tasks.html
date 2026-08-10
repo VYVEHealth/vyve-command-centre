@@ -195,6 +195,16 @@
   }
 
   // ---------- Fetch ----------
+
+  function asgList(t){
+    if (t && Array.isArray(t.assignees) && t.assignees.length) return t.assignees;
+    return (t && t.assignee) ? [t.assignee] : [];
+  }
+  function asgHas(t, email){
+    var e = (email || '').toLowerCase();
+    return asgList(t).some(function(a){ return (a || '').toLowerCase() === e; });
+  }
+
   async function fetchData(){
     var res = await S.client.from(TABLE).select('*').order('created_at', { ascending: false });
     state.tasks = res.error ? [] : (res.data || []);
@@ -207,8 +217,7 @@
       if (eff.serverRole && eff.serverRole !== 'admin'){
         var mine = (eff.email || '').toLowerCase();
         state.tasks = state.tasks.filter(function(t){
-          var a = (t.assignee || '').toLowerCase();
-          return a === mine || a === 'team@vyvehealth.co.uk';
+          return asgHas(t, mine) || asgHas(t, 'team@vyvehealth.co.uk');
         });
         state.me = eff.email; // 'Mine' tab + assignee default follow the persona
       }
@@ -220,8 +229,8 @@
 
   function filtered(){
     return state.tasks.filter(function(t){
-      if (state.scope === 'mine' && t.assignee !== state.me) return false;
-      if (state.scope === 'unassigned' && t.assignee) return false;
+      if (state.scope === 'mine' && !asgHas(t, state.me)) return false;
+      if (state.scope === 'unassigned' && asgList(t).length) return false;
       if (state.pillar && t.pillar !== state.pillar) return false;
       if (state.search){
         var hay = (t.title + ' ' + (t.notes||'')).toLowerCase();
@@ -234,7 +243,7 @@
   // ---------- KPIs ----------
   function renderKPIs(){
     var open = state.tasks.filter(function(t){ return t.stage !== 'done'; });
-    var mine = open.filter(function(t){ return t.assignee === state.me; });
+    var mine = open.filter(function(t){ return asgHas(t, state.me); });
     var today = new Date(); today.setHours(0,0,0,0);
     var weekEnd = new Date(today); weekEnd.setDate(weekEnd.getDate() + 7);
     var week = open.filter(function(t){
@@ -273,7 +282,8 @@
           '<div class="tk-card-title">' + escape(t.title) + '</div>' +
           '<div class="tk-card-meta">' +
             (t.pillar ? '<span class="pill pillar-' + t.pillar + '">' + t.pillar + '</span>' : '') +
-            (t.assignee ? '<span class="tk-avatar" title="' + escape(t.assignee) + '">' + initial(t.assignee) + '</span>' : '') +
+            asgList(t).slice(0,3).map(function(a){ return '<span class="tk-avatar" title="' + escape(a) + '">' + initial(a) + '</span>'; }).join('') +
+            (asgList(t).length > 3 ? '<span class="tk-avatar" title="' + escape(asgList(t).slice(3).join(', ')) + '">+' + (asgList(t).length - 3) + '</span>' : '') +
             (t.due_date ? '<span class="tk-card-due ' + (overdue ? 'overdue' : '') + '">' + fmtDue(t.due_date) + '</span>' : '') +
           '</div>' +
         '</div>';
@@ -295,7 +305,7 @@
       return '<tr class="tk-row" data-id="' + t.id + '">' +
         '<td>' + escape(t.title) + '</td>' +
         '<td><span style="color:' + stageColor + ';font-weight:600;text-transform:capitalize">' + (t.stage || '—') + '</span></td>' +
-        '<td style="color:var(--text-muted)">' + (t.assignee ? '<span class="tk-avatar" style="margin-right:6px">' + initial(t.assignee) + '</span>' + escape(t.assignee) : '<em>Unassigned</em>') + '</td>' +
+        '<td style="color:var(--text-muted)">' + (asgList(t).length ? asgList(t).map(function(a){ return '<span class="tk-avatar" style="margin-right:6px">' + initial(a) + '</span>' + escape(a); }).join('<br/>') : '<em>Unassigned</em>') + '</td>' +
         '<td>' + (t.pillar ? '<span class="pill pillar-' + t.pillar + '" style="font-size:10px;padding:2px 7px;border-radius:var(--r-pill);background:rgba(0,0,0,.04);text-transform:capitalize">' + t.pillar + '</span>' : '—') + '</td>' +
         '<td style="color:var(--text-muted);text-transform:capitalize">' + (t.priority || '—') + '</td>' +
         '<td' + (overdue ? ' style="color:var(--danger);font-weight:700"' : ' style="color:var(--text-muted)"') + '>' + (t.due_date ? fmtDue(t.due_date) : '—') + '</td>' +
@@ -318,11 +328,18 @@
   function openEditor(id){
     var task = id ? state.tasks.find(function(t){ return t.id === id; }) : null;
     var isEdit = !!task;
-    var t = task || { stage: 'todo', priority: 'medium', assignee: state.me };
+    var t = task || { stage: 'todo', priority: 'medium', assignees: [state.me] };
 
-    var assigneeOptions = '<option value="">Unassigned</option>' + state.admins.map(function(a){
-      return '<option value="' + escape(a.email) + '"' + (t.assignee === a.email ? ' selected' : '') + '>' + escape(a.email) + '</option>';
-    }).join('');
+    var cur = asgList(t);
+    function ck(email, label){
+      var on = cur.some(function(a){ return (a || '').toLowerCase() === email.toLowerCase(); });
+      return '<label style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:8px;cursor:pointer;font-size:12.5px">' +
+        '<input type="checkbox" class="tkf-asg" value="' + escape(email) + '"' + (on ? ' checked' : '') + '/> ' + escape(label) + '</label>';
+    }
+    var assigneePicker = '<div style="max-height:150px;overflow:auto;border:1px solid var(--border);border-radius:10px;padding:4px">' +
+      ck('team@vyvehealth.co.uk', 'Whole team') +
+      state.admins.filter(function(a){ return a.email !== 'team@vyvehealth.co.uk'; }).map(function(a){ return ck(a.email, a.email); }).join('') +
+      '</div>';
 
     var modal = VYVE_UI.modal({
       title: isEdit ? 'Edit task' : 'New task',
@@ -330,7 +347,7 @@
       body:
         '<div class="form-row"><div class="form-group"><label>Title</label><input id="tkf-title" value="' + escape(t.title || '') + '" placeholder="What needs to happen?"/></div></div>' +
         '<div class="form-row cols-3"><div class="form-group"><label>Stage</label><select id="tkf-stage"><option value="todo">To do</option><option value="doing">Doing</option><option value="blocked">Blocked</option><option value="done">Done</option></select></div><div class="form-group"><label>Priority</label><select id="tkf-priority"><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></div><div class="form-group"><label>Due date</label><input type="date" id="tkf-due" value="' + (t.due_date || '') + '"/></div></div>' +
-        '<div class="form-row cols-2"><div class="form-group"><label>Assignee</label><select id="tkf-assignee">' + assigneeOptions + '</select></div><div class="form-group"><label>Pillar</label><select id="tkf-pillar"><option value="">—</option><option value="physical">Physical</option><option value="mental">Mental</option><option value="social">Social</option><option value="business">Business</option></select></div></div>' +
+        '<div class="form-row cols-2"><div class="form-group"><label>Assignees</label>' + assigneePicker + '</div><div class="form-group"><label>Pillar</label><select id="tkf-pillar"><option value="">—</option><option value="physical">Physical</option><option value="mental">Mental</option><option value="social">Social</option><option value="business">Business</option></select></div></div>' +
         '<div class="form-row"><div class="form-group"><label>Notes</label><textarea id="tkf-notes" rows="4">' + escape(t.notes || '') + '</textarea></div></div>' +
         (isEdit ? '<div class="form-row"><div class="form-group"><label>Attachments</label><div id="tkf-attachments" style="margin-bottom:8px"><span style="color:var(--text-muted);font-size:12px">Loading…</span></div><div style="display:flex;align-items:center;gap:8px"><input type="file" id="tkf-file-input" style="display:none"/><button class="btn btn-sm" id="tkf-choose-btn" type="button">+ Add file</button><span id="tkf-file-name" style="flex:1;font-size:12px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Files upload as soon as you pick them</span></div></div></div>' : '') +
         '<div style="display:flex;justify-content:space-between;gap:8px">' +
@@ -353,7 +370,8 @@
           stage: newStage,
           priority: document.getElementById('tkf-priority').value,
           due_date: document.getElementById('tkf-due').value || null,
-          assignee: document.getElementById('tkf-assignee').value || null,
+          assignees: (function(){ var v = []; document.querySelectorAll('.tkf-asg:checked').forEach(function(c){ v.push(c.value); }); return v.length ? v : null; })(),
+          assignee: (function(){ var c = document.querySelector('.tkf-asg:checked'); return c ? c.value : null; })(),
           pillar: document.getElementById('tkf-pillar').value || null,
           notes: document.getElementById('tkf-notes').value.trim() || null,
           updated_at: new Date().toISOString()
