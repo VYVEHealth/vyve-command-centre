@@ -267,8 +267,11 @@
   }
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
   async function loadPersonal(){
-    document.getElementById('hm-business').style.display = 'none';
-    document.getElementById('hm-personal').style.display = 'block';
+    var bizEl = document.getElementById('hm-business');
+    var perEl = document.getElementById('hm-personal');
+    if (!bizEl || !perEl) return; // stale listener firing after navigation away — nothing to render
+    bizEl.style.display = 'none';
+    perEl.style.display = 'block';
     var A = window.VYVE_ACL, S = window.VYVE_SUPABASE;
     var e = A.effective();
     var em = e.email;
@@ -329,6 +332,7 @@
   }
 
   async function load(){
+    if (!document.getElementById('hm-business')) return; // navigated away
     if (personaIsTeam()) return loadPersonal();
     var token = null;
     try {

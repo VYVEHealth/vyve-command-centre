@@ -199,6 +199,21 @@
     var res = await S.client.from(TABLE).select('*').order('created_at', { ascending: false });
     state.tasks = res.error ? [] : (res.data || []);
 
+    // PM-907: team personas (and admin previews of them) see only their own
+    // tasks and tasks assigned to team@ — the full board stays admin-only.
+    var A = window.VYVE_ACL;
+    if (A && A.effective){
+      var eff = A.effective();
+      if (eff.serverRole && eff.serverRole !== 'admin'){
+        var mine = (eff.email || '').toLowerCase();
+        state.tasks = state.tasks.filter(function(t){
+          var a = (t.assignee || '').toLowerCase();
+          return a === mine || a === 'team@vyvehealth.co.uk';
+        });
+        state.me = eff.email; // 'Mine' tab + assignee default follow the persona
+      }
+    }
+
     var ar = await S.client.from('admin_users').select('email,role,active').eq('active', true).order('email', { ascending: true });
     state.admins = ar.error ? [] : (ar.data || []);
   }
