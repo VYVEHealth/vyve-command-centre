@@ -463,7 +463,9 @@
             await loadAttachments();
           } catch(e){
             if (fileNameEl) fileNameEl.textContent = 'Upload failed \u2014 try again';
-            alert('Upload failed: ' + (e.message || 'unknown'));
+            var m = (e.message || 'unknown');
+            if (/Failed to fetch/i.test(m)) m = 'connection dropped mid-upload \u2014 this usually means another app is using your upload bandwidth (video calls, Riverside recordings). Try again when the line is free.';
+            alert('Upload failed: ' + m);
           } finally {
             chooseBtn.disabled = false;
             fileInputEl.value = '';
