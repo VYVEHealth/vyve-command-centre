@@ -277,17 +277,27 @@
       if (!confirm('Cancel this meeting? Guest links stop working immediately.')) return;
       efCall({ action:'cancel', meeting_id:t.dataset.mtCancel }).then(load).catch(function(e){ alert(e.message); });
     }
-    if (t.dataset.mtTr){
-      var m = rows.find(function(x){ return x.id===t.dataset.mtTr; });
-      if (!m) return;
-      document.getElementById('mt-tr-title').textContent = m.title;
-      var sw = document.getElementById('mt-tr-summary-wrap');
-      if (m.summary){ document.getElementById('mt-tr-summary').textContent = m.summary; sw.style.display = ''; }
-      else { sw.style.display = 'none'; }
-      renderProposals(m);
-      document.getElementById('mt-tr-body').textContent = m.transcript || 'No transcript text.';
-      document.getElementById('mt-transcript-modal').style.display = '';
-    }
+    if (t.dataset.mtTr) openTranscript(t.dataset.mtTr);
+  });
+  function openTranscript(id){
+    var m = rows.find(function(x){ return x.id===id; });
+    if (!m) return;
+    document.getElementById('mt-tr-title').textContent = m.title;
+    var sw = document.getElementById('mt-tr-summary-wrap');
+    if (m.summary){ document.getElementById('mt-tr-summary').textContent = m.summary; sw.style.display = ''; }
+    else { sw.style.display = 'none'; }
+    renderProposals(m);
+    document.getElementById('mt-tr-body').textContent = m.transcript || 'No transcript text.';
+    document.getElementById('mt-transcript-modal').style.display = '';
+  }
+  // PM-922: bell deep link — #/meetings/<id> opens that meeting's transcript + approval box
+  function checkDeepLink(){
+    var parts = (location.hash || '').replace(/^#\/?/, '').split('/');
+    if (parts[0] === 'meetings' && parts[1]) openTranscript(parts[1]);
+  }
+  window.addEventListener('hashchange', function(){
+    var parts = (location.hash || '').replace(/^#\/?/, '').split('/');
+    if (parts[0] === 'meetings' && parts[1] && document.getElementById('page-meetings')) openTranscript(parts[1]);
   });
   var proposalMeeting = null;
   function renderProposals(m){
@@ -359,6 +369,7 @@
     }
     show('mt-content');
     await load();
+    checkDeepLink();
   }
   boot();
 })();
