@@ -186,6 +186,11 @@
     var res = await S.client.from('cc_documents').select('*').order('created_at', { ascending: false });
     if (res.error){ console.error('[docs] fetch failed', res.error); state.docs = []; return; }
     state.docs = res.data || [];
+    var A907 = window.VYVE_ACL;
+    if (A907 && A907.effective){
+      var e907 = A907.effective();
+      if (e907.serverRole && e907.serverRole !== 'admin') state.docs = state.docs.filter(function(d){ return d.visibility !== 'admin'; });
+    }
   }
 
   function renderKPIs(){
@@ -225,7 +230,7 @@
     document.getElementById('dc-files-body').innerHTML = rows.map(function(d){
       return '<tr class="dc-row" data-id="' + d.id + '">' +
         '<td><div class="dc-name">' + fileTypeIcon(d.name) + '<div>' + (d.name || 'Untitled') + '</div></div></td>' +
-        '<td style="color:var(--text-muted)">' + (d.category || '—') + '</td>' +
+        '<td style="color:var(--text-muted)">' + (d.category || '—') + (d.visibility === 'admin' ? ' <span title="Admins only" style="font-size:10px;background:var(--gold-pale,#f3e8cf);color:var(--gold,#a97f1a);border-radius:99px;padding:1px 7px;font-weight:700">ADMIN</span>' : '') + '</td>' +
         '<td style="color:var(--text-muted)">' + fmtSize(d.file_size) + '</td>' +
         '<td style="color:var(--text-muted);font-size:11.5px">' + (d.created_by || '—') + '</td>' +
         '<td style="color:var(--text-muted)">' + fmtDate(d.created_at) + '</td>' +
@@ -282,13 +287,47 @@
   }
 
   // ---------- Upload ----------
-  function promptCategory(filename){
-    var defaultCat = '';
-    var existing = {};
-    state.docs.forEach(function(d){ if (d.category) existing[d.category] = true; });
-    var allCats = CATEGORIES.concat(Object.keys(existing).filter(function(c){ return CATEGORIES.indexOf(c) < 0; }));
-    var input = prompt('Category for "' + filename + '" (existing: ' + allCats.join(', ') + '):', defaultCat);
-    return input || null;
+  // PM-909: category is a dropdown, not a prompt; admins also choose visibility
+  // (Everyone on the team / Admins only — the latter is RLS-enforced).
+  function askUploadMeta(filename){
+    return new Promise(function(resolve){
+      var existing = {};
+      state.docs.forEach(function(d){ if (d.category) existing[d.category] = true; });
+      var allCats = CATEGORIES.concat(Object.keys(existing).filter(function(c){ return CATEGORIES.indexOf(c) < 0; }));
+      var isAdmin = !!(window.VYVE_ACL && window.VYVE_ACL.is && window.VYVE_ACL.is('owner'));
+      var wrap = document.createElement('div');
+      wrap.style.cssText = 'position:fixed;inset:0;z-index:120;background:rgba(0,0,0,.45);display:grid;place-items:center';
+      wrap.innerHTML = '<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow-lg,0 12px 32px rgba(0,0,0,.25));padding:20px;min-width:340px;max-width:420px">' +
+        '<div style="font-size:15px;font-weight:700;margin-bottom:4px">Upload settings</div>' +
+        '<div style="font-size:12.5px;color:var(--text-muted);margin-bottom:14px;word-break:break-all">' + filename.replace(/[&<>"]/g,'') + '</div>' +
+        '<div class="form-group" style="margin-bottom:12px"><label style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim)">Category</label>' +
+        '<select id="dcm-cat" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text)">' +
+        allCats.map(function(c){ return '<option value="' + c + '">' + c + '</option>'; }).join('') +
+        '</select></div>' +
+        '<div id="dcm-other-wrap" style="display:none;margin-bottom:12px"><input id="dcm-other" placeholder="Custom category name" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text)"/></div>' +
+        (isAdmin ? '<div class="form-group" style="margin-bottom:14px"><label style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim)">Visible to</label>' +
+          '<select id="dcm-vis" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text)">' +
+          '<option value="team">Everyone on the team</option><option value="admin">Admins only (Dean, Lewis, Alan)</option></select></div>' : '') +
+        '<div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn" id="dcm-cancel" type="button">Cancel</button><button class="btn btn-primary" id="dcm-ok" type="button">Upload</button></div>' +
+        '</div>';
+      document.body.appendChild(wrap);
+      var catSel = wrap.querySelector('#dcm-cat');
+      catSel.addEventListener('change', function(){
+        wrap.querySelector('#dcm-other-wrap').style.display = (catSel.value === 'Other') ? 'block' : 'none';
+      });
+      function done(v){ wrap.remove(); resolve(v); }
+      wrap.querySelector('#dcm-cancel').addEventListener('click', function(){ done(null); });
+      wrap.addEventListener('click', function(e){ if (e.target === wrap) done(null); });
+      wrap.querySelector('#dcm-ok').addEventListener('click', function(){
+        var cat = catSel.value;
+        if (cat === 'Other'){
+          var custom = (wrap.querySelector('#dcm-other').value || '').trim();
+          if (custom) cat = custom;
+        }
+        var visEl = wrap.querySelector('#dcm-vis');
+        done({ category: cat, visibility: visEl ? visEl.value : 'team' });
+      });
+    });
   }
 
   async function uploadFiles(files){
@@ -308,8 +347,9 @@
         continue;
       }
 
-      var category = promptCategory(file.name);
-      if (category === null){ continue; }
+      var meta = await askUploadMeta(file.name);
+      if (meta === null){ continue; }
+      var category = meta.category;
 
       var rowEl = document.createElement('div');
       rowEl.className = 'dc-upload-row';
@@ -336,6 +376,7 @@
           file_size: file.size,
           file_type: file.type || fileExt(file.name),
           category: category,
+          visibility: meta.visibility || 'team',
           storage_path: storagePath
         });
         if (metaRes.error){ throw new Error(metaRes.error.message); }
