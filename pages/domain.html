@@ -51,6 +51,8 @@
 
   var section = (window.VYVE_NAV || []).find(function(s){ return s.section === dom.section; });
   var items = (section && section.items) || [];
+  // PM-907: landings honour per-person area grants
+  if (window.VYVE_ACL && window.VYVE_ACL.canSeeItem) items = items.filter(window.VYVE_ACL.canSeeItem);
   if (!items.length){
     tilesEl.innerHTML = '<div class="dm-empty">Nothing in this domain yet.</div>';
     return;

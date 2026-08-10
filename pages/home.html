@@ -73,6 +73,28 @@
 
 <div class="hm-error" id="hm-error"></div>
 
+<!-- PM-907: personal home for team members — their tasks, their day, their areas. -->
+<div id="hm-personal" style="display:none">
+  <div class="hm-kpis" style="grid-template-columns:repeat(3,1fr)">
+    <div class="hm-kpi"><div class="hm-kl">Your open tasks</div><div class="hm-kv" id="p-open">—</div><div class="hm-ks" id="p-open-sub"></div></div>
+    <div class="hm-kpi"><div class="hm-kl">Due this week</div><div class="hm-kv" id="p-due">—</div><div class="hm-ks">Next 7 days</div></div>
+    <div class="hm-kpi"><div class="hm-kl">Sessions today</div><div class="hm-kv" id="p-sessions">—</div><div class="hm-ks">On the live calendar</div></div>
+  </div>
+  <div class="hm-today">
+    <div class="hm-card">
+      <div class="hm-ch"><h3>Your tasks</h3><a href="#/tasks">Task board →</a></div>
+      <div id="p-tasklist"><div class="hm-empty">Loading…</div></div>
+    </div>
+    <div class="hm-card">
+      <div class="hm-ch"><h3>Today's sessions</h3><a href="#/calendar">Calendar →</a></div>
+      <div id="p-sessionlist"><div class="hm-empty">Loading…</div></div>
+    </div>
+  </div>
+  <div class="hm-sect">Your areas</div>
+  <div class="hm-tiles" id="p-tiles"></div>
+</div>
+
+<div id="hm-business">
 <div class="hm-kpis">
   <div class="hm-kpi"><div class="hm-kl">MRR</div><div class="hm-kv gold" id="k-mrr">—</div><div class="hm-ks" id="k-mrr-sub"></div></div>
   <div class="hm-kpi"><div class="hm-kl">Active members · 7d</div><div class="hm-kv" id="k-active">—</div><div class="hm-ks" id="k-active-sub"></div></div>
@@ -142,6 +164,7 @@
     <div class="hm-tlinks"><a class="hm-tl" href="#/settings">Settings</a></div>
   </div>
 </div>
+</div><!-- /hm-business -->
 
 <script>
 (function(){
@@ -235,7 +258,78 @@
       (ss.length ? ' · ' + ss.length + ' sessions today' : '');
   }
 
+  // ---------- PM-907: personal home for team personas ----------
+  function personaIsTeam(){
+    var A = window.VYVE_ACL;
+    if (!A || !A.effective) return false;
+    var e = A.effective();
+    return e.serverRole && e.serverRole !== 'admin';
+  }
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+  async function loadPersonal(){
+    document.getElementById('hm-business').style.display = 'none';
+    document.getElementById('hm-personal').style.display = 'block';
+    var A = window.VYVE_ACL, S = window.VYVE_SUPABASE;
+    var e = A.effective();
+    var em = e.email;
+    // greeting uses the persona's name
+    var nm = (em || '').split('@')[0].split('.')[0].replace(/[0-9]+$/,'');
+    nm = nm.charAt(0).toUpperCase() + nm.slice(1);
+    var g = el('hm-greet');
+    if (g) g.textContent = 'Evening, ' + nm + '.';
+    var meta = el('hm-metaline');
+    if (meta) meta.textContent = 'Your day at VYVE — tasks first, then what you own.';
+    try {
+      var now = new Date();
+      var in7 = new Date(now.getTime() + 7*86400000).toISOString().slice(0,10);
+      var dayStart = new Date(now); dayStart.setHours(0,0,0,0);
+      var dayEnd = new Date(dayStart.getTime() + 86400000);
+      var tRes = await S.client.from('cc_tasks').select('id,title,stage,priority,due_date,pillar').eq('assignee', em).neq('stage','done').order('due_date', { ascending: true, nullsFirst: false }).limit(8);
+      var tasks = tRes.data || [];
+      var due = tasks.filter(function(t){ return t.due_date && t.due_date <= in7; });
+      el('p-open').textContent = tasks.length;
+      el('p-open-sub').textContent = tasks.length ? 'Assigned to you' : 'All clear';
+      el('p-due').textContent = due.length;
+      var host = el('p-tasklist');
+      host.innerHTML = tasks.length ? tasks.map(function(t){
+        var overdue = t.due_date && t.due_date < now.toISOString().slice(0,10);
+        return '<a class="hm-row" href="#/tasks" style="text-decoration:none;color:inherit">' +
+          '<span class="hm-time">' + (t.due_date ? esc(t.due_date.slice(5)) : '—') + '</span>' +
+          '<span><b>' + esc(t.title) + '</b><div class="hm-sub">' + esc(t.stage) + (t.pillar ? ' · ' + esc(t.pillar) : '') + '</div></span>' +
+          '<span class="hm-pill ' + (overdue ? 'critical' : 'upcoming') + '">' + (overdue ? 'overdue' : esc(t.priority || '')) + '</span></a>';
+      }).join('') : '<div class="hm-empty">Nothing assigned to you — enjoy it while it lasts.</div>';
+      var sRes = await S.client.from('calendar_occurrences').select('session_title,name,host_name,starts_at').eq('type','live_session').eq('active', true).is('cancelled_at', null).gte('starts_at', dayStart.toISOString()).lt('starts_at', dayEnd.toISOString()).order('starts_at');
+      var ss = sRes.data || [];
+      el('p-sessions').textContent = ss.length;
+      el('p-sessionlist').innerHTML = ss.length ? ss.map(function(s){
+        var t = new Date(s.starts_at);
+        var hh = ('0'+t.getHours()).slice(-2) + ':' + ('0'+t.getMinutes()).slice(-2);
+        return '<div class="hm-row"><span class="hm-time">' + hh + '</span><span><b>' + esc(s.session_title || s.name) + '</b><div class="hm-sub">' + esc(s.host_name || '') + '</div></span></div>';
+      }).join('') : '<div class="hm-empty">No sessions today.</div>';
+      // area tiles from the filtered nav
+      var tiles = '';
+      (window.VYVE_NAV || []).forEach(function(sec){
+        (sec.items || []).forEach(function(item){
+          if (item.slug === 'home') return;
+          if (!(A.canSeeItem && A.canSeeItem(item))) return;
+          var icon = (window.VYVE_ICONS && window.VYVE_ICONS[item.icon]) || '';
+          var href = item.href ? item.href : ('#/' + item.slug);
+          var tgt = (item.href && item.external) ? ' target="_blank" rel="noopener"' : '';
+          tiles += '<div class="hm-tile"><a class="hm-tile-main" href="' + href + '"' + tgt + '>' +
+            '<div class="hm-tt"><div class="hm-tic">' + icon + '</div></div>' +
+            '<h2>' + esc(item.label) + '</h2><p>' + esc(item.desc || '') + '</p></a></div>';
+        });
+      });
+      el('p-tiles').innerHTML = tiles || '<div class="hm-empty">No areas granted yet.</div>';
+    } catch(err){
+      console.error('[home personal]', err);
+      el('hm-error').style.display = 'block';
+      el('hm-error').textContent = 'Home data failed to load.';
+    }
+  }
+
   async function load(){
+    if (personaIsTeam()) return loadPersonal();
     var token = null;
     try {
       var sb = window.VYVE_SUPABASE && window.VYVE_SUPABASE.client && window.VYVE_SUPABASE.client;
@@ -281,6 +375,7 @@
       el('hm-error').textContent = 'Data loaded but failed to display — see console.';
     }
   }
-  load();
+  setTimeout(load, 250);
+  window.addEventListener('vyve:viewas', function(){ setTimeout(load, 50); });
 })();
 </script>

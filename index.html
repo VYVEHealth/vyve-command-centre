@@ -82,6 +82,7 @@
 
     <!-- Top navigation bar (PRIMARY nav) -->
     <div class="app-body">
+    <div id="viewas-banner" style="display:none;position:sticky;top:0;z-index:90;background:var(--vyve-gold,#D49B2C);color:#1a1a1a;font-size:12.5px;font-weight:600;padding:6px 14px;text-align:center">Viewing as <span id="viewas-who"></span> — what you see is their Command Centre. <a href="#" id="viewas-exit" style="color:inherit;text-decoration:underline">Exit preview</a></div>
     <header class="topnav" id="topnav">
       <div class="topnav-inner">
         <div class="topnav-brand">
@@ -107,6 +108,7 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" stroke="none"/></svg>
           </button>
           <span class="topnav-role" id="topnav-role" title="Your role" style="display:none"></span>
+          <select id="viewas-select" title="Preview the Command Centre as another person" style="display:none;max-width:150px;font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text)"></select>
           <button class="topnav-bell" id="topnav-print" type="button" aria-label="Print current page as PDF" title="Print current page as PDF" onclick="window.VYVE_PDF && window.VYVE_PDF.printPage()">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
           </button>
@@ -294,6 +296,56 @@
       window.addEventListener('vyve:acl:change', paintRole);
       window.addEventListener('vyve:user', paintRole);
       setTimeout(paintRole, 150);
+    })();
+
+    // PM-907: admin-only "view as" preview — renders the CC through another
+    // person's areas so Dean can check each person's slice before rollout.
+    (function(){
+      var booted = false;
+      async function boot(){
+        if (booted) return;
+        var S = window.VYVE_SUPABASE;
+        var A = window.VYVE_ACL;
+        if (!S || !A || !S.client || !A.setViewAsRow) return;
+        var me = await S.getCurrentAdmin();
+        if (!me || me.role !== 'admin') return; // admins only
+        booted = true;
+        var sel = document.getElementById('viewas-select');
+        var res = await S.client.from('admin_users').select('email,role,areas,notes').eq('active', true).order('role').order('email');
+        var people = (res.data || []).filter(function(p){ return p.role === 'admin' || p.role === 'team'; });
+        var current = A.viewAs && A.viewAs();
+        var html = '<option value="">View as\u2026 (me)</option>';
+        people.forEach(function(p){
+          if (p.email === me.email) return;
+          var nm = (p.notes || '').split('\u2014')[0].trim() || p.email;
+          html += '<option value="' + p.email + '"' + (current === p.email ? ' selected' : '') + '>' + nm + ' (' + p.role + ')</option>';
+        });
+        sel.innerHTML = html;
+        sel.style.display = 'inline-block';
+        sel.addEventListener('change', function(){
+          A.setViewAs(sel.value || null);
+          window.location.reload();
+        });
+        // Active preview: load the viewed row into ACL then re-render nav + page
+        if (current){
+          var row = null;
+          for (var i=0;i<people.length;i++){ if (people[i].email === current) row = people[i]; }
+          if (!row){ A.setViewAs(null); window.location.reload(); return; }
+          A.setViewAsRow(row);
+          var banner = document.getElementById('viewas-banner');
+          var who = document.getElementById('viewas-who');
+          var nm2 = (row.notes || '').split('\u2014')[0].trim() || row.email;
+          if (who) who.textContent = nm2;
+          if (banner) banner.style.display = 'block';
+          var exit = document.getElementById('viewas-exit');
+          if (exit) exit.addEventListener('click', function(e){ e.preventDefault(); A.setViewAs(null); window.location.reload(); });
+          if (window.VYVE_ROUTER && window.VYVE_ROUTER.rerenderChrome) window.VYVE_ROUTER.rerenderChrome();
+          if (window.VYVE_ROUTER && window.VYVE_ROUTER.reload) window.VYVE_ROUTER.reload();
+          window.dispatchEvent(new CustomEvent('vyve:viewas', { detail: { email: current, row: row } }));
+        }
+      }
+      window.addEventListener('vyve:user', function(){ setTimeout(boot, 50); });
+      setTimeout(boot, 400);
     })();
 
     // Notification bell: update dot whenever notifs change
