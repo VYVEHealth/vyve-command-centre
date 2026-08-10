@@ -1759,3 +1759,23 @@ kbd {
   .bottom-tab.active { color: var(--vyve-gold); }
   .content { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
 }
+
+
+/* =====================================================================
+   PM-920 — Mobile fit: the topnav toolbar could not fit a phone viewport
+   (theme + role pill + view-as + bell + print + help + search + avatar),
+   forcing the document wider than the screen — the "dark strip" overflow
+   Dean flagged. On small screens keep bell, search icon and avatar only;
+   clamp horizontal overflow at the shell level as a backstop.
+   ===================================================================== */
+@media (max-width: 900px) {
+  html, body { overflow-x: hidden; }
+  .topnav-inner { flex-wrap: nowrap; min-width: 0; }
+  #topnav-print, #topnav-help, #topnav-theme { display: none; }
+  #topnav-role { display: none !important; }
+  .topnav-search { padding: 9px 11px; }
+  .topnav-search-label { display: none; }
+}
+@media (max-width: 640px) {
+  #viewas-select { display: none !important; }
+}

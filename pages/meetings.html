@@ -9,9 +9,18 @@
 #mt-call-topbar { display: flex; align-items: center; gap: 12px; padding: 10px 16px; background: #0a2222; }
 #mt-call-frame-host { flex: 1; }
 #mt-call-frame-host iframe { width: 100%; height: 100%; border: 0; }
-.mt-row { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.mt-row { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--border); font-size: 13px; flex-wrap: wrap; }
 .mt-row:last-child { border-bottom: 0; }
-.mt-chip { font-size: 11.5px; font-weight: 700; }
+.mt-chip { font-size: 11.5px; font-weight: 700; white-space: nowrap; }
+.mt-when { min-width: 150px; color: var(--text-muted); }
+.mt-main { flex: 1; min-width: 180px; }
+.mt-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+@media (max-width: 640px) {
+  .mt-row { row-gap: 6px; }
+  .mt-when { min-width: 0; flex-basis: 100%; font-size: 12px; }
+  .mt-main { flex-basis: 100%; }
+  .mt-actions { flex-basis: 100%; }
+}
 </style>
   <div class="page-hero">
     <div class="eyebrow">Run the Business · Live data</div>
@@ -155,11 +164,11 @@
       }
     }
     return '<div class="mt-row">'
-      + '<div style="min-width:150px;color:var(--text-muted)">'+fmtWhen(m.scheduled_at||m.started_at||m.created_at)+'</div>'
-      + '<div style="flex:1;min-width:0"><span style="font-weight:600">'+esc(m.title)+'</span>'
-      + ' <span style="font-size:11.5px;color:var(--text-muted)">'+(m.meeting_type==='client'?'Client':'Internal')+dur(m)+'</span></div>'
+      + '<div class="mt-when">'+fmtWhen(m.scheduled_at||m.started_at||m.created_at)+'</div>'
+      + '<div class="mt-main"><span style="font-weight:600">'+esc(m.title)+'</span>'
+      + ' <span style="font-size:11.5px;color:var(--text-muted);white-space:nowrap">'+(m.meeting_type==='client'?'Client':'Internal')+dur(m)+'</span></div>'
       + statusChip(m) + trChip(m)
-      + '<div style="display:flex;gap:6px">'+btns+'</div></div>';
+      + '<div class="mt-actions">'+btns+'</div></div>';
   }
 
   function render(){
