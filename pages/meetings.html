@@ -103,6 +103,15 @@
           <div style="font-weight:700;font-size:12.5px;margin-bottom:6px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px">AI summary</div>
           <div id="mt-tr-summary" style="white-space:pre-wrap;font-size:13px;line-height:1.6;color:var(--text)"></div>
         </div>
+        <div id="mt-tr-proposals" style="display:none;margin-bottom:14px;padding:12px 14px;border:1px solid #b7791f55;border-radius:10px;background:var(--surface-2)">
+          <div style="font-weight:700;font-size:12.5px;margin-bottom:8px;color:#b7791f;text-transform:uppercase;letter-spacing:.4px">Proposed tasks — approve to create &amp; assign</div>
+          <div id="mt-tr-proposal-list" style="font-size:13px;line-height:1.7"></div>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn btn-primary btn-sm" id="mt-tr-approve" type="button">Approve selected</button>
+            <button class="btn btn-ghost btn-sm" id="mt-tr-dismiss" type="button">Dismiss all</button>
+          </div>
+          <div id="mt-tr-approve-msg" style="font-size:12px;color:var(--text-muted);margin-top:8px"></div>
+        </div>
         <div style="font-weight:700;font-size:12.5px;margin-bottom:6px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px">Full transcript</div>
         <div id="mt-tr-body" style="white-space:pre-wrap;font-size:13px;line-height:1.6;color:var(--text)"></div>
       </div>
@@ -138,7 +147,13 @@
     var btns = '';
     if (!past && m.status!=='cancelled') btns += '<button class="btn btn-primary btn-sm" data-mt-join="'+m.id+'" type="button">Join</button>';
     if (!past) btns += '<button class="btn btn-ghost btn-sm" data-mt-cancel="'+m.id+'" type="button">Cancel</button>';
-    if (m.transcript_status==='ready') btns += '<button class="btn btn-ghost btn-sm" data-mt-tr="'+m.id+'" type="button">View transcript</button>';
+    if (m.transcript_status==='ready' || m.transcript_status==='incomplete'){
+      btns += '<button class="btn btn-ghost btn-sm" data-mt-tr="'+m.id+'" type="button">View transcript</button>';
+      var meta = m.transcript_meta || {};
+      if (Array.isArray(meta.proposed_tasks) && meta.proposed_tasks.length && (meta.tasks_created === undefined || meta.tasks_created === null)){
+        btns = '<span class="mt-chip" style="color:#b7791f">' + meta.proposed_tasks.length + ' tasks to approve</span>' + btns;
+      }
+    }
     return '<div class="mt-row">'
       + '<div style="min-width:150px;color:var(--text-muted)">'+fmtWhen(m.scheduled_at||m.started_at||m.created_at)+'</div>'
       + '<div style="flex:1;min-width:0"><span style="font-weight:600">'+esc(m.title)+'</span>'
@@ -260,10 +275,53 @@
       var sw = document.getElementById('mt-tr-summary-wrap');
       if (m.summary){ document.getElementById('mt-tr-summary').textContent = m.summary; sw.style.display = ''; }
       else { sw.style.display = 'none'; }
+      renderProposals(m);
       document.getElementById('mt-tr-body').textContent = m.transcript || 'No transcript text.';
       document.getElementById('mt-transcript-modal').style.display = '';
     }
   });
+  var proposalMeeting = null;
+  function renderProposals(m){
+    proposalMeeting = m;
+    var box = document.getElementById('mt-tr-proposals');
+    var meta = m.transcript_meta || {};
+    var proposed = Array.isArray(meta.proposed_tasks) ? meta.proposed_tasks : [];
+    var reviewed = meta.tasks_created !== undefined && meta.tasks_created !== null;
+    if (!proposed.length || reviewed){ box.style.display = 'none'; return; }
+    document.getElementById('mt-tr-proposal-list').innerHTML = proposed.map(function(t, i){
+      var who = t.email ? (t.owner || t.email) : (t.owner ? t.owner + ' (no CC account — will be unassigned)' : 'Unassigned');
+      return '<label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer"><input type="checkbox" class="mt-prop" value="' + i + '" checked style="margin-top:4px"/><span><span style="font-weight:600">' + esc(t.task) + '</span> <span style="color:var(--text-muted)">— ' + esc(who) + '</span></span></label>';
+    }).join('');
+    document.getElementById('mt-tr-approve-msg').textContent = '';
+    box.style.display = '';
+  }
+  async function summaryEF(payload){
+    var session = await S.getSession();
+    var r = await fetch(EF('meeting-summary'), { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+session.access_token }, body: JSON.stringify(payload) });
+    var j = await r.json().catch(function(){ return {}; });
+    if (!r.ok) throw new Error(j.error || ('HTTP '+r.status));
+    return j;
+  }
+  async function approveProposals(indices){
+    var msg = document.getElementById('mt-tr-approve-msg');
+    msg.textContent = 'Working…';
+    try {
+      var j = await summaryEF({ action:'approve', meeting_id: proposalMeeting.id, indices: indices });
+      msg.textContent = j.tasks_created > 0 ? (j.tasks_created + ' task(s) created and assigned.') : 'Dismissed — no tasks created.';
+      document.getElementById('mt-tr-proposals').querySelectorAll('button,input').forEach(function(el){ el.disabled = true; });
+      await load();
+      var fresh = rows.find(function(x){ return x.id === proposalMeeting.id; });
+      if (fresh && fresh.summary) document.getElementById('mt-tr-summary').textContent = fresh.summary;
+    } catch(e){ msg.textContent = 'Failed: ' + e.message; }
+  }
+  document.getElementById('mt-tr-approve').onclick = function(){
+    var idx = []; document.querySelectorAll('.mt-prop:checked').forEach(function(c){ idx.push(parseInt(c.value, 10)); });
+    approveProposals(idx);
+  };
+  document.getElementById('mt-tr-dismiss').onclick = function(){
+    if (!confirm('Dismiss all proposed tasks for this meeting?')) return;
+    approveProposals([]);
+  };
   document.getElementById('mt-tr-close').onclick = function(){ document.getElementById('mt-transcript-modal').style.display='none'; };
   document.getElementById('mt-tr-copy').onclick = function(){
     var sumEl = document.getElementById('mt-tr-summary-wrap');
