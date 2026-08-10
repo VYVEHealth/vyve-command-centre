@@ -461,6 +461,17 @@
 
     <!-- ── CONTENT ── -->
     <div class="pp-panel" id="panel-content">
+      <!-- PM-900: explicit welcome-video ask (Dean) — the wizard's starter video is skippable
+           (Vanessa's failed upload proved it), so the portal now asks for it by name until
+           one exists. Uses the same upload flow with is_welcome:true + no date (evergreen). -->
+      <div class="card" id="welcome-ask-card" style="display:none;border:1px solid rgba(224,155,61,0.35);">
+        <div class="card-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+          Your welcome video
+        </div>
+        <div id="welcome-ask-body"></div>
+      </div>
+
       <div class="card">
         <div class="card-title">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
@@ -483,9 +494,9 @@
             <textarea id="upload-desc" placeholder="What will members learn or experience?" style="min-height:70px;"></textarea>
           </div>
           <div class="field">
-            <label>Go-live date &amp; time</label>
+            <label>Go-live date &amp; time <span style="font-weight:400;color:var(--text-dim);">(optional)</span></label>
             <input id="upload-publish-at" type="datetime-local"/>
-            <div class="field-hint" style="color:var(--vyve-teal-light);">This is when your community will see the video — after the VYVE team has approved it. Must be at least 48 hours from now.</div>
+            <div class="field-hint" style="color:var(--vyve-teal-light);">Leave blank to add this straight to your library — visible to your community as soon as the VYVE team approves it. Or pick a date (at least 48 hours away) to schedule it.</div>
           </div>
           <div id="upload-progress" style="display:none;margin-bottom:12px;">
             <div style="background:var(--surface-3);border-radius:4px;height:6px;overflow:hidden;">
@@ -1247,17 +1258,50 @@
     if (st === 'returned') return { cls:'chip-returned', label:'Returned', meta:'Returned by VYVE — make changes and resubmit', editable:false };
     if (st === 'flagged')  return { cls:'chip-returned', label:'Flagged',  meta:'Flagged for review by VYVE', editable:false };
     if (st === 'approved') {
-      if (!pub) return { cls:'chip-approved', label:'Approved', meta:'Approved by VYVE — no go-live time set', editable:false };
+      if (!pub) return { cls:'chip-live', label:'Live', meta:'In your library — visible to your community', editable:false };
       if (future) return { cls:'chip-scheduled', label:'Scheduled · '+fmtDateTime(item.publish_at), meta:'Approved · goes live '+fmtDateTime(item.publish_at), editable:false };
       return { cls:'chip-live', label:'Live', meta:'Live since '+fmtDateTime(item.publish_at)+' · visible to your community', editable:false };
     }
     // in_review / draft — always "Pending approval"; partner can still edit until VYVE acts
     var meta = pub ? ('Uploaded '+fmtDate(item.created_at)+' · scheduled for '+fmtDateTime(item.publish_at))
-                   : ('Uploaded '+fmtDate(item.created_at)+' · go-live not set');
+                   : ('Uploaded '+fmtDate(item.created_at)+' · library — visible once approved');
     return { cls:'chip-review', label:'Pending approval', meta:meta, editable:true };
   }
 
+  /* PM-900: the welcome-video ask. Hidden once ANY is_welcome item exists (whatever
+     its review state — we show progress, not nag). */
+  function renderWelcomeAsk(items) {
+    var card = $('welcome-ask-card'); if (!card) return;
+    var w = (items || []).filter(function(i){ return i.is_welcome === true; })
+      .sort(function(a,b){ return a.created_at < b.created_at ? 1 : -1; })[0];
+    var body = $('welcome-ask-body');
+    if (!w) {
+      body.innerHTML = '<p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Your welcome video is the first thing members see when they find your space — a short hello, who you are, what your community is about. One take on a phone is perfect.</p>'
+        + '<button class="btn btn-teal" id="welcome-ask-btn" type="button" style="font-size:13px;">Upload your welcome video</button>';
+      card.style.display = 'block';
+      var b = $('welcome-ask-btn');
+      if (b) b.addEventListener('click', function(){
+        state.welcomeMode = true;
+        var t = $('upload-title'); if (t && !t.value.trim()) t.value = 'Welcome to VYVE';
+        var z = $('upload-zone'); if (z) z.scrollIntoView({ behavior:'smooth', block:'center' });
+        toast('Pick your video below — it goes straight to your library once approved');
+      });
+    } else if (w.moderation_status === 'approved') {
+      body.innerHTML = '<p style="font-size:13px;color:var(--text-muted);">&#10003; <b style="color:var(--vyve-teal-light);">Your welcome video is live.</b> Want a fresh one? Upload a new video below and let us know via Help &mdash; we\u2019ll swap it over.</p>';
+      card.style.display = 'block';
+      card.style.border = '1px solid var(--border)';
+    } else if (w.moderation_status === 'returned') {
+      body.innerHTML = '<p style="font-size:13px;color:var(--text-muted);"><b style="color:#E09B3D;">Your welcome video was returned</b> &mdash; check the note on it below, make the change and upload again.</p>';
+      card.style.display = 'block';
+    } else {
+      body.innerHTML = '<p style="font-size:13px;color:var(--text-muted);">&#10003; Your welcome video is with VYVE for a quick review &mdash; nothing more to do.</p>';
+      card.style.display = 'block';
+      card.style.border = '1px solid var(--border)';
+    }
+  }
+
   function renderContentList(items) {
+    renderWelcomeAsk(items);
     var el = $('content-list');
     if (!items.length) {
       el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🎥</div><h3>No content yet</h3><p>Upload your first video above. After review it will be available to your community members.</p></div>';
@@ -1365,9 +1409,8 @@
     var title = $('upload-title').value.trim();
     if (!title) { toast('Please enter a video title'); return; }
     var publishLocal = $('upload-publish-at').value;
-    if (!publishLocal) { toast('Please set a go-live date and time'); return; }
-    if (tooSoonLocal(publishLocal)) { toast('Go-live must be at least 48 hours from now'); return; }
-    var publishIso = new Date(publishLocal).toISOString();
+    if (publishLocal && tooSoonLocal(publishLocal)) { toast('Go-live must be at least 48 hours from now'); return; }
+    var publishIso = publishLocal ? new Date(publishLocal).toISOString() : null;
 
     var btn = this; btn.disabled = true; btn.textContent = 'Uploading…';
     $('upload-progress').style.display = 'block';
@@ -1434,13 +1477,15 @@
           storage_path: urlData.storage_path,
           pillar: state.partnerRow ? state.partnerRow.pillar : 'mind',
           publish_at: publishIso,
+          is_welcome: state.welcomeMode === true,
           thumbnail_url: thumbUrl,
         }),
       });
       var insData = await insertRes.json().catch(function(){ return {}; });
       if (!insertRes.ok || insData.error) throw new Error('Insert failed: ' + (insData.error || insertRes.status));
 
-      toast('Uploaded and submitted for review');
+      toast(state.welcomeMode ? 'Welcome video uploaded — with VYVE for a quick review' : 'Uploaded and submitted for review');
+      state.welcomeMode = false;
       $('upload-meta').style.display = 'none';
       $('upload-progress').style.display = 'none';
       $('upload-bar').style.width = '0%';
