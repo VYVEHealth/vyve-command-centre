@@ -60,7 +60,7 @@ window.VYVE_NAV = [
   {
     section: "Partners",
     items: [
-      { href: "/partners.html", area: "partners",       label: "Partner Management", icon: "link",  external: false, desc: "Pipeline, go-live gates, moderation and payouts." },
+      { slug: "partner-management", area: "partners", label: "Partner Management", icon: "link", status: "live", desc: "Pipeline, go-live gates, moderation and payouts \u2014 now inside the CC shell." },
       { href: "/partner-portal.html", area: "partners", label: "Partner Portal",     icon: "video", external: false, desc: "What partners see \u2014 content, publishing, notify." },
       { slug: "bookings", area: "partners",             label: "Bookings",           icon: "calendar", status: "live", desc: "Employer expert requests to confirm + the booking ledger." }
     ]

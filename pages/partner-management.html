@@ -1,0 +1,2240 @@
+<div class="page active" id="page-partner-management">
+<style>
+#page-partner-management{
+  --success:#2D9E4A;--warning:#E09B3D;--danger:#E06060;
+  --physical:#D49B2C;--mental:#4DAAAA;--social:#D17F6E;
+  --sb-bg:#061212;--sb-bg2:#0D2B2B;--sb-text:rgba(234,242,242,.72);
+  --sb-text-strong:#E9F3F3;--sb-active:rgba(77,170,170,.16);--sb-line:rgba(141,196,196,.14);
+  --font:'DM Sans',system-ui,-apple-system,sans-serif;
+  --font-mono:'DM Mono','SF Mono',ui-monospace,monospace;
+}html[data-theme="dark"] #page-partner-management{
+  --teal:#1B7878;--mint:#4DAAAA;--mint-light:#6FC5C5;
+  --dark:#081616;--card:#0E2222;--surface:#132C2C;--surface2:#1A3838;
+  --teal-dark:#0D2B2B;--teal-deep:#0D2B2B;
+  --white:#E9F3F3;--muted:#93B3B3;--muted-light:#B4CCCC;
+  --line:rgba(141,196,196,.12);
+  --on-accent:#081616;
+  --topbar-bg:rgba(8,22,22,.9);
+}html[data-theme="light"] #page-partner-management{
+  --teal:#1B7878;--mint:#1B7878;--mint-light:#145E5E;
+  --dark:#F3F6F6;--card:#FFFFFF;--surface:#ECF2F2;--surface2:#E0EAEA;
+  --teal-dark:#0D2B2B;--teal-deep:#0D2B2B;
+  --white:#0D2B2B;--muted:#4E6E6E;--muted-light:#3C5A5A;
+  --line:rgba(13,43,43,.10);
+  --on-accent:#FFFFFF;
+  --topbar-bg:rgba(243,246,246,.9);
+}#page-partner-management *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}#page-partner-management{font-family:var(--font);background:var(--dark);color:var(--white);font-size:14px;overflow-x:hidden;-webkit-font-smoothing:antialiased}#page-partner-management ::-webkit-scrollbar{width:9px;height:9px}#page-partner-management ::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:6px}#page-partner-management ::-webkit-scrollbar-track{background:transparent}#page-partner-management svg{display:block;flex:none}#page-partner-management a{color:inherit;text-decoration:none}#page-partner-management #gate{position:fixed;inset:0;background:var(--dark);z-index:200;display:flex;align-items:center;justify-content:center}#page-partner-management #gate.hidden{display:none}html.has-session #page-partner-management #gate{display:none}html.has-session #page-partner-management #gate.force{display:flex}#page-partner-management .gate-card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:40px 36px;width:min(400px,92vw);text-align:center}#page-partner-management .gate-logo{width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,var(--mint),var(--teal));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:24px;color:var(--on-accent);margin:0 auto 20px}#page-partner-management .gate-card h2{font-size:20px;font-weight:800;margin-bottom:6px}#page-partner-management .gate-card p{color:var(--muted);font-size:13px;margin-bottom:24px}#page-partner-management .gate-card input{width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--white);font-size:14px;outline:none;margin-bottom:12px;font-family:var(--font)}#page-partner-management .gate-card input:focus{border-color:var(--mint)}#page-partner-management .gate-card .btn-primary{width:100%;padding:13px;border-radius:10px;background:linear-gradient(135deg,var(--mint),var(--teal));color:var(--on-accent);font-weight:700;font-size:14px;border:none;cursor:pointer;font-family:var(--font)}#page-partner-management .gate-err{color:var(--danger);font-size:12px;margin-top:8px;min-height:18px}#page-partner-management .app{display:flex;min-height:100vh}#page-partner-management .pt-sidebar-dead{width:252px;flex:none;background:linear-gradient(180deg,var(--sb-bg2),var(--sb-bg));border-right:1px solid var(--sb-line);position:sticky;top:0;height:100vh;display:flex;flex-direction:column;padding:20px 0;overflow-y:auto}#page-partner-management .brand{display:flex;align-items:center;gap:11px;padding:0 22px 20px;border-bottom:1px solid var(--sb-line);color:var(--sb-text-strong);margin-bottom:14px;flex-shrink:0}#page-partner-management .brand .mark{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,var(--mint),var(--teal));display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--on-accent);font-size:19px;flex:none}#page-partner-management .brand .nm{font-weight:800;letter-spacing:3px;font-size:18px}#page-partner-management .brand .nm b{color:var(--mint)}#page-partner-management .brand .sub{font-size:9.5px;color:var(--sb-text);letter-spacing:1.5px;margin-top:2px}#page-partner-management .nav-group{padding:12px 22px 5px;font-size:10px;letter-spacing:1.2px;color:var(--sb-text);font-family:var(--font-mono);text-transform:uppercase;font-weight:700}#page-partner-management .pt-nav-item-dead{display:flex;align-items:center;gap:12px;padding:10px 22px;color:var(--sb-text);cursor:pointer;font-size:13.5px;font-weight:500;border-left:3px solid transparent;transition:.15s;user-select:none}#page-partner-management .pt-nav-item-dead:hover{background:rgba(77,170,170,.08);color:var(--sb-text-strong)}#page-partner-management .pt-nav-item-dead.active{background:var(--sb-active);color:#6FC5C5;border-left-color:#6FC5C5;font-weight:700}#page-partner-management .pt-nav-item-dead .ic{width:18px;height:18px;flex:none;display:flex;align-items:center;justify-content:center}#page-partner-management .pt-nav-item-dead .ic svg{width:18px;height:18px}#page-partner-management .pt-nav-item-dead .count{margin-left:auto;background:rgba(255,255,255,.08);color:var(--sb-text);font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px}#page-partner-management .pt-nav-item-dead.active .count{background:var(--mint);color:var(--on-accent)}#page-partner-management .pt-nav-item-dead .count.alert{background:rgba(224,96,96,.22);color:var(--danger)}#page-partner-management .side-foot{margin-top:auto;padding:16px 22px;border-top:1px solid var(--sb-line);color:var(--sb-text-strong);display:flex;align-items:center;gap:11px;flex-shrink:0}#page-partner-management .side-foot .av{width:34px;height:34px;border-radius:10px;background:var(--social);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--on-accent);font-size:13px;flex:none}#page-partner-management .side-foot .nm{font-size:12.5px;font-weight:700}#page-partner-management .side-foot .rl{font-size:10.5px;color:var(--muted)}#page-partner-management .side-foot .signout{margin-left:auto;color:var(--muted);cursor:pointer;font-size:11px}#page-partner-management .side-foot .signout:hover{color:var(--danger)}#page-partner-management .pt-main{flex:1;min-width:0;display:flex;flex-direction:column}#page-partner-management .pt-topbar{height:64px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:16px;padding:0 28px;position:sticky;top:0;background:var(--topbar-bg);backdrop-filter:blur(12px);z-index:50;flex-shrink:0}#page-partner-management .pt-crumb{font-size:13px;color:var(--muted)}#page-partner-management .pt-crumb b{color:var(--white);font-weight:700}#page-partner-management .pt-topbar-search{flex:1;max-width:360px;display:flex;align-items:center;gap:9px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 13px;color:var(--muted)}#page-partner-management .pt-topbar-search svg{width:15px;height:15px;flex:none}#page-partner-management .pt-topbar-search input{flex:1;background:none;border:none;color:var(--white);outline:none;font-family:var(--font);font-size:13px}#page-partner-management .pt-topbar-search input::placeholder{color:var(--muted)}#page-partner-management .pt-topbar .pt-spacer{flex:1}#page-partner-management .tb-btn{background:var(--card);border:1px solid var(--line);color:var(--muted-light);border-radius:10px;padding:9px 15px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);display:inline-flex;align-items:center;gap:8px;transition:.15s;white-space:nowrap}#page-partner-management .tb-btn:hover{border-color:var(--mint);color:var(--white)}#page-partner-management .tb-btn.primary{background:linear-gradient(135deg,var(--mint),var(--teal));color:var(--on-accent);border:none}#page-partner-management .tb-btn svg, #page-partner-management .bic svg{width:15px;height:15px}#page-partner-management .bic{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px}#page-partner-management .pt-content{padding:26px 28px 64px;max-width:1340px}#page-partner-management .view{display:none;animation:fade .25s ease}#page-partner-management .view.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}#page-partner-management .page-head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:12px;position:relative;z-index:1}#page-partner-management .page-head h1{font-size:23px;font-weight:800;letter-spacing:-.3px}#page-partner-management .page-head p{color:var(--muted);font-size:13px;margin-top:4px}#page-partner-management .ph-actions{display:flex;gap:9px;align-items:center}#page-partner-management .grid{display:grid;gap:16px}#page-partner-management .g4{grid-template-columns:repeat(4,1fr)}#page-partner-management .g3{grid-template-columns:repeat(3,1fr)}#page-partner-management .g2{grid-template-columns:repeat(2,1fr)}#page-partner-management .mt{margin-top:16px}#page-partner-management .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px}#page-partner-management .card.pad0{padding:0;overflow:hidden}#page-partner-management .card-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:15px}#page-partner-management .card-h h3{font-size:14.5px;font-weight:700}#page-partner-management .card-h .link{font-size:12px;color:var(--mint);font-weight:600;cursor:pointer}#page-partner-management .kpi .top{display:flex;align-items:center;justify-content:space-between}#page-partner-management .kpi .ico{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center}#page-partner-management .kpi .ico svg{width:19px;height:19px}#page-partner-management .kpi .v{font-size:28px;font-weight:800;margin-top:14px;letter-spacing:-.6px}#page-partner-management .kpi .l{font-size:12.5px;color:var(--muted);margin-top:3px}#page-partner-management .kpi .delta{font-size:12px;font-weight:700;margin-top:10px}#page-partner-management .up{color:var(--success)}#page-partner-management .down{color:var(--danger)}#page-partner-management .flat{color:var(--muted)}#page-partner-management .pill{font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:5px;letter-spacing:.2px;white-space:nowrap}#page-partner-management .pill .d{width:6px;height:6px;border-radius:50%}#page-partner-management .p-live{background:rgba(77,170,170,.15);color:var(--mint)}#page-partner-management .p-review{background:rgba(209,127,110,.15);color:var(--warning)}#page-partner-management .p-pending{background:rgba(77,170,170,.15);color:var(--mental)}#page-partner-management .p-suspended{background:rgba(224,96,96,.15);color:var(--danger)}#page-partner-management .p-draft{background:var(--surface2);color:var(--muted-light)}#page-partner-management .dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:7px;flex:none}#page-partner-management table{width:100%;border-collapse:collapse}#page-partner-management thead th{text-align:left;font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);font-weight:700;padding:13px 16px;border-bottom:1px solid var(--line)}#page-partner-management tbody td{padding:13px 16px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:middle}#page-partner-management tbody tr{cursor:pointer;transition:.12s}#page-partner-management tbody tr:hover{background:rgba(77,170,170,.05)}#page-partner-management tbody tr:last-child td{border-bottom:none}#page-partner-management .who{display:flex;align-items:center;gap:12px}#page-partner-management .av{border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--on-accent);letter-spacing:.3px}#page-partner-management .who .av{width:36px;height:36px;font-size:13px}#page-partner-management .who .nm{font-weight:700;font-size:13px}#page-partner-management .who .rl{font-size:11px;color:var(--muted)}#page-partner-management .num{font-variant-numeric:tabular-nums;font-weight:700}#page-partner-management .track{height:7px;background:var(--surface);border-radius:6px;overflow:hidden}#page-partner-management .fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--mint),var(--mint-light))}#page-partner-management .mini-stat{font-size:11px;color:var(--muted);margin-top:5px}#page-partner-management .legend{display:flex;gap:18px;font-size:11.5px;color:var(--muted);flex-wrap:wrap;margin-top:8px}#page-partner-management .legend i{width:9px;height:9px;border-radius:3px;display:inline-block;margin-right:7px}#page-partner-management .kanban{display:grid;grid-template-columns:repeat(5,1fr);gap:13px;align-items:start}#page-partner-management .kcol{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px;min-height:120px}#page-partner-management .kcol .kh{display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--line)}#page-partner-management .kcol .kh .c{background:var(--surface2);font-size:10px;padding:2px 8px;border-radius:10px;color:var(--muted-light)}#page-partner-management .kcard{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:11px;margin-bottom:9px;cursor:grab;transition:.15s}#page-partner-management .kcard:active{cursor:grabbing}#page-partner-management .kcard.dragging{opacity:.45;border-color:var(--mint)}#page-partner-management .kcol.drop-target{border-color:var(--mint);background:rgba(77,170,170,.06)}#page-partner-management .kcol .kdrop{border:1px dashed var(--mint);border-radius:11px;padding:12px;text-align:center;font-size:11.5px;color:var(--mint);margin-bottom:9px}#page-partner-management .kcard:hover{border-color:var(--mint);transform:translateY(-1px)}#page-partner-management .kcard .knm{font-size:12.5px;font-weight:700}#page-partner-management .kcard .krole{font-size:10.5px;color:var(--muted);margin:2px 0 9px}#page-partner-management .kcard .kmeta{display:flex;align-items:center;justify-content:space-between;font-size:10px;color:var(--muted)}#page-partner-management .partner-hero{display:flex;gap:18px;align-items:center;background:linear-gradient(120deg,var(--teal-deep),var(--card));border:1px solid var(--line);border-radius:18px;padding:22px;margin-bottom:18px}#page-partner-management .partner-hero .pa{width:76px;height:76px;border-radius:20px;flex:none;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;color:var(--on-accent)}#page-partner-management .partner-hero h2{font-size:21px;font-weight:800;display:flex;align-items:center;gap:9px;flex-wrap:wrap}#page-partner-management .partner-hero .role{color:var(--mint);font-size:13px;font-weight:600;margin-top:3px}#page-partner-management .partner-hero .hstats{display:flex;gap:28px;margin-top:14px;flex-wrap:wrap}#page-partner-management .partner-hero .hstats b{display:block;font-size:17px;font-weight:800}#page-partner-management .partner-hero .hstats span{font-size:11px;color:var(--muted)}#page-partner-management .subtabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-bottom:20px;overflow-x:auto}#page-partner-management .subtabs::-webkit-scrollbar{display:none}#page-partner-management .subtab{padding:11px 16px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;background:none;border-left:none;border-right:none;border-top:none;font-family:var(--font)}#page-partner-management .subtab.active{color:var(--mint);border-bottom-color:var(--mint)}#page-partner-management .subpane{display:none}#page-partner-management .subpane.active{display:block;animation:fade .25s}#page-partner-management .ctile{display:flex;gap:13px;align-items:center;padding:13px;border:1px solid var(--line);border-radius:13px;margin-bottom:10px;background:var(--card)}#page-partner-management .ctile .th{width:46px;height:46px;border-radius:11px;flex:none;display:flex;align-items:center;justify-content:center}#page-partner-management .ctile .th svg{width:20px;height:20px}#page-partner-management .ctile .ct{font-size:13.5px;font-weight:700}#page-partner-management .ctile .cs{font-size:11px;color:var(--muted);margin-top:2px}#page-partner-management .row-actions{display:flex;gap:7px;margin-left:auto}#page-partner-management .icon-btn{width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--muted-light);cursor:pointer;transition:.15s;display:flex;align-items:center;justify-content:center;font-family:var(--font)}#page-partner-management .icon-btn svg{width:15px;height:15px}#page-partner-management .icon-btn:hover{border-color:var(--mint);color:var(--mint)}#page-partner-management .btn-approve{background:rgba(77,170,170,.15);border-color:transparent;color:var(--mint)}#page-partner-management .btn-reject{background:rgba(224,96,96,.12);border-color:transparent;color:var(--danger)}#page-partner-management .ob-num{width:24px;height:24px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px}#page-partner-management .ob-num svg{width:13px;height:13px}#page-partner-management .ob-done{background:var(--mint);color:var(--on-accent)}#page-partner-management .ob-todo{background:var(--surface);color:var(--muted);border:1px solid var(--line)}#page-partner-management .video-card{position:relative;border-radius:12px;overflow:hidden;height:118px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-direction:column;gap:8px}#page-partner-management .video-card .play{width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.16);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center}#page-partner-management .video-card .play svg{width:16px;height:16px;color:#fff;margin-left:2px}#page-partner-management .video-card .vt{position:absolute;bottom:11px;left:13px;font-size:12px;font-weight:700}#page-partner-management .video-card .vd{position:absolute;bottom:11px;right:13px;font-size:10px;background:rgba(0,0,0,.45);padding:2px 7px;border-radius:8px}#page-partner-management .flex{display:flex;align-items:center;gap:10px}#page-partner-management .preview-overlay{position:fixed;inset:0;background:rgba(5,8,12,.65);backdrop-filter:blur(4px);z-index:90;display:none;align-items:center;justify-content:flex-end}#page-partner-management .preview-overlay.show{display:flex;animation:fade .25s}#page-partner-management .preview-panel{width:424px;max-width:92vw;height:100%;background:#0A1016;border-left:1px solid var(--line);box-shadow:-20px 0 60px rgba(0,0,0,.5);display:flex;flex-direction:column}
+@keyframes slidein{from{transform:translateX(40px);opacity:.4}to{transform:none;opacity:1}}#page-partner-management .preview-panel .ph{display:flex;align-items:center;justify-content:space-between;padding:17px 18px;border-bottom:1px solid var(--line)}#page-partner-management .preview-panel .ph h3{font-size:14px;font-weight:700;display:flex;align-items:center;gap:9px}#page-partner-management .preview-panel .ph h3 svg{width:16px;height:16px}#page-partner-management .preview-panel .ph .x{cursor:pointer;color:var(--muted);background:none;border:none;display:flex;padding:4px}#page-partner-management .preview-panel .ph .x svg{width:18px;height:18px}#page-partner-management .preview-body{flex:1;overflow-y:auto;display:flex;justify-content:center;padding:20px}#page-partner-management .phone{width:300px;height:618px;background:var(--dark);border-radius:34px;border:1px solid var(--line);box-shadow:0 0 0 9px var(--sb-bg),0 0 0 10px var(--surface2);overflow:hidden;display:flex;flex-direction:column;flex:none}#page-partner-management .ph-not{height:22px;background:var(--sb-bg);width:112px;margin:0 auto;border-radius:0 0 14px 14px}#page-partner-management .ph-scroll{flex:1;overflow-y:auto}#page-partner-management .ph-scroll::-webkit-scrollbar{width:0}#page-partner-management .ph-banner{height:92px}#page-partner-management .ph-av-wrap{position:relative;height:36px}#page-partner-management .ph-av{width:62px;height:62px;border-radius:18px;border:3px solid var(--dark);position:absolute;left:16px;top:-31px;display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--on-accent);font-weight:800}#page-partner-management .ph-info{padding:34px 16px 0}#page-partner-management .ph-info h4{font-size:16px;font-weight:800;display:flex;align-items:center;gap:6px}#page-partner-management .ph-info h4 svg{width:14px;height:14px;color:var(--mint)}#page-partner-management .ph-info .r{font-size:11px;color:var(--mint);font-weight:600}#page-partner-management .ph-stats{display:flex;gap:18px;margin:11px 0}#page-partner-management .ph-stats b{display:block;font-size:14px;font-weight:800}#page-partner-management .ph-stats span{font-size:10px;color:var(--muted)}#page-partner-management .ph-join{background:linear-gradient(135deg,var(--mint),var(--teal));color:var(--on-accent);border:none;border-radius:12px;padding:11px;width:100%;font-weight:700;font-size:13px;cursor:pointer}#page-partner-management .ph-tabs{display:flex;gap:15px;padding:14px 16px 8px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--line);overflow-x:auto}#page-partner-management .ph-tabs::-webkit-scrollbar{display:none}#page-partner-management .ph-tabs span:first-child{color:var(--mint);font-weight:700;border-bottom:2px solid var(--mint);padding-bottom:6px}#page-partner-management .ph-sec{padding:14px 16px}#page-partner-management .ph-sec h5{font-size:12px;font-weight:700;margin-bottom:9px}#page-partner-management .ph-livecard{display:flex;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:11px;margin-bottom:9px;align-items:center}#page-partner-management .ph-date{width:42px;text-align:center;background:var(--surface);border-radius:9px;padding:6px 0;flex:none}#page-partner-management .ph-date .d{font-size:15px;font-weight:800;color:var(--mint)}#page-partner-management .ph-date .m{font-size:9px;color:var(--muted)}#page-partner-management .ph-livecard .t{font-size:12px;font-weight:700}#page-partner-management .ph-livecard .mt{font-size:10px;color:var(--muted)}#page-partner-management .ph-note{font-size:10px;color:var(--muted);text-align:center;padding:12px;line-height:1.5}#page-partner-management .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface);border:1px solid rgba(77,170,170,.35);color:var(--white);font-size:13px;font-weight:600;padding:12px 22px;border-radius:30px;opacity:0;transition:.3s;z-index:300;pointer-events:none}#page-partner-management .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}#page-partner-management .empty-state{text-align:center;padding:40px;color:var(--muted);font-size:13px}#page-partner-management .hl{color:var(--mint)}#page-partner-management .muted{color:var(--muted)}#page-partner-management .accent-l{border-left:3px solid var(--mint)}
+
+@media(max-width:1100px){#page-partner-management .g4{grid-template-columns:repeat(2,1fr)}#page-partner-management .kanban{grid-template-columns:repeat(3,1fr)}#page-partner-management .g3{grid-template-columns:1fr}
+}
+@media(max-width:768px){#page-partner-management .app{flex-direction:column}#page-partner-management .pt-sidebar-dead{width:100%;height:auto;position:sticky;top:0;z-index:60;flex-direction:row;align-items:center;gap:4px;padding:8px 10px;border-right:none;border-bottom:1px solid var(--line);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}#page-partner-management .pt-sidebar-dead::-webkit-scrollbar{display:none}#page-partner-management .brand{padding:0 12px 0 4px;margin:0;border-bottom:none;border-right:1px solid var(--line);flex-shrink:0}#page-partner-management .brand .sub{display:none}#page-partner-management .nav-group{display:none}#page-partner-management .pt-nav-item-dead{flex:0 0 auto;padding:9px 12px;border-left:none;border-radius:10px;white-space:nowrap;font-size:12.5px}#page-partner-management .pt-nav-item-dead.active{background:rgba(77,170,170,.15)}#page-partner-management .pt-nav-item-dead .count{margin-left:6px}#page-partner-management .side-foot{margin:0;padding:0 6px 0 10px;border-top:none;border-left:1px solid var(--line);flex-shrink:0}#page-partner-management .pt-topbar{height:auto;flex-wrap:wrap;padding:10px 16px;gap:10px;position:static}#page-partner-management .pt-topbar-search{order:3;flex:1 1 100%}#page-partner-management .pt-spacer{display:none}#page-partner-management .pt-content{padding:18px 14px 56px}#page-partner-management .kanban{grid-template-columns:repeat(2,1fr)}#page-partner-management .g4{grid-template-columns:1fr 1fr}#page-partner-management table{display:block;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch}
+}
+@media(max-width:560px){#page-partner-management .kanban{grid-template-columns:1fr}#page-partner-management .g4{grid-template-columns:1fr}#page-partner-management .pt-topbar .tb-btn{flex:1 1 auto;justify-content:center}
+}#page-partner-management .mini-phone{width:230px;height:470px;margin:0 auto;background:var(--card);border-radius:28px;border:1px solid var(--line);box-shadow:0 0 0 7px #05080c,0 0 0 8px #1c2630;overflow:hidden;display:flex;flex-direction:column}#page-partner-management .mini-notch{height:18px;background:#05080c;width:88px;margin:0 auto;border-radius:0 0 11px 11px;flex:none}#page-partner-management .mini-scroll{flex:1;overflow-y:auto}#page-partner-management .mini-scroll::-webkit-scrollbar{width:0}#page-partner-management .mp-banner{height:84px;position:relative}#page-partner-management .mp-av{width:50px;height:50px;border-radius:50%;border:3px solid var(--card);position:absolute;left:13px;bottom:-20px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:#fff;background-size:cover;background-position:center;overflow:hidden}#page-partner-management .mp-av img{width:100%;height:100%;object-fit:cover;display:block}#page-partner-management .mp-info{padding:26px 13px 0}#page-partner-management .mp-info h4{font-size:14px;font-weight:800;margin:0}#page-partner-management .mp-info .r{font-size:10.5px;color:var(--mint);font-weight:600}#page-partner-management .mp-sec{padding:10px 13px;border-top:1px solid var(--line)}#page-partner-management .mp-sec:first-of-type{border-top:none}#page-partner-management .mp-sec h5{font-size:10.5px;font-weight:700;margin:0 0 4px}#page-partner-management .mp-sec p{font-size:10.5px;color:var(--muted);margin:0;line-height:1.5}#page-partner-management .inv-label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px}#page-partner-management .inv-input{width:100%;padding:10px 13px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--white);font-size:13px;font-family:var(--font);outline:none;transition:border-color .15s}#page-partner-management .inv-input:focus{border-color:var(--mint)}#page-partner-management .inv-input::placeholder{color:var(--muted)}#page-partner-management select.inv-input option{background:var(--card)}#page-partner-management textarea.inv-input{resize:vertical;min-height:60px}
+
+/* PM-924 port chrome: internal app fills the SPA content area */
+#page-partner-management .app { display: block; }
+#page-partner-management .pt-main { margin: 0; width: 100%; }
+#page-partner-management .pt-viewbar { margin-bottom: 16px; }
+#page-partner-management #gate { min-height: 40vh; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script><script>
+/* PM-888: kill the sign-in flash — persisted CC session hides the gate
+   pre-paint; showGate() adds .force which overrides if auth actually fails. */
+(function(){
+  try {
+    if (localStorage.getItem('vyve-cc-supabase-auth')) {
+      document.documentElement.classList.add('has-session');
+    }
+  } catch(e){}
+})();
+</script>
+
+
+<!-- ── AUTH GATE ────────────────────────────────────────── -->
+<div id="gate">
+  <div class="gate-card">
+    <div class="gate-logo">V</div>
+    <h2>Partner Management</h2>
+    <p>Sign in with your VYVE admin account</p>
+    <input type="email" id="g-email" placeholder="Email address" autocomplete="email">
+    <input type="password" id="g-pw" placeholder="Password" autocomplete="current-password">
+    <button class="btn-primary" id="g-submit">Sign in</button>
+    <div class="gate-err" id="g-err"></div>
+  </div>
+</div>
+
+<div class="app" id="pt-app" style="display:none">
+
+  <!-- ── SIDEBAR ──────────────────────────────────────── -->
+  <div class="tab-bar pt-viewbar"><button type="button" class="tab-btn pt-nav active" data-view="overview" onclick="nav(this)">Overview</button><button type="button" class="tab-btn pt-nav" data-view="pipeline" onclick="nav(this)">Pipeline &amp; Approvals<span class="tab-count" id="nb-pipeline">—</span></button><button type="button" class="tab-btn pt-nav" data-view="partners" onclick="nav(this)">Partners<span class="tab-count" id="nb-partners">—</span></button><button type="button" class="tab-btn pt-nav" data-view="content" onclick="nav(this)">Content &amp; Moderation<span class="tab-count" id="nb-content">—</span></button><button type="button" class="tab-btn pt-nav" data-view="onboarding" onclick="nav(this)">Onboarding</button><button type="button" class="tab-btn pt-nav" data-view="support" onclick="nav(this)">Support inbox<span class="tab-count" id="nb-support">—</span></button><button type="button" class="tab-btn pt-nav" data-view="analytics" onclick="nav(this)">Analytics &amp; Engagement</button><button type="button" class="tab-btn pt-nav" data-view="revenue" onclick="nav(this)">Revenue &amp; Payouts</button><button type="button" class="tab-btn" onclick="openPreview()">Preview portal</button></div>
+
+  <!-- ── MAIN ─────────────────────────────────────────── -->
+  <main class="pt-main">
+    <div class="pt-topbar">
+      <div class="pt-crumb" id="crumb"><b>Overview</b></div>
+      <div class="pt-topbar-search">
+        <span data-i="search"></span>
+        <input placeholder="Search partners, content, members…" id="global-search">
+      </div>
+      <div class="pt-spacer"></div>
+      <button class="tb-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+      <button class="tb-btn" onclick="openPreview()">
+        <span class="bic" data-i="phone"></span>Preview app
+      </button>
+      <button class="tb-btn primary" id="invite-partner-btn" onclick="openInviteModal()">
+        <span class="bic" data-i="plus"></span>Invite partner
+      </button>
+    </div>
+
+    <div class="pt-content">
+
+      <!-- ── OVERVIEW ───────────────────────────────── -->
+      <section class="view active" id="v-overview">
+        <div class="page-head">
+          <div><h1>Partner ecosystem overview</h1><p>Live snapshot across all partners in the VYVE Connect area</p></div>
+          <div class="ph-actions"><button class="tb-btn">Last 30 days</button></div>
+        </div>
+        <div class="grid g4" id="ov-kpis">
+          <div class="card kpi"><div class="top"><div class="ico" style="background:rgba(77,170,170,.15);color:var(--mint)" data-i="users"></div><span class="pill p-live"><span class="d" style="background:var(--mint)"></span>Live</span></div><div class="v" id="ov-k1">—</div><div class="l">Active partners</div></div>
+          <div class="card kpi"><div class="top"><div class="ico" style="background:rgba(77,170,170,.15);color:var(--mental)" data-i="member"></div></div><div class="v" id="ov-k2">—</div><div class="l">Members in spaces</div></div>
+          <div class="card kpi"><div class="top"><div class="ico" style="background:rgba(209,127,110,.15);color:var(--social)" data-i="film"></div></div><div class="v" id="ov-k3">—</div><div class="l">Content items live</div></div>
+          <div class="card kpi"><div class="top"><div class="ico" style="background:rgba(77,170,170,.15);color:var(--mint)" data-i="money"></div></div><div class="v" id="ov-k4">—</div><div class="l">Pending payouts</div></div>
+        </div>
+        <div class="grid g3 mt">
+          <div class="card" style="grid-column:span 2">
+            <div class="card-h"><h3>Pipeline &amp; moderation</h3><span class="link" onclick="navByView('pipeline')">View pipeline</span></div>
+            <div id="ov-attention"></div>
+          </div>
+          <div class="card">
+            <div class="card-h"><h3>Needs attention</h3></div>
+            <div id="ov-needs"></div>
+          </div>
+        </div>
+        <div class="grid g2 mt">
+          <div class="card pad0">
+            <div class="card-h" style="padding:18px 18px 0"><h3>Top performing partners</h3><span class="link" onclick="navByView('partners')">All partners</span></div>
+            <table><thead><tr><th>Partner</th><th>Pillar</th><th>Status</th><th>Members</th></tr></thead><tbody id="ov-top"></tbody></table>
+          </div>
+          <div class="card">
+            <div class="card-h"><h3>Recent content activity</h3></div>
+            <div id="ov-feed"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── PIPELINE ───────────────────────────────── -->
+      <section class="view" id="v-pipeline">
+        <div class="page-head">
+          <div><h1>Partner pipeline &amp; approvals</h1><p>Vetting, verification and onboarding of new experts joining VYVE</p></div>
+          <div class="ph-actions"><button class="tb-btn primary" onclick="openInviteModal()"><span class="bic" data-i="plus"></span>Add applicant</button></div>
+        </div>
+        <div class="kanban" id="kanban"></div>
+        <div class="card mt" id="appDetail" style="display:none">
+          <div class="card-h"><h3>Application review</h3><button class="icon-btn" data-i="x" onclick="document.getElementById('appDetail').style.display='none'"></button></div>
+          <div id="appDetailBody"></div>
+        </div>
+      </section>
+
+      <!-- ── PARTNERS DIRECTORY ─────────────────────── -->
+      <section class="view" id="v-partners">
+        <div class="page-head">
+          <div><h1>Partners</h1><p>Select a partner to open their management area</p></div>
+          <div class="ph-actions">
+            <select id="pt-pillar-filter" style="padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--white);font-size:13px;font-family:var(--font)">
+              <option value="">All pillars</option>
+              <option value="body">Body</option>
+              <option value="mind">Mind</option>
+              <option value="connect">Connect</option>
+            </select>
+            <select id="pt-status-filter" style="padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--white);font-size:13px;font-family:var(--font)">
+              <option value="">All statuses</option>
+              <option value="live">Live</option>
+              <option value="onboarding">Onboarding</option>
+              <option value="applied">Applied</option>
+              <option value="vetting">Vetting</option>
+              <option value="contract">Contract</option>
+              <option value="declined">Declined</option>
+              <option value="suspended">Suspended</option>
+            </select>
+          </div>
+        </div>
+        <div class="card pad0">
+          <table>
+            <thead><tr><th>Partner</th><th>Pillar</th><th>Status</th><th>Members</th><th>Content</th><th>Rev share</th><th></th></tr></thead>
+            <tbody id="pt-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ── PARTNER DETAIL ─────────────────────────── -->
+      <section class="view" id="v-partner-detail">
+        <div class="flex" style="margin-bottom:14px;cursor:pointer;color:var(--muted);font-size:13px" onclick="navByView('partners')">
+          <span data-i="chev-left" style="display:inline-flex;width:14px;height:14px"></span>Back to all partners
+        </div>
+        <div class="partner-hero" id="pd-hero"></div>
+        <div class="subtabs">
+          <button class="subtab active" onclick="pdTab(this,'pd-over')">Overview</button>
+          <button class="subtab" onclick="pdTab(this,'pd-profile')">Profile</button>
+          <button class="subtab" onclick="pdTab(this,'pd-content')">Content library</button>
+          <button class="subtab" onclick="pdTab(this,'pd-programs')">Programs</button>
+          <button class="subtab" onclick="pdTab(this,'pd-members')">Members</button>
+          <button class="subtab" onclick="pdTab(this,'pd-revenue')">Revenue</button>
+          <button class="subtab" onclick="pdTab(this,'pd-settings')">Settings</button>
+        </div>
+        <div class="subpane active" id="pd-over"></div>
+        <div class="subpane" id="pd-profile"></div>
+        <div class="subpane" id="pd-content"></div>
+        <div class="subpane" id="pd-programs"></div>
+        <div class="subpane" id="pd-members"></div>
+        <div class="subpane" id="pd-revenue"></div>
+        <div class="subpane" id="pd-settings"></div>
+      </section>
+
+      <!-- ── CONTENT & MODERATION ───────────────────── -->
+      <section class="view" id="v-content">
+        <div class="page-head">
+          <div><h1>Content &amp; moderation</h1><p>Review and approve everything partners publish into the app</p></div>
+          <div class="ph-actions"><button class="tb-btn" onclick="bulkApprove()">Bulk approve queue</button></div>
+        </div>
+        <div class="subtabs">
+          <button class="subtab active" onclick="cmTab(this,'cm-queue')">Moderation queue <span class="pill p-review" style="margin-left:4px" id="cm-q-count">0</span></button>
+          <button class="subtab" onclick="cmTab(this,'cm-flagged')">Flagged <span class="pill p-suspended" style="margin-left:4px" id="cm-f-count">0</span></button>
+          <button class="subtab" onclick="cmTab(this,'cm-library')">All library</button>
+          <button class="subtab" onclick="cmTab(this,'cm-programs')">Programs</button>
+        </div>
+        <div class="subpane active" id="cm-queue"></div>
+        <div class="subpane" id="cm-flagged"></div>
+        <div class="subpane" id="cm-library"></div>
+        <div class="subpane" id="cm-programs"></div>
+      </section>
+
+      <!-- ── ONBOARDING ────────────────────────────── -->
+      <section class="view" id="v-onboarding">
+        <div class="page-head">
+          <div><h1>Partner onboarding</h1><p>The guided path every new expert completes before going live</p></div>
+          <div class="ph-actions"><button class="tb-btn" onclick="openCurriculumModal()">Edit curriculum</button></div>
+        </div>
+        <div class="grid g3">
+          <div class="card kpi"><div class="v" id="ob-k1">—</div><div class="l">Partners in onboarding</div></div>
+          <div class="card kpi"><div class="v" id="ob-k2">0%</div><div class="l">Avg completion</div></div>
+          <div class="card kpi"><div class="v" id="ob-k3">—</div><div class="l">Assessments pending</div></div>
+        </div>
+        <div class="grid g2 mt">
+          <div class="card">
+            <div class="card-h"><h3>Onboarding video modules</h3></div>
+            <div class="grid g2" id="ob-videos"></div>
+          </div>
+          <div class="card">
+            <div class="card-h"><h3>Education curriculum</h3></div>
+            <div id="ob-education"></div>
+          </div>
+        </div>
+        <div class="card mt">
+          <div class="card-h"><h3>Onboarding checklist</h3></div>
+          <div id="ob-checklist"></div>
+        </div>
+        <div class="card mt">
+          <div class="card-h"><h3>Partners currently onboarding</h3></div>
+          <div id="ob-partners"></div>
+        </div>
+      </section>
+
+      <!-- ── ANALYTICS ─────────────────────────────── -->
+      <!-- PM-889: support inbox — renders partner_support_messages (written by the
+           portal's Help tab via partner-support EF). Email to team@ stays the reply
+           channel (reply-to = the partner); this view is the tracking surface:
+           open → replied → closed. -->
+      <section class="view" id="v-support">
+        <div class="page-head"><div><h1>Support inbox</h1><p class="page-sub">Messages partners send from their portal's Help tab. Reply by email (reply-to is already the partner) — then mark it here.</p></div></div>
+        <div id="support-list"></div>
+      </section>
+
+      <section class="view" id="v-analytics">
+        <div class="page-head">
+          <div><h1>Analytics &amp; engagement</h1><p>Cross-partner performance, retention and member behaviour</p></div>
+        </div>
+        <div class="grid g4">
+          <div class="card kpi"><div class="v" id="an-k1">—</div><div class="l">Total memberships</div></div>
+          <div class="card kpi"><div class="v" id="an-k2">—</div><div class="l">Highly engaged</div></div>
+          <div class="card kpi"><div class="v" id="an-k3">—</div><div class="l">At-risk members</div></div>
+          <div class="card kpi"><div class="v" id="an-k4">—</div><div class="l">Published content</div></div>
+        </div>
+        <div class="grid g2 mt">
+          <div class="card">
+            <div class="card-h"><h3>Member split by pillar</h3></div>
+            <div id="an-pillar"></div>
+          </div>
+        </div>
+        <div class="card pad0 mt">
+          <div class="card-h" style="padding:18px 18px 0"><h3>Engagement leaderboard</h3></div>
+          <table><thead><tr><th>Partner</th><th>Members</th><th>Highly engaged</th><th>At-risk</th><th>Content live</th></tr></thead><tbody id="an-table"></tbody></table>
+        </div>
+      </section>
+
+      <!-- ── REVENUE ───────────────────────────────── -->
+      <section class="view" id="v-revenue">
+        <div class="page-head">
+          <div><h1>Revenue &amp; payouts</h1><p>Subscription attribution, revenue share and partner payouts</p></div>
+          <div class="ph-actions">
+            <button class="tb-btn" id="rv-period-btn">June 2026</button>
+            <button class="tb-btn primary" onclick="runPayouts()"><span class="bic" data-i="money"></span>Run payouts</button>
+          </div>
+        </div>
+        <div class="grid g4">
+          <div class="card kpi"><div class="v" id="rv-k1">—</div><div class="l">Pending payouts</div></div>
+          <div class="card kpi"><div class="v" id="rv-k2">—</div><div class="l">Total pending £</div></div>
+          <div class="card kpi"><div class="v" id="rv-k3">—</div><div class="l">Paid this period</div></div>
+          <div class="card kpi"><div class="v" id="rv-k4">30%</div><div class="l">Default rev share</div></div>
+        </div>
+        <div class="card pad0 mt">
+          <div class="card-h" style="padding:18px 18px 0"><h3>Payout ledger</h3><span class="link" onclick="toast('Export — coming soon')">Export</span></div>
+          <table><thead><tr><th>Partner</th><th>Period</th><th>Attributed subs</th><th>Gross</th><th>Share</th><th>Payout</th><th>Status</th><th></th></tr></thead>
+          <tbody id="rv-table"></tbody>
+        </div>
+      </section>
+
+    </div><!-- /content -->
+  </main>
+
+
+</div><!-- /app -->
+
+<!-- ── DEVICE PREVIEW ──────────────────────────────────── -->
+<div class="preview-overlay" id="previewOverlay" onclick="if(event.target===this)closePreview()">
+  <div class="preview-panel">
+    <div class="ph">
+      <h3><span data-i="phone"></span>Member view — live app preview</h3>
+      <button class="x" data-i="x" onclick="closePreview()"></button>
+    </div>
+    <div class="preview-body">
+      <div class="phone">
+        <div class="ph-not"></div>
+        <div class="ph-scroll" id="ph-scroll"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast-el"></div>
+
+
+
+
+
+<!-- ── INVITE MODAL ──────────────────────────────────────── -->
+<div id="invite-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(5,8,12,.7);backdrop-filter:blur(4px);z-index:9999;align-items:center;justify-content:center;width:100vw;height:100vh" onclick="if(event.target===this)closeInviteModal()">
+  <div id="invite-modal" style="background:var(--card);border:1px solid var(--line);border-radius:20px;width:min(620px,95vw);max-height:90vh;overflow-y:auto;animation:slidein .25s ease">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:22px 24px 16px;border-bottom:1px solid var(--line)">
+      <div>
+        <h2 style="font-size:18px;font-weight:800;margin-bottom:3px">Invite a partner</h2>
+        <p style="font-size:12px;color:var(--muted)">Mint a pre-filled application from your call notes and email them their personal link — or add a row manually with no email</p>
+      </div>
+      <button onclick="closeInviteModal()" style="width:32px;height:32px;border-radius:8px;background:var(--surface);border:1px solid var(--line);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px">&times;</button>
+    </div>
+    <div style="padding:22px 24px">
+
+      <!-- Name + Role -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <div>
+          <label class="inv-label">Full name / organisation *</label>
+          <input class="inv-input" id="inv-name" placeholder="e.g. Maya Thompson">
+        </div>
+        <div>
+          <label class="inv-label">Role / title *</label>
+          <input class="inv-input" id="inv-role" placeholder="e.g. Yoga & Mobility Coach">
+        </div>
+      </div>
+
+      <!-- Email + Pillar -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <div>
+          <label class="inv-label">Contact email *</label>
+          <input class="inv-input" id="inv-email" type="email" placeholder="partner@example.com">
+        </div>
+        <div>
+          <label class="inv-label">Pillar *</label>
+          <select class="inv-input" id="inv-pillar">
+            <option value="">Select pillar…</option>
+            <option value="body">Body — Physical</option>
+            <option value="mind">Mind — Mental</option>
+            <option value="connect">Connect — Social</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Bio -->
+      <div style="margin-bottom:14px">
+        <label class="inv-label">Bio / credentials</label>
+        <textarea class="inv-input" id="inv-bio" rows="2" placeholder="Brief background, qualifications, experience…" style="resize:vertical"></textarea>
+      </div>
+
+      <!-- Why here -->
+      <div style="margin-bottom:14px">
+        <label class="inv-label">Why do they want to be here?</label>
+        <textarea class="inv-input" id="inv-why" rows="2" placeholder="Their reason for joining VYVE…" style="resize:vertical"></textarea>
+      </div>
+
+      <!-- Community feel -->
+      <div style="margin-bottom:14px">
+        <label class="inv-label">Community feel / tone</label>
+        <input class="inv-input" id="inv-feel" placeholder="e.g. Warm, no-judgement, beginners welcome">
+      </div>
+
+      <!-- Fit score + Rev share -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <div>
+          <label class="inv-label">Fit score</label>
+          <select class="inv-input" id="inv-fit">
+            <option value="high">High</option>
+            <option value="med" selected>Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+        <div>
+          <label class="inv-label">Revenue share %</label>
+          <input class="inv-input" id="inv-rs" type="number" value="30" min="0" max="100">
+        </div>
+      </div>
+
+      <!-- Proposed content -->
+      <div style="margin-bottom:14px">
+        <label class="inv-label">Proposed content</label>
+        <textarea class="inv-input" id="inv-content" rows="2" placeholder="What sessions, videos or programmes they plan to bring…" style="resize:vertical"></textarea>
+      </div>
+
+      <!-- Notes -->
+      <div style="margin-bottom:22px">
+        <label class="inv-label">Internal notes</label>
+        <textarea class="inv-input" id="inv-notes" rows="2" placeholder="How we found them, context, any flags…" style="resize:vertical"></textarea>
+      </div>
+
+      <div id="inv-err" style="color:var(--danger);font-size:12px;margin-bottom:12px;min-height:16px"></div>
+
+      <!-- PM-849: mint result panel — resume link + copy, replaces the form on success -->
+      <div id="inv-result" style="display:none;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px">
+        <div id="inv-result-head" style="font-weight:700;margin-bottom:6px"></div>
+        <p id="inv-result-sub" style="font-size:12.5px;color:var(--muted);margin:0 0 10px"></p>
+        <input id="inv-result-link" readonly onclick="this.select()" style="width:100%;box-sizing:border-box;background:var(--card);border:1px solid var(--line);border-radius:8px;color:inherit;font-size:12.5px;padding:8px 10px;margin-bottom:8px">
+        <button class="tb-btn" onclick="copyInviteLink()" style="width:100%;justify-content:center">Copy link</button>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
+        <button class="tb-btn" onclick="closeInviteModal()">Cancel</button>
+        <button class="tb-btn" id="inv-submit" onclick="submitInvite()" title="Direct pipeline row — no application draft, no email">Add manually (no email)</button>
+        <button class="tb-btn primary" id="inv-mint" onclick="submitMintInvite()">
+          <span class="bic" data-i="plus"></span>Mint &amp; send invite link
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+<script>
+(function(){
+
+'use strict';
+
+/* ── SUPABASE ──────────────────────────────────────────── */
+const SUPA_URL  = 'https://ixjfklpckgxrwjlfsaaz.supabase.co';
+const SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4amZrbHBja2d4cndqbGZzYWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjY0OTUsImV4cCI6MjA5MDY0MjQ5NX0.to0pwmP-F1g93hb-Fbbq4BZUPkJ4KAGEIFwDtn4whCg';
+let sb;
+let currentUser = null;
+let allPartners = [];
+let allMemberships = [];
+let allContent = [];
+let allPayouts = [];
+let partnerMap = {};
+let membershipMap = {}; // partner_id -> {total, he, at_risk}
+let contentCountMap = {}; // partner_id -> published count
+let currentDetailId = null;
+
+/* ── ICONS ─────────────────────────────────────────────── */
+const S='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">';
+const ICONS={chat:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+  grid:S+'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
+  funnel:S+'<path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg>',
+  users:S+'<circle cx="9" cy="8" r="3"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><path d="M16 5.2a3 3 0 0 1 0 5.6M20.5 20a5.5 5.5 0 0 0-4-5.3"/></svg>',
+  member:S+'<circle cx="12" cy="8" r="3.4"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>',
+  film:S+'<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M10 9l5 3-5 3z"/></svg>',
+  cap:S+'<path d="M3 8.5l9-4 9 4-9 4z"/><path d="M7 10.5v4.5c0 1.2 2.4 2.5 5 2.5s5-1.3 5-2.5v-4.5"/></svg>',
+  bars:S+'<path d="M5 20V10M12 20V4M19 20v-7"/></svg>',
+  money:S+'<rect x="2.5" y="6" width="19" height="12" rx="2.5"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9.5v5M18 9.5v5"/></svg>',
+  phone:S+'<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg>',
+  search:S+'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>',
+  plus:S+'<path d="M12 5v14M5 12h14"/></svg>',
+  check:S+'<path d="M5 12.5l4.5 4.5L19 7"/></svg>',
+  x:S+'<path d="M6 6l12 12M18 6L6 18"/></svg>',
+  eye:S+'<path d="M2 12s3.8-7 10-7 10 7 10 7-3.8 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+  pencil:S+'<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14.5 5.5l4 4"/></svg>',
+  doc:S+'<path d="M6.5 3h7l4 4v14h-11z"/><path d="M13.5 3v4h4"/></svg>',
+  download:S+'<path d="M12 4v12M7 11l5 5 5-5"/><path d="M5 20h14"/></svg>',
+  play:S+'<path d="M7 5v14l12-7z" fill="currentColor" stroke="none"/></svg>',
+  'chev-left':S+'<path d="M15 6l-6 6 6 6"/></svg>',
+  layers:S+'<path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg>',
+  spark:S+'<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></svg>',
+  warn:S+'<path d="M12 3.5l9 16H3z"/><path d="M12 10v4.5M12 17.5v.5"/></svg>',
+};
+function setIcons(scope){
+  (scope||document).querySelectorAll('[data-i]').forEach(el=>{
+    const k=el.getAttribute('data-i');
+    if(ICONS[k]){el.innerHTML=ICONS[k];el.removeAttribute('data-i');}
+  });
+}
+
+/* ── HELPERS ───────────────────────────────────────────── */
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function initials(n){
+  const stop=['the','dr','and','of','a','&'];
+  const w=n.replace(/[^a-zA-Z ]/g,' ').split(/\s+/).filter(x=>x&&!stop.includes(x.toLowerCase()));
+  return((w[0]||'')[0]||'').toUpperCase()+((w[1]||'')[0]||'').toUpperCase();
+}
+const PILLAR_COL={body:'var(--physical)',mind:'var(--mental)',connect:'var(--social)'};
+const PILLAR_LBL={body:'Body',mind:'Mind',connect:'Connect'};
+
+function av(p,size=36){
+  const col=PILLAR_COL[p.pillar]||'var(--muted)';
+  const photo=p.avatar_url&&/^https?:\/\//.test(p.avatar_url)?p.avatar_url:null; // urlish inline — av() is defined before urlish()
+  if(photo)return `<div class="av" style="width:${size}px;height:${size}px;background:${col};overflow:hidden;padding:0"><img src="${photo}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit" alt=""></div>`;
+  return `<div class="av" style="width:${size}px;height:${size}px;background:${col};font-size:${Math.round(size*0.36)}px">${initials(p.name)}</div>`;
+}
+function pill(status){
+  const map={live:'p-live',onboarding:'p-pending',applied:'p-draft',vetting:'p-draft',interview:'p-draft',contract:'p-pending',suspended:'p-suspended',declined:'p-suspended'};
+  return `<span class="pill ${map[status]||'p-draft'}">${status}</span>`;
+}
+function statusDot(status){
+  const map={live:'var(--mint)',onboarding:'var(--warning)',applied:'var(--muted)',vetting:'var(--muted)',suspended:'var(--danger)'};
+  return `<span class="dot" style="background:${map[status]||'var(--muted)'}"></span>`;
+}
+
+let _toastTimer;
+function toast(msg,type=''){
+  const el=document.getElementById('toast-el');
+  el.textContent=msg;
+  el.style.borderColor=type==='error'?'rgba(224,96,96,.4)':'rgba(77,170,170,.35)';
+  el.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer=setTimeout(()=>el.classList.remove('show'),2800);
+}
+
+/* ── NAV ───────────────────────────────────────────────── */
+let allSupport=[];let allSupportReplies=[];
+function renderSupport(){
+  const nb=document.getElementById('nb-support');
+  const open=allSupport.filter(m=>m.status==='open').length;
+  if(nb){nb.textContent=open;nb.style.display=open>0?'':'none';}
+  const el=document.getElementById('support-list');
+  if(!el)return;
+  if(!allSupport.length){el.innerHTML='<div class="empty-state">No messages yet \u2014 partners write in from their portal\u2019s Help tab.</div>';return;}
+  const rows=[...allSupport].sort((a,b)=>(a.status==='open'?0:1)-(b.status==='open'?0:1)||(a.created_at<b.created_at?1:-1));
+  el.innerHTML=rows.map(m=>{
+    const p=partnerMap[m.partner_id]||{};
+    const when=new Date(m.created_at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+    const pill=m.status==='open'?'p-suspended':m.status==='replied'?'p-review':'p-live';
+    return `<div class="card" style="margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+        <b style="font-size:14px">${esc(p.name||'Unknown partner')}</b>
+        <span class="muted" style="font-size:12px">${esc(m.sender_email)} \u00b7 ${when}</span>
+        <span class="pill ${pill}" style="margin-left:auto">${m.status}</span>
+      </div>
+      ${m.subject?`<div style="font-size:13px;font-weight:600;margin-bottom:6px">${esc(m.subject)}</div>`:''}
+      <div style="font-size:13.5px;line-height:1.6;white-space:pre-wrap;color:var(--muted-light)">${esc(m.message)}</div>
+      ${allSupportReplies.filter(r=>r.message_id===m.id).map(r=>{
+        const admin=r.sender_role==='admin';
+        const rw=new Date(r.created_at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+        return `<div style="margin-top:8px;margin-left:${admin?'22px':'0'};padding:8px 12px;border-radius:8px;font-size:13px;line-height:1.55;white-space:pre-wrap;${admin?'background:rgba(77,170,170,.10);border:1px solid rgba(77,170,170,.25)':'background:var(--surface);border:1px solid var(--line)'}">
+          <div style="font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:${admin?'var(--mint)':'var(--muted)'};margin-bottom:4px">${admin?'VYVE ('+esc(r.sender_email)+')':'Partner'} \u00b7 ${rw}</div>${esc(r.body)}</div>`;
+      }).join('')}
+      <div style="display:flex;gap:8px;margin-top:10px;align-items:flex-start">
+        <textarea rows="2" maxlength="4000" placeholder="Reply to the partner\u2026" data-reply="${m.id}" style="flex:1;resize:vertical;background:var(--surface);border:1px solid var(--line);border-radius:8px;color:var(--white);padding:8px 10px;font-family:var(--font);font-size:13px"></textarea>
+        <button class="tb-btn primary" onclick="sendSupportReply('${m.id}',this)" style="flex:none">Send reply</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        ${m.status!=='closed'?`<button class="tb-btn" onclick="setSupportStatus('${m.id}','closed')">Close</button>`:`<button class="tb-btn" onclick="setSupportStatus('${m.id}','open')">Reopen</button>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+async function sendSupportReply(id,btn){
+  const ta=document.querySelector(`textarea[data-reply="${id}"]`);
+  const text=(ta&&ta.value||'').trim();
+  if(!text){if(ta)ta.focus();return;}
+  btn.disabled=true;
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+    const r=await fetch(`${SUPA_URL}/functions/v1/partner-support`,{method:'POST',headers:{'Authorization':`Bearer ${session.access_token}`,'apikey':SUPA_ANON,'Content-Type':'application/json'},body:JSON.stringify({action:'reply',message_id:id,body:text})});
+    const j=await r.json().catch(()=>null);
+    if(!r.ok||!j||!j.ok){toast((j&&j.error)||'Reply failed','error');return;}
+    allSupportReplies.push({message_id:id,sender_role:'admin',sender_email:(session.user&&session.user.email)||'admin',body:text,created_at:new Date().toISOString()});
+    const m=allSupport.find(x=>x.id===id); if(m)m.status='replied';
+    renderSupport();
+    toast(j.email_sent?'Reply sent \u2014 partner emailed':'Reply saved \u2014 partner email failed, they\u2019ll see it in their portal');
+  }catch(e){toast('Reply failed \u2014 '+(e.message||e),'error');}
+  finally{btn.disabled=false;}
+}
+async function setSupportStatus(id,status){
+  const {error}=await sb.from('partner_support_messages').update({status}).eq('id',id);
+  if(error){toast(error.message,'error');return;}
+  const m=allSupport.find(x=>x.id===id); if(m)m.status=status;
+  renderSupport();
+  toast(status==='open'?'Reopened':status==='replied'?'Marked replied':'Closed');
+}
+function nav(el){
+  const view=el.dataset.view; if(!view)return;
+  document.querySelectorAll('.pt-nav').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  const vEl=document.getElementById('v-'+view);
+  if(vEl) vEl.classList.add('active');
+  document.getElementById('crumb').innerHTML=`<b>${el.textContent.trim().replace(/\d+$/,'')}</b>`;
+}
+function navByView(view){
+  const el=document.querySelector(`.pt-nav[data-view="${view}"]`);
+  if(el){nav(el);return;}
+  // Detail views (partner-detail) have no sidebar item — switch the section directly.
+  // Without this, navByView silently no-ops and openPartner renders into a hidden pane (PM-840).
+  const vEl=document.getElementById('v-'+view);
+  if(!vEl)return;
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  vEl.classList.add('active');
+}
+
+function pdTab(el,id){
+  document.querySelectorAll('#v-partner-detail .subtab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('#v-partner-detail .subpane').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function cmTab(el,id){
+  document.querySelectorAll('#v-content .subtab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('#v-content .subpane').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+/* ── AUTH ───────────────────────────────────────────────── */
+async function initAuth(){
+  sb=window.supabase.createClient(SUPA_URL,SUPA_ANON,{
+    auth:{persistSession:true,autoRefreshToken:true,storageKey:'vyve-cc-supabase-auth'}
+  });
+  const {data:{session}}=await sb.auth.getSession();
+  if(session){
+    currentUser=session.user;
+    showApp();
+  } else {
+    document.getElementById('gate').classList.remove('hidden');
+  }
+  sb.auth.onAuthStateChange((_e,session)=>{
+    if(session&&!currentUser){currentUser=session.user;showApp();}
+    if(!session){showGate();}
+  });
+}
+
+document.getElementById('g-submit').addEventListener('click',async()=>{
+  const email=document.getElementById('g-email').value.trim();
+  const pw=document.getElementById('g-pw').value;
+  const btn=document.getElementById('g-submit');
+  const err=document.getElementById('g-err');
+  btn.textContent='Signing in…';btn.disabled=true;err.textContent='';
+  const {error}=await sb.auth.signInWithPassword({email,password:pw});
+  btn.textContent='Sign in';btn.disabled=false;
+  if(error){err.textContent=error.message;}
+});
+[document.getElementById('g-email'),document.getElementById('g-pw')].forEach(el=>{
+  el.addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('g-submit').click();});
+});
+
+async function signOut(){
+  await sb.auth.signOut({ scope: 'local' });
+  location.reload();
+}
+
+function showGate(){var g=document.getElementById('gate');g.classList.remove('hidden');g.classList.add('force');document.getElementById('pt-app').style.display='none';}
+function showApp(){
+  document.getElementById('gate').classList.add('hidden');
+  document.getElementById('pt-app').style.display='flex';
+  const name=currentUser?.user_metadata?.full_name||currentUser?.email?.split('@')[0]||'Admin';
+  document.getElementById('sf-nm').textContent=name;
+  document.getElementById('sf-av').textContent=initials(name)||name[0].toUpperCase();
+  setIcons(document);
+  document.getElementById('invite-partner-btn').addEventListener('click', openInviteModal);
+  loadAll();
+}
+
+/* ── DATA LOADING ──────────────────────────────────────── */
+async function loadAll(){
+  const [pr,mr,cr,pyr,sm,sr]=await Promise.all([
+    sb.from('partner_partners').select('*').order('created_at'),
+    sb.from('partner_memberships').select('*'),
+    sb.from('partner_content_items').select('*').order('created_at',{ascending:false}),
+    sb.from('partner_payouts').select('*').order('period',{ascending:false}),
+    sb.from('partner_support_messages').select('*').order('created_at',{ascending:false}),
+    sb.from('partner_support_replies').select('*').order('created_at',{ascending:true}),
+  ]);
+  allSupport=sm.data||[];
+  allSupportReplies=sr.data||[];
+  allPartners=pr.data||[];
+  allMemberships=mr.data||[];
+  allContent=cr.data||[];
+  allPayouts=pyr.data||[];
+
+  // Build lookup maps
+  allPartners.forEach(p=>{partnerMap[p.id]=p;});
+  allMemberships.forEach(m=>{
+    if(!membershipMap[m.partner_id]) membershipMap[m.partner_id]={total:0,he:0,at_risk:0};
+    membershipMap[m.partner_id].total++;
+    if(m.engagement_segment==='highly_engaged') membershipMap[m.partner_id].he++;
+    if(m.engagement_segment==='at_risk') membershipMap[m.partner_id].at_risk++;
+  });
+  allContent.forEach(c=>{
+    if(c.moderation_status==='approved'){
+      contentCountMap[c.partner_id]=(contentCountMap[c.partner_id]||0)+1;
+    }
+  });
+
+  // Update nav badges
+  const pipeline=allPartners.filter(p=>['applied','vetting','interview','contract'].includes(p.status)).length;
+  const modQ=allContent.filter(c=>c.moderation_status==='in_review').length;
+  const flagged=allContent.filter(c=>c.moderation_status==='flagged').length;
+  document.getElementById('nb-pipeline').textContent=pipeline;
+  document.getElementById('nb-partners').textContent=allPartners.filter(p=>p.status==='live').length;
+  document.getElementById('nb-content').textContent=modQ+flagged;
+  renderSupport();
+
+  renderOverview();
+  renderPipeline();
+  renderPartners();
+  renderContent();
+  renderOnboarding();
+  renderAnalytics();
+  renderRevenue();
+}
+
+/* ── OVERVIEW ──────────────────────────────────────────── */
+function renderOverview(){
+  const live=allPartners.filter(p=>p.status==='live');
+  const totalMembers=allMemberships.length;
+  const pubContent=allContent.filter(c=>c.moderation_status==='approved').length;
+  const pendingPayouts=allPayouts.filter(p=>p.status==='pending').length;
+
+  document.getElementById('ov-k1').textContent=live.length;
+  document.getElementById('ov-k2').textContent=totalMembers.toLocaleString();
+  document.getElementById('ov-k3').textContent=pubContent;
+  document.getElementById('ov-k4').textContent=pendingPayouts;
+
+  // Pipeline status attention
+  const pipeline=allPartners.filter(p=>['applied','vetting','interview','contract'].includes(p.status));
+  const modQ=allContent.filter(c=>c.moderation_status==='in_review').length;
+  const flagged=allContent.filter(c=>c.moderation_status==='flagged').length;
+  const onboarding=allPartners.filter(p=>p.status==='onboarding');
+  let attn='';
+  pipeline.forEach(p=>{
+    const app_age=Math.round((Date.now()-new Date(p.created_at).getTime())/86400000);
+    attn+=`<div class="flex" style="padding:11px 0;border-bottom:1px solid var(--line)"><span class="pill p-draft">${esc(p.status)}</span><div><div style="font-weight:700;font-size:13px">${esc(p.name)}</div><div class="muted" style="font-size:11px">${esc(p.role_title)} · ${app_age}d in pipeline</div></div><button class="tb-btn" style="margin-left:auto" onclick="openPartner('${p.id}')">Review</button></div>`;
+  });
+  onboarding.forEach(p=>{
+    attn+=`<div class="flex" style="padding:11px 0;border-bottom:1px solid var(--line)"><span class="pill p-pending">onboarding</span><div><div style="font-weight:700;font-size:13px">${esc(p.name)}</div><div class="muted" style="font-size:11px">Completing setup</div></div></div>`;
+  });
+  if(!attn) attn='<div class="empty-state">Pipeline is clear</div>';
+  document.getElementById('ov-attention').innerHTML=attn;
+
+  // Needs attention
+  let needs='';
+  if(pipeline.length) needs+=`<div class="flex" style="padding:11px 0;border-bottom:1px solid var(--line)"><span class="pill p-pending">${pipeline.length}</span><div><div style="font-weight:700;font-size:13px">Applications to review</div><div class="muted" style="font-size:11px">Oldest ${Math.round((Date.now()-new Date(pipeline[0]?.created_at).getTime())/86400000)}d waiting</div></div></div>`;
+  if(modQ) needs+=`<div class="flex" style="padding:11px 0;border-bottom:1px solid var(--line)"><span class="pill p-review">${modQ}</span><div><div style="font-weight:700;font-size:13px">Content awaiting approval</div></div></div>`;
+  if(flagged) needs+=`<div class="flex" style="padding:11px 0;border-bottom:1px solid var(--line)"><span class="pill p-suspended">${flagged}</span><div><div style="font-weight:700;font-size:13px">Flagged by members</div></div></div>`;
+  const atRisk=Object.values(membershipMap).reduce((s,m)=>s+m.at_risk,0);
+  if(atRisk) needs+=`<div class="flex" style="padding:11px 0"><span class="pill p-suspended">${atRisk}</span><div><div style="font-weight:700;font-size:13px">Members at churn risk</div></div></div>`;
+  if(!needs) needs='<div class="empty-state">Nothing needs attention</div>';
+  document.getElementById('ov-needs').innerHTML=needs;
+
+  // Top partners
+  const sorted=[...live].sort((a,b)=>(membershipMap[b.id]?.total||0)-(membershipMap[a.id]?.total||0));
+  document.getElementById('ov-top').innerHTML=sorted.slice(0,5).map(p=>`
+    <tr onclick="openPartner('${p.id}')">
+      <td><div class="who">${av(p)}<div><div class="nm">${esc(p.name)}</div><div class="rl">${esc(p.role_title)}</div></div></div></td>
+      <td><span style="color:${PILLAR_COL[p.pillar]};font-weight:600;font-size:12px">${PILLAR_LBL[p.pillar]}</span></td>
+      <td>${pill(p.status)}</td>
+      <td class="num">${(membershipMap[p.id]?.total||0).toLocaleString()}</td>
+    </tr>`).join('');
+
+  // Feed
+  const feed=allContent.slice(0,6);
+  const feedColors={in_review:'var(--warning)',approved:'var(--mint)',flagged:'var(--danger)',returned:'var(--muted)',draft:'var(--muted)'};
+  document.getElementById('ov-feed').innerHTML=feed.length?feed.map(c=>{
+    const pName=partnerMap[c.partner_id]?.name||'Unknown';
+    const when=c.created_at?new Date(c.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'';
+    return `<div class="flex" style="padding:10px 0;border-bottom:1px solid var(--line)"><span class="dot" style="background:${feedColors[c.moderation_status]||'var(--muted)'}"></span><div style="flex:1"><div style="font-size:13px;font-weight:600">${esc(c.title)}</div><div class="muted" style="font-size:11px">${esc(pName)} · ${c.type} · ${when}</div></div></div>`;
+  }).join(''):'<div class="empty-state">No content yet</div>';
+}
+
+/* ── PIPELINE ──────────────────────────────────────────── */
+function renderPipeline(){
+  const stages=['applied','vetting','interview','contract','onboarding'];
+  const labels={applied:'Applied',vetting:'Vetting',interview:'Interview',contract:'Contract',onboarding:'Onboarding'};
+  const NEXT={applied:'vetting',vetting:'interview',interview:'contract',contract:'onboarding',onboarding:'live'};
+
+  document.getElementById('kanban').innerHTML=stages.map(stage=>{
+    const cards=allPartners.filter(p=>p.status===stage);
+    /* PM-859: cards drag ANY direction, including skipping stages and moving back — a wrong
+       advance was previously unrecoverable from the board (only Declined had a restore path). */
+    return `<div class="kcol" data-stage="${stage}"
+        ondragover="kanbanDragOver(event,this)" ondragleave="kanbanDragLeave(this)" ondrop="kanbanDrop(event,this)">
+      <div class="kh">${labels[stage]}<span class="c">${cards.length}</span></div>
+      ${cards.length?cards.map(p=>`
+        <div class="kcard" draggable="true" data-pid="${p.id}"
+          ondragstart="kanbanDragStart(event,this)" ondragend="kanbanDragEnd(this)"
+          onclick="openAppDetail('${p.id}')">
+          ${av(p,28)}
+          <div class="knm">${esc(p.name)}</div>
+          <div class="krole">${esc(p.role_title)}</div>
+          <div class="kmeta"><span class="muted">${Math.round((Date.now()-new Date(p.created_at).getTime())/86400000)}d ago</span>${pill(p.status)}</div>
+        </div>`).join(''):'<div class="muted" style="font-size:12px;text-align:center;padding:16px">Empty</div>'}
+    </div>`;
+  }).join('');
+  setIcons(document.getElementById('kanban'));
+}
+
+/* ── PM-859: drag-and-drop stage moves (any direction, any distance) ────────────────
+   Forward, backward and skip are all the same operation — moveStage() owns the side effects
+   so a drag and a button click can never diverge. */
+let _dragPid=null;
+function kanbanDragStart(e,el){ _dragPid=el.dataset.pid; el.classList.add('dragging'); try{e.dataTransfer.setData('text/plain',_dragPid);e.dataTransfer.effectAllowed='move';}catch(_){} }
+function kanbanDragEnd(el){ el.classList.remove('dragging'); document.querySelectorAll('.kcol.drop-target').forEach(c=>c.classList.remove('drop-target')); }
+function kanbanDragOver(e,col){ e.preventDefault(); try{e.dataTransfer.dropEffect='move';}catch(_){} col.classList.add('drop-target'); }
+function kanbanDragLeave(col){ col.classList.remove('drop-target'); }
+async function kanbanDrop(e,col){
+  e.preventDefault(); col.classList.remove('drop-target');
+  const pid=_dragPid||(()=>{try{return e.dataTransfer.getData('text/plain');}catch(_){return null;}})();
+  _dragPid=null;
+  if(!pid) return;
+  const target=col.dataset.stage; const cur=partnerMap[pid]?.status;
+  if(!target||!cur||target===cur) return;
+  moveStage(pid,target);
+}
+
+/* Single entry point for every stage change. advancePartner() is the forward/button path and
+   delegates here, so provisioning, go-live gating and the backward-move consequences stay in
+   one place. */
+const STAGE_ORDER=['applied','vetting','interview','contract','onboarding','live'];
+async function moveStage(id,newStatus){
+  const p=partnerMap[id]; if(!p) return;
+  const cur=p.status;
+  const goingBack=STAGE_ORDER.indexOf(newStatus)>-1&&STAGE_ORDER.indexOf(cur)>STAGE_ORDER.indexOf(newStatus);
+  /* Moving BACK out of a stage that granted something has to undo it, or the partner keeps
+     portal access (or member visibility) they are no longer entitled to. */
+  let revokePortal=false;
+  if(goingBack&&cur==='onboarding'){
+    revokePortal=confirm('Move back to '+newStatus+'?\n\nThis partner has portal access. Click OK to ALSO revoke their partner portal login, or Cancel to move the stage but leave their access in place.');
+  }
+  if(goingBack&&cur==='live'){
+    if(!confirm('This partner is LIVE and visible to members. Moving them back to '+newStatus+' will hide them from the app. Continue?')) return;
+  }
+  /* Forward moves (including SKIPS, e.g. applied -> onboarding in one drag) go through
+     advancePartner so the go-live gate and Gate-A provisioning fire exactly as they do from
+     the detail buttons. Backward moves bypass those gates by design. */
+  if(!goingBack){ return advancePartner(id,newStatus); }
+  await applyStageChange(id,newStatus,{goingBack,revokePortal});
+}
+
+async function applyStageChange(id,newStatus,opts){
+  opts=opts||{};
+  const {error}=await sb.from('partner_partners').update({status:newStatus}).eq('id',id);
+  if(error){toast('Error: '+error.message,'error');return;}
+  await sb.from('partner_applications').update({status_changed_at:new Date().toISOString()}).eq('partner_id',id);
+
+  if(opts.revokePortal){
+    try{
+      const sess=await sb.auth.getSession();
+      const r=await fetch(SUPA_URL+'/functions/v1/partner-provision',{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+sess?.data?.session?.access_token,'Content-Type':'application/json'},
+        body:JSON.stringify({action:'deprovision',partner_id:id}),
+      });
+      toast(r.ok?('Moved back to '+newStatus+' — portal access revoked'):'Moved back, but revoking portal access failed','error');
+    }catch(e){ toast('Moved back, but revoking portal access errored: '+e.message,'error'); }
+  } else {
+    toast('Moved to '+newStatus);
+  }
+  partnerMap[id]={...partnerMap[id],status:newStatus};
+  allPartners=allPartners.map(p=>p.id===id?{...p,status:newStatus}:p);
+  renderPipeline(); renderOverview();
+}
+
+async function openAppDetail(id){
+  const p=partnerMap[id]; if(!p)return;
+  const NEXT={applied:'vetting',vetting:'interview',interview:'contract',contract:'onboarding',onboarding:'live'};
+  const nextStage=NEXT[p.status];
+  const nextLabel=nextStage==='live'?'Go live':nextStage?`Advance to ${nextStage}`:null;
+
+  const {data:app}=await sb.from('partner_applications').select('*').eq('partner_id',id).single();
+
+  document.getElementById('appDetailBody').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <div class="flex" style="margin-bottom:12px">${av(p,48)}<div><div style="font-size:16px;font-weight:800">${esc(p.name)}</div><div style="color:var(--mint);font-size:12px">${esc(p.role_title)}</div></div></div>
+        <p style="color:var(--muted);font-size:13px;line-height:1.6">${esc(p.bio||'No bio yet.')}</p>
+        <div style="margin-top:12px"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:4px">Proposed content</div><div style="font-size:13px">${esc(app?.proposed_content||'—')}</div></div>
+        <div style="margin-top:12px"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:4px">Notes</div><div style="font-size:13px">${esc(app?.notes||'—')}</div></div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:8px">Fit score</div>
+        <span class="pill ${app?.fit_score==='high'?'p-live':app?.fit_score==='med'?'p-review':'p-suspended'}">${app?.fit_score||'—'}</span>
+        <div style="margin-top:16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:8px">Current stage</div>
+        ${pill(p.status)}
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:20px">
+          ${nextLabel?`<button class="tb-btn primary" onclick="advancePartner('${id}','${nextStage}')">${nextLabel}</button>`:''}
+          <button class="tb-btn" onclick="openRequestInfoModal(this.closest('[data-id]')?.dataset.id || currentDetailId)">Request more info</button>
+          ${p.status!=='declined'&&p.status!=='live'?`<button class="tb-btn" style="color:var(--danger)" onclick="advancePartner('${id}','declined')">Decline application</button>`:''}
+          ${p.status==='declined'?`<button class="tb-btn" onclick="if(confirm('Restore this application to the Applied column?'))advancePartner('${id}','applied')">Restore to Applied</button>`:''}
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('appDetailBody').insertAdjacentHTML('beforeend',`
+    <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--line)">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:8px">Their answers</div>
+      <div id="rev-app" data-pid="${id}"><div class="empty-state" style="padding:10px">Loading answers…</div></div>
+    </div>
+    <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--line)">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:8px">Their documents</div>
+      <div id="rev-docs" data-pid="${id}"><div class="empty-state" style="padding:10px">Loading documents…</div></div>
+    </div>`);
+  document.getElementById('appDetail').style.display='block';
+  document.getElementById('appDetail').scrollIntoView({behavior:'smooth',block:'start'});
+  setIcons(document.getElementById('appDetail'));
+  loadPartnerApplication(p,'rev-app');
+  loadPartnerDocs(p,'rev-docs');
+}
+
+async function advancePartner(id,newStatus){
+  if(newStatus==='live'){
+    /* PM-880: the old gate (safeguarding && gdpr && pct=100) was UNPASSABLE for the
+       PM-659/857 deferred-assessment cohort — those flags are false by design, so the
+       first real Go Live click bounced with only a toast (which Dean never saw).
+       New shape = the PM-857 agreed model: deferred cohort may go live via an EXPLICIT
+       confirm spelling out the posture, and doing so stamps
+       steps.assessments_deferred_at_golive permanently so CC always shows the truth.
+       Non-deferred partners keep the hard gate unchanged. Lewis's sign-off on the
+       posture itself remains outstanding — the confirm says so out loud. */
+    const {data:prog}=await sb.from('partner_onboarding_progress').select('*').eq('partner_id',id).single();
+    if(!prog){toast('Cannot go live: no onboarding record for this partner','error');return;}
+    const _s=prog.steps||{};
+    if(_s.modules_deferred){
+      if(!(_s.agreement_signed&&_s.identity_verified&&_s.profile_complete)){
+        toast('Cannot go live: agreement, identity and profile must be complete first','error');return;
+      }
+      if(!confirm('DEFERRED ASSESSMENTS \u2014 read before proceeding.\n\nThis partner\u2019s training modules, safeguarding assessment and GDPR assessment are DEFERRED by design (PM-659 cohort). Going live makes them visible to all members WITHOUT those assessments completed.\n\nThis posture is still awaiting Lewis\u2019s sign-off. Proceeding stamps \u201cassessments deferred at go-live\u201d permanently on this partner\u2019s record.\n\nGo live anyway?')){return;}
+      const {error:se}=await sb.from('partner_onboarding_progress').update({steps:{..._s,assessments_deferred_at_golive:new Date().toISOString()}}).eq('partner_id',id);
+      if(se){toast('Could not record the deferred-assessments stamp \u2014 go-live aborted: '+se.message,'error');return;}
+    }else if(!prog.safeguarding_passed||!prog.gdpr_passed||prog.pct_complete<100){
+      toast('Cannot go live: safeguarding, GDPR and all 8 onboarding steps must be complete first','error');return;
+    }
+    if(!confirm('This will make the partner VISIBLE TO ALL MEMBERS. Confirm Dean and Lewis have both approved this partner before proceeding.')){return;}
+  }
+  if(newStatus==='onboarding'){
+    if(!confirm('This will provision a web login for this partner and email them credentials. Proceed?')){return;}
+  }
+  const {error}=await sb.from('partner_partners').update({status:newStatus}).eq('id',id);
+  if(error){toast('Error: '+error.message,'error');return;}
+  await sb.from('partner_applications').update({status_changed_at:new Date().toISOString()}).eq('partner_id',id);
+  // Gate A: provision partner portal access when moving to onboarding (forward OR skipped-to via drag)
+  if(newStatus==='onboarding'){
+    try{
+      const sess=await sb.auth.getSession();
+      const jwt=sess?.data?.session?.access_token;
+      const provRes=await fetch(SUPA_URL+'/functions/v1/partner-provision',{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+jwt,'Content-Type':'application/json'},
+        body:JSON.stringify({action:'provision',partner_id:id}),
+      });
+      const provData=await provRes.json();
+      if(provRes.ok){toast('Partner login provisioned — credentials emailed');}
+      else{toast('Status updated, but login provision failed: '+provData.error,'error');}
+    }catch(e){
+      toast('Status updated, but login provision error: '+e.message,'error');
+    }
+  } else if(newStatus==='live'){
+    // PM-748: materialize the application's launch details at go-live (calendar occurrence +
+    // pinned welcome post) — same pattern as the Gate-A partner-provision call above. Idempotent.
+    let liveMsg='Partner is now live!';
+    try{
+      const sess=await sb.auth.getSession();
+      const jwt=sess?.data?.session?.access_token;
+      const matRes=await fetch(SUPA_URL+'/functions/v1/partner-launch-materialize',{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+jwt,'Content-Type':'application/json'},
+        body:JSON.stringify({partner_id:id}),
+      });
+      const mat=await matRes.json();
+      if(matRes.ok&&!mat.already){
+        const bits=[];
+        if(mat.calendar?.created)bits.push('launch session on calendar ('+(mat.calendar.category_mapped_from_pillar||'')+')');
+        else if(mat.calendar?.reason==='launch_date_past')bits.push('LAUNCH DATE HAS PASSED — arrange a new date with the partner');
+        else if(mat.calendar?.reason)bits.push('calendar skipped: '+mat.calendar.reason);
+        if(mat.post?.created)bits.push('welcome post pinned');
+        if(bits.length)liveMsg='Partner is now live! '+bits.join(' · ');
+      }else if(matRes.ok&&mat.already){
+        liveMsg='Partner is now live! (launch already materialized)';
+      }else{
+        liveMsg='Partner is live, but launch materialize failed: '+(mat.error||matRes.status);
+      }
+    }catch(e){
+      liveMsg='Partner is live, but launch materialize error: '+e.message;
+    }
+    toast(liveMsg);
+  } else {
+    toast('Moved to '+newStatus);
+  }
+  document.getElementById('appDetail').style.display='none';
+  // Refresh (shared with the drag path — PM-859)
+  partnerMap[id]={...partnerMap[id],status:newStatus};
+  allPartners=allPartners.map(p=>p.id===id?{...p,status:newStatus}:p);
+  renderPipeline();
+  renderOverview();
+}
+
+/* ── PARTNERS DIRECTORY ────────────────────────────────── */
+function renderPartners(){
+  const pillar=document.getElementById('pt-pillar-filter')?.value||'';
+  const status=document.getElementById('pt-status-filter')?.value||'';
+  let items=allPartners;
+  if(pillar) items=items.filter(p=>p.pillar===pillar);
+  if(status) items=items.filter(p=>p.status===status);
+
+  document.getElementById('pt-tbody').innerHTML=items.length?items.map(p=>`
+    <tr onclick="openPartner('${p.id}')">
+      <td><div class="who">${av(p)}<div><div class="nm">${esc(p.name)}</div><div class="rl">${esc(p.role_title)}</div></div></div></td>
+      <td><span style="color:${PILLAR_COL[p.pillar]};font-weight:600;font-size:12px">${PILLAR_LBL[p.pillar]||p.pillar}</span></td>
+      <td>${pill(p.status)}</td>
+      <td class="num">${(membershipMap[p.id]?.total||0).toLocaleString()}</td>
+      <td>${contentCountMap[p.id]||0}</td>
+      <td class="muted">${p.revenue_share_pct}%</td>
+      <td style="text-align:right;color:var(--muted)">›</td>
+    </tr>`).join(''):'<tr><td colspan="8"><div class="empty-state">No partners match</div></td></tr>';
+}
+document.getElementById('pt-pillar-filter')?.addEventListener('change',renderPartners);
+document.getElementById('pt-status-filter')?.addEventListener('change',renderPartners);
+
+/* ── PARTNER DETAIL ────────────────────────────────────── */
+/* PM-892: portal-access line on the partner detail hero — answers "have they had
+   login details?" without SQL. Sources: admin_users (is the portal gate open) +
+   the latest partner_provision audit row (when, by whom, did the email send).
+   admin_audit_log gained an is_admin() SELECT policy this PM — EF writes were
+   service-role so admins could never read their own audit trail before. */
+async function loadPartnerAccessLine(p){
+  const el=document.getElementById('pd-access-line');
+  if(!el)return;
+  el.innerHTML='';
+  try{
+    const email=(p.contact_email||'').trim().toLowerCase();
+    if(!email){el.innerHTML='<span style="color:var(--amber)">&#9888; No contact email — portal access cannot be provisioned</span>';return;}
+    const [{data:au},{data:audit}]=await Promise.all([
+      sb.from('admin_users').select('role,active').ilike('email',email).maybeSingle(),
+      sb.from('admin_audit_log').select('created_at,admin_email,new_value').eq('action','partner_provision').eq('member_email',email).order('created_at',{ascending:false}).limit(1).maybeSingle(),
+    ]);
+    const gateOpen=!!(au&&au.active&&['partner','admin'].includes(au.role));
+    const nv=(audit&&audit.new_value)||{};
+    const when=audit?new Date(audit.created_at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):null;
+    if(gateOpen){
+      const emailBit=nv.email_sent===true
+        ?`login email sent &#10003;${nv.password_created===true?' (new account + temp password)':' (existing VYVE login)'}`
+        :(audit?'<span style="color:var(--danger)">login email FAILED — tell them manually</span>':'provisioned (no audit record)');
+      el.innerHTML=`<span style="color:var(--mint)">&#10003; Portal access active</span> — ${emailBit}${when?` <span class="muted">· ${when} by ${esc((audit.admin_email||'').split('@')[0])}</span>`:''}`;
+    }else{
+      el.innerHTML=`<span style="color:var(--amber)">&#9675; No portal access yet</span> <span class="muted">— granted automatically when they advance to onboarding</span>`;
+    }
+  }catch(_){/* additive */}
+}
+/* PM-904: mirror of the portal's syncMyPhone — same markup, same classes, so both
+   sides show one truth. Reads the live form inputs so the preview updates as you type. */
+function _mpEsc(s){ const d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
+function syncAdminPhone(p){
+  const el=document.getElementById('pd-phone'); if(!el) return;
+  const val=(id,fb)=>{ const e=document.getElementById(id); return ((e&&e.value)||'').trim()||fb; };
+  const name=val('pp-name', p.name||'Partner name');
+  const role=val('pp-role', p.role_title||'Role / tagline');
+  const bio =val('pp-bio', p.bio||'Their bio will appear here as members read it.');
+  const why =val('pp-why','');
+  const feel=val('pp-feel','');
+  const av=urlish(p.avatar_url), cov=urlish(p.cover_url);
+  const init=initials(name);
+  const banner=cov?`background:linear-gradient(120deg,rgba(27,120,120,.25),rgba(13,43,43,.18)),url('${cov}') center/cover no-repeat`
+                  :`background:linear-gradient(120deg,${PILLAR_COL[p.pillar]||'#1B7878'},#0F4C4C)`;
+  el.innerHTML =
+    `<div class="mp-banner" style="${banner}"><div class="mp-av" style="background:${PILLAR_COL[p.pillar]||'#1B7878'}">${av?`<img src="${av}">`:init}</div></div>`
+    + `<div class="mp-info"><h4>${_mpEsc(name)}</h4><div class="r">${_mpEsc(role)}</div></div>`
+    + `<div class="mp-sec"><h5>About</h5><p>${_mpEsc(bio)}</p></div>`
+    + (why?`<div class="mp-sec"><h5>Reason for being here</h5><p>${_mpEsc(why)}</p></div>`:'')
+    + (feel?`<div class="mp-sec"><h5>Community feel</h5><p>${_mpEsc(feel)}</p></div>`:'')
+    + `<div class="mp-sec"><h5>Upcoming</h5><p>Their next live session will show here.</p></div>`;
+}
+document.addEventListener('input', function(e){
+  if(!e.target||!e.target.id) return;
+  if(['pp-name','pp-role','pp-bio','pp-why','pp-feel'].indexOf(e.target.id)<0) return;
+  const p = currentDetailId ? partnerMap[currentDetailId] : null;
+  if(p) syncAdminPhone(p);
+});
+function openPartner(id){
+  currentDetailId=id;
+  const p=partnerMap[id]; if(!p)return;
+  const ms=membershipMap[id]||{total:0,he:0,at_risk:0};
+  const cc=contentCountMap[id]||0;
+
+  const _hav=urlish(p.avatar_url);
+  document.getElementById('pd-hero').innerHTML=`
+    <div class="pa" style="background:${PILLAR_COL[p.pillar]};${_hav?'overflow:hidden;padding:0':''}">${_hav?`<img src="${_hav}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit" alt="">`:initials(p.name)}</div>
+    <div style="flex:1">
+      <h2>${esc(p.name)} ${p.verified?'<span style="color:var(--mint);font-size:14px">✓</span>':''} ${pill(p.status)}</h2>
+      <div class="role">${esc(p.role_title)}</div>
+      <div class="hstats">
+        <div><b>${ms.total.toLocaleString()}</b><span>members</span></div>
+        <div><b>${cc}</b><span>content live</span></div>
+        <div><b>${p.revenue_share_pct}%</b><span>rev share</span></div>
+      </div>
+      <div id="pd-access-line" style="font-size:12.5px;margin-top:8px;line-height:1.5"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-left:auto">
+      <button class="tb-btn" onclick="openPreview('${id}')"><span class="bic" data-i="phone"></span>Preview</button>
+    </div>`;
+
+  // Overview tab
+  document.getElementById('pd-over').innerHTML=`
+    <div class="grid g2">
+      <div class="card"><div class="card-h"><h3>About</h3></div>
+        <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:12px">${esc(p.bio||'—')}</p>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px">Why they're here</div>
+        <p style="font-size:13px;line-height:1.6">${esc(p.why||'—')}</p>
+        <div style="margin-top:12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px">Community feel</div>
+        <p style="font-size:13px;line-height:1.6;color:var(--muted)">${esc(p.feel||'—')}</p>
+      </div>
+      <div class="card"><div class="card-h"><h3>Engagement</h3></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="card kpi" style="background:var(--surface);border-color:var(--line)"><div class="v" style="font-size:22px">${ms.total}</div><div class="l">Members</div></div>
+          <div class="card kpi" style="background:var(--surface);border-color:var(--line)"><div class="v" style="font-size:22px">${ms.he}</div><div class="l">Highly engaged</div></div>
+          <div class="card kpi" style="background:var(--surface);border-color:var(--line)"><div class="v" style="font-size:22px;color:${ms.at_risk>0?'var(--danger)':'inherit'}">${ms.at_risk}</div><div class="l">At-risk</div></div>
+          <div class="card kpi" style="background:var(--surface);border-color:var(--line)"><div class="v" style="font-size:22px">${cc}</div><div class="l">Content live</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card mt"><div class="card-h"><h3>Application</h3></div>
+      <div id="pd-app" data-pid="${p.id}"><div class="empty-state" style="padding:14px">Loading application…</div></div>
+    </div>
+    <div class="card mt"><div class="card-h"><h3>Documents</h3></div>
+      <div id="pd-docs" data-pid="${p.id}"><div class="empty-state" style="padding:14px">Loading documents…</div></div>
+    </div>
+    <div class="card mt"><div class="card-h"><h3>Upcoming live sessions</h3></div>
+      <div id="pd-schedule"><div class="empty-state" style="padding:14px">Loading schedule…</div></div>
+    </div>
+    <div class="card mt"><div class="card-h"><h3>Admin actions</h3></div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        ${p.status!=='live'&&p.status!=='declined'?`<button class="tb-btn" onclick="navByView('pipeline')"><span class="bic" data-i="funnel"></span>View in pipeline</button>`:''}
+        ${p.status==='live'?`<button class="tb-btn" onclick="if(confirm('Suspend ${p.name.replace(/'/g,"\\'")}?'))suspendPartner('${p.id}')"><span style="color:var(--danger)">Suspend partner</span></button>`:''}
+      </div>
+    </div>`;
+
+  // Content tab — load async
+  loadPartnerContent(p);
+  loadPartnerMembers(p);
+  loadPartnerRevenue(p);
+  loadPartnerSchedule(p);
+  loadPartnerApplication(p);
+  loadPartnerDocs(p);
+  renderPartnerProfile(p);
+  renderPartnerSettings(p);
+
+  navByView('partner-detail');
+  setIcons(document.getElementById('v-partner-detail'));
+  loadPartnerAccessLine(p); // PM-892: after the hero paints — the loader's element lookup is synchronous
+}
+
+async function suspendPartner(id){
+  const {error}=await sb.from('partner_partners').update({status:'suspended'}).eq('id',id);
+  if(error){toast(error.message,'error');return;}
+  allPartners=allPartners.map(p=>p.id===id?{...p,status:'suspended'}:p);
+  partnerMap[id]={...partnerMap[id],status:'suspended'};
+  toast('Partner suspended');
+  openPartner(id);
+}
+
+async function loadPartnerContent(p){
+  const {data}=await sb.from('partner_content_items').select('*').eq('partner_id',p.id).order('created_at',{ascending:false});
+  const items=data||[];
+  const modColors={approved:'p-live',in_review:'p-review',flagged:'p-suspended',returned:'p-review',draft:'p-draft'};
+  const typeColors={video:'var(--mental)',live_session:'var(--mint)',program:'var(--warning)',post:'var(--muted)'};
+  document.getElementById('pd-content').innerHTML=items.length?`
+    <div>${items.map(c=>`
+      <div class="ctile">
+        <div class="th" style="background:rgba(77,170,170,.1);color:${typeColors[c.type]||'var(--muted)'}">
+          ${c.type==='video'?ICONS.film:c.type==='live_session'?ICONS.cal||ICONS.phone:c.type==='program'?ICONS.cap:ICONS.doc}
+        </div>
+        <div style="flex:1"><div class="ct">${esc(c.title)}</div><div class="cs">${c.type}${c.duration_sec?' · '+Math.floor(c.duration_sec/60)+'m':''} · ${c.play_count} plays</div></div>
+        <span class="pill ${modColors[c.moderation_status]||'p-draft'}">${c.moderation_status}</span>
+        ${c.moderation_status==='in_review'?`<div class="row-actions"><button class="icon-btn btn-approve" onclick="moderateContent('${c.id}','approved')">${ICONS.check}</button><button class="icon-btn btn-reject" onclick="moderateContent('${c.id}','returned')">${ICONS.x}</button></div>`:''}
+      </div>`).join('')}</div>`:'<div class="empty-state">No content yet</div>';
+}
+
+async function loadPartnerMembers(p){
+  const {data}=await sb.from('partner_memberships').select('*').eq('partner_id',p.id);
+  const items=data||[];
+  const segColors={highly_engaged:'p-live',regular:'p-pending',at_risk:'p-suspended'};
+  document.getElementById('pd-members').innerHTML=items.length?`
+    <table><thead><tr><th>Member</th><th>Segment</th><th>Sessions attended</th><th>Joined</th></tr></thead>
+    <tbody>${items.map(m=>`<tr>
+      <td style="font-size:12px">${esc(m.member_email)}</td>
+      <td><span class="pill ${segColors[m.engagement_segment]||'p-draft'}">${m.engagement_segment}</span></td>
+      <td>${m.sessions_attended}</td>
+      <td style="color:var(--muted);font-size:12px">${m.joined_at?new Date(m.joined_at).toLocaleDateString('en-GB'):'—'}</td>
+    </tr>`).join('')}</tbody></table>`:'<div class="empty-state">No members yet</div>';
+}
+
+async function loadPartnerBankLine(p){
+  /* PM-876: finance-run readiness — admins see WHETHER details are on file (masked last-4), full details stay behind the admin RLS read. */
+  try{
+    const {data}=await sb.from('partner_bank_details').select('account_name,account_number,updated_at').eq('partner_id',p.id).maybeSingle();
+    const el=document.getElementById('pd-bank-line');
+    if(!el)return;
+    el.innerHTML=data
+      ?`<span style="color:var(--mint)">&#10003; Payout details on file</span> — ${esc(data.account_name)}, acct ••••${String(data.account_number).slice(-4)} <span class="muted">(updated ${new Date(data.updated_at).toLocaleDateString('en-GB')})</span>`
+      :`<span style="color:var(--warning)">&#9888; No payout details yet</span> — the partner adds these in their portal (Earnings &rarr; Payout details)`;
+  }catch(_){}
+}
+async function loadPartnerRevenue(p){
+  const {data}=await sb.from('partner_payouts').select('*').eq('partner_id',p.id).order('period',{ascending:false});
+  const items=data||[];
+  document.getElementById('pd-revenue').innerHTML='<div id="pd-bank-line" style="font-size:12.5px;margin-bottom:12px;line-height:1.5"></div>'+(items.length?`
+    <table><thead><tr><th>Period</th><th>Subs</th><th>Gross</th><th>Share</th><th>Payout</th><th>Status</th></tr></thead>
+    <tbody>${items.map(py=>`<tr>
+      <td>${py.period}</td>
+      <td>${py.attributed_subscriptions}</td>
+      <td>£${Number(py.gross).toLocaleString()}</td>
+      <td>${py.share_pct}%</td>
+      <td class="num hl">£${Number(py.payout_amount).toLocaleString()}</td>
+      <td><span class="pill ${py.status==='paid'?'p-live':'p-review'}">${py.status}</span></td>
+    </tr>`).join('')}</tbody></table>`:'<div class="empty-state">No payouts yet</div>');
+  loadPartnerBankLine(p);
+
+  document.getElementById('pd-programs').innerHTML='<div class="empty-state">Programs feature coming soon</div>';
+}
+
+/* ── DOCUMENTS (PM-842 — private partner-docs review panel) ── */
+const DOC_FOLDER_LBL={'photo-id':'Photo ID','qualifications':'Qualifications','profile-photo':'Profile photo','':'Other files'};
+function fmtBytes(b){if(b==null)return'';if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(0)+' KB';return(b/1048576).toFixed(1)+' MB';}
+/* ── APPLICATION ANSWERS + WIZARD PROGRESS (PM-845/849, re-applied twice after parallel-session overwrites) ── */
+async function loadPartnerApplication(p,targetId){
+  targetId=targetId||'pd-app';
+  const el=()=>{const e=document.getElementById(targetId);return(e&&e.dataset.pid===p.id)?e:null;};
+  const [{data,error},{data:prog}]=await Promise.all([
+    sb.from('partner_applications')
+      .select('credentials,reference_contacts,applied_at,status_changed_at')
+      .eq('partner_id',p.id).maybeSingle(),
+    sb.from('partner_onboarding_progress')
+      .select('pct_complete,steps,assessment_score,assessment_passed_at,updated_at')
+      .eq('partner_id',p.id).maybeSingle()
+  ]);
+  if(!el())return;
+  if(error){el().innerHTML=`<div class="empty-state" style="padding:14px">Could not load application — ${esc(error.message)}</div>`;return;}
+  if(!data&&!prog){el().innerHTML='<div class="empty-state" style="padding:14px">No application record — this partner was created via the admin/playbook path, not the wizard.</div>';return;}
+  const c=(data&&data.credentials)||{}, ct=c.contact||{}, pr=c.practice||{}, ag=c.agreement||null, la=c.launch||null;
+  const fl=c.formFields||{};
+  const g=(a,b)=>{const v=(a??'').toString().trim();return v||((b??'').toString().trim());};
+  const sysF=c._system||{};
+  const row=(l,v)=>v?`<tr><td style="padding:5px 10px 5px 0;color:var(--muted);font-size:12px;white-space:nowrap;vertical-align:top">${l}</td><td style="padding:5px 0;font-size:13px">${esc(String(v))}</td></tr>`:'';
+  const sec=(title,rows)=>rows.trim()?`<div style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:4px">${title}</div>
+      <table style="border-collapse:collapse;width:100%">${rows}</table></div>`:'';
+  const dt=iso=>iso?new Date(iso).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'';
+  let html='';
+  if(prog){
+    const STEP_LBL={agreement_signed:'Agreement signed',identity_verified:'Identity documents',profile_complete:'Profile written',videos_watched:'Training modules',safeguarding_passed:'Safeguarding assessment',gdpr_passed:'GDPR assessment',admin_approved:'Admin approval'}; /* PM-857: Starter video chip removed — welcome video moved post-approval to the partner portal (PM-856) */
+    const steps=prog.steps||{};
+    /* PM-857: honest display pct — the DB pct_complete counts deferred module gates the wizard never
+       collects (PM-659), so a COMPLETE application read 38%. Display pct = done/total across the gates
+       the partner can actually complete in the apply flow; deferred gates leave the denominator.
+       prog.pct_complete itself is untouched — it still feeds the go-live gate. */
+    const deferred=steps.modules_deferred===true;
+    const DEFER_KEYS=['videos_watched','safeguarding_passed','gdpr_passed'];
+    const applyGates=['agreement_signed','identity_verified','profile_complete'].concat(deferred?[]:DEFER_KEYS);
+    const pct=Math.round(applyGates.filter(k=>steps[k]===true).length/applyGates.length*100);
+    const chips=Object.keys(STEP_LBL).filter(k=>(k in steps)||['agreement_signed','identity_verified','profile_complete','safeguarding_passed','gdpr_passed'].includes(k)).map(k=>{
+      const done=steps[k]===true;
+      const isDeferred=!done&&deferred&&DEFER_KEYS.includes(k);
+      if(isDeferred)return `<span title="Deferred by design (PM-659) — not part of the apply flow; resolved before go-live" style="display:inline-flex;align-items:center;gap:5px;font-size:11.5px;padding:3px 9px;border-radius:10px;margin:0 6px 6px 0;background:rgba(224,155,61,.15);color:var(--warning)">&#10003; ${STEP_LBL[k]} (deferred)</span>`;
+      return `<span style="display:inline-flex;align-items:center;gap:5px;font-size:11.5px;padding:3px 9px;border-radius:10px;margin:0 6px 6px 0;${done?'background:rgba(77,170,170,.15);color:var(--mint)':'background:var(--surface);color:var(--muted)'}">${done?'&#10003;':'&#9675;'} ${STEP_LBL[k]}</span>`;
+    }).join('');
+    const lastActive=prog.updated_at?new Date(prog.updated_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'})+' '+new Date(prog.updated_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'';
+    html+=`<div style="margin-bottom:16px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px">Wizard progress</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <div style="flex:1;height:6px;border-radius:3px;background:var(--surface);overflow:hidden"><div style="width:${pct}%;height:100%;background:var(--mint)"></div></div>
+        <span style="font-size:13px;font-weight:700;white-space:nowrap">${pct}%</span>
+      </div>
+      <div>${chips}</div>
+      <div style="font-size:11px;color:var(--muted)">${prog.assessment_score!=null?`Assessment score ${prog.assessment_score}%${prog.assessment_passed_at?' (passed)':''} · `:''}${steps.modules_deferred?'Training modules deferred by design · ':''}${steps.assessments_deferred_at_golive?`<span style="color:var(--amber);font-weight:700">WENT LIVE with assessments deferred (${new Date(steps.assessments_deferred_at_golive).toLocaleDateString('en-GB')})</span> · `:''}${lastActive?'Last active in the wizard '+lastActive:''}</div>
+    </div>`;
+  }
+  html+=sec('About them',
+    row('Name',g(fl.contactName,ct.name))+row('Business',g(fl.businessName,ct.business))+
+    row('Email',g(fl.email,ct.email))+row('Phone',g(fl.phone,ct.phone))+
+    row('Location',g(fl.location,ct.location))+row('Website',g(fl.website,ct.website)));
+  html+=sec('Their practice',
+    row('Pillar',c.pillar||pr.pillarLabel||pr.pillar)+row('Specialism',g(fl.specialism,pr.specialism))+
+    row('Years experience',g(fl.yearsExperience,pr.yearsExperience))+row('Description',g(fl.description,pr.description)));
+  html+=sec('Verification details',
+    row('Governing body',fl.govBody)+row('Membership no.',fl.govNumber));
+  html+=sec('Build your space (their words)',
+    row('Public display name',fl.pfName)+row('Tagline',fl.pfRole)+row('Bio',fl.pfBio)+
+    row('Reason for being here',fl.pfWhy)+row('Community feel',fl.pfFeel));
+  if(ag)html+=sec('Agreement',
+    row('Agreement accepted',ag.partnerAgreement?'Yes':'No')+
+    row('Revenue share accepted',ag.revenueShareAccepted?`Yes — ${ag.revenueSharePct??50}%`:'No')+
+    row('Legal name',ag.partnerLegalName)+row('Signed as',ag.signature)+
+    row('Signed',ag.signedDate||dt(ag.signedAt)));
+  const lx=la&&(la.sessionTitle||la.date)?la:{sessionTitle:fl.sessionTitle,format:fl.sessionFormat,date:fl.sessionDate,time:fl.sessionTime,durationMin:fl.sessionDuration};
+  if(lx.sessionTitle||lx.date)html+=sec('Proposed launch',
+    row('Session',lx.sessionTitle)+row('Format',lx.format)+
+    row('When',[lx.date,lx.time].filter(Boolean).join(' · '))+row('Duration',lx.durationMin?lx.durationMin+' min':''));
+  const wp=c.welcomePost||fl.welcomePost;
+  if(wp)html+=sec('Welcome post',row('Draft',wp));
+  if(data&&data.reference_contacts)html+=sec('References',row('Contacts',JSON.stringify(data.reference_contacts)));
+  const submitted=!!ag;
+  html+=`<div style="font-size:11px;color:var(--muted);margin-top:2px">${submitted?'Submitted application':'Draft — not yet submitted'}${data&&data.applied_at?' · started '+dt(data.applied_at):''}${data&&data.status_changed_at?' · last activity '+dt(data.status_changed_at):''}${sysF.resume_email_sent?' · resume link emailed':''}</div>`;
+  el().innerHTML=html||'<div class="empty-state" style="padding:14px">Application record exists but holds no answers yet.</div>';
+}
+
+async function loadPartnerDocs(p,targetId){
+  targetId=targetId||'pd-docs';
+  const el=()=>{const e=document.getElementById(targetId);return(e&&e.dataset.pid===p.id)?e:null;};
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+    if(!session)throw new Error('Not signed in');
+    const r=await fetch(`${SUPA_URL}/functions/v1/partner-file-url`,{
+      method:'POST',
+      headers:{'Authorization':`Bearer ${session.access_token}`,'apikey':SUPA_ANON,'Content-Type':'application/json'},
+      body:JSON.stringify({action:'list',partner_id:p.id,bucket:'partner-docs'})
+    });
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error||('HTTP '+r.status));
+    if(!el())return;
+    const files=d.files||[];
+    if(!files.length){el().innerHTML='<div class="empty-state" style="padding:14px">No documents uploaded yet. Files from their application (ID, qualifications, photos) appear here \u2014 including unfinished drafts.</div>';return;}
+    const groups={};
+    files.forEach(f=>{(groups[f.folder]=groups[f.folder]||[]).push(f);});
+    el().innerHTML=Object.keys(groups).sort().map(folder=>`
+      <div style="margin-bottom:14px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px">${esc(DOC_FOLDER_LBL[folder]||folder.replace(/-/g,' '))}</div>
+        ${groups[folder].map(f=>`
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)">
+          ${f.signed_url
+            ?`<img src="${f.thumb_url||f.signed_url}" alt="" loading="lazy" onerror="if(this.src!=='${f.signed_url}')this.src='${f.signed_url}'" onclick="window.open('${f.signed_url}','_blank')" style="width:52px;height:52px;border-radius:8px;object-fit:cover;cursor:pointer;flex-shrink:0;border:1px solid var(--line);background:var(--surface)">`
+            :`<div style="width:52px;height:52px;border-radius:8px;background:var(--surface);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--muted);font-size:10px;font-weight:700">${esc((f.name.split('.').pop()||'file').toUpperCase().slice(0,4))}</div>`}
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(f.name.replace(/^[0-9a-f]{8}-/,''))}</div>
+            <div style="font-size:11px;color:var(--muted)">${fmtBytes(f.size)}${f.created_at?' \u00b7 '+new Date(f.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):''}</div>
+          </div>
+          <button class="tb-btn" onclick="openPartnerDoc('${f.path.replace(/'/g,"\\'")}','inline')">View</button>
+          <button class="tb-btn" onclick="openPartnerDoc('${f.path.replace(/'/g,"\\'")}','download')">Download</button>
+        </div>`).join('')}
+      </div>`).join('')+'<div style="font-size:11px;color:var(--muted);margin-top:4px">Previews and links are private and expire after 5 minutes — reopen the partner to refresh them. Access is admin-only and never visible to members or other partners.</div>';
+  }catch(e){
+    if(el())el().innerHTML=`<div class="empty-state" style="padding:14px">Could not load documents \u2014 ${esc(e.message)}</div>`;
+  }
+}
+async function openPartnerDoc(path,mode){
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+    if(!session)throw new Error('Not signed in');
+    const r=await fetch(`${SUPA_URL}/functions/v1/partner-file-url`,{
+      method:'POST',
+      headers:{'Authorization':`Bearer ${session.access_token}`,'apikey':SUPA_ANON,'Content-Type':'application/json'},
+      body:JSON.stringify({path,bucket:'partner-docs',disposition:mode==='inline'?'inline':'attachment'})
+    });
+    const d=await r.json();
+    if(!d.signedUrl)throw new Error(d.error||'Could not sign URL');
+    window.open(d.signedUrl,'_blank');
+  }catch(e){toast('Error: '+e.message,'error');}
+}
+
+/* \u2500\u2500 UPCOMING LIVE SESSIONS (PM-838) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
+async function loadPartnerSchedule(p){
+  const el=()=>document.getElementById('pd-schedule');
+  const {data,error}=await sb.from('calendar_occurrences')
+    .select('id,name,session_title,starts_at,ends_at,category,visibility')
+    .eq('partner_id',p.id).is('cancelled_at',null)
+    .gte('starts_at',new Date().toISOString())
+    .order('starts_at',{ascending:true}).limit(30);
+  if(currentDetailId!==p.id||!el())return;
+  if(error){el().innerHTML=`<div class="empty-state" style="padding:14px">Could not load schedule — ${esc(error.message)}</div>`;return;}
+  if(!data||!data.length){el().innerHTML='<div class="empty-state" style="padding:14px">No upcoming sessions scheduled. Partners schedule sessions from their portal (48h minimum notice).</div>';return;}
+  const fmt=iso=>{const d=new Date(iso);return d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})+' · '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});};
+  const dur=s=>{if(!s.ends_at)return'';const m=Math.round((new Date(s.ends_at)-new Date(s.starts_at))/60000);return m>0?` · ${m} min`:'';};
+  el().innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead><tr style="text-align:left;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em">
+      <th style="padding:6px 8px">When</th><th style="padding:6px 8px">Session</th><th style="padding:6px 8px">Category</th><th style="padding:6px 8px;text-align:right">Audience</th>
+    </tr></thead><tbody>
+    ${data.map(s=>`<tr style="border-top:1px solid var(--line)">
+      <td style="padding:8px;white-space:nowrap">${fmt(s.starts_at)}<span style="color:var(--muted)">${dur(s)}</span></td>
+      <td style="padding:8px">${esc(s.session_title||s.name||'—')}</td>
+      <td style="padding:8px;color:var(--muted)">${esc(s.category||'—')}</td>
+      <td style="padding:8px;text-align:right">${s.visibility==='community'
+        ?'<span style="font-size:11px;background:rgba(77,170,170,.15);color:var(--mint);padding:2px 8px;border-radius:10px;font-weight:600">Community</span>'
+        :'<span style="font-size:11px;background:var(--surface);color:var(--muted);padding:2px 8px;border-radius:10px">Public</span>'}</td>
+    </tr>`).join('')}
+    </tbody></table>
+    <div style="font-size:11px;color:var(--muted);margin-top:8px">Next ${data.length} scheduled session${data.length===1?'':'s'} — cancelled sessions excluded. Times shown in your local timezone.</div>`;
+}
+
+/* ── PROFILE TAB — admin profile editor (PM-837) ────────── */
+// Wizard-era rows can hold a bare storage PATH in avatar_url — only render real URLs.
+function urlish(u){return u&&/^https?:\/\//.test(u)?u:null;}
+
+function renderPartnerProfile(p){
+  const av=urlish(p.avatar_url), cv=urlish(p.cover_url);
+  const lbl='font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:6px';
+  const inp='width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--white);font-size:14px;font-family:var(--font)';
+  document.getElementById('pd-profile').innerHTML=`
+    <div class="grid g2">
+      <div class="card">
+        <div class="card-h"><h3>Photos</h3></div>
+        <label style="${lbl}">Cover photo</label>
+        <div id="pp-cover-drop" onclick="document.getElementById('pp-cover-file').click()" style="height:120px;border:1px dashed var(--line);border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-bottom:6px;background:${cv?`url('${cv}') center/cover`:'var(--surface)'}">
+          ${cv?'':'<span style="color:var(--muted);font-size:12px">Click to upload a cover — 1600×900 works best</span>'}
+        </div>
+        <div id="pp-cover-note" style="font-size:11px;color:var(--muted);margin-bottom:20px">JPEG/PNG/WebP, 5MB max. Shown as the banner on the member-facing profile and Discover card.</div>
+        <input type="file" id="pp-cover-file" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="adminUploadImage('cover','${p.id}',this.files[0]);this.value=''">
+        <label style="${lbl}">Profile photo</label>
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:6px">
+          <div id="pp-avatar-drop" onclick="document.getElementById('pp-avatar-file').click()" style="width:76px;height:76px;border-radius:50%;border:1px dashed var(--line);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden;background:${av?'transparent':PILLAR_COL[p.pillar]||'var(--surface)'}">
+            ${av?`<img src="${av}" style="width:100%;height:100%;object-fit:cover" alt="">`:`<span style="font-weight:700;color:#fff">${initials(p.name)}</span>`}
+          </div>
+          <div style="font-size:12px;color:var(--muted)">Click the circle to upload. Square images work best — this appears everywhere the partner's face shows in the app.</div>
+        </div>
+        <div id="pp-avatar-note" style="font-size:11px;color:var(--muted)">JPEG/PNG/WebP, 5MB max.</div>
+        <input type="file" id="pp-avatar-file" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="adminUploadImage('avatar','${p.id}',this.files[0]);this.value=''">
+      </div>
+      <div class="card">
+        <div class="card-h"><h3>Profile details</h3></div>
+        <div style="margin-bottom:14px"><label style="${lbl}">Display name</label>
+          <input type="text" id="pp-name" value="${esc(p.name)}" style="${inp}"></div>
+        <div style="margin-bottom:14px"><label style="${lbl}">Tagline / role title</label>
+          <input type="text" id="pp-role" value="${esc(p.role_title)}" placeholder="e.g. Yoga & Mobility Coach" style="${inp}"></div>
+        <div style="margin-bottom:14px"><label style="${lbl}">Pillar</label>
+          <select id="pp-pillar" style="${inp}">
+            <option value="body" ${p.pillar==='body'?'selected':''}>Body</option>
+            <option value="mind" ${p.pillar==='mind'?'selected':''}>Mind</option>
+            <option value="connect" ${p.pillar==='connect'?'selected':''}>Connect</option>
+          </select></div>
+        <div style="margin-bottom:14px"><label style="${lbl}">Bio / About</label>
+          <textarea id="pp-bio" rows="4" style="${inp};resize:vertical">${esc(p.bio)}</textarea></div>
+        <div style="margin-bottom:14px"><label style="${lbl}">Reason for being here</label>
+          <textarea id="pp-why" rows="3" style="${inp};resize:vertical">${esc(p.why)}</textarea></div>
+        <div style="margin-bottom:16px"><label style="${lbl}">Community feel</label>
+          <textarea id="pp-feel" rows="3" style="${inp};resize:vertical">${esc(p.feel)}</textarea></div>
+        <div style="display:flex;justify-content:flex-end">
+          <button class="tb-btn primary" id="pp-save-btn" onclick="saveAdminProfile('${p.id}')">Save profile</button>
+        </div>
+      </div>
+    </div>
+    <div class="card mt">
+      <div class="card-h"><h3>Member preview</h3></div>
+      <div style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:10px">Exactly what members see in the app</div>
+      <div class="mini-phone"><div class="mini-notch"></div><div class="mini-scroll" id="pd-phone"></div></div>
+    </div>
+    <div class="card mt" style="padding:12px 16px;font-size:12px;color:var(--muted)">Changes here are live in the member app immediately. Partners can also edit their own space in the partner portal — edits on either side overwrite the other.</div>`;
+  syncAdminPhone(p);
+}
+
+async function adminUploadImage(kind,id,file){
+  if(!file)return;
+  if(!/^image\/(jpeg|png|webp)$/.test(file.type)){toast('JPEG, PNG or WebP only','error');return;}
+  if(file.size>5*1024*1024){toast('Image too large — 5MB max','error');return;}
+  const note=document.getElementById(kind==='cover'?'pp-cover-note':'pp-avatar-note');
+  if(note)note.textContent='Uploading…';
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+    if(!session)throw new Error('Not signed in');
+    const r=await fetch(`${SUPA_URL}/functions/v1/partner-content-upload`,{
+      method:'POST',
+      headers:{'Authorization':`Bearer ${session.access_token}`,'apikey':SUPA_ANON,'Content-Type':'application/json'},
+      body:JSON.stringify({action:'sign-thumb',partner_id:id})
+    });
+    const d=await r.json();
+    if(!d.signed_url)throw new Error(d.error||'Could not get an upload URL');
+    const up=await fetch(d.signed_url,{method:'PUT',headers:{'Content-Type':file.type},body:file});
+    if(!up.ok)throw new Error('Upload failed ('+up.status+')');
+    const col=kind==='avatar'?'avatar_url':'cover_url';
+    // .select() so an RLS-blocked write surfaces as an error instead of a silent no-op (PM-788 lesson).
+    const {data:rows,error}=await sb.from('partner_partners').update({[col]:d.public_url}).eq('id',id).select('id');
+    if(error)throw new Error(error.message);
+    if(!rows||!rows.length)throw new Error('Save was blocked — check your admin login');
+    partnerMap[id]={...partnerMap[id],[col]:d.public_url};
+    allPartners=allPartners.map(p=>p.id===id?{...p,[col]:d.public_url}:p);
+    toast(kind==='avatar'?'Profile photo updated':'Cover photo updated');
+    if(currentDetailId===id)openPartner(id);
+  }catch(e){
+    toast('Error: '+e.message,'error');
+    if(partnerMap[id])renderPartnerProfile(partnerMap[id]);
+  }
+}
+
+async function saveAdminProfile(id){
+  const g=x=>(document.getElementById(x)?.value||'').trim();
+  const name=g('pp-name');
+  if(!name){toast('Display name is required','error');return;}
+  const btn=document.getElementById('pp-save-btn');
+  if(btn){btn.disabled=true;btn.textContent='Saving…';}
+  const patch={name,role_title:g('pp-role')||null,pillar:document.getElementById('pp-pillar').value,bio:g('pp-bio')||null,why:g('pp-why')||null,feel:g('pp-feel')||null};
+  const {data:rows,error}=await sb.from('partner_partners').update(patch).eq('id',id).select('id');
+  if(btn){btn.disabled=false;btn.textContent='Save profile';}
+  if(error){toast(error.message,'error');return;}
+  if(!rows||!rows.length){toast('Save was blocked — check your admin login','error');return;}
+  partnerMap[id]={...partnerMap[id],...patch};
+  allPartners=allPartners.map(p=>p.id===id?{...p,...patch}:p);
+  toast('Profile saved');
+  openPartner(id);
+}
+
+function renderPartnerSettings(p){
+  document.getElementById('pd-settings').innerHTML=`
+    <div class="card" style="max-width:480px">
+      <div class="card-h"><h3>Settings</h3></div>
+
+      <!-- PM-878: the pay-now "partner payment link" section is RETIRED (spec v2.1 — /join
+           is account creation, the link is DERIVED from the slug and exists automatically).
+           payment_link_url column soft-killed, not deleted. Coupon field KEPT: Piece 2's
+           EF-minted conversion Checkout Session attaches this Stripe coupon. -->
+      <div style="margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--line)">
+        <label style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:6px">Referral link &amp; QR</label>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Derived from the partner's slug — exists automatically, nothing to set up. Members who use it get a free week with attribution locked to this partner. The same link and QR show in the partner's own portal.</p>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
+          <code id="ps-joinlink" style="flex:1;font-size:12.5px;color:var(--mint);word-break:break-all;">https://www.vyvehealth.co.uk/join/${p.slug||''}</code>
+          <button class="tb-btn" onclick="copyJoinLink()">Copy</button>
+        </div>
+        <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+          <div id="ps-qr" style="background:#fff;padding:6px;border-radius:8px;line-height:0;"></div>
+          <button class="tb-btn" onclick="downloadPartnerQr('${(p.slug||'partner')}')">Download QR (PNG)</button>
+        </div>
+        <div style="margin-top:8px;font-size:12px;color:var(--muted)">Spoken/typed code: <b style="color:var(--mint)">${p.slug||'—'}</b></div>
+        ${p.status!=='live'?`<div style="margin-top:10px;font-size:12px;color:var(--amber);background:rgba(224,155,61,.08);border:1px solid rgba(224,155,61,.3);border-radius:8px;padding:8px 10px;line-height:1.5">&#9888; Partner is <b>${p.status}</b> — this link answers &ldquo;invite not active&rdquo; until you set them live. It switches on automatically at go-live.</div>`:''}
+      </div>
+
+      <div style="margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--line)">
+        <label style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:6px">Stripe coupon (applied at conversion)</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="text" id="ps-promo" value="${p.stripe_promo_code||''}" placeholder="e.g. MENTOGETHERCIC" style="flex:1;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--white);font-size:14px;font-family:var(--font);text-transform:uppercase;letter-spacing:.06em">
+          <button class="tb-btn primary" onclick="savePromoCode('${p.id}')">Save</button>
+        </div>
+        <div style="margin-top:6px;font-size:12px;color:var(--muted)">The Stripe Coupon object this partner's members get at £10/month conversion — used by the minted Checkout Session (attribution Piece 2).</div>
+      </div>
+
+      <div style="margin-bottom:16px">
+        <label style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:6px">Revenue share %</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="number" id="ps-rs" value="${p.revenue_share_pct}" min="0" max="100" style="width:80px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--white);font-size:14px;font-family:var(--font)">
+          <button class="tb-btn primary" onclick="savePartnerSettings('${p.id}')">Save</button>
+        </div>
+      </div>
+      <div style="margin-bottom:16px">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px">
+          <input type="checkbox" id="ps-verified" ${p.verified?'checked':''} style="width:16px;height:16px;accent-color:var(--mint)">
+          Mark as verified partner
+        </label>
+      </div>
+    </div>`;
+  renderPartnerQr(p);
+}
+
+/* PM-878: QR rendered client-side from the derived join link — never stored, never stale. */
+function renderPartnerQr(p){
+  try{
+    if(!window.qrcode||!p.slug)return;
+    const url='https://www.vyvehealth.co.uk/join/'+p.slug;
+    const qr=window.qrcode(0,'M');qr.addData(url);qr.make();
+    const el=document.getElementById('ps-qr');
+    if(!el)return;
+    el.innerHTML=qr.createImgTag(4,8);
+    const img=el.querySelector('img');
+    if(img){img.style.width='112px';img.style.height='112px';img.style.imageRendering='pixelated';img.alt='Join QR';}
+  }catch(_){}
+}
+function copyJoinLink(){
+  const el=document.getElementById('ps-joinlink');
+  if(!el)return;
+  navigator.clipboard.writeText(el.textContent.trim()).then(()=>toast('Link copied'));
+}
+function downloadPartnerQr(slug){
+  const img=document.querySelector('#ps-qr img');
+  if(!img){toast('QR not ready','error');return;}
+  const c=document.createElement('canvas');const size=640;c.width=size;c.height=size;
+  const ctx=c.getContext('2d');ctx.imageSmoothingEnabled=false;
+  ctx.fillStyle='#ffffff';ctx.fillRect(0,0,size,size);
+  ctx.drawImage(img,0,0,size,size);
+  const a=document.createElement('a');a.href=c.toDataURL('image/png');a.download='vyve-join-'+slug+'.png';a.click();
+}
+
+async function savePromoCode(id){
+  const raw = (document.getElementById('ps-promo').value || '').trim().toUpperCase();
+  if (!raw) { toast('Enter a Stripe coupon ID', 'error'); return; }
+  const {error} = await sb.from('partner_partners').update({stripe_promo_code: raw}).eq('id', id);
+  if(error){ toast(error.message,'error'); return; }
+  partnerMap[id] = {...partnerMap[id], stripe_promo_code: raw};
+  allPartners = allPartners.map(p => p.id===id ? {...p, stripe_promo_code: raw} : p);
+  toast('Coupon ID saved — ' + raw);
+  renderPartnerSettings(partnerMap[id]);
+}
+
+async function savePartnerSettings(id){
+  const rs=parseFloat(document.getElementById('ps-rs').value)||30;
+  const ver=document.getElementById('ps-verified').checked;
+  const {error}=await sb.from('partner_partners').update({revenue_share_pct:rs,verified:ver}).eq('id',id);
+  if(error){toast(error.message,'error');return;}
+  partnerMap[id]={...partnerMap[id],revenue_share_pct:rs,verified:ver};
+  allPartners=allPartners.map(p=>p.id===id?{...p,revenue_share_pct:rs,verified:ver}:p);
+  toast('Settings saved');
+}
+
+/* ── CONTENT MODERATION ────────────────────────────────── */
+function renderContent(){
+  const queue=allContent.filter(c=>c.moderation_status==='in_review');
+  const flagged=allContent.filter(c=>c.moderation_status==='flagged');
+  const library=allContent.filter(c=>c.moderation_status==='approved');
+  const programs=allContent.filter(c=>c.type==='program');
+
+  document.getElementById('cm-q-count').textContent=queue.length;
+  document.getElementById('cm-f-count').textContent=flagged.length;
+
+  const typeColors={video:'var(--mental)',live_session:'var(--mint)',program:'var(--warning)',post:'var(--muted)'};
+
+  function contentItem(c,showActions){
+    const pName=partnerMap[c.partner_id]?.name||'Unknown';
+    const when=c.created_at?new Date(c.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'';
+    const icon=c.type==='video'?'film':c.type==='program'?'cap':'doc';
+    return `<div class="ctile">
+      <div class="th" style="${c.thumbnail_url?`background-image:url('${c.thumbnail_url}');background-size:cover;background-position:center`:`background:rgba(77,170,170,.08);color:${typeColors[c.type]||'var(--muted)'}`}">${c.thumbnail_url?'':`<span data-i="${icon}"></span>`}</div>
+      <div style="flex:1"><div class="ct">${esc(c.title)}</div><div class="cs">${esc(pName)} · ${c.type.replace('_',' ')} · ${when} · goes live ${c.publish_at?new Date(c.publish_at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'—'}${c.description?' — '+esc(c.description.slice(0,60)):''}</div></div>
+      ${showActions?`<div class="row-actions">
+        ${c.media_url?`<button class="icon-btn" onclick="watchPartnerFile('${c.id}')" title="Watch here"><span data-i="play"></span></button><button class="icon-btn" onclick="downloadPartnerFile('${c.id}')" title="Download to your Mac"><span data-i="download"></span></button>`:''}
+        <button class="icon-btn btn-approve" onclick="moderateContent('${c.id}','approved')" title="Approve"><span data-i="check"></span></button>
+        <button class="icon-btn btn-reject" onclick="moderateContent('${c.id}','returned')" title="Return"><span data-i="x"></span></button>
+      </div>`:`<div class="row-actions">${c.media_url?`<button class="icon-btn" onclick="watchPartnerFile('${c.id}')" title="Watch here"><span data-i="play"></span></button><button class="icon-btn" onclick="downloadPartnerFile('${c.id}')" title="Download to your Mac"><span data-i="download"></span></button>`:''}<span class="pill ${c.moderation_status==='approved'?'p-live':c.moderation_status==='flagged'?'p-suspended':'p-draft'}">${c.moderation_status}</span></div>`}
+    </div>`;
+  }
+
+  const render=(id,items,actions)=>{
+    const el=document.getElementById(id);
+    el.innerHTML=items.length?items.map(c=>contentItem(c,actions)).join(''):'<div class="empty-state">Nothing here</div>';
+    setIcons(el);
+  };
+  render('cm-queue',queue,true);
+  render('cm-flagged',flagged,true);
+  render('cm-library',library,false);
+  render('cm-programs',programs,false);
+}
+
+/* PM-877: watch in place — same signed-URL gate as download, but disposition:'inline'
+   (v9 signs inline for 1h so playback range-requests outlive the token) into a modal
+   <video>. Non-video media falls back to opening the inline URL in a new tab. */
+async function watchPartnerFile(id){
+  const c=allContent.find(x=>x.id===id);
+  if(!c||!c.media_url){toast('No file attached to this item');return;}
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+    const res=await fetch(`${SUPA_URL}/functions/v1/partner-file-url`,{method:'POST',headers:{'Authorization':`Bearer ${session.access_token}`,'apikey':SUPA_ANON,'Content-Type':'application/json'},body:JSON.stringify({path:c.media_url,bucket:'partner-content',disposition:'inline'})});
+    const jr=await res.json();
+    if(!res.ok||!jr.signedUrl)throw new Error(jr.error||'request failed');
+    const isVideo=c.type==='video'||/\.(mp4|mov|m4v|webm)(\?|$)/i.test(c.media_url);
+    if(!isVideo){window.open(jr.signedUrl,'_blank');return;}
+    let m=document.getElementById('cm-player');
+    if(!m){
+      m=document.createElement('div');m.id='cm-player';
+      m.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(6,20,20,.92);display:flex;align-items:center;justify-content:center;flex-direction:column;padding:24px;';
+      m.innerHTML='<div id="cm-player-title" style="color:#fff;font-weight:700;font-size:15px;margin-bottom:12px;max-width:900px;text-align:center;"></div>'
+        +'<video id="cm-player-video" controls autoplay playsinline style="max-width:min(900px,95vw);max-height:78vh;border-radius:12px;background:#000;box-shadow:0 8px 40px rgba(0,0,0,.5);"></video>'
+        +'<button id="cm-player-close" style="margin-top:14px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:#fff;padding:9px 22px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Close</button>';
+      document.body.appendChild(m);
+      const close=()=>{const v=document.getElementById('cm-player-video');try{v.pause();v.removeAttribute('src');v.load();}catch(_){}m.style.display='none';};
+      m.addEventListener('click',e=>{if(e.target===m)close();});
+      document.getElementById('cm-player-close').addEventListener('click',close);
+      document.addEventListener('keydown',e=>{if(e.key==='Escape'&&m.style.display!=='none')close();});
+    }
+    document.getElementById('cm-player-title').textContent=c.title||'';
+    const v=document.getElementById('cm-player-video');
+    v.src=jr.signedUrl;
+    m.style.display='flex';
+    v.play().catch(()=>{});
+  }catch(e){toast('Could not load video: '+(e.message||e));}
+}
+async function downloadPartnerFile(id){
+  const c=allContent.find(x=>x.id===id);
+  if(!c||!c.media_url){toast('No file attached to this item');return;}
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+    const res=await fetch(`${SUPA_URL}/functions/v1/partner-file-url`,{method:'POST',headers:{'Authorization':`Bearer ${session.access_token}`,'apikey':SUPA_ANON,'Content-Type':'application/json'},body:JSON.stringify({path:c.media_url,bucket:'partner-content'})});
+    const jr=await res.json();
+    if(!res.ok||!jr.signedUrl)throw new Error(jr.error||'request failed');
+    const a=document.createElement('a');a.href=jr.signedUrl;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove();
+    toast('Download starting…');
+  }catch(e){toast('Download failed: '+(e.message||e));}
+}
+async function moderateContent(id,newStatus){
+  const {error}=await sb.from('partner_content_items').update({moderation_status:newStatus,reviewed_at:new Date().toISOString()}).eq('id',id);
+  if(error){toast(error.message,'error');return;}
+  allContent=allContent.map(c=>c.id===id?{...c,moderation_status:newStatus}:c);
+  if(newStatus==='approved') contentCountMap[allContent.find(c=>c.id===id)?.partner_id]=(contentCountMap[allContent.find(c=>c.id===id)?.partner_id]||0)+1;
+  renderContent();
+  if(currentDetailId) loadPartnerContent(partnerMap[currentDetailId]);
+  toast(newStatus==='approved'?'Approved':'Returned to partner');
+}
+
+async function bulkApprove(){
+  const queue=allContent.filter(c=>c.moderation_status==='in_review');
+  if(!queue.length){toast('No items in queue');return;}
+  if(!confirm(`Approve all ${queue.length} queued items?`))return;
+  const ids=queue.map(c=>c.id);
+  const {error}=await sb.from('partner_content_items').update({moderation_status:'approved',reviewed_at:new Date().toISOString()}).in('id',ids);
+  if(error){toast(error.message,'error');return;}
+  allContent=allContent.map(c=>ids.includes(c.id)?{...c,moderation_status:'approved'}:c);
+  renderContent();
+  toast(`${ids.length} items approved`);
+}
+
+/* ── ONBOARDING ────────────────────────────────────────── */
+async function renderOnboarding(){
+  const {data:progs}=await sb.from('partner_onboarding_progress').select('*');
+  const progMap={};(progs||[]).forEach(pg=>progMap[pg.partner_id]=pg);
+
+  const inOnboarding=allPartners.filter(p=>['onboarding','contract'].includes(p.status));
+  const pending=inOnboarding.filter(p=>{
+    const pg=progMap[p.id];
+    return !pg||!pg.safeguarding_passed||!pg.gdpr_passed;
+  }).length;
+  const avgPct=inOnboarding.length?Math.round(inOnboarding.reduce((s,p)=>{
+    return s+(progMap[p.id]?.pct_complete||0);
+  },0)/inOnboarding.length):0;
+
+  document.getElementById('ob-k1').textContent=inOnboarding.length;
+  document.getElementById('ob-k2').textContent=avgPct+'%';
+  document.getElementById('ob-k3').textContent=pending;
+
+  // Videos
+  document.getElementById('ob-videos').innerHTML=[
+    {t:'Welcome to VYVE',d:'4:20',col:'var(--teal)'},
+    {t:'Building your space',d:'7:10',col:'var(--mental)'},
+    {t:'Recording great sessions',d:'9:45',col:'var(--physical)'},
+    {t:'Growing your community',d:'6:30',col:'var(--social)'},
+  ].map(v=>`<div class="video-card" style="background:linear-gradient(135deg,${v.col},var(--teal-deep))" onclick="toast('Video modules — upload to play')">
+    <div class="play"><span data-i="play"></span></div>
+    <div class="vt">${v.t}</div><div class="vd">${v.d}</div>
+  </div>`).join('');
+
+  // Education
+  const edu=[
+    {t:'VYVE brand & tone of voice',meta:'Article · 8 min',done:true},
+    {t:'The three pillars explained',meta:'Article · 6 min',done:true},
+    {t:'Safeguarding & duty of care',meta:'Required assessment',done:true,required:true},
+    {t:'GDPR & member data basics',meta:'Required assessment',done:false,required:true},
+    {t:'Accessibility & inclusive language',meta:'Article · 5 min',done:false},
+    {t:'Content quality standards',meta:'Article + checklist',done:false},
+  ];
+  document.getElementById('ob-education').innerHTML=edu.map(e=>`
+    <div class="flex" style="padding:11px 0;border-bottom:1px solid var(--line)">
+      <span class="ob-num ${e.done?'ob-done':'ob-todo'}">${e.done?`<span data-i="check"></span>`:''}</span>
+      <div style="flex:1"><div style="font-weight:700;font-size:13px">${esc(e.t)}</div><div class="muted" style="font-size:11px">${esc(e.meta)}${e.required?' · <span style="color:var(--danger)">Required</span>':''}</div></div>
+    </div>`).join('');
+
+  // Checklist
+  const steps=['Sign partner agreement & revenue share','Complete identity & qualification verification','Watch all four onboarding video modules','Pass safeguarding & GDPR assessments','Set up profile: photo, bio and reason for being here','Upload three starter library videos','Complete community space setup','Admin final approval'];
+  document.getElementById('ob-checklist').innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+    ${steps.map((s,i)=>`<div class="flex" style="padding:10px 0;border-bottom:1px solid var(--line)"><span class="ob-num ob-todo" style="font-size:10px">${i+1}</span><span style="font-size:13px">${esc(s)}</span></div>`).join('')}
+  </div>`;
+
+  // In-progress
+  document.getElementById('ob-partners').innerHTML=inOnboarding.length?inOnboarding.map(p=>{
+    const pg=progMap[p.id]||{pct_complete:0,safeguarding_passed:false,gdpr_passed:false};
+    const pct=pg.pct_complete||0;
+    const step=Math.ceil(pct/12.5);
+    const gateOk=pg.safeguarding_passed&&pg.gdpr_passed;
+    return `<div class="flex" style="padding:12px 0;border-bottom:1px solid var(--line)">
+      ${av(p,36)}
+      <div style="flex:1"><div style="font-weight:700;font-size:13px">${esc(p.name)}</div>
+      <div class="muted" style="font-size:11px">${esc(p.role_title)} · step ${step} of 8${!gateOk?' · <span style="color:var(--danger)">Assessments pending</span>':''}</div></div>
+      <div style="width:160px;margin:0 16px">
+        <div class="track"><div class="fill" style="width:${pct}%"></div></div>
+        <div class="mini-stat">${Math.round(pct)}% complete</div>
+      </div>
+      <button class="tb-btn" onclick="openPartner('${p.id}')">Open</button>
+    </div>`;
+  }).join(''):'<div class="empty-state">No partners currently onboarding</div>';
+
+  setIcons(document.getElementById('v-onboarding'));
+}
+
+/* ── ANALYTICS ─────────────────────────────────────────── */
+function renderAnalytics(){
+  const live=allPartners.filter(p=>p.status==='live');
+  const totalMs=allMemberships.length;
+  const he=allMemberships.filter(m=>m.engagement_segment==='highly_engaged').length;
+  const atRisk=allMemberships.filter(m=>m.engagement_segment==='at_risk').length;
+  const pub=allContent.filter(c=>c.moderation_status==='approved').length;
+
+  document.getElementById('an-k1').textContent=totalMs.toLocaleString();
+  document.getElementById('an-k2').textContent=he;
+  document.getElementById('an-k3').textContent=atRisk;
+  document.getElementById('an-k4').textContent=pub;
+
+  // Pillar split
+  const byPillar={body:0,mind:0,connect:0};
+  const pmMap={};live.forEach(p=>pmMap[p.id]=p.pillar);
+  allMemberships.forEach(m=>{const pl=pmMap[m.partner_id];if(pl)byPillar[pl]=(byPillar[pl]||0)+1;});
+  const tot=totalMs||1;
+  document.getElementById('an-pillar').innerHTML=Object.entries({Body:'body',Mind:'mind',Connect:'connect'}).map(([lbl,key])=>{
+    const pct=Math.round((byPillar[key]||0)/tot*100);
+    const col={body:'var(--physical)',mind:'var(--mental)',connect:'var(--social)'}[key];
+    return `<div style="margin-bottom:15px">
+      <div class="flex" style="justify-content:space-between;font-size:13px;margin-bottom:6px"><span><span class="dot" style="background:${col}"></span>${lbl}</span><b>${pct}%</b></div>
+      <div class="track"><div class="fill" style="width:${pct}%;background:${col}"></div></div>
+    </div>`;
+  }).join('');
+
+  // Leaderboard
+  const sorted=[...live].sort((a,b)=>(membershipMap[b.id]?.total||0)-(membershipMap[a.id]?.total||0));
+  document.getElementById('an-table').innerHTML=sorted.map(p=>{
+    const ms=membershipMap[p.id]||{total:0,he:0,at_risk:0};
+    return `<tr onclick="openPartner('${p.id}')">
+      <td><div class="who">${av(p)}<div><div class="nm">${esc(p.name)}</div><div class="rl">${esc(p.role_title)}</div></div></div></td>
+      <td class="num">${ms.total.toLocaleString()}</td>
+      <td><span class="pill p-live">${ms.he}</span></td>
+      <td><span class="pill ${ms.at_risk>0?'p-suspended':'p-draft'}">${ms.at_risk}</span></td>
+      <td>${contentCountMap[p.id]||0}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ── REVENUE ───────────────────────────────────────────── */
+function renderRevenue(){
+  document.getElementById('rv-period-btn').textContent=new Date().toLocaleString('en-GB',{month:'long',year:'numeric'});
+  const pending=allPayouts.filter(p=>p.status==='pending');
+  const paid=allPayouts.filter(p=>p.status==='paid');
+  const totalPending=pending.reduce((s,p)=>s+Number(p.payout_amount),0);
+
+  document.getElementById('rv-k1').textContent=pending.length;
+  document.getElementById('rv-k2').textContent='£'+totalPending.toLocaleString('en-GB',{maximumFractionDigits:0});
+  document.getElementById('rv-k3').textContent=paid.length;
+
+  document.getElementById('rv-table').innerHTML=allPayouts.length?allPayouts.map(py=>`
+    <tr onclick="openPartner('${py.partner_id}')">
+      <td><div class="who">${av(partnerMap[py.partner_id]||{name:'?',pillar:'body'})}<div><div class="nm">${esc(partnerMap[py.partner_id]?.name||'Unknown')}</div></div></div></td>
+      <td>${py.period}</td>
+      <td class="num">${py.attributed_subscriptions}</td>
+      <td class="num">£${Number(py.gross).toLocaleString()}</td>
+      <td class="muted">${py.share_pct}%</td>
+      <td class="num hl">£${Number(py.payout_amount).toLocaleString()}</td>
+      <td>${py.status==='paid'?'<span class="pill p-live">Paid</span>':'<span class="pill p-review">Pending</span>'}</td>
+      <td style="text-align:right">${py.status==='pending'?`<button class="tb-btn" onclick="event.stopPropagation();markPaid('${py.id}')">Mark paid</button>`:''}</td>
+    </tr>`).join(''):'<tr><td colspan="8"><div class="empty-state">No payouts yet — run payouts to generate</div></td></tr>';
+}
+
+async function markPaid(id){
+  const {error}=await sb.from('partner_payouts').update({status:'paid',paid_at:new Date().toISOString()}).eq('id',id);
+  if(error){toast(error.message,'error');return;}
+  allPayouts=allPayouts.map(p=>p.id===id?{...p,status:'paid'}:p);
+  renderRevenue();
+  toast('Marked as paid');
+}
+
+async function runPayouts(){
+  const live=allPartners.filter(p=>p.status==='live');
+  if(!live.length){toast('No live partners','error');return;}
+  if(!confirm(`Generate payouts for ${new Date().toLocaleString('en-GB',{month:'long',year:'numeric'})}?\n\nThis creates ledger entries only — no funds are transferred.`))return;
+  const period=new Date().toISOString().slice(0,7);
+  // Real attributed revenue: each partner's gross = the sum of what their REFERRED
+  // members actually pay (partner_memberships.subscription_value, populated by
+  // stripe-webhook / stripe-reconcile). Payout = gross x revenue share. This matches
+  // the partner-facing earnings figure — no MRR estimation, no session weighting.
+  // PM-876 (Dean definition): an attributed sub is a member who came through the
+  // partner AND IS PAYING — referred + active + a real subscription_value. Partners
+  // with £0 gross generate NO row at all (a £0 pending payout is ledger noise the
+  // finance run doesn't need; the June seed rows this replaced showed every partner
+  // with a phantom "1 attributed sub").
+  const rows=live.map(p=>{
+    const refs=allMemberships.filter(m=>m.partner_id===p.id&&m.referred&&m.subscription_status==='active'&&Number(m.subscription_value)>0);
+    const gross=Math.round(refs.reduce((s,m)=>s+(Number(m.subscription_value)||0),0)*100)/100;
+    const payout=Math.round(gross*(p.revenue_share_pct/100)*100)/100;
+    return{partner_id:p.id,period,attributed_subscriptions:refs.length,gross,share_pct:p.revenue_share_pct,payout_amount:payout,status:'pending'};
+  }).filter(r=>r.gross>0);
+  if(!rows.length){toast('No attributed paying members this period — nothing to generate');return;}
+  const {error}=await sb.from('partner_payouts').upsert(rows,{onConflict:'partner_id,period'});
+  if(error){toast(error.message,'error');return;}
+  const {data}=await sb.from('partner_payouts').select('*').order('period',{ascending:false});
+  allPayouts=data||[];
+  renderRevenue();
+  toast('Payouts generated for '+period);
+}
+
+/* ── DEVICE PREVIEW ────────────────────────────────────── */
+function openPreview(id){
+  const p=id?partnerMap[id]:allPartners.find(p=>p.status==='live');
+  if(!p){toast('No live partner to preview');return;}
+  const col=PILLAR_COL[p.pillar]||'var(--mint)';
+  const _pav=urlish(p.avatar_url), _pcv=urlish(p.cover_url);
+  document.getElementById('ph-scroll').innerHTML=`
+    <div class="ph-banner" style="background:${_pcv?`url('${_pcv}') center/cover`:`linear-gradient(120deg,${col},var(--teal-deep))`}"></div>
+    <div class="ph-av-wrap"><div class="ph-av" style="background:${col};${_pav?'overflow:hidden;padding:0':''}">${_pav?`<img src="${_pav}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit" alt="">`:initials(p.name)}</div></div>
+    <div class="ph-info">
+      <h4>${esc(p.name)} <span data-i="check" style="color:var(--mint)"></span></h4>
+      <div class="r">${esc(p.role_title)}</div>
+      <div class="ph-stats">
+        <div><b>${(membershipMap[p.id]?.total||0).toLocaleString()}</b><span>members</span></div>
+        <div><b>${contentCountMap[p.id]||0}</b><span>content</span></div>
+      </div>
+      <button class="ph-join">Join community</button>
+    </div>
+    <div class="ph-tabs"><span>About</span><span>Live</span><span>Library</span><span>Community</span><span>Programs</span></div>
+    <div class="ph-sec"><h5>About</h5><p class="muted" style="font-size:11.5px;line-height:1.55">${esc(p.bio||'No bio yet.')}</p></div>
+    <div class="ph-sec" style="border-top:1px solid var(--line)"><h5>Reason for being here</h5><p class="muted" style="font-size:11.5px;line-height:1.55">${esc(p.why||'—')}</p></div>
+    <div class="ph-sec" style="border-top:1px solid var(--line)"><h5>Community feel</h5><p class="muted" style="font-size:11.5px;line-height:1.55">${esc(p.feel||'—')}</p></div>
+    <div class="ph-note">This is exactly what members see in the VYVE app.<br>Edit from the partner's management area.</div>`;
+  setIcons(document.getElementById('ph-scroll'));
+  document.getElementById('previewOverlay').classList.add('show');
+}
+function closePreview(){document.getElementById('previewOverlay').classList.remove('show');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closePreview();});
+
+
+/* ── INVITE MODAL ──────────────────────────────────────── */
+function openInviteModal(){
+  // Clear fields
+  ['inv-name','inv-role','inv-email','inv-bio','inv-why','inv-feel','inv-content','inv-notes'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('inv-pillar').value='';
+  document.getElementById('inv-fit').value='med';
+  document.getElementById('inv-rs').value='30';
+  document.getElementById('inv-err').textContent='';
+  const rz=document.getElementById('inv-result'); if(rz) rz.style.display='none';
+  const mb=document.getElementById('inv-mint'); if(mb){mb.disabled=false;mb.innerHTML='<span class="bic" data-i="plus"></span>Mint &amp; send invite link';}
+  // Move overlay to body to escape any stacking context
+  const ov=document.getElementById('invite-overlay');
+  document.body.appendChild(ov);
+  ov.style.cssText='display:flex;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(5,8,12,.7);backdrop-filter:blur(4px);z-index:99999;align-items:center;justify-content:center';
+  setTimeout(()=>document.getElementById('inv-name').focus(),80);
+  setIcons(document.getElementById('invite-modal'));
+}
+
+function closeInviteModal(){
+  document.getElementById('invite-overlay').style.display='none';
+}
+
+async function submitInvite(){
+  const name=document.getElementById('inv-name').value.trim();
+  const role=document.getElementById('inv-role').value.trim();
+  const email=document.getElementById('inv-email').value.trim();
+  const pillar=document.getElementById('inv-pillar').value;
+  const err=document.getElementById('inv-err');
+  err.textContent='';
+
+  if(!name){err.textContent='Name is required.';return;}
+  if(!role){err.textContent='Role / title is required.';return;}
+  if(!email||!/^[^@]+@[^@]+\.[^@]+$/.test(email)){err.textContent='Valid email is required.';return;}
+  if(!pillar){err.textContent='Please select a pillar.';return;}
+
+  const btn=document.getElementById('inv-submit');
+  btn.textContent='Adding…';btn.disabled=true;
+
+  // Generate slug from name
+  const slug=name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40)+'-'+Date.now().toString(36);
+
+  const bio=document.getElementById('inv-bio').value.trim();
+  const why=document.getElementById('inv-why').value.trim();
+  const feel=document.getElementById('inv-feel').value.trim();
+  const fit=document.getElementById('inv-fit').value;
+  const rs=parseFloat(document.getElementById('inv-rs').value)||30;
+  const proposed=document.getElementById('inv-content').value.trim();
+  const notes=document.getElementById('inv-notes').value.trim();
+
+  // Insert partner
+  const {data:partner,error:pErr}=await sb.from('partner_partners').insert({
+    slug, name, role_title:role, pillar,
+    status:'applied',
+    bio:bio||null, why:why||null, feel:feel||null,
+    revenue_share_pct:rs,
+    verified:false
+  }).select().single();
+
+  if(pErr){
+    err.textContent='Error: '+pErr.message;
+    btn.textContent='Add to pipeline';btn.disabled=false;
+    return;
+  }
+
+  // Insert application
+  await sb.from('partner_applications').insert({
+    partner_id:partner.id,
+    fit_score:fit,
+    proposed_content:proposed||null,
+    notes:notes||null,
+    applied_at:new Date().toISOString(),
+    status_changed_at:new Date().toISOString()
+  });
+
+  // Store contact email as a credential
+  await sb.from('partner_applications').update({
+    credentials:{contact_email:email}
+  }).eq('partner_id',partner.id);
+
+  // Update local state
+  allPartners.push(partner);
+  partnerMap[partner.id]=partner;
+
+  closeInviteModal();
+  toast(name+' added to pipeline');
+  btn.textContent='Add to pipeline';btn.disabled=false;
+
+  // Refresh views
+  renderOverview();
+  renderPipeline();
+  renderPartners();
+
+  // Update nav badge
+  const pipeline=allPartners.filter(p=>['applied','vetting','interview','contract'].includes(p.status)).length;
+  document.getElementById('nb-pipeline').textContent=pipeline;
+
+  // Switch to pipeline view so they can see the new card
+  navByView('pipeline');
+}
+
+/* PM-849: mint a pre-filled self-serve draft + Lewis-voiced invite email via partner-onboarding v13.
+   The warm-lead default. The manual "Add to pipeline" path above stays for rows that need no draft. */
+async function submitMintInvite(){
+  const name=document.getElementById('inv-name').value.trim();
+  const role=document.getElementById('inv-role').value.trim();
+  const email=document.getElementById('inv-email').value.trim();
+  const pillar=document.getElementById('inv-pillar').value;
+  const bio=document.getElementById('inv-bio').value.trim();
+  const notes=document.getElementById('inv-notes').value.trim();
+  const err=document.getElementById('inv-err');
+  err.textContent='';
+  if(!name){err.textContent='Name is required.';return;}
+  if(!email||!/^[^@]+@[^@]+\.[^@]+$/.test(email)){err.textContent='Valid email is required.';return;}
+  if(!pillar){err.textContent='Please select a pillar.';return;}
+
+  const btn=document.getElementById('inv-mint');
+  btn.disabled=true;btn.textContent='Minting…';
+  try{
+    const sess=await sb.auth.getSession();
+    const jwt=sess?.data?.session?.access_token;
+    const res=await fetch(SUPA_URL+'/functions/v1/partner-onboarding',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+jwt,'Content-Type':'application/json'},
+      body:JSON.stringify({action:'mint_invite',
+        contact:{name,email},
+        practice:{pillar,specialism:role,description:bio},
+        notes})
+    });
+    const data=await res.json();
+    if(!res.ok){err.textContent='Mint failed: '+(data.error||res.status);btn.disabled=false;btn.innerHTML='<span class="bic" data-i="plus"></span>Mint &amp; send invite link';setIcons(btn);return;}
+
+    // Result panel: link + honest send status
+    const rz=document.getElementById('inv-result');
+    document.getElementById('inv-result-link').value=data.resume_link||'';
+    if(data.existing){
+      document.getElementById('inv-result-head').textContent='They already have an open draft';
+      document.getElementById('inv-result-sub').textContent='No new draft minted and no email sent — this is their existing personal link.';
+    }else{
+      document.getElementById('inv-result-head').textContent='Invite minted for '+name;
+      document.getElementById('inv-result-sub').textContent=data.email_sent
+        ? 'Lewis-voiced invite emailed to '+email+'. Their details are pre-filled — the link below is the same one in the email.'
+        : 'Draft minted, but the invite email FAILED to send — copy the link below and send it to '+email+' yourself.';
+    }
+    rz.style.display='block';
+    btn.textContent='Done';
+
+    // Pull the fresh partner row into local state so Pipeline shows it without a reload
+    if(!data.existing){
+      const {data:partner}=await sb.from('partner_partners').select('*').eq('id',data.partner_id).single();
+      if(partner){
+        allPartners.push(partner);partnerMap[partner.id]=partner;
+        renderOverview();renderPipeline();renderPartners();
+        const pipeline=allPartners.filter(p=>['applied','vetting','interview','contract'].includes(p.status)).length;
+        document.getElementById('nb-pipeline').textContent=pipeline;
+      }
+      toast(name+' invited — draft in pipeline at Applied');
+    }
+  }catch(e){
+    err.textContent='Mint error: '+e.message;
+    btn.disabled=false;btn.innerHTML='<span class="bic" data-i="plus"></span>Mint &amp; send invite link';setIcons(btn);
+  }
+}
+function copyInviteLink(){
+  const i=document.getElementById('inv-result-link');
+  const done=()=>toast('Link copied');
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(i.value).then(done).catch(()=>{i.select();try{document.execCommand('copy');done();}catch(e){}});}
+  else{i.select();try{document.execCommand('copy');done();}catch(e){}}
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&document.getElementById('invite-overlay').style.display==='flex') closeInviteModal();
+});
+
+
+/* ── REQUEST INFO MODAL ─────────────────────────────────── */
+function openRequestInfoModal(partnerId){
+  const p = partnerId ? partnerMap[partnerId] : null;
+  const name = p ? p.name : 'this partner';
+  
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(5,8,12,.7);z-index:99999;display:flex;align-items:center;justify-content:center';
+  modal.innerHTML = `
+    <div style="background:var(--card);border:1px solid var(--line);border-radius:16px;padding:28px;width:min(480px,92vw)">
+      <h3 style="font-size:16px;font-weight:700;margin-bottom:8px">Request more info</h3>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Log what additional information you need from ${esc(name)}</p>
+      <textarea id="ri-notes" style="width:100%;padding:10px 13px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--white);font-size:13px;font-family:var(--font);min-height:100px;resize:vertical" placeholder="What do you need from them? e.g. qualifications, references, sample content…"></textarea>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+        <button class="tb-btn" onclick="document.querySelectorAll('body>[style*=fixed]').forEach(e=>e.remove())">Cancel</button>
+        <button class="tb-btn primary" onclick="submitRequestInfo('${partnerId}', this.closest('[style]'))">Log request</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  setTimeout(()=>modal.querySelector('textarea').focus(), 80);
+}
+
+async function submitRequestInfo(partnerId, modal){
+  const notes = document.getElementById('ri-notes')?.value?.trim();
+  if(!notes){ toast('Please enter what information you need', 'error'); return; }
+  
+  if(partnerId){
+    // Append to application notes
+    const {data:app} = await sb.from('partner_applications').select('notes').eq('partner_id', partnerId).single();
+    const existing = app?.notes || '';
+    const newNotes = existing ? existing + '\n\n[Info requested ' + new Date().toLocaleDateString('en-GB') + ']: ' + notes : '[Info requested ' + new Date().toLocaleDateString('en-GB') + ']: ' + notes;
+    await sb.from('partner_applications').update({notes: newNotes}).eq('partner_id', partnerId);
+  }
+  
+  document.querySelectorAll('body>[style*=fixed]').forEach(e=>e.remove());
+  toast('Info request logged');
+}
+
+/* ── CURRICULUM MODAL ───────────────────────────────────── */
+function openCurriculumModal(){
+  const steps = [
+    'Sign partner agreement & revenue share',
+    'Complete identity & qualification verification', 
+    'Watch all four onboarding video modules',
+    'Pass safeguarding & GDPR assessments',
+    'Set up profile: photo, bio and reason for being here',
+    'Upload three starter library videos',
+    'Complete community space setup',
+    'Admin final approval'
+  ];
+  
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(5,8,12,.7);z-index:99999;display:flex;align-items:center;justify-content:center';
+  modal.innerHTML = `
+    <div style="background:var(--card);border:1px solid var(--line);border-radius:16px;padding:28px;width:min(560px,92vw);max-height:80vh;overflow-y:auto">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <h3 style="font-size:16px;font-weight:700">Edit onboarding curriculum</h3>
+        <button onclick="document.querySelectorAll('body>[style*=fixed]').forEach(e=>e.remove())" style="width:34px;height:34px;border-radius:8px;background:var(--surface);border:1px solid var(--line);color:var(--white);cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0">&times;</button>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:16px">These are the 8 steps every partner must complete before going live. Steps are enforced by the system — safeguarding and GDPR are required gates.</p>
+      <div id="curr-steps">
+        ${steps.map((s,i) => `
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)">
+            <span style="width:24px;height:24px;border-radius:50%;background:var(--surface);color:var(--muted);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">${i+1}</span>
+            <input style="flex:1;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--white);font-size:13px;font-family:var(--font)" value="${esc(s)}" data-step="${i}">
+            ${i===3?'<span style="font-size:10px;color:var(--danger);font-weight:700">REQUIRED</span>':''}
+          </div>`).join('')}
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
+        <button class="tb-btn" onclick="document.querySelectorAll('body>[style*=fixed]').forEach(e=>e.remove())">Cancel</button>
+        <button class="tb-btn primary" onclick="document.querySelectorAll('body>[style*=fixed]').forEach(e=>e.remove());toast('Curriculum updated')">Save changes</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+/* ── INIT ──────────────────────────────────────────────── */
+initAuth();
+
+/* PM-924: SPA port — export handlers referenced by inline onclick */
+window._mpEsc = _mpEsc;
+window.adminUploadImage = adminUploadImage;
+window.advancePartner = advancePartner;
+window.applyStageChange = applyStageChange;
+window.av = av;
+window.bulkApprove = bulkApprove;
+window.closeInviteModal = closeInviteModal;
+window.closePreview = closePreview;
+window.cmTab = cmTab;
+window.copyInviteLink = copyInviteLink;
+window.copyJoinLink = copyJoinLink;
+window.downloadPartnerFile = downloadPartnerFile;
+window.downloadPartnerQr = downloadPartnerQr;
+window.esc = esc;
+window.fmtBytes = fmtBytes;
+window.initAuth = initAuth;
+window.initials = initials;
+window.kanbanDragEnd = kanbanDragEnd;
+window.kanbanDragLeave = kanbanDragLeave;
+window.kanbanDragOver = kanbanDragOver;
+window.kanbanDragStart = kanbanDragStart;
+window.kanbanDrop = kanbanDrop;
+window.loadAll = loadAll;
+window.loadPartnerAccessLine = loadPartnerAccessLine;
+window.loadPartnerApplication = loadPartnerApplication;
+window.loadPartnerBankLine = loadPartnerBankLine;
+window.loadPartnerContent = loadPartnerContent;
+window.loadPartnerDocs = loadPartnerDocs;
+window.loadPartnerMembers = loadPartnerMembers;
+window.loadPartnerRevenue = loadPartnerRevenue;
+window.loadPartnerSchedule = loadPartnerSchedule;
+window.markPaid = markPaid;
+window.moderateContent = moderateContent;
+window.moveStage = moveStage;
+window.nav = nav;
+window.navByView = navByView;
+window.openAppDetail = openAppDetail;
+window.openCurriculumModal = openCurriculumModal;
+window.openInviteModal = openInviteModal;
+window.openPartner = openPartner;
+window.openPartnerDoc = openPartnerDoc;
+window.openPreview = openPreview;
+window.openRequestInfoModal = openRequestInfoModal;
+window.pdTab = pdTab;
+window.pill = pill;
+window.renderAnalytics = renderAnalytics;
+window.renderContent = renderContent;
+window.renderOnboarding = renderOnboarding;
+window.renderOverview = renderOverview;
+window.renderPartnerProfile = renderPartnerProfile;
+window.renderPartnerQr = renderPartnerQr;
+window.renderPartnerSettings = renderPartnerSettings;
+window.renderPartners = renderPartners;
+window.renderPipeline = renderPipeline;
+window.renderRevenue = renderRevenue;
+window.renderSupport = renderSupport;
+window.runPayouts = runPayouts;
+window.saveAdminProfile = saveAdminProfile;
+window.savePartnerSettings = savePartnerSettings;
+window.savePromoCode = savePromoCode;
+window.sendSupportReply = sendSupportReply;
+window.setIcons = setIcons;
+window.setSupportStatus = setSupportStatus;
+window.showApp = showApp;
+window.showGate = showGate;
+window.signOut = signOut;
+window.statusDot = statusDot;
+window.submitInvite = submitInvite;
+window.submitMintInvite = submitMintInvite;
+window.submitRequestInfo = submitRequestInfo;
+window.suspendPartner = suspendPartner;
+window.syncAdminPhone = syncAdminPhone;
+window.toast = toast;
+window.urlish = urlish;
+window.watchPartnerFile = watchPartnerFile;
+})();
+</script>
+</div>
