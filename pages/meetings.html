@@ -98,7 +98,14 @@
           <button class="btn btn-ghost btn-sm" id="mt-tr-close" type="button">Close</button>
         </div>
       </div>
-      <div id="mt-tr-body" style="overflow:auto;white-space:pre-wrap;font-size:13px;line-height:1.6;color:var(--text)"></div>
+      <div style="overflow:auto">
+        <div id="mt-tr-summary-wrap" style="display:none;margin-bottom:14px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)">
+          <div style="font-weight:700;font-size:12.5px;margin-bottom:6px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px">AI summary</div>
+          <div id="mt-tr-summary" style="white-space:pre-wrap;font-size:13px;line-height:1.6;color:var(--text)"></div>
+        </div>
+        <div style="font-weight:700;font-size:12.5px;margin-bottom:6px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px">Full transcript</div>
+        <div id="mt-tr-body" style="white-space:pre-wrap;font-size:13px;line-height:1.6;color:var(--text)"></div>
+      </div>
     </div>
   </div>
 
@@ -250,14 +257,18 @@
       var m = rows.find(function(x){ return x.id===t.dataset.mtTr; });
       if (!m) return;
       document.getElementById('mt-tr-title').textContent = m.title;
+      var sw = document.getElementById('mt-tr-summary-wrap');
+      if (m.summary){ document.getElementById('mt-tr-summary').textContent = m.summary; sw.style.display = ''; }
+      else { sw.style.display = 'none'; }
       document.getElementById('mt-tr-body').textContent = m.transcript || 'No transcript text.';
       document.getElementById('mt-transcript-modal').style.display = '';
     }
   });
   document.getElementById('mt-tr-close').onclick = function(){ document.getElementById('mt-transcript-modal').style.display='none'; };
   document.getElementById('mt-tr-copy').onclick = function(){
-    var body = document.getElementById('mt-tr-body');
-    navigator.clipboard && navigator.clipboard.writeText(body.textContent);
+    var sumEl = document.getElementById('mt-tr-summary-wrap');
+    var text = (sumEl.style.display !== 'none' ? 'AI SUMMARY\n' + document.getElementById('mt-tr-summary').textContent + '\n\nFULL TRANSCRIPT\n' : '') + document.getElementById('mt-tr-body').textContent;
+    navigator.clipboard && navigator.clipboard.writeText(text);
     this.textContent='Copied'; var b=this; setTimeout(function(){ b.textContent='Copy'; },1500);
   };
 
