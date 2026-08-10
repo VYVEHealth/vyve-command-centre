@@ -2054,7 +2054,7 @@ async function signIn() {
     const adminResponse = await apiCall('overview');
     if (adminResponse.error) {
       err.textContent = 'Access denied - not in admin allowlist';
-      await supa.auth.signOut();
+      await supa.auth.signOut({ scope: 'local' });
       btn.disabled = false;
       btn.textContent = 'Sign in';
       return;
@@ -2076,7 +2076,7 @@ async function signIn() {
 }
 
 async function signOut() {
-  await supa.auth.signOut();
+  await supa.auth.signOut({ scope: 'local' });
   currentUser = null;
   document.getElementById('login').style.display = 'flex';
   document.getElementById('app').classList.remove('ready');
@@ -2763,7 +2763,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       document.getElementById('user-email').textContent = currentUser.email;
       handleRoute();
     } else {
-      await supa.auth.signOut();
+      await supa.auth.signOut({ scope: 'local' });
     }
   }
 

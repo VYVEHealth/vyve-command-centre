@@ -2210,7 +2210,7 @@
   // ── Sign out ──────────────────────────────────────────────────────────────
   $('pp-signout').addEventListener('click', async function() {
     var client = sb();
-    await client.auth.signOut();
+    await client.auth.signOut({ scope: 'local' });
     state.session = null;
     showLogin();
   });

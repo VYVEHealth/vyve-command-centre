@@ -272,7 +272,7 @@
         out.textContent = 'Signing out\u2026';
         try {
           var c = window.VYVE_SUPABASE && window.VYVE_SUPABASE.client;
-          if (c) await c.auth.signOut();
+          if (c) await c.auth.signOut({ scope: 'local' });
         } catch(err){ console.warn('signout', err); }
         window.location.hash = '#/home';
         window.location.reload();
