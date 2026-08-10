@@ -1238,6 +1238,35 @@ document.getElementById('pt-pillar-filter')?.addEventListener('change',renderPar
 document.getElementById('pt-status-filter')?.addEventListener('change',renderPartners);
 
 /* ── PARTNER DETAIL ────────────────────────────────────── */
+/* PM-892: portal-access line on the partner detail hero — answers "have they had
+   login details?" without SQL. Sources: admin_users (is the portal gate open) +
+   the latest partner_provision audit row (when, by whom, did the email send).
+   admin_audit_log gained an is_admin() SELECT policy this PM — EF writes were
+   service-role so admins could never read their own audit trail before. */
+async function loadPartnerAccessLine(p){
+  const el=document.getElementById('pd-access-line');
+  if(!el)return;
+  el.innerHTML='';
+  try{
+    const email=(p.contact_email||'').trim().toLowerCase();
+    if(!email){el.innerHTML='<span style="color:var(--amber)">&#9888; No contact email — portal access cannot be provisioned</span>';return;}
+    const [{data:au},{data:audit}]=await Promise.all([
+      sb.from('admin_users').select('role,active').ilike('email',email).maybeSingle(),
+      sb.from('admin_audit_log').select('created_at,admin_email,new_value').eq('action','partner_provision').eq('member_email',email).order('created_at',{ascending:false}).limit(1).maybeSingle(),
+    ]);
+    const gateOpen=!!(au&&au.active&&['partner','admin'].includes(au.role));
+    const nv=(audit&&audit.new_value)||{};
+    const when=audit?new Date(audit.created_at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):null;
+    if(gateOpen){
+      const emailBit=nv.email_sent===true
+        ?`login email sent &#10003;${nv.password_created===true?' (new account + temp password)':' (existing VYVE login)'}`
+        :(audit?'<span style="color:var(--danger)">login email FAILED — tell them manually</span>':'provisioned (no audit record)');
+      el.innerHTML=`<span style="color:var(--mint)">&#10003; Portal access active</span> — ${emailBit}${when?` <span class="muted">· ${when} by ${esc((audit.admin_email||'').split('@')[0])}</span>`:''}`;
+    }else{
+      el.innerHTML=`<span style="color:var(--amber)">&#9675; No portal access yet</span> <span class="muted">— granted automatically when they advance to onboarding</span>`;
+    }
+  }catch(_){/* additive */}
+}
 function openPartner(id){
   currentDetailId=id;
   const p=partnerMap[id]; if(!p)return;
@@ -1255,6 +1284,7 @@ function openPartner(id){
         <div><b>${cc}</b><span>content live</span></div>
         <div><b>${p.revenue_share_pct}%</b><span>rev share</span></div>
       </div>
+      <div id="pd-access-line" style="font-size:12.5px;margin-top:8px;line-height:1.5"></div>
     </div>
     <div style="display:flex;flex-direction:column;gap:8px;margin-left:auto">
       <button class="tb-btn" onclick="openPreview('${id}')"><span class="bic" data-i="phone"></span>Preview</button>
@@ -1307,6 +1337,7 @@ function openPartner(id){
 
   navByView('partner-detail');
   setIcons(document.getElementById('v-partner-detail'));
+  loadPartnerAccessLine(p); // PM-892: after the hero paints — the loader's element lookup is synchronous
 }
 
 async function suspendPartner(id){
