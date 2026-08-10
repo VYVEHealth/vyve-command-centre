@@ -134,8 +134,10 @@ window.VYVE_ICONS = {
 // Top-level domains — 4-domain IA per PM-639. 'sectionName' groups the
 // sidebar sections that belong to each domain (informational).
 window.VYVE_NAV_TOP = [
-  { slug: 'brief', label: 'Run the Business', icon: 'layers', sectionName: 'Daily',
-    description: 'Daily ops, commercial, marketing, delivery, knowledge, org.' },
+  // PM-912: Morning Brief soft-killed (Lewis-era, stale data) — tab now lands
+  // on the Run the Business domain landing. brief.html stays in repo, #/brief restores.
+  { slug: 'domain-rtb', label: 'Run the Business', icon: 'layers', sectionName: 'Daily',
+    description: 'Pipeline, finance, content, tasks, documents, calendar.' },
   { slug: 'usage', label: 'Analytics', icon: 'bar-chart', sectionName: 'Analytics',
     description: 'App health, usage, retention, wellbeing, platform, revenue, AI.' },
   { slug: 'active-users', label: 'Members', icon: 'users', sectionName: 'Members',
@@ -149,21 +151,22 @@ window.VYVE_ROUTE_TO_TOP = (function(){
   var m = {};
   (window.VYVE_NAV || []).forEach(function(section){
     var topSlug = ({
-      'Daily':      'brief',
-      'Commercial': 'brief',
-      'Marketing':  'brief',
-      'Delivery':   'brief',
-      'Knowledge':  'brief',
-      'Org':        'brief',
+      'Daily':      'domain-rtb',
+      'Commercial': 'domain-rtb',
+      'Marketing':  'domain-rtb',
+      'Delivery':   'domain-rtb',
+      'Knowledge':  'domain-rtb',
+      'Org':        'domain-rtb',
       'Analytics':  'usage',
       'Members':    'active-users',
-      'Partners':   'brief'
-    })[section.section] || 'brief';
+      'Partners':   'domain-rtb'
+    })[section.section] || 'domain-rtb';
     section.items.forEach(function(item){
       if (item.slug) m[item.slug] = topSlug;
     });
   });
-  m['brief'] = 'brief';
+  m['brief'] = 'domain-rtb';
+  m['domain-rtb'] = 'domain-rtb';
   m['usage'] = 'usage';
   m['active-users'] = 'active-users';
   return m;

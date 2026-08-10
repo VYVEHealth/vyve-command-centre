@@ -51,6 +51,7 @@
         <label style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--text-muted);cursor:pointer;background:var(--surface-2);border-radius:var(--r-md);padding:7px 12px">
           <input type="checkbox" id="cal-show-sessions" style="accent-color:var(--accent)"/> Show sessions
         </label>
+        <button class="btn btn-ghost btn-sm" id="cal-sync" title="Subscribe your personal calendar to VYVE sessions">Sync to my calendar</button>
         <span style="font-size:12px;color:var(--text-muted)" id="cal-current-email"></span>
       </div>
     </div>
@@ -403,6 +404,7 @@
       body:
         '<div class="form-row"><div class="form-group"><label>Title</label><input id="ev-title" value="' + escape(initial.title || '') + '"/></div></div>' +
         '<div class="form-row cols-2"><div class="form-group"><label>Start</label><input id="ev-start" type="datetime-local" value="' + toLocalDateTime(start) + '"/></div><div class="form-group"><label>End</label><input id="ev-end" type="datetime-local" value="' + toLocalDateTime(end) + '"/></div></div>' +
+        (isEdit ? '' : '<div class="form-row cols-2"><div class="form-group"><label>Repeats</label><select id="ev-repeat"><option value="">Does not repeat</option><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="fortnightly">Fortnightly</option><option value="monthly">Monthly</option></select></div><div class="form-group" id="ev-repeat-until-wrap" style="visibility:hidden"><label>Until</label><input id="ev-repeat-until" type="date"/></div></div>') +
         '<div class="form-row cols-2"><div class="form-group"><label>Visibility</label><select id="ev-visibility"><option value="team">Team (all admins)</option><option value="private">Private (just you)</option><option value="shared">Shared (team + attendees)</option></select></div><div class="form-group"><label>Location</label><input id="ev-location" value="' + escape(initial.location || '') + '" placeholder="Address, room, or blank"/></div></div>' +
         (function(){
           var cur = attList(initial);
@@ -421,13 +423,19 @@
         '<div class="form-row"><div class="form-group"><label>Google Meet link</label><div style="display:flex;gap:6px"><input id="ev-meet" value="' + escape(initial.meet_url || '') + '" placeholder="meet.google.com/..." style="flex:1"/><button type="button" class="btn btn-ghost btn-sm" id="ev-meet-gen" title="Open meet.google.com/new in a new tab; copy the link back here">Generate</button></div></div></div>' +
         '<div class="form-row"><div class="form-group"><label>Description</label><textarea id="ev-desc" rows="3">' + escape(initial.description || '') + '</textarea></div></div>' +
         '<div style="display:flex;justify-content:space-between;gap:8px">' +
-          (isEdit && state.isAdmin ? '<button class="btn" id="ev-del" style="color:var(--danger);border-color:rgba(224,96,96,.3)">Delete</button>' : '<span></span>') +
+          (isEdit ? '<span style="display:flex;gap:8px;align-items:center">' +
+            (state.isAdmin ? '<button class="btn" id="ev-del" style="color:var(--danger);border-color:rgba(224,96,96,.3)">Delete</button>' : '') +
+            '<a class="btn btn-ghost btn-sm" href="https://ixjfklpckgxrwjlfsaaz.supabase.co/functions/v1/calendar-ics?event=' + initial.id + '&t=7692664bd208dceec368b30830e862a2" target="_blank" rel="noopener" title="Download this event as .ics for your personal calendar">Add to my calendar</a></span>' : '<span></span>') +
           '<button class="btn btn-primary" id="ev-save">Save</button>' +
         '</div>'
     });
 
     setTimeout(function(){
       if (initial.visibility) document.getElementById('ev-visibility').value = initial.visibility;
+      var repSel = document.getElementById('ev-repeat');
+      if (repSel) repSel.addEventListener('change', function(){
+        document.getElementById('ev-repeat-until-wrap').style.visibility = repSel.value ? 'visible' : 'hidden';
+      });
       document.getElementById('ev-meet-gen').addEventListener('click', function(){
         // Open the Meet new-room URL in a new tab. User copies link back.
         window.open('https://meet.google.com/new', '_blank', 'noopener');
@@ -454,8 +462,41 @@
             savedRow = res.data;
           } else {
             record.owner_email = state.me;
-            res = await S.client.from(TABLE).insert(record).select().maybeSingle();
-            savedRow = res.data;
+            // PM-912: recurring events — materialise instances up front. No
+            // recurrence engine: every row is a real event, so views, scoping
+            // and sync work unchanged. Delete-series via shared recur_group.
+            var repEl = document.getElementById('ev-repeat');
+            var rep = repEl ? repEl.value : '';
+            if (rep){
+              var stepDays = { daily: 1, weekly: 7, fortnightly: 14 }[rep] || 0;
+              var untilStr = (document.getElementById('ev-repeat-until').value || '');
+              var until = untilStr ? new Date(untilStr + 'T23:59:59') : null;
+              if (!until){ if (VYVE_UI && VYVE_UI.toast) VYVE_UI.toast('Pick an Until date for the repeat', 'error'); return; }
+              var s0 = new Date(record.start_at);
+              var e0 = new Date(record.end_at);
+              var dur = e0 - s0;
+              var groupId = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + '-' + Math.random());
+              var rows = [];
+              var cur = new Date(s0);
+              var guard = 0;
+              while (cur <= until && guard < 52){
+                var inst = Object.assign({}, record, {
+                  start_at: cur.toISOString(),
+                  end_at: new Date(cur.getTime() + dur).toISOString(),
+                  recur_group: groupId
+                });
+                rows.push(inst);
+                guard++;
+                if (rep === 'monthly'){ cur = new Date(cur); cur.setMonth(cur.getMonth() + 1); }
+                else { cur = new Date(cur.getTime() + stepDays * 86400000); }
+              }
+              res = await S.client.from(TABLE).insert(rows).select();
+              savedRow = res.data && res.data[0];
+              if (!res.error && VYVE_UI && VYVE_UI.toast) VYVE_UI.toast(rows.length + ' occurrences created', 'success');
+            } else {
+              res = await S.client.from(TABLE).insert(record).select().maybeSingle();
+              savedRow = res.data;
+            }
           }
           if (res.error){ alert('Save failed: ' + res.error.message); return; }
           if (modal.draft) modal.draft.clear();
@@ -497,9 +538,17 @@
       var delBtn = document.getElementById('ev-del');
       if (delBtn){
         delBtn.addEventListener('click', async function(){
-          if (!confirm('Delete this event? This cannot be undone.')) return;
+          var wholeSeries = false;
+          if (initial.recur_group){
+            wholeSeries = confirm('This is part of a repeating series.\n\nOK = delete the WHOLE series\nCancel = just this occurrence');
+            if (!wholeSeries && !confirm('Delete this one occurrence? This cannot be undone.')) return;
+          } else {
+            if (!confirm('Delete this event? This cannot be undone.')) return;
+          }
           var hadGcal = initial.gcal_event_id;
-          var res = await S.client.from(TABLE).delete().eq('id', initial.id);
+          var res = wholeSeries
+            ? await S.client.from(TABLE).delete().eq('recur_group', initial.recur_group)
+            : await S.client.from(TABLE).delete().eq('id', initial.id);
           if (res.error){ alert('Delete failed: ' + res.error.message); return; }
           modal.close();
           if (VYVE_UI && VYVE_UI.toast) VYVE_UI.toast('Event deleted', 'success');
@@ -547,6 +596,31 @@
     });
     var ss = document.getElementById('cal-show-sessions');
     if (ss) ss.addEventListener('change', function(){ state.showSessions = ss.checked; renderCurrent(); });
+    var sync = document.getElementById('cal-sync');
+    if (sync) sync.addEventListener('click', function(){
+      var feedHttps = 'https://ixjfklpckgxrwjlfsaaz.supabase.co/functions/v1/calendar-ics?feed=sessions&t=7692664bd208dceec368b30830e862a2';
+      var feedWebcal = feedHttps.replace(/^https:/, 'webcal:');
+      VYVE_UI.modal({
+        title: 'Sync sessions to your calendar',
+        body:
+          '<p style="font-size:13px;color:var(--text-muted);margin-bottom:12px">Subscribe once and every VYVE session lands in your personal calendar automatically — updates within the hour when the schedule changes.</p>' +
+          '<div class="form-group" style="margin-bottom:12px"><label>Feed URL</label><div style="display:flex;gap:6px"><input id="ics-url" readonly value="' + feedHttps + '" style="flex:1;font-size:12px"/><button class="btn btn-ghost btn-sm" id="ics-copy" type="button">Copy</button></div></div>' +
+          '<div style="font-size:12.5px;color:var(--text-muted);line-height:1.6">' +
+          '<b>Google Calendar:</b> Settings &rarr; Add calendar &rarr; From URL &rarr; paste the link.<br/>' +
+          '<b>iPhone / Apple Calendar:</b> <a href="' + feedWebcal + '" style="color:var(--accent)">tap here</a> or Settings &rarr; Apps &rarr; Calendar &rarr; Accounts &rarr; Add Subscribed Calendar.<br/>' +
+          '<b>Outlook:</b> Add calendar &rarr; Subscribe from web.' +
+          '</div>'
+      });
+      setTimeout(function(){
+        var cp = document.getElementById('ics-copy');
+        if (cp) cp.addEventListener('click', function(){
+          document.getElementById('ics-url').select();
+          try { document.execCommand('copy'); } catch(e){}
+          if (navigator.clipboard) navigator.clipboard.writeText(feedHttps).catch(function(){});
+          cp.textContent = 'Copied';
+        });
+      }, 60);
+    });
     document.querySelectorAll('#page-calendar .seg-btn[data-scope]').forEach(function(b){
       b.addEventListener('click', function(){
         document.querySelectorAll('#page-calendar .seg-btn[data-scope]').forEach(function(x){ x.classList.remove('active'); });
