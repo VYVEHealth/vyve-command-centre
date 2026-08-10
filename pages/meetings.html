@@ -1,0 +1,288 @@
+<div class="page active" id="page-meetings">
+<style>
+/* Token-backed fields per §23.152 */
+#page-meetings select, #page-meetings input[type=text], #page-meetings input[type=datetime-local] {
+  background: var(--surface-2); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px;
+}
+#page-meetings select:focus, #page-meetings input:focus { outline: none; box-shadow: var(--shadow-focus); }
+#mt-call-overlay { position: fixed; inset: 0; z-index: 4000; background: #0D2B2B; display: none; flex-direction: column; }
+#mt-call-topbar { display: flex; align-items: center; gap: 12px; padding: 10px 16px; background: #0a2222; }
+#mt-call-frame-host { flex: 1; }
+#mt-call-frame-host iframe { width: 100%; height: 100%; border: 0; }
+.mt-row { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.mt-row:last-child { border-bottom: 0; }
+.mt-chip { font-size: 11.5px; font-weight: 700; }
+</style>
+  <div class="page-hero">
+    <div class="eyebrow">Run the Business · Live data</div>
+    <h1 class="page-title">Meetings</h1>
+    <p class="page-sub">Internal video meetings and secure client calls, right here in the Command Centre. Transcripts land automatically after each meeting.</p>
+  </div>
+
+  <div id="mt-gate-notready" class="card" style="display:none;padding:30px 26px;text-align:center"><div style="font-size:14px;color:var(--text-muted)">Connecting to Supabase…</div></div>
+  <div id="mt-gate-signin" class="card" style="display:none;padding:36px 26px">
+    <div style="max-width:420px;margin:0 auto;text-align:center">
+      <div style="font-family:var(--font-head);font-size:22px;font-weight:700;margin-bottom:8px">Sign in to view meetings</div>
+      <div style="display:flex;gap:8px;justify-content:center">
+        <input type="text" id="mt-signin-email" placeholder="team@vyvehealth.co.uk" style="flex:1;max-width:280px"/>
+        <button class="btn btn-primary" id="mt-signin-btn">Send magic link</button>
+      </div>
+      <div id="mt-signin-msg" style="margin-top:12px;font-size:12.5px;color:var(--text-muted)"></div>
+    </div>
+  </div>
+  <div id="mt-gate-denied" class="card" style="display:none;padding:36px 26px;text-align:center">
+    <div style="font-family:var(--font-head);font-size:20px;font-weight:700;margin-bottom:8px">Access restricted</div>
+    <p style="color:var(--text-muted);font-size:13.5px;max-width:420px;margin:0 auto 20px">You're signed in as <strong id="mt-denied-email"></strong> but this email isn't on the admin allowlist.</p>
+    <button class="btn btn-ghost btn-sm" id="mt-signout-btn">Sign out</button>
+  </div>
+
+  <div id="mt-content" style="display:none">
+    <div class="card" style="margin-bottom:18px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div>
+          <div style="font-weight:700;font-size:15px">New meeting</div>
+          <p style="font-size:12.5px;color:var(--text-muted);margin:2px 0 0">Internal meetings open here in the CC. Client meetings get a secure guest link to send — no account needed, guests wait in a lobby until you admit them.</p>
+        </div>
+        <button class="btn btn-primary" id="mt-new-btn" type="button">+ Create meeting</button>
+      </div>
+      <div id="mt-create-form" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+          <div style="flex:2;min-width:200px"><label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">Title</label>
+            <input type="text" id="mt-f-title" maxlength="120" placeholder="Weekly team meeting" style="width:100%"/></div>
+          <div><label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">Type</label>
+            <select id="mt-f-type"><option value="internal">Internal</option><option value="client">Client</option></select></div>
+          <div><label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">When (optional)</label>
+            <input type="datetime-local" id="mt-f-when"/></div>
+          <div style="display:flex;align-items:center;gap:6px;padding-bottom:8px">
+            <input type="checkbox" id="mt-f-transcribe" checked/><label for="mt-f-transcribe" style="font-size:12.5px;color:var(--text-muted)">Transcribe</label></div>
+          <button class="btn btn-primary" id="mt-f-create" type="button">Create</button>
+        </div>
+        <div id="mt-f-msg" style="margin-top:10px;font-size:12.5px;color:var(--text-muted)"></div>
+        <div id="mt-guestlink-panel" style="display:none;margin-top:12px;padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)">
+          <div style="font-weight:700;font-size:13px;margin-bottom:4px">Guest link — copy it now, it's only shown once</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="text" id="mt-guestlink" readonly style="flex:1;font-size:12px"/>
+            <button class="btn btn-ghost btn-sm" id="mt-guestlink-copy" type="button">Copy</button>
+          </div>
+          <div style="font-size:11.5px;color:var(--text-muted);margin-top:6px">Send this to your client. The link expires 24 hours after the meeting time.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:18px">
+      <div style="font-weight:700;font-size:15px;margin-bottom:8px">Live &amp; upcoming</div>
+      <div id="mt-upcoming"></div>
+    </div>
+
+    <div class="card">
+      <div style="font-weight:700;font-size:15px;margin-bottom:8px">Past meetings</div>
+      <div id="mt-past"></div>
+    </div>
+  </div>
+
+  <div id="mt-call-overlay">
+    <div id="mt-call-topbar">
+      <div style="font-weight:700;font-size:14px;color:#fff;flex:1" id="mt-call-title"></div>
+      <button class="btn btn-ghost btn-sm" id="mt-call-end" type="button" style="color:#f0a3a3">End for everyone</button>
+      <button class="btn btn-ghost btn-sm" id="mt-call-leave" type="button" style="color:#fff">Leave</button>
+    </div>
+    <div id="mt-call-frame-host"></div>
+  </div>
+
+  <div id="mt-transcript-modal" style="display:none;position:fixed;inset:0;z-index:3900;background:rgba(0,0,0,.55)">
+    <div class="card" style="max-width:760px;margin:6vh auto;max-height:82vh;display:flex;flex-direction:column;padding:22px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-weight:700;font-size:15px" id="mt-tr-title">Transcript</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" id="mt-tr-copy" type="button">Copy</button>
+          <button class="btn btn-ghost btn-sm" id="mt-tr-close" type="button">Close</button>
+        </div>
+      </div>
+      <div id="mt-tr-body" style="overflow:auto;white-space:pre-wrap;font-size:13px;line-height:1.6;color:var(--text)"></div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  'use strict';
+  var S = window.VYVE_SUPABASE;
+  var rows = [], activeFrame = null, activeMeeting = null;
+  var EF = function(name){ return S.URL + '/functions/v1/' + name; };
+
+  function show(id){ ['mt-gate-notready','mt-gate-signin','mt-gate-denied','mt-content'].forEach(function(x){ var el=document.getElementById(x); if(el) el.style.display=(x===id)?'':'none'; }); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function fmtWhen(iso){ if(!iso) return 'No time set'; var d=new Date(iso); return d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})+' '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}); }
+  function dur(m){ if(!m.started_at||!m.ended_at) return ''; var mins=Math.round((new Date(m.ended_at)-new Date(m.started_at))/60000); return mins>0 ? ' · '+mins+' min' : ''; }
+
+  function statusChip(m){
+    if (m.status==='live') return '<span class="mt-chip" style="color:#22c55e">● Live</span>';
+    if (m.status==='cancelled') return '<span class="mt-chip" style="color:var(--text-muted)">Cancelled</span>';
+    if (m.status==='ended') return '<span class="mt-chip" style="color:var(--text-muted)">Ended</span>';
+    return '<span class="mt-chip" style="color:#b7791f">Scheduled</span>';
+  }
+  function trChip(m){
+    if (!m.transcribe || m.transcript_status==='none') return '';
+    var map = { waiting:['Transcript: after meeting','var(--text-muted)'], capturing:['Capturing…','#b7791f'], queued:['⏳ Waiting for worker','#b7791f'], processing:['⏳ Transcribing…','#b7791f'], ready:['🟢 Transcript ready','#22c55e'], failed:['⚠️ Transcript failed','#ef4444'], incomplete:['⚠️ Partial capture','#b7791f'] };
+    var c = map[m.transcript_status]; if(!c) return '';
+    return '<span class="mt-chip" style="color:'+c[1]+'">'+c[0]+'</span>';
+  }
+
+  function rowHtml(m, past){
+    var btns = '';
+    if (!past && m.status!=='cancelled') btns += '<button class="btn btn-primary btn-sm" data-mt-join="'+m.id+'" type="button">Join</button>';
+    if (!past) btns += '<button class="btn btn-ghost btn-sm" data-mt-cancel="'+m.id+'" type="button">Cancel</button>';
+    if (m.transcript_status==='ready') btns += '<button class="btn btn-ghost btn-sm" data-mt-tr="'+m.id+'" type="button">View transcript</button>';
+    return '<div class="mt-row">'
+      + '<div style="min-width:150px;color:var(--text-muted)">'+fmtWhen(m.scheduled_at||m.started_at||m.created_at)+'</div>'
+      + '<div style="flex:1;min-width:0"><span style="font-weight:600">'+esc(m.title)+'</span>'
+      + ' <span style="font-size:11.5px;color:var(--text-muted)">'+(m.meeting_type==='client'?'Client':'Internal')+dur(m)+'</span></div>'
+      + statusChip(m) + trChip(m)
+      + '<div style="display:flex;gap:6px">'+btns+'</div></div>';
+  }
+
+  function render(){
+    var up = rows.filter(function(m){ return m.status==='scheduled'||m.status==='live'; });
+    var past = rows.filter(function(m){ return m.status==='ended'||m.status==='cancelled'; });
+    document.getElementById('mt-upcoming').innerHTML = up.length ? up.map(function(m){return rowHtml(m,false);}).join('') : '<div style="font-size:13px;color:var(--text-muted);padding:6px 0">Nothing scheduled — create one above.</div>';
+    document.getElementById('mt-past').innerHTML = past.length ? past.slice(0,40).map(function(m){return rowHtml(m,true);}).join('') : '<div style="font-size:13px;color:var(--text-muted);padding:6px 0">No past meetings yet.</div>';
+  }
+
+  async function load(){
+    var res = await S.list('cc_meetings', { order:{ column:'created_at', ascending:false }, limit: 200 });
+    rows = res.data || [];
+    render();
+  }
+
+  async function efCall(payload){
+    var session = await S.getSession();
+    var r = await fetch(EF('meeting-manage'), { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+session.access_token }, body: JSON.stringify(payload) });
+    var j = await r.json().catch(function(){ return {}; });
+    if (!r.ok) throw new Error(j.error || ('HTTP '+r.status));
+    return j;
+  }
+
+  function loadDailyJs(){
+    return new Promise(function(resolve, reject){
+      if (window.DailyIframe) return resolve();
+      var s = document.createElement('script');
+      s.src = 'https://unpkg.com/@daily-co/daily-js';
+      s.onload = resolve; s.onerror = function(){ reject(new Error('Could not load the video library — check your connection.')); };
+      document.head.appendChild(s);
+    });
+  }
+
+  async function joinMeeting(id){
+    var m = rows.find(function(x){ return x.id===id; });
+    try {
+      await loadDailyJs();
+      var j = await efCall({ action:'join', meeting_id:id });
+      activeMeeting = m;
+      document.getElementById('mt-call-title').textContent = m ? m.title : 'Meeting';
+      document.getElementById('mt-call-overlay').style.display = 'flex';
+      activeFrame = window.DailyIframe.createFrame(document.getElementById('mt-call-frame-host'), {
+        showLeaveButton: false, showFullscreenButton: true,
+        iframeStyle: { width:'100%', height:'100%', border:'0' }
+      });
+      activeFrame.on('left-meeting', closeCall);
+      await activeFrame.join({ url: j.room_url, token: j.token });
+    } catch(e){ alert('Could not join: ' + e.message); closeCall(); }
+  }
+
+  function closeCall(){
+    document.getElementById('mt-call-overlay').style.display = 'none';
+    if (activeFrame){ try { activeFrame.destroy(); } catch(e){} activeFrame = null; }
+    activeMeeting = null;
+    load();
+  }
+
+  document.getElementById('mt-call-leave').onclick = function(){ if (activeFrame) activeFrame.leave(); else closeCall(); };
+  document.getElementById('mt-call-end').onclick = async function(){
+    if (!activeMeeting) return closeCall();
+    if (!confirm('End this meeting for everyone?')) return;
+    var id = activeMeeting.id;
+    if (activeFrame) { try { await activeFrame.leave(); } catch(e){} }
+    try { await efCall({ action:'end', meeting_id:id }); } catch(e){ alert(e.message); }
+    closeCall();
+  };
+
+  document.getElementById('mt-new-btn').onclick = function(){
+    var f = document.getElementById('mt-create-form');
+    f.style.display = f.style.display==='none' ? '' : 'none';
+  };
+  document.getElementById('mt-f-create').onclick = async function(){
+    var btn = this, msg = document.getElementById('mt-f-msg');
+    var title = document.getElementById('mt-f-title').value.trim();
+    if (!title){ msg.textContent = 'Give the meeting a title.'; return; }
+    btn.disabled = true; msg.textContent = 'Creating…';
+    try {
+      var when = document.getElementById('mt-f-when').value;
+      var j = await efCall({ action:'create', title:title,
+        meeting_type: document.getElementById('mt-f-type').value,
+        scheduled_at: when ? new Date(when).toISOString() : null,
+        transcribe: document.getElementById('mt-f-transcribe').checked });
+      msg.textContent = 'Created.';
+      document.getElementById('mt-f-title').value = '';
+      if (j.guest_token && j.meeting){
+        var link = S.URL + '/functions/v1/meeting-guest?m=' + j.meeting.id + '&g=' + j.guest_token;
+        document.getElementById('mt-guestlink').value = link;
+        document.getElementById('mt-guestlink-panel').style.display = '';
+      } else {
+        document.getElementById('mt-guestlink-panel').style.display = 'none';
+      }
+      await load();
+    } catch(e){ msg.textContent = 'Could not create: ' + e.message; }
+    btn.disabled = false;
+  };
+  document.getElementById('mt-guestlink-copy').onclick = function(){
+    var el = document.getElementById('mt-guestlink');
+    el.select(); document.execCommand('copy');
+    this.textContent = 'Copied'; var b=this; setTimeout(function(){ b.textContent='Copy'; }, 1500);
+  };
+
+  document.getElementById('mt-content').addEventListener('click', function(ev){
+    var t = ev.target;
+    if (t.dataset.mtJoin) joinMeeting(t.dataset.mtJoin);
+    if (t.dataset.mtCancel){
+      if (!confirm('Cancel this meeting? Guest links stop working immediately.')) return;
+      efCall({ action:'cancel', meeting_id:t.dataset.mtCancel }).then(load).catch(function(e){ alert(e.message); });
+    }
+    if (t.dataset.mtTr){
+      var m = rows.find(function(x){ return x.id===t.dataset.mtTr; });
+      if (!m) return;
+      document.getElementById('mt-tr-title').textContent = m.title;
+      document.getElementById('mt-tr-body').textContent = m.transcript || 'No transcript text.';
+      document.getElementById('mt-transcript-modal').style.display = '';
+    }
+  });
+  document.getElementById('mt-tr-close').onclick = function(){ document.getElementById('mt-transcript-modal').style.display='none'; };
+  document.getElementById('mt-tr-copy').onclick = function(){
+    var body = document.getElementById('mt-tr-body');
+    navigator.clipboard && navigator.clipboard.writeText(body.textContent);
+    this.textContent='Copied'; var b=this; setTimeout(function(){ b.textContent='Copy'; },1500);
+  };
+
+  async function boot(){
+    if (!S.isReady()){ show('mt-gate-notready'); S.onReady(boot); return; }
+    var session = await S.getSession();
+    if (!session){ show('mt-gate-signin');
+      document.getElementById('mt-signin-btn').onclick = async function(){
+        var em = document.getElementById('mt-signin-email').value.trim();
+        if (!em) return;
+        await S.signInWithEmail(em);
+        document.getElementById('mt-signin-msg').textContent = 'Magic link sent — check your inbox.';
+      };
+      return;
+    }
+    var admin = await S.getCurrentAdmin();
+    if (!admin){ show('mt-gate-denied');
+      document.getElementById('mt-denied-email').textContent = await S.getUserEmail();
+      document.getElementById('mt-signout-btn').onclick = function(){ S.signOut().then(function(){ location.reload(); }); };
+      return;
+    }
+    show('mt-content');
+    await load();
+  }
+  boot();
+})();
+</script>
+</div>

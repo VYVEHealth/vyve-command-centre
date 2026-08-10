@@ -40,6 +40,7 @@ window.VYVE_NAV = [
       { slug: "tasks", area: "tasks",     label: "Tasks",               icon: "check-square", status: "live", desc: "The shared team task board." },
       { slug: "documents", area: "documents", label: "Documents",           icon: "folder",       status: "skeleton", desc: "Internal docs and files." },
       { slug: "calendar", area: "calendar",  label: "Calendar",            icon: "calendar",     status: "live", desc: "The operating calendar \u2014 sessions, deadlines, events." },
+      { slug: "meetings", label: "Meetings",            icon: "video",        status: "live", desc: "Video meetings with automatic transcripts \u2014 internal and client calls." },
       { href: "https://app.metricool.com/evolution/instagram?blogId=5565297&userId=4317867", area: "social", label: "Social Media", icon: "share", external: true },
       { href: "https://riverside.fm/dashboard/home", area: "content", label: "Riverside", icon: "video", external: true },
       { href: "https://drive.google.com/drive/u/1/home", area: "documents", label: "Shared Documents", icon: "drive", external: true }
