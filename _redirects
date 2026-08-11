@@ -1,0 +1,2 @@
+# PM-934: human guest links — /m/<code> serves the meeting join page
+/m/:code /meet.html?c=:code 200

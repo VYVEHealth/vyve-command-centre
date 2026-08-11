@@ -35,15 +35,18 @@
 (function(){
   var EF = 'https://ixjfklpckgxrwjlfsaaz.supabase.co/functions/v1/meeting-guest';
   var params = new URLSearchParams(location.search);
+  var code = params.get('c') || '';
+  if (!code){ var pm = location.pathname.match(/\/m\/([0-9A-Za-z]{6,12})/); if (pm) code = pm[1]; }
   var mid = params.get('m') || '';
   var tok = params.get('g') || '';
   var btn = document.getElementById('join');
   var errEl = document.getElementById('err');
   function fail(msg){ errEl.textContent = msg; errEl.style.display = 'block'; }
-  if (!mid || !tok){ btn.disabled = true; fail('This link is incomplete — please check the link you were sent.'); }
+  function apiIds(){ return code ? { code: code } : { meeting_id: mid, token: tok }; }
+  if (!code && (!mid || !tok)){ btn.disabled = true; fail('This link is incomplete — please check the link you were sent.'); }
   else {
     fetch(EF, { method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ action:'info', meeting_id: mid, token: tok }) })
+      body: JSON.stringify(Object.assign({ action:'info' }, apiIds())) })
       .then(function(r){ return r.json().then(function(j){ return { ok:r.ok, j:j }; }); })
       .then(function(res){
         if (res.ok && res.j.title){ document.getElementById('title').textContent = res.j.title; document.title = res.j.title + ' — VYVE Meeting'; }
@@ -58,7 +61,7 @@
     btn.disabled = true; btn.textContent = 'Joining\u2026';
     try {
       var r = await fetch(EF, { method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ meeting_id: mid, token: tok, name: name }) });
+        body: JSON.stringify(Object.assign({ name: name }, apiIds())) });
       var j = await r.json();
       if (!r.ok) throw new Error(j.error === 'link_expired' ? 'This meeting link has expired.' : j.error === 'meeting_over' ? 'This meeting has ended.' : 'Could not join \u2014 please check your link.');
       document.getElementById('gate').style.display = 'none';
