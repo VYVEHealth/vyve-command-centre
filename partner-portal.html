@@ -1217,7 +1217,10 @@
       var f = e.target.files[0]; e.target.value = '';
       if (!f) return;
       if (!/^image\//.test(f.type)) { toast('Please choose an image file'); return; }
-      if (f.size > 15 * 1024 * 1024) { toast('Image too large — 15MB max'); return; }
+      /* PM-935: raw-input gate only guards browser memory — the PM-860 cropper exports a
+         small canvas JPEG regardless of source size (Vanessa's 17.5MB cover was rejected here
+         pointlessly; modern phone photos routinely exceed 15MB). */
+      if (f.size > 40 * 1024 * 1024) { toast('Image too large — 40MB max'); return; }
       openCropper(kind, f);
     });
   });
