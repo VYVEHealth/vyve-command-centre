@@ -1,2 +1,3 @@
 # PM-934: human guest links — /m/<code> serves the meeting join page
-/m/:code /meet.html?c=:code 200
+# (extensionless target: the .html form gets 308-normalised by Pages and DROPS the query)
+/m/:code /meet?c=:code 200
