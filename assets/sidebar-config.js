@@ -37,6 +37,7 @@ window.VYVE_NAV = [
       { slug: "investor", area: "investors",  label: "Investors & Grants",  icon: "target",       status: "live", desc: "Funding pipeline and the grant calendar." },
       { slug: "content", area: "content",   label: "Content",             icon: "edit",         status: "live", desc: "Plan and approve posts before Metricool publishes." },
       { slug: "podcast", area: "podcast",   label: "Podcast",             icon: "mic",          status: "live", desc: "Episode tracker \u2014 planned, recorded, published." },
+      { slug: "inbound", label: "Applications",        icon: "inbox",        status: "live", desc: "Website applications, contact & demo requests, podcast guests \u2014 instant bell + daily digest." },
       { slug: "tasks", area: "tasks",     label: "Tasks",               icon: "check-square", status: "live", desc: "The shared team task board." },
       { slug: "documents", area: "documents", label: "Documents",           icon: "folder",       status: "skeleton", desc: "Internal docs and files." },
       { slug: "calendar", area: "calendar",  label: "Calendar",            icon: "calendar",     status: "live", desc: "The operating calendar \u2014 sessions, deadlines, events." },
@@ -53,8 +54,7 @@ window.VYVE_NAV = [
       { href: "/admin-console.html", area: "members", label: "Member Admin", icon: "users", external: false, desc: "Member list, detail and edit \u2014 the members admin surface." },
       { slug: "broadcast", area: "members",    label: "Broadcast",    icon: "share", status: "live", desc: "Push notifications to member devices." },
       { slug: "active-users", area: "members", label: "Active Users", icon: "users", status: "live", desc: "Who\u2019s in the app right now." },
-      { slug: "complaints", area: "complaints",   label: "Complaints",   icon: "shield", status: "live", desc: "Member reports from Help & Support \u2014 triage and resolve." },
-      { slug: "inbound", area: "complaints",   label: "Inbound",   icon: "inbox", status: "live", desc: "Website applications, contact & demo requests, podcast guests \u2014 with a daily digest." }
+      { slug: "complaints", area: "complaints",   label: "Complaints",   icon: "shield", status: "live", desc: "Member reports from Help & Support \u2014 triage and resolve." }
     ]
   },
   // ---------- Partners ----------
