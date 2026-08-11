@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>VYVE Meeting</title>
+<!-- PM-933: guest join page. Lives on our domain because the Supabase functions
+     domain forcibly serves HTML as sandboxed text/plain (platform anti-phishing).
+     The meeting-guest EF is the API: POST info -> title, POST join -> Daily token. -->
+<style>
+  :root{--teal:#1B7878;--dark:#0D2B2B;--gold:#c9a84c}
+  *{box-sizing:border-box;margin:0}
+  body{font-family:'DM Sans',-apple-system,system-ui,sans-serif;background:var(--dark);color:#fff;min-height:100vh;display:flex;flex-direction:column}
+  #gate{max-width:420px;margin:auto;padding:32px 24px;text-align:center}
+  h1{font-size:22px;margin-bottom:6px}
+  p{font-size:14px;color:#9fc3c3;margin-bottom:18px}
+  input{width:100%;padding:12px 14px;border-radius:10px;border:1px solid #2e5757;background:#12403f;color:#fff;font-size:15px;margin-bottom:12px}
+  button{width:100%;padding:13px;border-radius:10px;border:0;background:var(--teal);color:#fff;font-size:15px;font-weight:700;cursor:pointer}
+  button:disabled{opacity:.5}
+  #err{color:#f0a3a3;font-size:13px;margin-top:12px;display:none}
+  .fine{font-size:11.5px;color:#6f9a9a;margin-top:16px;line-height:1.5}
+  #call{flex:1;display:none}
+  #callframe{width:100%;height:100vh;border:0}
+</style></head>
+<body>
+<div id="gate">
+  <h1 id="title">VYVE Meeting</h1>
+  <p>You've been invited to a VYVE Health video meeting.</p>
+  <input id="name" placeholder="Your name" maxlength="60" autocomplete="name"/>
+  <button id="join">Join meeting</button>
+  <div id="err"></div>
+  <div class="fine">Your host will let you in from the lobby. This meeting may be transcribed for the organiser's internal notes.</div>
+</div>
+<div id="call"><iframe id="callframe" allow="camera; microphone; fullscreen; display-capture; autoplay"></iframe></div>
+<script src="https://unpkg.com/@daily-co/daily-js"></script>
+<script>
+(function(){
+  var EF = 'https://ixjfklpckgxrwjlfsaaz.supabase.co/functions/v1/meeting-guest';
+  var params = new URLSearchParams(location.search);
+  var mid = params.get('m') || '';
+  var tok = params.get('g') || '';
+  var btn = document.getElementById('join');
+  var errEl = document.getElementById('err');
+  function fail(msg){ errEl.textContent = msg; errEl.style.display = 'block'; }
+  if (!mid || !tok){ btn.disabled = true; fail('This link is incomplete — please check the link you were sent.'); }
+  else {
+    fetch(EF, { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'info', meeting_id: mid, token: tok }) })
+      .then(function(r){ return r.json().then(function(j){ return { ok:r.ok, j:j }; }); })
+      .then(function(res){
+        if (res.ok && res.j.title){ document.getElementById('title').textContent = res.j.title; document.title = res.j.title + ' — VYVE Meeting'; }
+        else if (res.j.error === 'link_expired'){ btn.disabled = true; fail('This meeting link has expired.'); }
+        else if (res.j.error === 'meeting_over'){ btn.disabled = true; fail('This meeting has ended.'); }
+      }).catch(function(){});
+  }
+  btn.onclick = async function(){
+    var name = document.getElementById('name').value.trim();
+    errEl.style.display = 'none';
+    if (!name){ fail('Please enter your name.'); return; }
+    btn.disabled = true; btn.textContent = 'Joining\u2026';
+    try {
+      var r = await fetch(EF, { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ meeting_id: mid, token: tok, name: name }) });
+      var j = await r.json();
+      if (!r.ok) throw new Error(j.error === 'link_expired' ? 'This meeting link has expired.' : j.error === 'meeting_over' ? 'This meeting has ended.' : 'Could not join \u2014 please check your link.');
+      document.getElementById('gate').style.display = 'none';
+      document.getElementById('call').style.display = 'block';
+      var frame = window.DailyIframe.wrap(document.getElementById('callframe'));
+      frame.on('left-meeting', function(){ location.reload(); });
+      await frame.join({ url: j.room_url, token: j.token });
+    } catch(e){
+      fail(e.message || 'Could not join.');
+      btn.disabled = false; btn.textContent = 'Join meeting';
+    }
+  };
+})();
+</script>
+</body></html>

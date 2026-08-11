@@ -254,7 +254,7 @@
       msg.textContent = 'Created.';
       document.getElementById('mt-f-title').value = '';
       if (j.guest_token && j.meeting){
-        var link = S.URL + '/functions/v1/meeting-guest?m=' + j.meeting.id + '&g=' + j.guest_token;
+        var link = 'https://admin.vyvehealth.co.uk/meet.html?m=' + j.meeting.id + '&g=' + j.guest_token;
         document.getElementById('mt-guestlink').value = link;
         document.getElementById('mt-guestlink-panel').style.display = '';
       } else {
