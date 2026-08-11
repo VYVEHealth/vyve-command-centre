@@ -1,0 +1,165 @@
+<div class="page active" id="page-inbound">
+<style>
+/* Token-backed fields per §23.152 */
+#page-inbound select { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; }
+.ib-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 13px; flex-wrap: wrap; cursor: pointer; }
+.ib-row:last-child { border-bottom: 0; }
+.ib-row:hover { background: var(--surface-2); }
+.ib-when { min-width: 130px; color: var(--text-muted); font-size: 12px; }
+.ib-main { flex: 1; min-width: 200px; }
+.ib-kind { font-size: 10.5px; font-weight: 800; letter-spacing: .4px; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+.ib-kind-role_application { background: rgba(61,184,159,.15); color: #3DB89F; }
+.ib-kind-contact { background: rgba(201,168,76,.16); color: #c9a84c; }
+.ib-kind-podcast_guest { background: rgba(120,150,230,.16); color: #8aa2e8; }
+.ib-kind-other { background: var(--surface-2); color: var(--text-muted); }
+.ib-status { font-size: 11.5px; font-weight: 700; white-space: nowrap; }
+.ib-new { color: #3DB89F; }
+@media (max-width: 640px) {
+  .ib-when { flex-basis: 100%; min-width: 0; }
+  .ib-main { flex-basis: 100%; }
+}
+</style>
+  <div class="page-hero">
+    <div class="eyebrow">Run the Business · Live data</div>
+    <h1 class="page-title">Inbound</h1>
+    <p class="page-sub">Everything the website sends in — role applications, contact &amp; demo requests, podcast guest interest. One daily digest instead of an email per item.</p>
+  </div>
+
+  <div id="ib-gate-notready" class="card" style="padding:30px 26px;text-align:center"><div style="font-size:14px;color:var(--text-muted)">Connecting…</div></div>
+  <div id="ib-gate-denied" class="card" style="display:none;padding:30px 26px;text-align:center"><div style="font-size:14px;color:var(--text-muted)">Your account doesn't have access to Inbound.</div></div>
+
+  <div id="ib-content" style="display:none">
+    <div class="card" style="padding:16px 18px;margin-bottom:16px">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <select id="ib-kind">
+          <option value="">All kinds</option>
+          <option value="role_application">Applications</option>
+          <option value="contact">Contact / demo</option>
+          <option value="podcast_guest">Podcast guests</option>
+        </select>
+        <select id="ib-status">
+          <option value="open">New + seen</option>
+          <option value="new">New only</option>
+          <option value="actioned">Actioned</option>
+          <option value="archived">Archived</option>
+          <option value="">Everything</option>
+        </select>
+        <span id="ib-counts" style="font-size:12.5px;color:var(--text-muted)"></span>
+      </div>
+    </div>
+    <div class="card" style="padding:6px 18px">
+      <div id="ib-list"></div>
+      <div id="ib-empty" style="display:none;padding:28px 0;text-align:center;color:var(--text-muted);font-size:13.5px">Nothing here.</div>
+    </div>
+  </div>
+
+  <div id="ib-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:3000;align-items:center;justify-content:center;padding:18px" role="dialog">
+    <div class="card" style="max-width:640px;width:100%;max-height:86vh;overflow:auto;padding:22px 24px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+        <div>
+          <div id="ib-m-kind"></div>
+          <h3 id="ib-m-title" style="margin:8px 0 2px;font-size:17px"></h3>
+          <div id="ib-m-meta" style="font-size:12.5px;color:var(--text-muted)"></div>
+        </div>
+        <button class="btn btn-ghost btn-sm" id="ib-m-close" type="button">✕</button>
+      </div>
+      <div id="ib-m-body" style="margin-top:14px;font-size:13.5px;line-height:1.65;white-space:pre-wrap"></div>
+      <div id="ib-m-extra" style="margin-top:12px;font-size:12.5px;color:var(--text-muted)"></div>
+      <div style="display:flex;gap:8px;margin-top:18px;flex-wrap:wrap">
+        <a id="ib-m-reply" class="btn btn-primary btn-sm" href="#">Reply by email</a>
+        <button class="btn btn-ghost btn-sm" id="ib-m-actioned" type="button">Mark actioned</button>
+        <button class="btn btn-ghost btn-sm" id="ib-m-archive" type="button">Archive</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  'use strict';
+  var S = window.VYVE_SUPABASE;
+  var rows = [], current = null;
+
+  function show(id){ ['ib-gate-notready','ib-gate-denied','ib-content'].forEach(function(x){ var el=document.getElementById(x); if(el) el.style.display=(x===id)?'':'none'; }); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function fmtWhen(iso){ var d=new Date(iso); return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}); }
+  var KIND_LABEL = { role_application:'Application', contact:'Contact / demo', podcast_guest:'Podcast guest', other:'Other' };
+
+  async function load(){
+    var kind = document.getElementById('ib-kind').value;
+    var status = document.getElementById('ib-status').value;
+    var q = S.client.from('cc_inbound').select('*').order('created_at',{ascending:false}).limit(200);
+    if (kind) q = q.eq('kind', kind);
+    if (status === 'open') q = q.in('status',['new','seen']);
+    else if (status) q = q.eq('status', status);
+    var r = await q;
+    rows = r.data || [];
+    render();
+  }
+
+  function render(){
+    var list = document.getElementById('ib-list');
+    document.getElementById('ib-empty').style.display = rows.length ? 'none' : '';
+    list.innerHTML = rows.map(function(x){
+      var title = x.kind==='role_application' ? ((x.payload&&x.payload.role)||'Application') : (x.subject || KIND_LABEL[x.kind]);
+      return '<div class="ib-row" data-ib="'+x.id+'">'
+        + '<div class="ib-when">'+fmtWhen(x.created_at)+'</div>'
+        + '<span class="ib-kind ib-kind-'+esc(x.kind)+'">'+(KIND_LABEL[x.kind]||x.kind)+'</span>'
+        + '<div class="ib-main"><span style="font-weight:600">'+esc(x.name)+'</span> <span style="color:var(--text-muted)">— '+esc(title)+'</span></div>'
+        + '<span class="ib-status '+(x.status==='new'?'ib-new':'')+'">'+esc(x.status)+'</span>'
+        + '</div>';
+    }).join('');
+    var newCount = rows.filter(function(x){return x.status==='new';}).length;
+    document.getElementById('ib-counts').textContent = rows.length + ' shown · ' + newCount + ' new';
+  }
+
+  async function setStatus(id, status){
+    await S.client.from('cc_inbound').update({ status: status }).eq('id', id);
+    await load();
+  }
+
+  function openItem(id){
+    var x = rows.find(function(r){ return r.id===id; });
+    if (!x) return;
+    current = x;
+    document.getElementById('ib-m-kind').innerHTML = '<span class="ib-kind ib-kind-'+esc(x.kind)+'">'+(KIND_LABEL[x.kind]||x.kind)+'</span>';
+    document.getElementById('ib-m-title').textContent = x.name + (x.subject ? ' — ' + x.subject : '');
+    document.getElementById('ib-m-meta').textContent = x.email + ' · ' + fmtWhen(x.created_at) + ' · from ' + (x.source||'website');
+    document.getElementById('ib-m-body').textContent = x.body || '(no message)';
+    var extras = [];
+    var p = x.payload || {};
+    Object.keys(p).forEach(function(k){ if (p[k]) extras.push(k.replace(/_/g,' ') + ': ' + p[k]); });
+    document.getElementById('ib-m-extra').innerHTML = extras.map(function(e){
+      var isLink = /^https?:\/\//.test(e.split(': ').slice(1).join(': '));
+      if (isLink){ var parts = e.split(': '); var url = parts.slice(1).join(': '); return esc(parts[0]) + ': <a href="'+esc(url)+'" target="_blank" rel="noopener" style="color:var(--accent)">'+esc(url)+'</a>'; }
+      return esc(e);
+    }).join('<br/>');
+    var subj = encodeURIComponent('Re: ' + (x.subject || KIND_LABEL[x.kind] + ' — VYVE Health'));
+    document.getElementById('ib-m-reply').href = 'mailto:' + encodeURIComponent(x.email) + '?subject=' + subj;
+    document.getElementById('ib-modal').style.display = 'flex';
+    if (x.status === 'new') setStatus(x.id, 'seen');
+  }
+
+  document.getElementById('ib-modal').addEventListener('click', function(e){ if (e.target === this) this.style.display='none'; });
+  document.getElementById('ib-m-close').onclick = function(){ document.getElementById('ib-modal').style.display='none'; };
+  document.getElementById('ib-m-actioned').onclick = function(){ if (current) setStatus(current.id,'actioned'); document.getElementById('ib-modal').style.display='none'; };
+  document.getElementById('ib-m-archive').onclick = function(){ if (current) setStatus(current.id,'archived'); document.getElementById('ib-modal').style.display='none'; };
+  document.getElementById('ib-kind').onchange = load;
+  document.getElementById('ib-status').onchange = load;
+  document.getElementById('ib-content').addEventListener('click', function(e){
+    var t = e.target.closest('[data-ib]');
+    if (t) openItem(t.dataset.ib);
+  });
+
+  async function boot(){
+    if (!S.isReady()){ show('ib-gate-notready'); S.onReady(boot); return; }
+    var session = await S.getSession();
+    if (!session){ show('ib-gate-denied'); return; }
+    var admin = await S.getCurrentAdmin();
+    if (!admin){ show('ib-gate-denied'); return; }
+    show('ib-content');
+    await load();
+  }
+  boot();
+})();
+</script>
+</div>
