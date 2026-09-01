@@ -367,6 +367,7 @@
 
   <div class="pp-tabs">
     <button class="pp-tab active" data-tab="profile" type="button">Profile</button>
+    <button class="pp-tab" data-tab="clients" type="button">Clients</button>
     <button class="pp-tab" data-tab="content" type="button">My Content</button>
     <button class="pp-tab" data-tab="community" type="button">Community</button>
     <button class="pp-tab" data-tab="sessions" type="button">Sessions</button>
@@ -754,6 +755,54 @@
           <button class="btn btn-primary" id="sup-send-btn" type="button" style="font-size:13px;">Send message</button>
           <div id="sup-msg" style="margin-top:8px;font-size:12.5px;color:var(--text-muted);"></div>
         </div>
+      </div>
+    </div>
+
+    <div class="pp-panel" id="panel-clients">
+      <div class="card">
+        <div class="card-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Your clients
+          <button class="btn btn-primary" id="cl-add-btn" type="button" style="margin-left:auto;font-size:12px;">+ Add client</button>
+        </div>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">Create a VYVE account for each of your clients. They get an email invite, 7 days free, then &pound;10/month &mdash; and you earn &pound;5/month for every month they stay a member. You can only ever see your own clients&rsquo; training data, and only after they accept data sharing on first login.</p>
+
+        <div id="cl-editor" style="display:none;margin-bottom:16px;border:1px solid var(--border);border-radius:10px;padding:16px;">
+          <div style="font-weight:700;font-size:14px;margin-bottom:12px;">New client</div>
+          <div class="field-row">
+            <div class="field"><label>First name</label><input id="clf-first" type="text" maxlength="60" placeholder="e.g. Michael"/></div>
+            <div class="field"><label>Last name</label><input id="clf-last" type="text" maxlength="60" placeholder="Surname"/></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Email</label><input id="clf-email" type="email" placeholder="client@example.com"/></div>
+            <div class="field"><label>Date of birth (optional)</label><input id="clf-dob" type="date"/></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Gender (optional)</label>
+              <select id="clf-gender"><option value="">Prefer not to say</option><option>Male</option><option>Female</option><option>Non-binary</option></select>
+            </div>
+            <div class="field"></div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;margin-top:6px;">
+            <button class="btn btn-primary" id="clf-save" type="button">Create &amp; send invite</button>
+            <button class="btn" id="clf-cancel" type="button">Cancel</button>
+            <span id="clf-msg" style="font-size:12.5px;color:var(--text-muted);"></span>
+          </div>
+        </div>
+
+        <div id="cl-list"><div class="empty-state"><h3>No clients yet</h3><p>Add your first client to send them their VYVE login.</p></div></div>
+        <div id="cl-link-row" style="display:none;margin-top:12px;">
+          <label style="font-size:12px;color:var(--text-muted);">Activation link (share directly if their email hasn&rsquo;t arrived)</label>
+          <input id="cl-link-input" type="text" readonly style="width:100%;margin-top:4px;font-size:12px;" onclick="this.select()"/>
+        </div>
+      </div>
+
+      <div class="card" id="cl-detail-card" style="display:none;">
+        <div class="card-title">
+          <span id="cl-detail-name">Client</span>
+          <button class="btn" id="cl-detail-close" type="button" style="margin-left:auto;font-size:12px;">Close</button>
+        </div>
+        <div id="cl-detail-body" style="font-size:13.5px;color:var(--text);"></div>
       </div>
     </div>
 
@@ -2518,6 +2567,148 @@
     document.querySelectorAll('.ba-daypill').forEach(function(b){ b.classList.add('sel'); });
   });
   $b('bx-add').addEventListener('click', blockDay);
+})();
+</script>
+<script>
+/* \u2500\u2500 PM-954: Clients tab (coaching roster \u2014 self-contained, mirrors PM-812 bookings pattern) \u2500\u2500 */
+(function(){
+  'use strict';
+  var REST = _SUPA_URL + '/rest/v1';
+  var EF = _SUPA_URL + '/functions/v1/coach-provision-client';
+  var inited = false, partnerId = null, roster = [], memberMap = {};
+  function $c(id){ return document.getElementById(id); }
+  function esc(x){ return String(x==null?'':x).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  async function jwt(){ var r = await _getSB().auth.getSession(); return (r.data.session && r.data.session.access_token) || ''; }
+  async function rest(path, opts){
+    opts = opts || {};
+    var t = await jwt();
+    var h = { 'apikey': _SUPA_ANON, 'Authorization': 'Bearer ' + t, 'Content-Type': 'application/json' };
+    var r = await fetch(REST + path, { method: opts.method || 'GET', headers: h, body: opts.body ? JSON.stringify(opts.body) : undefined });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    var txt = await r.text();
+    return txt ? JSON.parse(txt) : null;
+  }
+  async function ef(payload){
+    var t = await jwt();
+    var r = await fetch(EF, { method: 'POST', headers: { 'Authorization': 'Bearer ' + t, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    var j = await r.json().catch(function(){ return {}; });
+    if (!r.ok) throw new Error(j.message || j.error || ('HTTP ' + r.status));
+    return j;
+  }
+  function badge(st){
+    var map = { invited: ['Invited','#C9A84C'], active: ['Active','#22c55e'], archived: ['Archived','#94a3b8'] };
+    var m = map[st] || [st,'#94a3b8'];
+    return '<span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.5px;color:#fff;background:' + m[1] + ';">' + m[0] + '</span>';
+  }
+  function nameOf(c){
+    var m = memberMap[(c.member_email||'').toLowerCase()];
+    if (m && (m.first_name || m.last_name)) return ((m.first_name||'') + ' ' + (m.last_name||'')).trim();
+    return ((c.invited_first_name||'') + ' ' + (c.invited_last_name||'')).trim() || c.member_email;
+  }
+  function renderRoster(){
+    var el = $c('cl-list');
+    if (!roster.length){ el.innerHTML = '<div class="empty-state"><h3>No clients yet</h3><p>Add your first client to send them their VYVE login.</p></div>'; return; }
+    el.innerHTML = roster.map(function(c){
+      var acts = '';
+      if (c.status === 'invited') acts = '<button class="btn" data-act="resend" data-em="' + esc(c.member_email) + '" style="font-size:11.5px;">Resend invite</button> <button class="btn" data-act="copy_link" data-em="' + esc(c.member_email) + '" style="font-size:11.5px;">Copy link</button> ';
+      if (c.status !== 'archived') acts += '<button class="btn" data-act="view" data-em="' + esc(c.member_email) + '" style="font-size:11.5px;">View</button> <button class="btn" data-act="archive" data-em="' + esc(c.member_email) + '" style="font-size:11.5px;">Archive</button>';
+      else acts += '<button class="btn" data-act="reactivate" data-em="' + esc(c.member_email) + '" style="font-size:11.5px;">Reactivate</button>';
+      var sub = c.status === 'invited' ? 'Invited ' + (c.invite_sent_at ? new Date(c.invite_sent_at).toLocaleDateString('en-GB') : '') + (c.invite_count > 1 ? ' \u00b7 ' + c.invite_count + ' invites sent' : '') : esc(c.member_email);
+      return '<div style="display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--border);flex-wrap:wrap;">' +
+        '<div style="flex:1;min-width:180px;"><div style="font-weight:600;">' + esc(nameOf(c)) + '</div><div style="font-size:12px;color:var(--text-muted);">' + sub + '</div></div>' +
+        badge(c.status) + '<div style="display:flex;gap:6px;flex-wrap:wrap;">' + acts + '</div></div>';
+    }).join('');
+    el.querySelectorAll('[data-act]').forEach(function(b){ b.addEventListener('click', function(){ act(b.dataset.act, b.dataset.em, b); }); });
+  }
+  async function loadClients(){
+    roster = await rest('/coach_clients?partner_id=eq.' + partnerId + '&order=created_at.desc&select=*') || [];
+    var emails = roster.map(function(c){ return '"' + c.member_email + '"'; }).join(',');
+    memberMap = {};
+    if (roster.length){
+      try {
+        var ms = await rest('/members?email=in.(' + encodeURIComponent(emails.replace(/"/g,'')) + ')&select=email,first_name,last_name,last_active_at,weight_kg') || [];
+        ms.forEach(function(m){ memberMap[(m.email||'').toLowerCase()] = m; });
+      } catch(e){ /* unconsented rows simply not visible \u2014 expected */ }
+    }
+    renderRoster();
+  }
+  async function act(a, em, btn){
+    if (a === 'view') return viewClient(em);
+    if (a === 'archive' && !confirm('Archive this client? They keep their VYVE membership (and your \u00a35/month continues) \u2014 you just stop managing their training.')) return;
+    var old = btn.textContent; btn.disabled = true; btn.textContent = '\u2026';
+    try {
+      var r = await ef({ action: a, email: em });
+      if (a === 'copy_link' && r.invite_link){
+        $c('cl-link-row').style.display = '';
+        $c('cl-link-input').value = r.invite_link;
+        try { await navigator.clipboard.writeText(r.invite_link); btn.textContent = 'Copied!'; setTimeout(function(){ btn.textContent = old; btn.disabled = false; }, 1500); return; } catch(_){}
+      }
+      if (a === 'resend'){ btn.textContent = r.email_sent ? 'Sent!' : 'Link made \u2014 email failed'; setTimeout(function(){ btn.textContent = old; btn.disabled = false; }, 2000); return; }
+      await loadClients();
+    } catch(e){ alert('That didn\u2019t work: ' + e.message); btn.textContent = old; btn.disabled = false; }
+  }
+  async function viewClient(em){
+    var c = roster.find(function(x){ return x.member_email === em; });
+    $c('cl-detail-card').style.display = '';
+    $c('cl-detail-name').textContent = nameOf(c);
+    var body = $c('cl-detail-body');
+    if (c.status === 'invited' || !c.consent_accepted_at){
+      body.innerHTML = '<div class="empty-state"><h3>Waiting on ' + esc((c.invited_first_name||'them')) + '</h3><p>Their training data appears here once they log in and accept your terms and data sharing.</p></div>';
+      return;
+    }
+    body.innerHTML = '<p style="color:var(--text-muted);font-size:12.5px;">Loading\u2026</p>';
+    var enc = encodeURIComponent(em), since30 = new Date(Date.now()-30*864e5).toISOString(), since7 = new Date(Date.now()-7*864e5).toISOString().slice(0,10);
+    try {
+      var res = await Promise.all([
+        rest('/weight_logs?member_email=eq.' + enc + '&order=logged_at.desc&limit=1&select=weight_kg,logged_at').catch(function(){return [];}),
+        rest('/workouts?member_email=eq.' + enc + '&completed_at=gte.' + encodeURIComponent(since30) + '&select=id').catch(function(){return [];}),
+        rest('/daily_habits?member_email=eq.' + enc + '&completed_date=gte.' + since7 + '&select=id').catch(function(){return [];}),
+        rest('/coach_form_responses?member_email=eq.' + enc + '&order=submitted_at.desc&limit=1&select=answers,week_start,submitted_at').catch(function(){return [];})
+      ]);
+      var w = res[0] && res[0][0], wk = (res[1]||[]).length, hb = (res[2]||[]).length, ci = res[3] && res[3][0];
+      var m = memberMap[em.toLowerCase()] || {};
+      var rows = [];
+      rows.push('<tr><td style="font-weight:600;padding:6px 12px 6px 0;">Last active</td><td>' + (m.last_active_at ? new Date(m.last_active_at).toLocaleDateString('en-GB') : '\u2014') + '</td></tr>');
+      rows.push('<tr><td style="font-weight:600;padding:6px 12px 6px 0;">Latest weight</td><td>' + (w ? w.weight_kg + ' kg (' + new Date(w.logged_at).toLocaleDateString('en-GB') + ')' : '\u2014') + '</td></tr>');
+      rows.push('<tr><td style="font-weight:600;padding:6px 12px 6px 0;">Workouts (30d)</td><td>' + wk + '</td></tr>');
+      rows.push('<tr><td style="font-weight:600;padding:6px 12px 6px 0;">Habits logged (7d)</td><td>' + hb + '</td></tr>');
+      rows.push('<tr><td style="font-weight:600;padding:6px 12px 6px 0;">Last check-in</td><td>' + (ci ? new Date(ci.submitted_at).toLocaleDateString('en-GB') : 'None yet') + '</td></tr>');
+      body.innerHTML = '<table style="border-collapse:collapse;font-size:13.5px;">' + rows.join('') + '</table>' +
+        (ci ? '<div style="margin-top:12px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;"><div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Latest check-in answers</div><pre style="white-space:pre-wrap;font-family:inherit;font-size:12.5px;margin:0;">' + esc(JSON.stringify(ci.answers, null, 1).replace(/[{}"]/g,'')) + '</pre></div>' : '');
+    } catch(e){ body.innerHTML = '<p style="color:var(--text-muted);">Could not load client data: ' + esc(e.message) + '</p>'; }
+  }
+  async function addClient(){
+    var fn = $c('clf-first').value.trim(), ln = $c('clf-last').value.trim(), em = $c('clf-email').value.trim().toLowerCase();
+    var msg = $c('clf-msg');
+    if (!fn || !em || em.indexOf('@') < 0){ msg.textContent = 'First name and a valid email are required.'; return; }
+    var btn = $c('clf-save'); btn.disabled = true; msg.textContent = 'Creating account\u2026';
+    try {
+      var r = await ef({ action: 'create', firstName: fn, lastName: ln, email: em, dob: $c('clf-dob').value || null, gender: $c('clf-gender').value || null });
+      msg.textContent = r.email_sent ? 'Invite sent to ' + em + '.' : 'Account created \u2014 email failed, use Copy link.';
+      if (r.invite_link){ $c('cl-link-row').style.display = ''; $c('cl-link-input').value = r.invite_link; }
+      $c('clf-first').value = ''; $c('clf-last').value = ''; $c('clf-email').value = ''; $c('clf-dob').value = ''; $c('clf-gender').value = '';
+      await loadClients();
+      setTimeout(function(){ $c('cl-editor').style.display = 'none'; msg.textContent = ''; }, 2500);
+    } catch(e){ msg.textContent = 'That didn\u2019t work: ' + e.message; }
+    btn.disabled = false;
+  }
+  async function init(){
+    if (inited) return; inited = true;
+    try {
+      var t = await jwt();
+      var r = await fetch(REST + '/rpc/get_my_partner_id', { method: 'POST', headers: { 'apikey': _SUPA_ANON, 'Authorization': 'Bearer ' + t, 'Content-Type': 'application/json' }, body: '{}' });
+      partnerId = await r.json();
+      if (!partnerId){ $c('cl-list').innerHTML = '<div class="empty-state"><h3>Not linked</h3><p>Your login isn\u2019t linked to a partner record \u2014 contact the VYVE team.</p></div>'; return; }
+      await loadClients();
+    } catch(e){ inited = false; }
+  }
+  document.querySelectorAll('.pp-tab').forEach(function(t){
+    if (t.dataset.tab === 'clients') t.addEventListener('click', init);
+  });
+  $c('cl-add-btn').addEventListener('click', function(){ $c('cl-editor').style.display = ''; $c('clf-first').focus(); });
+  $c('clf-cancel').addEventListener('click', function(){ $c('cl-editor').style.display = 'none'; });
+  $c('clf-save').addEventListener('click', addClient);
+  $c('cl-detail-close').addEventListener('click', function(){ $c('cl-detail-card').style.display = 'none'; });
 })();
 </script>
 </body>
