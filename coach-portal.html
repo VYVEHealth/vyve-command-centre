@@ -89,7 +89,12 @@
       <button class="cp-signout" id="cp-signout" type="button">Sign out</button>
     </div>
   </div>
+  <div class="cp-tabs" style="display:flex;gap:8px;padding:12px 22px 0;max-width:860px;margin:0 auto;">
+    <button class="btn cp-view-btn active" data-view="clients" type="button" style="font-size:13px;">Clients</button>
+    <button class="btn cp-view-btn" data-view="plans" type="button" style="font-size:13px;">My Plans</button>
+  </div>
   <div class="cp-content">
+  <div id="view-clients">
       <div class="card">
         <div class="card-title">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -167,6 +172,34 @@
         </div>
         <div id="cl-detail-body" style="font-size:13.5px;color:var(--text);"></div>
       </div>
+  </div>
+
+  <div id="view-plans" style="display:none;">
+    <div class="card">
+      <div class="card-title">My plans &amp; forms</div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">Build once, assign to any client &mdash; these are the options in your Add Client and bulk-upload dropdowns.</p>
+      <div id="pl-kinds" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;">
+        <button class="btn pl-kind active" data-kind="onboarding" type="button" style="font-size:12px;">Questionnaires</button>
+        <button class="btn pl-kind" data-kind="checkin" type="button" style="font-size:12px;">Check-ins</button>
+        <button class="btn pl-kind" data-kind="habits" type="button" style="font-size:12px;">Habits</button>
+        <button class="btn pl-kind" data-kind="workout" type="button" style="font-size:12px;">Workouts</button>
+        <button class="btn pl-kind" data-kind="nutrition" type="button" style="font-size:12px;">Nutrition</button>
+        <button class="btn pl-kind" data-kind="supplements" type="button" style="font-size:12px;">Supplements</button>
+      </div>
+      <div style="margin-bottom:12px;"><button class="btn btn-primary" id="pl-new" type="button" style="font-size:12px;">+ New</button></div>
+      <div id="pl-list"></div>
+    </div>
+    <div class="card" id="pl-editor" style="display:none;">
+      <div class="card-title"><span id="pl-editor-title">New</span>
+        <button class="btn" id="pl-cancel" type="button" style="margin-left:auto;font-size:12px;">Cancel</button>
+      </div>
+      <div class="field" style="margin-bottom:12px;"><label>Name</label><input id="plf-name" type="text" maxlength="120" placeholder="e.g. 12-Week Fat Loss"/></div>
+      <div id="pl-body"></div>
+      <div style="display:flex;gap:10px;align-items:center;margin-top:14px;">
+        <button class="btn btn-primary" id="pl-save" type="button">Save</button>
+        <span id="pl-msg" style="font-size:12.5px;color:var(--text-muted);"></span>
+      </div>
+    </div>
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
@@ -468,6 +501,235 @@
   $c('bu-template').addEventListener('click', downloadTemplate);
   $c('bu-file').addEventListener('change', function(){ if (this.files && this.files[0]) handleFile(this.files[0]); this.value = ''; });
   $c('bu-confirm').addEventListener('click', confirmBulk);
+
+  /* ── My Plans: template + form builders (PM-954e) ── */
+  var plKind = 'onboarding', plEditing = null, plItems = [], exerciseNames = [];
+  var IS_FORM = function(k){ return k === 'onboarding' || k === 'checkin'; };
+  var KIND_LABEL = { onboarding:'questionnaire', checkin:'check-in form', habits:'habits plan', workout:'workout plan', nutrition:'nutrition plan', supplements:'supplement plan' };
+  var QTYPES = [['text','Short answer'],['textarea','Long answer'],['number','Number'],['scale','1\u201310 scale'],['select','Multiple choice'],['yesno','Yes / No']];
+  function rowBtn(label, cls){ return '<button class="btn ' + (cls||'') + '" type="button" style="font-size:11.5px;padding:5px 10px;">' + label + '</button>'; }
+  async function plLoad(){
+    var el = $c('pl-list');
+    el.innerHTML = '<p style="color:var(--text-muted);font-size:12.5px;">Loading\u2026</p>';
+    try {
+      if (IS_FORM(plKind)) plItems = await rest('/coach_forms?partner_id=eq.' + partnerId + '&kind=eq.' + plKind + '&active=eq.true&order=created_at.desc&select=*') || [];
+      else plItems = await rest('/coach_templates?partner_id=eq.' + partnerId + '&kind=eq.' + plKind + '&active=eq.true&order=created_at.desc&select=*') || [];
+    } catch(e){ plItems = []; }
+    if (!plItems.length){ el.innerHTML = '<div class="empty-state"><h3>Nothing here yet</h3><p>Create your first ' + KIND_LABEL[plKind] + ' and it becomes assignable to clients.</p></div>'; return; }
+    el.innerHTML = plItems.map(function(it){
+      var name = it.title || it.name;
+      var sub = IS_FORM(plKind) ? ((it.questions||[]).length + ' questions') : summarise(it.payload||{});
+      return '<div style="display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid var(--border);">' +
+        '<div style="flex:1;"><div style="font-weight:600;">' + esc(name) + '</div><div style="font-size:12px;color:var(--text-muted);">' + esc(sub) + '</div></div>' +
+        '<button class="btn" data-pl-edit="' + it.id + '" style="font-size:11.5px;">Edit</button>' +
+        '<button class="btn" data-pl-del="' + it.id + '" style="font-size:11.5px;">Delete</button></div>';
+    }).join('');
+    el.querySelectorAll('[data-pl-edit]').forEach(function(b){ b.addEventListener('click', function(){ plOpen(plItems.find(function(x){ return x.id === b.dataset.plEdit; })); }); });
+    el.querySelectorAll('[data-pl-del]').forEach(function(b){ b.addEventListener('click', function(){ plDelete(b.dataset.plDel); }); });
+  }
+  function summarise(p){
+    if (plKind === 'habits') return ((p.habits||[]).length) + ' habits';
+    if (plKind === 'workout') return ((p.sessions||[]).length) + ' sessions / week';
+    if (plKind === 'nutrition') return (p.calories ? p.calories + ' kcal' : 'targets') + (p.protein_g ? ' \u00b7 ' + p.protein_g + 'g protein' : '');
+    if (plKind === 'supplements') return ((p.items||[]).length) + ' supplements';
+    return '';
+  }
+  async function plDelete(id){
+    if (!confirm('Delete this ' + KIND_LABEL[plKind] + '? Clients it was already applied to are unaffected.')) return;
+    var path = IS_FORM(plKind) ? '/coach_forms' : '/coach_templates';
+    try { await rest(path + '?id=eq.' + id, { method: 'PATCH', body: { active: false } }); } catch(e){ alert('Delete failed: ' + e.message); }
+    await plLoad(); loadLibraries();
+  }
+  function plOpen(item){
+    plEditing = item || null;
+    $c('pl-editor').style.display = '';
+    $c('pl-editor-title').textContent = (item ? 'Edit ' : 'New ') + KIND_LABEL[plKind];
+    $c('plf-name').value = item ? (item.title || item.name) : '';
+    $c('pl-msg').textContent = '';
+    var b = $c('pl-body');
+    if (IS_FORM(plKind)){
+      b.innerHTML = '<div id="q-rows"></div><button class="btn" id="q-add" type="button" style="font-size:12px;margin-top:6px;">+ Add question</button>';
+      (item && item.questions && item.questions.length ? item.questions : [{}]).forEach(addQRow);
+      $c('q-add').addEventListener('click', function(){ addQRow({}); });
+    } else if (plKind === 'habits'){
+      b.innerHTML = '<div id="h-rows"></div><button class="btn" id="h-add" type="button" style="font-size:12px;margin-top:6px;">+ Add habit</button>';
+      var hs = (item && item.payload && item.payload.habits && item.payload.habits.length) ? item.payload.habits : [{}];
+      hs.forEach(addHRow);
+      $c('h-add').addEventListener('click', function(){ addHRow({}); });
+    } else if (plKind === 'workout'){
+      b.innerHTML = '<p style="font-size:12.5px;color:var(--text-muted);margin-bottom:10px;">Build one training week \u2014 it repeats until you change it. Exercise names matching the VYVE library get demo videos automatically in the app.</p><div id="w-sessions"></div><button class="btn" id="w-add-session" type="button" style="font-size:12px;margin-top:6px;">+ Add session</button><datalist id="ex-names">' + exerciseNames.map(function(n){ return '<option value="' + esc(n) + '">'; }).join('') + '</datalist>';
+      var ss = (item && item.payload && item.payload.sessions && item.payload.sessions.length) ? item.payload.sessions : [{ name: 'Session 1', exercises: [{}] }];
+      ss.forEach(addWSession);
+      $c('w-add-session').addEventListener('click', function(){ addWSession({ name: 'Session ' + ($c('w-sessions').children.length + 1), exercises: [{}] }); });
+    } else if (plKind === 'nutrition'){
+      var p = (item && item.payload) || {};
+      b.innerHTML = '<div class="field-row">' +
+        '<div class="field"><label>Daily calories (kcal)</label><input id="nf-cal" type="number" min="0" value="' + (p.calories||'') + '"/></div>' +
+        '<div class="field"><label>Protein (g)</label><input id="nf-pro" type="number" min="0" value="' + (p.protein_g||'') + '"/></div></div>' +
+        '<div class="field-row">' +
+        '<div class="field"><label>Fat (g)</label><input id="nf-fat" type="number" min="0" value="' + (p.fat_g||'') + '"/></div>' +
+        '<div class="field"><label>Carbs (g)</label><input id="nf-carb" type="number" min="0" value="' + (p.carbs_g||'') + '"/></div></div>' +
+        '<div class="field-row">' +
+        '<div class="field"><label>Water (litres/day)</label><input id="nf-water" type="number" min="0" step="0.1" value="' + (p.hydration_l||'') + '"/></div>' +
+        '<div class="field"></div></div>' +
+        '<div class="field"><label>Guidance notes for the client</label><textarea id="nf-notes" rows="4" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:13px;font-family:inherit;">' + esc(p.notes||'') + '</textarea></div>';
+    } else if (plKind === 'supplements'){
+      b.innerHTML = '<div id="sp-rows"></div><button class="btn" id="sp-add" type="button" style="font-size:12px;margin-top:6px;">+ Add supplement</button>';
+      var sps = (item && item.payload && item.payload.items && item.payload.items.length) ? item.payload.items : [{}];
+      sps.forEach(addSPRow);
+      $c('sp-add').addEventListener('click', function(){ addSPRow({}); });
+    }
+  }
+  function addQRow(q){
+    var d = document.createElement('div');
+    d.style.cssText = 'border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;';
+    d.innerHTML = '<div class="field-row"><div class="field"><label>Question</label><input class="q-label" type="text" maxlength="200" value="' + esc(q.label||'') + '" placeholder="e.g. What are your top 3 goals?"/></div>' +
+      '<div class="field"><label>Answer type</label><select class="q-type">' + QTYPES.map(function(t){ return '<option value="' + t[0] + '"' + (q.type===t[0]?' selected':'') + '>' + t[1] + '</option>'; }).join('') + '</select></div></div>' +
+      '<div class="field q-opts" style="display:' + (q.type==='select'?'':'none') + ';"><label>Choices (comma separated)</label><input class="q-options" type="text" value="' + esc((q.options||[]).join(', ')) + '"/></div>' +
+      '<div style="text-align:right;">' + rowBtn('Remove','q-del') + '</div>';
+    d.querySelector('.q-type').addEventListener('change', function(){ d.querySelector('.q-opts').style.display = this.value === 'select' ? '' : 'none'; });
+    d.querySelector('.q-del').addEventListener('click', function(){ d.remove(); });
+    $c('q-rows').appendChild(d);
+  }
+  function addHRow(h){
+    var d = document.createElement('div');
+    d.style.cssText = 'border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;';
+    d.innerHTML = '<div class="field-row"><div class="field"><label>Habit</label><input class="h-title" type="text" maxlength="120" value="' + esc(h.title||'') + '" placeholder="e.g. 10,000 steps"/></div>' +
+      '<div class="field"><label>Why / how (shown to client)</label><input class="h-desc" type="text" maxlength="240" value="' + esc(h.description||'') + '"/></div></div>' +
+      '<div style="text-align:right;">' + rowBtn('Remove','h-del') + '</div>';
+    d.querySelector('.h-del').addEventListener('click', function(){ d.remove(); });
+    $c('h-rows').appendChild(d);
+  }
+  function addWSession(sess){
+    var d = document.createElement('div');
+    d.className = 'w-session';
+    d.style.cssText = 'border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px;';
+    d.innerHTML = '<div class="field" style="margin-bottom:8px;"><label>Session name</label><input class="w-name" type="text" maxlength="80" value="' + esc(sess.name||'') + '" placeholder="e.g. Push A"/></div>' +
+      '<div class="w-ex-rows"></div><div style="display:flex;gap:8px;margin-top:6px;">' + rowBtn('+ Exercise','w-add-ex') + rowBtn('Remove session','w-del') + '</div>';
+    var exWrap = d.querySelector('.w-ex-rows');
+    function addEx(ex){
+      var e = document.createElement('div');
+      e.style.cssText = 'display:grid;grid-template-columns:2fr 60px 70px 70px 2fr 28px;gap:6px;margin-bottom:6px;align-items:end;';
+      e.innerHTML = '<div class="field"><label>Exercise</label><input class="we-name" list="ex-names" type="text" value="' + esc(ex.name||'') + '"/></div>' +
+        '<div class="field"><label>Sets</label><input class="we-sets" type="text" value="' + esc(ex.sets||'3') + '"/></div>' +
+        '<div class="field"><label>Reps</label><input class="we-reps" type="text" value="' + esc(ex.reps||'8-12') + '"/></div>' +
+        '<div class="field"><label>Rest s</label><input class="we-rest" type="number" min="0" value="' + (ex.rest_seconds!=null?ex.rest_seconds:90) + '"/></div>' +
+        '<div class="field"><label>Notes</label><input class="we-notes" type="text" value="' + esc(ex.notes||'') + '"/></div>' +
+        '<button class="btn we-del" type="button" style="font-size:11px;padding:6px 8px;">&times;</button>';
+      e.querySelector('.we-del').addEventListener('click', function(){ e.remove(); });
+      exWrap.appendChild(e);
+    }
+    (sess.exercises && sess.exercises.length ? sess.exercises : [{}]).forEach(addEx);
+    d.querySelector('.w-add-ex').addEventListener('click', function(){ addEx({}); });
+    d.querySelector('.w-del').addEventListener('click', function(){ d.remove(); });
+    $c('w-sessions').appendChild(d);
+  }
+  function addSPRow(sp){
+    var d = document.createElement('div');
+    d.style.cssText = 'border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;';
+    d.innerHTML = '<div style="display:grid;grid-template-columns:2fr 1fr 1fr 2fr;gap:8px;" class="sp-grid">' +
+      '<div class="field"><label>Supplement</label><input class="sp-name" type="text" value="' + esc(sp.name||'') + '" placeholder="e.g. Creatine"/></div>' +
+      '<div class="field"><label>Dosage</label><input class="sp-dose" type="text" value="' + esc(sp.dosage||'') + '" placeholder="5g"/></div>' +
+      '<div class="field"><label>Timing</label><input class="sp-time" type="text" value="' + esc(sp.timing||'') + '" placeholder="Morning"/></div>' +
+      '<div class="field"><label>Notes</label><input class="sp-notes" type="text" value="' + esc(sp.notes||'') + '"/></div></div>' +
+      '<div style="text-align:right;margin-top:6px;">' + rowBtn('Remove','sp-del') + '</div>';
+    d.querySelector('.sp-del').addEventListener('click', function(){ d.remove(); });
+    $c('sp-rows').appendChild(d);
+  }
+  function plCollect(){
+    if (IS_FORM(plKind)){
+      var qs = [];
+      $c('q-rows').querySelectorAll(':scope > div').forEach(function(d, i){
+        var label = d.querySelector('.q-label').value.trim();
+        if (!label) return;
+        var type = d.querySelector('.q-type').value;
+        var q = { id: 'q' + (i+1), label: label, type: type };
+        if (type === 'select') q.options = d.querySelector('.q-options').value.split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+        qs.push(q);
+      });
+      return { questions: qs, valid: qs.length > 0, err: 'Add at least one question.' };
+    }
+    if (plKind === 'habits'){
+      var hs = [];
+      $c('h-rows').querySelectorAll(':scope > div').forEach(function(d){
+        var t = d.querySelector('.h-title').value.trim();
+        if (t) hs.push({ title: t, description: d.querySelector('.h-desc').value.trim() });
+      });
+      return { payload: { habits: hs }, valid: hs.length > 0, err: 'Add at least one habit.' };
+    }
+    if (plKind === 'workout'){
+      var ss = [];
+      document.querySelectorAll('#w-sessions .w-session').forEach(function(d){
+        var nm = d.querySelector('.w-name').value.trim() || 'Session';
+        var exs = [];
+        d.querySelectorAll('.w-ex-rows > div').forEach(function(e){
+          var en = e.querySelector('.we-name').value.trim();
+          if (en) exs.push({ name: en, sets: e.querySelector('.we-sets').value.trim() || '3', reps: e.querySelector('.we-reps').value.trim() || '8-12', rest_seconds: parseInt(e.querySelector('.we-rest').value) || 60, notes: e.querySelector('.we-notes').value.trim() });
+        });
+        if (exs.length) ss.push({ name: nm, exercises: exs });
+      });
+      return { payload: { sessions: ss }, valid: ss.length > 0, err: 'Add at least one session with an exercise.' };
+    }
+    if (plKind === 'nutrition'){
+      var p = { calories: parseInt($c('nf-cal').value) || null, protein_g: parseInt($c('nf-pro').value) || null, fat_g: parseInt($c('nf-fat').value) || null, carbs_g: parseInt($c('nf-carb').value) || null, hydration_l: parseFloat($c('nf-water').value) || null, notes: $c('nf-notes').value.trim() };
+      return { payload: p, valid: !!(p.calories || p.protein_g || p.notes), err: 'Set at least calories, protein, or notes.' };
+    }
+    var items = [];
+    $c('sp-rows').querySelectorAll(':scope > div').forEach(function(d){
+      var n = d.querySelector('.sp-name').value.trim();
+      if (n) items.push({ name: n, dosage: d.querySelector('.sp-dose').value.trim(), timing: d.querySelector('.sp-time').value.trim(), notes: d.querySelector('.sp-notes').value.trim() });
+    });
+    return { payload: { items: items }, valid: items.length > 0, err: 'Add at least one supplement.' };
+  }
+  async function plSave(){
+    var name = $c('plf-name').value.trim(), msg = $c('pl-msg');
+    if (!name){ msg.textContent = 'Give it a name.'; return; }
+    var col = plCollect();
+    if (!col.valid){ msg.textContent = col.err; return; }
+    var btn = $c('pl-save'); btn.disabled = true; msg.textContent = 'Saving\u2026';
+    try {
+      if (IS_FORM(plKind)){
+        if (plEditing) await rest('/coach_forms?id=eq.' + plEditing.id, { method: 'PATCH', body: { title: name, questions: col.questions, updated_at: new Date().toISOString() } });
+        else await rest('/coach_forms', { method: 'POST', body: { partner_id: partnerId, kind: plKind, title: name, questions: col.questions } });
+      } else {
+        if (plEditing) await rest('/coach_templates?id=eq.' + plEditing.id, { method: 'PATCH', body: { name: name, payload: col.payload, updated_at: new Date().toISOString() } });
+        else await rest('/coach_templates', { method: 'POST', body: { partner_id: partnerId, kind: plKind, name: name, payload: col.payload } });
+      }
+      msg.textContent = 'Saved.';
+      $c('pl-editor').style.display = 'none';
+      await plLoad(); loadLibraries();
+    } catch(e){ msg.textContent = 'Save failed: ' + (e.message.indexOf('409') >= 0 ? 'you already have a ' + KIND_LABEL[plKind] + ' with that name.' : e.message); }
+    btn.disabled = false;
+  }
+  async function loadExerciseNames(){
+    if (exerciseNames.length) return;
+    try {
+      var rows = await rest('/workout_plans?select=exercise_name&order=exercise_name.asc');
+      var seen = {};
+      exerciseNames = (rows||[]).map(function(r){ return r.exercise_name; }).filter(function(n){ if (!n || seen[n]) return false; seen[n] = 1; return true; });
+    } catch(e){ exerciseNames = []; }
+  }
+  document.querySelectorAll('.cp-view-btn').forEach(function(b){
+    b.addEventListener('click', function(){
+      document.querySelectorAll('.cp-view-btn').forEach(function(x){ x.classList.remove('active'); x.classList.remove('btn-primary'); });
+      b.classList.add('active'); b.classList.add('btn-primary');
+      $c('view-clients').style.display = b.dataset.view === 'clients' ? '' : 'none';
+      $c('view-plans').style.display = b.dataset.view === 'plans' ? '' : 'none';
+      if (b.dataset.view === 'plans'){ plLoad(); loadExerciseNames(); }
+    });
+  });
+  document.querySelectorAll('.pl-kind').forEach(function(b){
+    b.addEventListener('click', function(){
+      document.querySelectorAll('.pl-kind').forEach(function(x){ x.classList.remove('active'); x.classList.remove('btn-primary'); });
+      b.classList.add('active'); b.classList.add('btn-primary');
+      plKind = b.dataset.kind;
+      $c('pl-editor').style.display = 'none';
+      plLoad();
+    });
+  });
+  $c('pl-new').addEventListener('click', function(){ plOpen(null); });
+  $c('pl-cancel').addEventListener('click', function(){ $c('pl-editor').style.display = 'none'; });
+  $c('pl-save').addEventListener('click', plSave);
 
   function showApp(sess){
     $g('login-overlay').classList.remove('show');
