@@ -506,7 +506,8 @@
   var plKind = 'onboarding', plEditing = null, plItems = [], exerciseNames = [];
   var IS_FORM = function(k){ return k === 'onboarding' || k === 'checkin'; };
   var KIND_LABEL = { onboarding:'questionnaire', checkin:'check-in form', habits:'habits plan', workout:'workout plan', nutrition:'nutrition plan', supplements:'supplement plan' };
-  var QTYPES = [['text','Short answer'],['textarea','Long answer'],['number','Number'],['scale','1\u201310 scale'],['select','Multiple choice'],['yesno','Yes / No']];
+  var QTYPES = [['text','Short answer'],['textarea','Long answer'],['number','Number'],['scale','1\u201310 scale'],['select','Multiple choice'],['yesno','Yes / No'],['photo','Photo upload'],['video','Video upload']];
+  var CHECKIN_DEFAULTS = [{label:'Tell us about your week',type:'textarea'},{label:'Did you stick to your plan?',type:'yesno'},{label:'How do you feel overall?',type:'scale'},{label:'Current photos (front, back, side)',type:'photo'},{label:'Anything else for your coach?',type:'textarea'}];
   function rowBtn(label, cls){ return '<button class="btn ' + (cls||'') + '" type="button" style="font-size:11.5px;padding:5px 10px;">' + label + '</button>'; }
   async function plLoad(){
     var el = $c('pl-list');
@@ -549,7 +550,8 @@
     var b = $c('pl-body');
     if (IS_FORM(plKind)){
       b.innerHTML = '<div id="q-rows"></div><button class="btn" id="q-add" type="button" style="font-size:12px;margin-top:6px;">+ Add question</button>';
-      (item && item.questions && item.questions.length ? item.questions : [{}]).forEach(addQRow);
+      var seedQs = (item && item.questions && item.questions.length) ? item.questions : (plKind === 'checkin' ? CHECKIN_DEFAULTS : [{}]);
+      seedQs.forEach(addQRow);
       $c('q-add').addEventListener('click', function(){ addQRow({}); });
     } else if (plKind === 'habits'){
       b.innerHTML = '<div id="h-rows"></div><button class="btn" id="h-add" type="button" style="font-size:12px;margin-top:6px;">+ Add habit</button>';
@@ -557,7 +559,7 @@
       hs.forEach(addHRow);
       $c('h-add').addEventListener('click', function(){ addHRow({}); });
     } else if (plKind === 'workout'){
-      b.innerHTML = '<p style="font-size:12.5px;color:var(--text-muted);margin-bottom:10px;">Build one training week \u2014 it repeats until you change it. Exercise names matching the VYVE library get demo videos automatically in the app.</p><div id="w-sessions"></div><button class="btn" id="w-add-session" type="button" style="font-size:12px;margin-top:6px;">+ Add session</button><datalist id="ex-names">' + exerciseNames.map(function(n){ return '<option value="' + esc(n) + '">'; }).join('') + '</datalist>';
+      b.innerHTML = '<p style="font-size:12.5px;color:var(--text-muted);margin-bottom:10px;">Build one training week \u2014 it repeats until you change it. Exercise names matching the VYVE library get demo videos automatically in the app.</p><div class="field" style="margin-bottom:10px;"><label>Workout instructions (shown to the client)</label><textarea id="w-instructions" rows="2" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:13px;font-family:inherit;">' + esc((item && item.payload && item.payload.instructions) || '') + '</textarea></div><div id="w-sessions"></div><button class="btn" id="w-add-session" type="button" style="font-size:12px;margin-top:6px;">+ Add session</button><datalist id="ex-names">' + exerciseNames.map(function(n){ return '<option value="' + esc(n) + '">'; }).join('') + '</datalist>';
       var ss = (item && item.payload && item.payload.sessions && item.payload.sessions.length) ? item.payload.sessions : [{ name: 'Session 1', exercises: [{}] }];
       ss.forEach(addWSession);
       $c('w-add-session').addEventListener('click', function(){ addWSession({ name: 'Session ' + ($c('w-sessions').children.length + 1), exercises: [{}] }); });
@@ -586,7 +588,7 @@
     d.innerHTML = '<div class="field-row"><div class="field"><label>Question</label><input class="q-label" type="text" maxlength="200" value="' + esc(q.label||'') + '" placeholder="e.g. What are your top 3 goals?"/></div>' +
       '<div class="field"><label>Answer type</label><select class="q-type">' + QTYPES.map(function(t){ return '<option value="' + t[0] + '"' + (q.type===t[0]?' selected':'') + '>' + t[1] + '</option>'; }).join('') + '</select></div></div>' +
       '<div class="field q-opts" style="display:' + (q.type==='select'?'':'none') + ';"><label>Choices (comma separated)</label><input class="q-options" type="text" value="' + esc((q.options||[]).join(', ')) + '"/></div>' +
-      '<div style="text-align:right;">' + rowBtn('Remove','q-del') + '</div>';
+      '<div style="display:flex;align-items:center;justify-content:space-between;"><label style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:6px;cursor:pointer;"><input class="q-req" type="checkbox"' + (q.required?' checked':'') + ' style="accent-color:var(--vyve-teal);"/> Required</label>' + rowBtn('Remove','q-del') + '</div>';
     d.querySelector('.q-type').addEventListener('change', function(){ d.querySelector('.q-opts').style.display = this.value === 'select' ? '' : 'none'; });
     d.querySelector('.q-del').addEventListener('click', function(){ d.remove(); });
     $c('q-rows').appendChild(d);
@@ -605,9 +607,12 @@
     d.className = 'w-session';
     d.style.cssText = 'border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px;';
     d.innerHTML = '<div class="field" style="margin-bottom:8px;"><label>Session name</label><input class="w-name" type="text" maxlength="80" value="' + esc(sess.name||'') + '" placeholder="e.g. Push A"/></div>' +
-      '<div class="w-ex-rows"></div><div style="display:flex;gap:8px;margin-top:6px;">' + rowBtn('+ Exercise','w-add-ex') + rowBtn('Remove session','w-del') + '</div>';
-    var exWrap = d.querySelector('.w-ex-rows');
-    function addEx(ex){
+      '<div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin:6px 0 4px;">Warm up (optional)</div><div class="w-warm-rows"></div><div style="margin-bottom:8px;">' + rowBtn('+ Warm up exercise','w-add-warm') + '</div>' +
+      '<div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin:6px 0 4px;">Workout</div><div class="w-ex-rows"></div><div style="margin-bottom:8px;">' + rowBtn('+ Exercise','w-add-ex') + '</div>' +
+      '<div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin:6px 0 4px;">Cool down (optional)</div><div class="w-cool-rows"></div><div style="display:flex;gap:8px;margin-top:6px;">' + rowBtn('+ Cool down exercise','w-add-cool') + rowBtn('Remove session','w-del') + '</div>';
+    var exWrap = d.querySelector('.w-ex-rows'), warmWrap = d.querySelector('.w-warm-rows'), coolWrap = d.querySelector('.w-cool-rows');
+    function addEx(ex, wrap){
+      wrap = wrap || exWrap;
       var e = document.createElement('div');
       e.style.cssText = 'display:grid;grid-template-columns:2fr 60px 70px 70px 2fr 28px;gap:6px;margin-bottom:6px;align-items:end;';
       e.innerHTML = '<div class="field"><label>Exercise</label><input class="we-name" list="ex-names" type="text" value="' + esc(ex.name||'') + '"/></div>' +
@@ -617,10 +622,14 @@
         '<div class="field"><label>Notes</label><input class="we-notes" type="text" value="' + esc(ex.notes||'') + '"/></div>' +
         '<button class="btn we-del" type="button" style="font-size:11px;padding:6px 8px;">&times;</button>';
       e.querySelector('.we-del').addEventListener('click', function(){ e.remove(); });
-      exWrap.appendChild(e);
+      wrap.appendChild(e);
     }
-    (sess.exercises && sess.exercises.length ? sess.exercises : [{}]).forEach(addEx);
-    d.querySelector('.w-add-ex').addEventListener('click', function(){ addEx({}); });
+    (sess.exercises && sess.exercises.length ? sess.exercises : [{}]).forEach(function(x){ addEx(x, exWrap); });
+    (sess.warmup || []).forEach(function(x){ addEx(x, warmWrap); });
+    (sess.cooldown || []).forEach(function(x){ addEx(x, coolWrap); });
+    d.querySelector('.w-add-ex').addEventListener('click', function(){ addEx({}, exWrap); });
+    d.querySelector('.w-add-warm').addEventListener('click', function(){ addEx({ sets:'1', reps:'', rest_seconds:0 }, warmWrap); });
+    d.querySelector('.w-add-cool').addEventListener('click', function(){ addEx({ sets:'1', reps:'', rest_seconds:0 }, coolWrap); });
     d.querySelector('.w-del').addEventListener('click', function(){ d.remove(); });
     $c('w-sessions').appendChild(d);
   }
@@ -645,6 +654,7 @@
         var type = d.querySelector('.q-type').value;
         var q = { id: 'q' + (i+1), label: label, type: type };
         if (type === 'select') q.options = d.querySelector('.q-options').value.split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+        if (d.querySelector('.q-req').checked) q.required = true;
         qs.push(q);
       });
       return { questions: qs, valid: qs.length > 0, err: 'Add at least one question.' };
@@ -659,16 +669,21 @@
     }
     if (plKind === 'workout'){
       var ss = [];
+      function grab(d, cls){
+        var out = [];
+        d.querySelectorAll(cls + ' > div').forEach(function(e){
+          var en = e.querySelector('.we-name').value.trim();
+          if (en) out.push({ name: en, sets: e.querySelector('.we-sets').value.trim() || '3', reps: e.querySelector('.we-reps').value.trim() || '8-12', rest_seconds: parseInt(e.querySelector('.we-rest').value) || 60, notes: e.querySelector('.we-notes').value.trim() });
+        });
+        return out;
+      }
       document.querySelectorAll('#w-sessions .w-session').forEach(function(d){
         var nm = d.querySelector('.w-name').value.trim() || 'Session';
-        var exs = [];
-        d.querySelectorAll('.w-ex-rows > div').forEach(function(e){
-          var en = e.querySelector('.we-name').value.trim();
-          if (en) exs.push({ name: en, sets: e.querySelector('.we-sets').value.trim() || '3', reps: e.querySelector('.we-reps').value.trim() || '8-12', rest_seconds: parseInt(e.querySelector('.we-rest').value) || 60, notes: e.querySelector('.we-notes').value.trim() });
-        });
-        if (exs.length) ss.push({ name: nm, exercises: exs });
+        var exs = grab(d, '.w-ex-rows'), wu = grab(d, '.w-warm-rows'), cd = grab(d, '.w-cool-rows');
+        if (exs.length) ss.push({ name: nm, exercises: exs, warmup: wu, cooldown: cd });
       });
-      return { payload: { sessions: ss }, valid: ss.length > 0, err: 'Add at least one session with an exercise.' };
+      var instr = ($c('w-instructions') && $c('w-instructions').value.trim()) || '';
+      return { payload: { sessions: ss, instructions: instr }, valid: ss.length > 0, err: 'Add at least one session with an exercise.' };
     }
     if (plKind === 'nutrition'){
       var p = { calories: parseInt($c('nf-cal').value) || null, protein_g: parseInt($c('nf-pro').value) || null, fat_g: parseInt($c('nf-fat').value) || null, carbs_g: parseInt($c('nf-carb').value) || null, hydration_l: parseFloat($c('nf-water').value) || null, notes: $c('nf-notes').value.trim() };
