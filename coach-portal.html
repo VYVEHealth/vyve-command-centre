@@ -293,30 +293,81 @@
     $c('cl-detail-card').style.display = '';
     $c('cl-detail-name').textContent = nameOf(c);
     var body = $c('cl-detail-body');
-    if (c.status === 'invited' || !c.consent_accepted_at){
-      body.innerHTML = '<div class="empty-state"><h3>Waiting on ' + esc((c.invited_first_name||'them')) + '</h3><p>Their training data appears here once they log in and accept your terms and data sharing.</p></div>';
-      return;
-    }
     body.innerHTML = '<p style="color:var(--text-muted);font-size:12.5px;">Loading\u2026</p>';
     var enc = encodeURIComponent(em), since30 = new Date(Date.now()-30*864e5).toISOString(), since7 = new Date(Date.now()-7*864e5).toISOString().slice(0,10);
-    try {
-      var res = await Promise.all([
-        rest('/weight_logs?member_email=eq.' + enc + '&order=logged_at.desc&limit=1&select=weight_kg,logged_at').catch(function(){return [];}),
-        rest('/workouts?member_email=eq.' + enc + '&completed_at=gte.' + encodeURIComponent(since30) + '&select=id').catch(function(){return [];}),
+    var consented = c.status === 'active' && c.consent_accepted_at;
+    var res = [[],[],[],[],[]];
+    if (consented){
+      res = await Promise.all([
+        rest('/weight_logs?member_email=eq.' + enc + '&order=logged_at.desc&limit=3&select=weight_kg,logged_at').catch(function(){return [];}),
+        rest('/workouts?member_email=eq.' + enc + '&completed_at=gte.' + encodeURIComponent(since30) + '&order=completed_at.desc&select=completed_at').catch(function(){return [];}),
         rest('/daily_habits?member_email=eq.' + enc + '&completed_date=gte.' + since7 + '&select=id').catch(function(){return [];}),
-        rest('/coach_form_responses?member_email=eq.' + enc + '&order=submitted_at.desc&limit=1&select=answers,week_start,submitted_at').catch(function(){return [];})
+        rest('/coach_form_responses?member_email=eq.' + enc + '&order=submitted_at.desc&limit=3&select=answers,week_start,submitted_at').catch(function(){return [];}),
+        rest('/members?email=eq.' + enc + '&select=last_active_at,trial_ends_at,subscription_status').catch(function(){return [];})
       ]);
-      var w = res[0] && res[0][0], wk = (res[1]||[]).length, hb = (res[2]||[]).length, ci = res[3] && res[3][0];
-      var m = memberMap[em.toLowerCase()] || {};
-      var rows = [];
-      rows.push('<tr><td style="font-weight:600;padding:6px 12px 6px 0;">Last active</td><td>' + (m.last_active_at ? new Date(m.last_active_at).toLocaleDateString('en-GB') : '\u2014') + '</td></tr>');
-      rows.push('<tr><td style="font-weight:600;padding:6px 12px 6px 0;">Latest weight</td><td>' + (w ? w.weight_kg + ' kg (' + new Date(w.logged_at).toLocaleDateString('en-GB') + ')' : '\u2014') + '</td></tr>');
-      rows.push('<tr><td style="font-weight:600;padding:6px 12px 6px 0;">Workouts (30d)</td><td>' + wk + '</td></tr>');
-      rows.push('<tr><td style="font-weight:600;padding:6px 12px 6px 0;">Habits logged (7d)</td><td>' + hb + '</td></tr>');
-      rows.push('<tr><td style="font-weight:600;padding:6px 12px 6px 0;">Last check-in</td><td>' + (ci ? new Date(ci.submitted_at).toLocaleDateString('en-GB') : 'None yet') + '</td></tr>');
-      body.innerHTML = '<table style="border-collapse:collapse;font-size:13.5px;">' + rows.join('') + '</table>' +
-        (ci ? '<div style="margin-top:12px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;"><div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Latest check-in answers</div><pre style="white-space:pre-wrap;font-family:inherit;font-size:12.5px;margin:0;">' + esc(JSON.stringify(ci.answers, null, 1).replace(/[{}"]/g,'')) + '</pre></div>' : '');
-    } catch(e){ body.innerHTML = '<p style="color:var(--text-muted);">Could not load client data: ' + esc(e.message) + '</p>'; }
+    }
+    var w = res[0] && res[0][0], wk = (res[1]||[]).length, hb = (res[2]||[]).length, cis = res[3]||[], mrow = (res[4]||[])[0] || {};
+
+    // ── Header stats ──
+    var stats = '<div style="display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px;color:var(--text-muted);margin-bottom:14px;">' +
+      '<span>Status: <strong style="color:var(--text);">' + c.status + '</strong></span>' +
+      (mrow.trial_ends_at ? '<span>Trial ends: <strong style="color:var(--text);">' + new Date(mrow.trial_ends_at).toLocaleDateString('en-GB') + '</strong></span>' : '') +
+      (mrow.last_active_at ? '<span>Last active: <strong style="color:var(--text);">' + new Date(mrow.last_active_at).toLocaleDateString('en-GB') + '</strong></span>' : '') +
+      (consented ? '<span>Workouts 30d: <strong style="color:var(--text);">' + wk + '</strong></span><span>Habits 7d: <strong style="color:var(--text);">' + hb + '</strong></span>' + (w ? '<span>Weight: <strong style="color:var(--text);">' + w.weight_kg + ' kg</strong></span>' : '') : '') +
+      '</div>';
+
+    // ── Assignments editor (works at any status) ──
+    var asg = c.assignments || {};
+    function slotSel(sl){
+      var key = { onboarding:'onboarding_form_id', checkin:'checkin_form_id', habits:'habits_template_id', workout:'workout_template_id', nutrition:'nutrition_template_id', supplements:'supplements_template_id' }[sl.slot];
+      var cur = asg[key] || '';
+      var pool = sl.slot === 'onboarding' || sl.slot === 'checkin'
+        ? lib.forms.filter(function(f){ return f.kind === sl.slot; }).map(function(f){ return { id: f.id, label: f.title }; })
+        : lib.tpls.filter(function(t){ return t.kind === sl.slot; }).map(function(t){ return { id: t.id, label: t.name }; });
+      return '<div class="field"><label>' + sl.col + '</label><select class="cd-asg" data-key="' + key + '"><option value="">None</option>' +
+        pool.map(function(p){ return '<option value="' + p.id + '"' + (p.id === cur ? ' selected' : '') + '>' + esc(p.label) + '</option>'; }).join('') + '</select></div>';
+    }
+    var asgHtml = '<div style="font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);margin:4px 0 8px;">Assigned plans</div>' +
+      '<div class="field-row">' + slotSel(SLOTS[0]) + slotSel(SLOTS[1]) + '</div>' +
+      '<div class="field-row">' + slotSel(SLOTS[2]) + slotSel(SLOTS[3]) + '</div>' +
+      '<div class="field-row">' + slotSel(SLOTS[4]) + slotSel(SLOTS[5]) + '</div>' +
+      '<div style="display:flex;gap:10px;align-items:center;margin:4px 0 16px;"><button class="btn btn-primary" id="cd-asg-save" type="button" style="font-size:12px;">Save assignments</button><span id="cd-asg-msg" style="font-size:12px;color:var(--text-muted);"></span></div>';
+
+    // ── Activity log ──
+    var events = [];
+    if (c.created_at) events.push({ t: c.created_at, label: 'Client created' + (c.invite_sent_at ? ', invite email sent' : '') });
+    if (c.invite_count > 1 && c.invite_sent_at) events.push({ t: c.invite_sent_at, label: 'Invite re-sent (' + c.invite_count + ' total)' });
+    if (c.coach_terms_accepted_at) events.push({ t: c.coach_terms_accepted_at, label: 'Accepted your terms' });
+    if (c.consent_accepted_at) events.push({ t: c.consent_accepted_at, label: 'Accepted data sharing \u2014 coaching active' });
+    if (c.archived_at && c.status === 'archived') events.push({ t: c.archived_at, label: 'Archived' });
+    (res[1]||[]).slice(0,5).forEach(function(x){ events.push({ t: x.completed_at, label: 'Completed a workout' }); });
+    (res[0]||[]).forEach(function(x){ events.push({ t: x.logged_at, label: 'Logged weight: ' + x.weight_kg + ' kg' }); });
+    cis.forEach(function(x){ events.push({ t: x.submitted_at, label: 'Submitted check-in' + (x.week_start ? ' (w/c ' + x.week_start + ')' : '') }); });
+    events = events.filter(function(e){ return e.t; }).sort(function(a,b){ return new Date(b.t) - new Date(a.t); }).slice(0, 12);
+    var logHtml = '<div style="font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);margin:4px 0 8px;">Activity log</div>' +
+      (events.length ? '<div style="border-left:2px solid var(--border);padding-left:14px;">' + events.map(function(e){
+        var d = new Date(e.t);
+        return '<div style="margin-bottom:10px;"><div style="font-size:13px;">' + esc(e.label) + '</div><div style="font-size:11.5px;color:var(--text-muted);">' + d.toLocaleDateString('en-GB') + ' ' + d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) + '</div></div>';
+      }).join('') + '</div>' : '<p style="font-size:12.5px;color:var(--text-muted);">No activity yet.</p>');
+
+    // ── Latest check-in answers ──
+    var ci = cis[0];
+    var ciHtml = ci ? '<div style="margin-top:12px;padding:12px 14px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;"><div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Latest check-in answers</div><pre style="white-space:pre-wrap;font-family:inherit;font-size:12.5px;margin:0;">' + esc(JSON.stringify(ci.answers, null, 1).replace(/[{}"]/g,'')) + '</pre></div>' : '';
+
+    var waitNote = !consented ? '<div style="padding:10px 14px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;font-size:12.5px;color:var(--text-muted);margin-bottom:14px;">Training data unlocks when ' + esc(c.invited_first_name || 'they') + ' logs in and accepts your terms and data sharing. You can adjust their assigned plans in the meantime.</div>' : '';
+
+    body.innerHTML = stats + waitNote + asgHtml + logHtml + ciHtml;
+    $c('cd-asg-save').addEventListener('click', async function(){
+      var na = {};
+      body.querySelectorAll('.cd-asg').forEach(function(sel){ if (sel.value) na[sel.dataset.key] = sel.value; });
+      var msg = $c('cd-asg-msg'); this.disabled = true; msg.textContent = 'Saving\u2026';
+      try {
+        await rest('/coach_clients?id=eq.' + c.id, { method: 'PATCH', body: { assignments: na } });
+        c.assignments = na;
+        msg.textContent = 'Saved.';
+      } catch(e){ msg.textContent = 'Save failed: ' + e.message; }
+      this.disabled = false;
+    });
   }
   async function addClient(){
     var fn = $c('clf-first').value.trim(), ln = $c('clf-last').value.trim(), em = $c('clf-email').value.trim().toLowerCase();
