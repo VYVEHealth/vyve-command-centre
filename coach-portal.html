@@ -63,6 +63,35 @@
     .empty-state h3 { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
     .empty-state p { font-size: 13px; line-height: 1.6; max-width: 340px; margin: 0 auto; }
   </style>
+<style id="cp-side-css">
+  .cp-side{position:fixed;top:0;left:0;bottom:0;width:228px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:14px 10px;gap:2px;z-index:60;overflow-y:auto;}
+  .cp-side .side-brand{font-family:Georgia,serif;font-size:19px;letter-spacing:5px;color:var(--teal-lt);padding:6px 12px 14px;}
+  .cp-item{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:8px;font-size:13.5px;color:var(--text-muted);cursor:pointer;border:none;background:none;width:100%;text-align:left;font-family:inherit;}
+  .cp-item svg{width:16px;height:16px;flex:none;}
+  .cp-item:hover{background:var(--surface-2,rgba(77,170,170,.08));color:var(--text);}
+  .cp-item.active{background:rgba(27,120,120,.14);color:var(--teal-lt);font-weight:600;box-shadow:inset 3px 0 0 var(--teal);}
+  .cp-item .soon{margin-left:auto;font-size:9px;font-weight:700;letter-spacing:.8px;color:var(--text-muted);border:1px solid var(--border);border-radius:99px;padding:2px 6px;}
+  .cp-content{margin-left:228px;}
+  .cp-header{margin-left:228px;}
+  .cp-burger{display:none;background:none;border:none;color:var(--text);font-size:20px;cursor:pointer;padding:4px 10px 4px 0;}
+  .cp-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:55;}
+  @media(max-width:840px){
+    .cp-side{transform:translateX(-100%);transition:transform .2s ease;}
+    .cp-side.open{transform:none;}
+    .cp-content,.cp-header{margin-left:0;}
+    .cp-burger{display:inline-block;}
+    .cp-overlay.show{display:block;}
+  }
+  .dash-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:18px;}
+  .dash-tile{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;}
+  .dash-tile .n{font-size:26px;font-weight:700;color:var(--teal-lt);}
+  .dash-tile .l{font-size:11.5px;letter-spacing:.6px;text-transform:uppercase;color:var(--text-muted);margin-top:2px;}
+  .soon-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:34px 28px;text-align:center;max-width:520px;margin:30px auto;}
+  .soon-card h3{margin:0 0 8px;font-size:18px;}
+  .soon-card p{margin:0;font-size:13.5px;color:var(--text-muted);line-height:1.65;}
+  .prof-row{display:flex;justify-content:space-between;gap:14px;padding:11px 2px;border-bottom:1px solid var(--border);font-size:13.5px;}
+  .prof-row .k{color:var(--text-muted);}
+</style>
 </head>
 <body>
 <div id="login-overlay" class="show">
@@ -82,19 +111,31 @@
 
 <div id="shell">
   <div class="cp-topbar">
-    <div class="cp-brand"><div class="cp-logo">VYVE</div><div class="cp-label">Coach Portal</div></div>
+    <button class="cp-burger" id="cp-burger" type="button" aria-label="Menu">&#9776;</button><div class="cp-brand"><div class="cp-logo">VYVE</div><div class="cp-label">Coach Portal</div></div>
     <div class="cp-right">
       <span class="cp-user" id="cp-user-email"></span>
       <button class="cp-theme" id="cp-theme-toggle" type="button" title="Toggle theme">&#9790;</button>
       <button class="cp-signout" id="cp-signout" type="button">Sign out</button>
     </div>
   </div>
-  <div class="cp-tabs" style="display:flex;gap:8px;padding:12px 22px 0;max-width:860px;margin:0 auto;">
-    <button class="btn cp-view-btn active" data-view="clients" type="button" style="font-size:13px;">Clients</button>
-    <button class="btn cp-view-btn" data-view="plans" type="button" style="font-size:13px;">My Plans</button>
-  </div>
+  <aside class="cp-side" id="cp-side">
+    <div class="side-brand">VYVE</div>
+    <button class="cp-item" data-go="profile" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Profile</span></button>
+    <button class="cp-item" data-go="messages" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Messages</span><span class="soon">SOON</span></button>
+    <button class="cp-item" data-go="notifications" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span>Notifications</span><span class="soon">SOON</span></button>
+    <button class="cp-item active" data-go="dashboard" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg><span>Dashboard</span></button>
+    <button class="cp-item" data-go="clients" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Clients</span></button>
+    <button class="cp-item" data-go="nutrition" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4z"/></svg><span>Nutrition</span></button>
+    <button class="cp-item" data-go="workouts" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11"/><path d="M17.5 6.5v11"/><path d="M3 9v6"/><path d="M21 9v6"/><path d="M6.5 12h11"/></svg><span>Workouts</span></button>
+    <button class="cp-item" data-go="calendar" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>Calendar</span><span class="soon">SOON</span></button>
+    <button class="cp-item" data-go="content" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m10 9 5 3-5 3z"/></svg><span>Content Library</span><span class="soon">SOON</span></button>
+    <button class="cp-item" data-go="automations" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span>Automations</span><span class="soon">SOON</span></button>
+    <button class="cp-item" data-go="forms" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span>Forms</span></button>
+    <button class="cp-item" data-go="settings" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><circle cx="9" cy="7" r="2"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="15" cy="17" r="2"/></svg><span>Settings</span></button>
+  </aside>
+  <div class="cp-overlay" id="cp-overlay"></div>
   <div class="cp-content">
-  <div id="view-clients">
+  <div id="view-clients" style="display:none;">
       <div class="card">
         <div class="card-title">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -174,6 +215,31 @@
       </div>
   </div>
 
+  <div id="view-dashboard">
+    <div class="card" style="max-width:860px;margin:18px auto;">
+      <h2 style="margin:0 0 14px;font-size:17px;">Dashboard</h2>
+      <div class="dash-tiles" id="dash-tiles"><div class="dash-tile"><div class="n">&ndash;</div><div class="l">Loading</div></div></div>
+      <h3 style="margin:6px 0 4px;font-size:13px;letter-spacing:.5px;text-transform:uppercase;color:var(--text-muted);">Recent clients</h3>
+      <div id="dash-recent" style="font-size:13.5px;"></div>
+    </div>
+  </div>
+  <div id="view-profile" style="display:none;">
+    <div class="card" style="max-width:640px;margin:18px auto;">
+      <h2 style="margin:0 0 6px;font-size:17px;">Coach profile</h2>
+      <div id="prof-body"><div class="prof-row"><span class="k">Loading&hellip;</span><span></span></div></div>
+      <p style="font-size:12px;color:var(--text-muted);margin-top:14px;">Profile editing (photo, bio, display name your clients see) lands with the client-facing coach card.</p>
+    </div>
+  </div>
+  <div id="view-soon" style="display:none;">
+    <div class="soon-card"><h3 id="soon-title"></h3><p id="soon-desc"></p></div>
+  </div>
+  <div id="view-settings" style="display:none;">
+    <div class="card" style="max-width:640px;margin:18px auto;">
+      <h2 style="margin:0 0 14px;font-size:17px;">Settings</h2>
+      <div class="prof-row"><span class="k">Appearance</span><button class="btn" id="set-theme" type="button" style="font-size:12.5px;">Toggle light / dark</button></div>
+      <div class="prof-row"><span class="k">Account</span><button class="btn" id="set-signout" type="button" style="font-size:12.5px;">Sign out</button></div>
+    </div>
+  </div>
   <div id="view-plans" style="display:none;">
     <div class="card">
       <div class="card-title">My plans &amp; forms</div>
@@ -392,6 +458,7 @@
       partnerId = await r.json();
       if (!partnerId){ $c('cl-list').innerHTML = '<div class="empty-state"><h3>Not linked</h3><p>Your login isn\u2019t linked to a partner record \u2014 contact the VYVE team.</p></div>'; return; }
       await loadClients();
+      renderDashboard();
       loadLibraries();
     } catch(e){ inited = false; }
   }
@@ -775,15 +842,72 @@
       exerciseNames = (rows||[]).map(function(r){ return r.exercise_name; }).filter(function(n){ if (!n || seen[n]) return false; seen[n] = 1; return true; });
     } catch(e){ exerciseNames = []; }
   }
-  document.querySelectorAll('.cp-view-btn').forEach(function(b){
-    b.addEventListener('click', function(){
-      document.querySelectorAll('.cp-view-btn').forEach(function(x){ x.classList.remove('active'); x.classList.remove('btn-primary'); });
-      b.classList.add('active'); b.classList.add('btn-primary');
-      $c('view-clients').style.display = b.dataset.view === 'clients' ? '' : 'none';
-      $c('view-plans').style.display = b.dataset.view === 'plans' ? '' : 'none';
-      if (b.dataset.view === 'plans'){ plLoad(); loadExerciseNames(); }
-    });
-  });
+  /* \u2500\u2500 Sidebar router (PM-955j Kahunas-style shell) \u2500\u2500 */
+  var SECTION_KINDS = { forms: ['onboarding','checkin','habits'], workouts: ['workout'], nutrition: ['nutrition','supplements'] };
+  var SOON_COPY = {
+    messages: ['Messages', 'Message your clients without leaving the portal \u2014 conversations sync to the VYVE app on their phone. Coming soon.'],
+    notifications: ['Notifications', 'A live feed of client activity \u2014 workouts finished, check-ins submitted, trials ending. Coming soon.'],
+    calendar: ['Calendar', 'Your session calendar and client bookings, powered by the VYVE booking engine. Coming soon.'],
+    content: ['Content Library', 'Upload and share your own videos and resources with clients \u2014 unlisted, coach-only content. Coming soon.'],
+    automations: ['Automations', 'Custom triggered messages \u2014 e.g. an automatic email to a client the moment you update their workout plan. Coming soon.']
+  };
+  var VIEW_IDS = ['view-dashboard','view-clients','view-plans','view-profile','view-soon','view-settings'];
+  function go(view){
+    document.querySelectorAll('.cp-item').forEach(function(x){ x.classList.toggle('active', x.dataset.go === view); });
+    var show = 'view-soon';
+    if (view === 'dashboard') show = 'view-dashboard';
+    else if (view === 'clients') show = 'view-clients';
+    else if (view === 'profile') show = 'view-profile';
+    else if (view === 'settings') show = 'view-settings';
+    else if (SECTION_KINDS[view]) show = 'view-plans';
+    VIEW_IDS.forEach(function(id){ $c(id).style.display = id === show ? '' : 'none'; });
+    if (SECTION_KINDS[view]){
+      var kinds = SECTION_KINDS[view];
+      var first = null;
+      document.querySelectorAll('.pl-kind').forEach(function(b){
+        var inSec = kinds.indexOf(b.dataset.kind) >= 0;
+        b.style.display = inSec ? '' : 'none';
+        if (inSec && !first) first = b;
+      });
+      if (kinds.indexOf(plKind) < 0 && first) first.click();
+      else { plLoad(); }
+      loadExerciseNames();
+    }
+    if (view === 'dashboard') renderDashboard();
+    if (view === 'profile') renderProfile();
+    if (SOON_COPY[view]){ $c('soon-title').textContent = SOON_COPY[view][0]; $c('soon-desc').textContent = SOON_COPY[view][1]; }
+    var side = $c('cp-side'); if (side) side.classList.remove('open');
+    var ov = $c('cp-overlay'); if (ov) ov.classList.remove('show');
+  }
+  document.querySelectorAll('.cp-item').forEach(function(b){ b.addEventListener('click', function(){ go(b.dataset.go); }); });
+  $c('cp-burger').addEventListener('click', function(){ $c('cp-side').classList.toggle('open'); $c('cp-overlay').classList.toggle('show'); });
+  $c('cp-overlay').addEventListener('click', function(){ $c('cp-side').classList.remove('open'); $c('cp-overlay').classList.remove('show'); });
+  $c('set-theme').addEventListener('click', function(){ $c('cp-theme-toggle').click(); });
+  $c('set-signout').addEventListener('click', function(){ $c('cp-signout').click(); });
+  function renderDashboard(){
+    var t = { total: roster.length, active: 0, invited: 0, archived: 0 };
+    roster.forEach(function(c){ if (t[c.status] !== undefined) t[c.status]++; });
+    $c('dash-tiles').innerHTML =
+      '<div class="dash-tile"><div class="n">' + t.total + '</div><div class="l">Clients</div></div>' +
+      '<div class="dash-tile"><div class="n">' + t.active + '</div><div class="l">Active</div></div>' +
+      '<div class="dash-tile"><div class="n">' + t.invited + '</div><div class="l">Invited</div></div>' +
+      '<div class="dash-tile"><div class="n">' + t.archived + '</div><div class="l">Archived</div></div>';
+    var rec = roster.slice(0, 5);
+    $c('dash-recent').innerHTML = rec.length ? rec.map(function(c){
+      return '<div style="display:flex;justify-content:space-between;gap:10px;padding:8px 2px;border-bottom:1px solid var(--border);">' +
+        '<span>' + esc(nameOf(c)) + '</span><span style="color:var(--text-muted);font-size:12px;">' + esc(c.status) + '</span></div>';
+    }).join('') : '<div style="color:var(--text-muted);padding:8px 2px;">No clients yet \u2014 add your first from the Clients tab.</div>';
+  }
+  async function renderProfile(){
+    var em = ($c('cp-user-email').textContent || '').trim();
+    var rows = [['Email', em || '\u2014']];
+    try {
+      var p = await rest('/partner_partners?id=eq.' + partnerId + '&select=name,slug,status,partner_type&limit=1');
+      if (p && p[0]){ rows.unshift(['Name', p[0].name || '\u2014']); rows.push(['Partner status', p[0].status || '\u2014'], ['Invite link base', 'www.vyvehealth.co.uk/start/\u2026 (per client, on the Clients tab)']); }
+    } catch(e){}
+    rows.push(['Clients', String(roster.length)]);
+    $c('prof-body').innerHTML = rows.map(function(r){ return '<div class="prof-row"><span class="k">' + esc(r[0]) + '</span><span>' + esc(r[1]) + '</span></div>'; }).join('');
+  }
   document.querySelectorAll('.pl-kind').forEach(function(b){
     b.addEventListener('click', function(){
       document.querySelectorAll('.pl-kind').forEach(function(x){ x.classList.remove('active'); x.classList.remove('btn-primary'); });
