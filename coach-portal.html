@@ -94,7 +94,8 @@
         <div class="card-title">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           Your clients
-          <button class="btn btn-primary" id="cl-add-btn" type="button" style="margin-left:auto;font-size:12px;">+ Add client</button>
+          <button class="btn" id="cl-bulk-btn" type="button" style="margin-left:auto;font-size:12px;">Bulk upload</button>
+          <button class="btn btn-primary" id="cl-add-btn" type="button" style="font-size:12px;">+ Add client</button>
         </div>
         <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">Create a VYVE account for each of your clients. They get an email invite, 7 days free, then &pound;10/month &mdash; and you earn &pound;5/month for every month they stay a member. You can only ever see your own clients&rsquo; training data, and only after they accept data sharing on first login.</p>
 
@@ -114,6 +115,19 @@
             </div>
             <div class="field"></div>
           </div>
+          <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin:10px 0 8px;text-transform:uppercase;letter-spacing:.05em;">Assign from your saved plans (optional)</div>
+          <div class="field-row">
+            <div class="field"><label>Onboarding questionnaire</label><select id="asg-onboarding"><option value="">None</option></select></div>
+            <div class="field"><label>Check-in form</label><select id="asg-checkin"><option value="">None</option></select></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Habits plan</label><select id="asg-habits"><option value="">None</option></select></div>
+            <div class="field"><label>Workout plan</label><select id="asg-workout"><option value="">None</option></select></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Nutrition plan</label><select id="asg-nutrition"><option value="">None</option></select></div>
+            <div class="field"><label>Supplement plan</label><select id="asg-supplements"><option value="">None</option></select></div>
+          </div>
           <div style="display:flex;gap:10px;align-items:center;margin-top:6px;">
             <button class="btn btn-primary" id="clf-save" type="button">Create &amp; send invite</button>
             <button class="btn" id="clf-cancel" type="button">Cancel</button>
@@ -128,6 +142,24 @@
         </div>
       </div>
 
+      <div class="card" id="cl-bulk-card" style="display:none;">
+        <div class="card-title">Bulk upload clients
+          <button class="btn" id="bu-close" type="button" style="margin-left:auto;font-size:12px;">Close</button>
+        </div>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">Download your template &mdash; it comes pre-loaded with dropdowns of your saved questionnaires and plans. Fill a row per client (up to 100), then upload it back. Excel or CSV accepted.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
+          <button class="btn btn-primary" id="bu-template" type="button">Download template (.xlsx)</button>
+          <label class="btn" for="bu-file" style="cursor:pointer;">Upload filled file</label>
+          <input id="bu-file" type="file" accept=".xlsx,.csv" style="display:none;"/>
+        </div>
+        <div id="bu-preview"></div>
+        <div id="bu-actions" style="display:none;margin-top:12px;">
+          <button class="btn btn-primary" id="bu-confirm" type="button">Create these clients &amp; send invites</button>
+          <span id="bu-msg" style="font-size:12.5px;color:var(--text-muted);margin-left:8px;"></span>
+        </div>
+        <div id="bu-results" style="margin-top:12px;"></div>
+      </div>
+
       <div class="card" id="cl-detail-card" style="display:none;">
         <div class="card-title">
           <span id="cl-detail-name">Client</span>
@@ -138,6 +170,7 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 <script>
 /* PM-954c: standalone Coach Portal (Dean call: separate surface from partner portal; same data model) */
 (function(){
@@ -258,7 +291,7 @@
     if (!fn || !em || em.indexOf('@') < 0){ msg.textContent = 'First name and a valid email are required.'; return; }
     var btn = $c('clf-save'); btn.disabled = true; msg.textContent = 'Creating account\u2026';
     try {
-      var r = await ef({ action: 'create', firstName: fn, lastName: ln, email: em, dob: $c('clf-dob').value || null, gender: $c('clf-gender').value || null });
+      var r = await ef({ action: 'create', firstName: fn, lastName: ln, email: em, dob: $c('clf-dob').value || null, gender: $c('clf-gender').value || null, assignments: readAssignSelects() });
       msg.textContent = r.email_sent ? 'Invite sent to ' + em + '.' : 'Account created \u2014 email failed, use Copy link.';
       if (r.invite_link){ $c('cl-link-row').style.display = ''; $c('cl-link-input').value = r.invite_link; }
       $c('clf-first').value = ''; $c('clf-last').value = ''; $c('clf-email').value = ''; $c('clf-dob').value = ''; $c('clf-gender').value = '';
@@ -275,12 +308,167 @@
       partnerId = await r.json();
       if (!partnerId){ $c('cl-list').innerHTML = '<div class="empty-state"><h3>Not linked</h3><p>Your login isn\u2019t linked to a partner record \u2014 contact the VYVE team.</p></div>'; return; }
       await loadClients();
+      loadLibraries();
     } catch(e){ inited = false; }
   }
   $c('cl-add-btn').addEventListener('click', function(){ $c('cl-editor').style.display = ''; $c('clf-first').focus(); });
   $c('clf-cancel').addEventListener('click', function(){ $c('cl-editor').style.display = 'none'; });
   $c('clf-save').addEventListener('click', addClient);
   $c('cl-detail-close').addEventListener('click', function(){ $c('cl-detail-card').style.display = 'none'; });
+  /* ── Assignments + bulk upload (PM-954d) ── */
+  var lib = { forms: [], tpls: [] };
+  var SLOTS = [
+    { slot:'onboarding',  col:'Onboarding questionnaire', sel:'asg-onboarding',  pool:function(){ return lib.forms.filter(function(f){return f.kind==='onboarding';}).map(function(f){return f.title;}); } },
+    { slot:'checkin',     col:'Check-in form',            sel:'asg-checkin',     pool:function(){ return lib.forms.filter(function(f){return f.kind==='checkin';}).map(function(f){return f.title;}); } },
+    { slot:'habits',      col:'Habits plan',              sel:'asg-habits',      pool:function(){ return lib.tpls.filter(function(t){return t.kind==='habits';}).map(function(t){return t.name;}); } },
+    { slot:'workout',     col:'Workout plan',             sel:'asg-workout',     pool:function(){ return lib.tpls.filter(function(t){return t.kind==='workout';}).map(function(t){return t.name;}); } },
+    { slot:'nutrition',   col:'Nutrition plan',           sel:'asg-nutrition',   pool:function(){ return lib.tpls.filter(function(t){return t.kind==='nutrition';}).map(function(t){return t.name;}); } },
+    { slot:'supplements', col:'Supplement plan',          sel:'asg-supplements', pool:function(){ return lib.tpls.filter(function(t){return t.kind==='supplements';}).map(function(t){return t.name;}); } }
+  ];
+  async function loadLibraries(){
+    try {
+      var res = await Promise.all([
+        rest('/coach_forms?partner_id=eq.' + partnerId + '&active=eq.true&select=id,kind,title'),
+        rest('/coach_templates?partner_id=eq.' + partnerId + '&active=eq.true&select=id,kind,name')
+      ]);
+      lib.forms = res[0] || []; lib.tpls = res[1] || [];
+    } catch(e){ lib = { forms: [], tpls: [] }; }
+    SLOTS.forEach(function(sl){
+      var el = $c(sl.sel); if (!el) return;
+      el.innerHTML = '<option value="">None</option>' + sl.pool().map(function(n){ return '<option>' + esc(n) + '</option>'; }).join('');
+    });
+  }
+  function readAssignSelects(){
+    var a = {};
+    SLOTS.forEach(function(sl){ var el = $c(sl.sel); if (el && el.value) a[sl.slot] = el.value; });
+    return a;
+  }
+  var BASE_COLS = ['First name','Last name','Email','Date of birth (YYYY-MM-DD)','Gender'];
+  async function downloadTemplate(){
+    var wb = new ExcelJS.Workbook();
+    var ws = wb.addWorksheet('Clients');
+    var ls = wb.addWorksheet('Lists'); ls.state = 'veryHidden';
+    var cols = BASE_COLS.concat(SLOTS.map(function(s){ return s.col; }));
+    ws.addRow(cols);
+    ws.getRow(1).font = { bold: true };
+    cols.forEach(function(c, i){ ws.getColumn(i+1).width = Math.max(18, c.length + 4); });
+    // Lists sheet: col A gender, then one column per slot
+    var genders = ['Male','Female','Non-binary'];
+    genders.forEach(function(g, i){ ls.getCell(i+1, 1).value = g; });
+    SLOTS.forEach(function(sl, si){
+      sl.pool().forEach(function(n, i){ ls.getCell(i+1, si+2).value = n; });
+    });
+    function colLetter(n){ var sTr=''; while(n>0){ var m=(n-1)%26; sTr=String.fromCharCode(65+m)+sTr; n=Math.floor((n-1)/26); } return sTr; }
+    for (var r = 2; r <= 201; r++){
+      ws.getCell(r, 5).dataValidation = { type:'list', allowBlank:true, formulae:['Lists!$A$1:$A$' + genders.length] };
+      SLOTS.forEach(function(sl, si){
+        var count = sl.pool().length;
+        if (!count) return;
+        var L = colLetter(si+2);
+        ws.getCell(r, 6+si).dataValidation = { type:'list', allowBlank:true, formulae:['Lists!$' + L + '$1:$' + L + '$' + count] };
+      });
+    }
+    var buf = await wb.xlsx.writeBuffer();
+    var blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'vyve-clients-template.xlsx';
+    a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 5000);
+  }
+  var pendingRows = [];
+  function parseCSV(text){
+    var rows = [], row = [], cur = '', inQ = false;
+    for (var i = 0; i < text.length; i++){
+      var ch = text[i];
+      if (inQ){ if (ch === '"'){ if (text[i+1] === '"'){ cur += '"'; i++; } else inQ = false; } else cur += ch; }
+      else if (ch === '"') inQ = true;
+      else if (ch === ','){ row.push(cur); cur = ''; }
+      else if (ch === '\n' || ch === '\r'){ if (ch === '\r' && text[i+1] === '\n') i++; row.push(cur); cur = ''; if (row.some(function(c){return c !== '';})) rows.push(row); row = []; }
+      else cur += ch;
+    }
+    if (cur !== '' || row.length){ row.push(cur); if (row.some(function(c){return c !== '';})) rows.push(row); }
+    return rows;
+  }
+  function rowsToClients(grid){
+    if (!grid.length) return [];
+    var hdr = grid[0].map(function(h){ return String(h||'').trim().toLowerCase(); });
+    function idx(name){ return hdr.findIndex(function(h){ return h.indexOf(name) === 0; }); }
+    var iF = idx('first name'), iL = idx('last name'), iE = idx('email'), iD = idx('date of birth'), iG = idx('gender');
+    var slotIdx = {};
+    SLOTS.forEach(function(sl){ slotIdx[sl.slot] = idx(sl.col.toLowerCase()); });
+    return grid.slice(1).map(function(r){
+      var asg = {};
+      SLOTS.forEach(function(sl){ var v = slotIdx[sl.slot] >= 0 ? String(r[slotIdx[sl.slot]]||'').trim() : ''; if (v) asg[sl.slot] = v; });
+      var dobRaw = iD >= 0 ? r[iD] : '';
+      var dob = '';
+      if (dobRaw instanceof Date) dob = dobRaw.toISOString().slice(0,10);
+      else if (dobRaw) dob = String(dobRaw).trim().slice(0,10);
+      return {
+        firstName: iF >= 0 ? String(r[iF]||'').trim() : '',
+        lastName:  iL >= 0 ? String(r[iL]||'').trim() : '',
+        email:     iE >= 0 ? String(r[iE]||'').trim().toLowerCase() : '',
+        dob: dob || null,
+        gender: iG >= 0 ? String(r[iG]||'').trim() || null : null,
+        assignments: asg
+      };
+    }).filter(function(c){ return c.firstName || c.email; });
+  }
+  async function handleFile(file){
+    var name = (file.name || '').toLowerCase();
+    var grid = [];
+    if (name.slice(-4) === '.csv'){
+      grid = parseCSV(await file.text());
+    } else {
+      var wb = new ExcelJS.Workbook();
+      await wb.xlsx.load(await file.arrayBuffer());
+      var ws = wb.getWorksheet('Clients') || wb.worksheets[0];
+      ws.eachRow({ includeEmpty: false }, function(row){
+        var vals = [];
+        for (var c = 1; c <= row.cellCount; c++){
+          var v = row.getCell(c).value;
+          if (v && typeof v === 'object' && v.text) v = v.text;
+          if (v && typeof v === 'object' && v.result !== undefined) v = v.result;
+          vals.push(v == null ? '' : v);
+        }
+        grid.push(vals);
+      });
+    }
+    pendingRows = rowsToClients(grid);
+    var pv = $c('bu-preview');
+    if (!pendingRows.length){ pv.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">No client rows found in that file.</p>'; $c('bu-actions').style.display = 'none'; return; }
+    if (pendingRows.length > 100){ pv.innerHTML = '<p style="color:#e8834a;font-size:13px;">' + pendingRows.length + ' rows found \u2014 maximum is 100 per upload. Split the file.</p>'; $c('bu-actions').style.display = 'none'; return; }
+    pv.innerHTML = '<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">' + pendingRows.length + ' client' + (pendingRows.length===1?'':'s') + ' ready:</div>' +
+      '<div style="max-height:260px;overflow:auto;border:1px solid var(--border);border-radius:8px;">' +
+      '<table style="width:100%;border-collapse:collapse;font-size:12.5px;">' +
+      '<tr style="text-align:left;"><th style="padding:8px;">Name</th><th style="padding:8px;">Email</th><th style="padding:8px;">Assigned</th></tr>' +
+      pendingRows.map(function(c){
+        var asg = Object.keys(c.assignments).map(function(k){ return esc(c.assignments[k]); }).join(', ') || '\u2014';
+        return '<tr style="border-top:1px solid var(--border);"><td style="padding:8px;">' + esc((c.firstName + ' ' + (c.lastName||'')).trim()) + '</td><td style="padding:8px;">' + esc(c.email) + '</td><td style="padding:8px;color:var(--text-muted);">' + asg + '</td></tr>';
+      }).join('') + '</table></div>';
+    $c('bu-results').innerHTML = '';
+    $c('bu-actions').style.display = '';
+  }
+  async function confirmBulk(){
+    var btn = $c('bu-confirm'), msg = $c('bu-msg');
+    btn.disabled = true; msg.textContent = 'Creating ' + pendingRows.length + ' accounts and sending invites\u2026 this can take a minute.';
+    try {
+      var r = await ef({ action: 'bulk', rows: pendingRows, send_emails: true });
+      msg.textContent = '';
+      var out = '<div style="font-size:13px;margin-bottom:8px;"><strong>' + r.created + '</strong> created' + (r.failed ? ', <strong style="color:#e8834a;">' + r.failed + '</strong> failed:' : '.') + '</div>';
+      if (r.failed) out += (r.results||[]).filter(function(x){ return !x.ok; }).map(function(x){ return '<div style="font-size:12.5px;color:#e8834a;">' + esc(x.email) + ' \u2014 ' + esc(x.error||'') + '</div>'; }).join('');
+      $c('bu-results').innerHTML = out;
+      $c('bu-preview').innerHTML = ''; $c('bu-actions').style.display = 'none'; pendingRows = [];
+      await loadClients();
+    } catch(e){ msg.textContent = 'Upload failed: ' + e.message; }
+    btn.disabled = false;
+  }
+  $c('cl-bulk-btn').addEventListener('click', function(){ $c('cl-bulk-card').style.display = ''; $c('cl-editor').style.display = 'none'; });
+  $c('bu-close').addEventListener('click', function(){ $c('cl-bulk-card').style.display = 'none'; });
+  $c('bu-template').addEventListener('click', downloadTemplate);
+  $c('bu-file').addEventListener('change', function(){ if (this.files && this.files[0]) handleFile(this.files[0]); this.value = ''; });
+  $c('bu-confirm').addEventListener('click', confirmBulk);
+
   function showApp(sess){
     $g('login-overlay').classList.remove('show');
     $g('shell').classList.add('show');
