@@ -147,10 +147,11 @@
     <button class="cp-item" data-go="notifications" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span>Notifications</span><span class="cp-nbadge" id="cp-notif-badge" style="display:none;margin-left:auto;background:#E8834A;color:#fff;border-radius:99px;font-size:10px;font-weight:800;padding:2px 8px;">0</span></button>
     <button class="cp-item active" data-go="dashboard" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg><span>Dashboard</span></button>
     <button class="cp-item" data-go="clients" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Clients</span></button>
+    <button class="cp-item" data-go="leads" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg><span>Leads</span></button>
     <button class="cp-item" data-go="nutrition" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4z"/></svg><span>Nutrition</span></button>
     <button class="cp-item" data-go="workouts" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11"/><path d="M17.5 6.5v11"/><path d="M3 9v6"/><path d="M21 9v6"/><path d="M6.5 12h11"/></svg><span>Workouts</span></button>
     <button class="cp-item" data-go="exercises" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 6v12"/><path d="M7 10v4"/><path d="M17 10v4"/></svg><span>Exercise Library</span></button>
-    <button class="cp-item" data-go="calendar" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>Calendar</span><span class="soon">SOON</span></button>
+    <button class="cp-item" data-go="calendar" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>Calendar</span></button>
     <button class="cp-item" data-go="content" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m10 9 5 3-5 3z"/></svg><span>Content Library</span><span class="soon">SOON</span></button>
     <button class="cp-item" data-go="automations" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span>Automations</span></button>
     <button class="cp-item" data-go="forms" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span>Forms</span></button>
@@ -274,6 +275,42 @@
       </div>
     </div>
   </div>
+  <div id="view-leads" style="display:none;">
+    <div class="card">
+      <div class="card-title">Leads</div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">People who filled in your public lead form. Build the form under Forms &rarr; Lead forms, then share your link anywhere &mdash; bio, posts, posters.</p>
+      <div id="lead-linkbar" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:14px;">
+        <span id="lead-link" style="font-size:12.5px;color:var(--teal-lt);word-break:break-all;flex:1;min-width:200px;">&hellip;</span>
+        <button class="btn" id="lead-copy" type="button" style="font-size:11.5px;">Copy link</button>
+      </div>
+      <div id="lead-list"><p style="font-size:12.5px;color:var(--text-muted);">Loading&hellip;</p></div>
+    </div>
+  </div>
+  <div id="view-cal" style="display:none;">
+    <div class="card">
+      <div class="card-title">Calendar</div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">Book calls with your clients. The call itself runs wherever you run it &mdash; Zoom, Meet, FaceTime &mdash; paste the link and your client joins straight from their VYVE app.</p>
+      <div style="margin-bottom:12px;"><button class="btn btn-primary" id="cal-new" type="button" style="font-size:12px;">+ Book a call</button></div>
+      <div class="card" id="cal-editor" style="display:none;background:var(--surface-2);">
+        <div class="field-row">
+          <div class="field"><label>Client</label><select id="calf-client"></select></div>
+          <div class="field"><label>Title</label><input id="calf-title" type="text" maxlength="120" placeholder="Monthly check-in call"/></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Date &amp; time</label><input id="calf-when" type="datetime-local"/></div>
+          <div class="field"><label>Length (mins)</label><input id="calf-mins" type="number" min="5" step="5" value="30"/></div>
+        </div>
+        <div class="field" style="margin-bottom:10px;"><label>Call link (Zoom, Meet&hellip;)</label><input id="calf-link" type="text" placeholder="https://zoom.us/j/&hellip;"/></div>
+        <div class="field"><label>Notes for your client (optional)</label><input id="calf-notes" type="text" maxlength="240"/></div>
+        <div style="display:flex;gap:10px;align-items:center;margin-top:10px;">
+          <button class="btn btn-primary" id="calf-save" type="button" style="font-size:12px;">Book it</button>
+          <button class="btn" id="calf-cancel" type="button" style="font-size:12px;">Cancel</button>
+          <span id="calf-msg" style="font-size:12px;color:var(--text-muted);"></span>
+        </div>
+      </div>
+      <div id="cal-list"></div>
+    </div>
+  </div>
   <div id="view-autos" style="display:none;">
     <div class="card">
       <div class="card-title">Automations</div>
@@ -343,6 +380,7 @@
       <div id="pl-kinds" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;">
         <button class="btn pl-kind active" data-kind="onboarding" type="button" style="font-size:12px;">Questionnaires</button>
         <button class="btn pl-kind" data-kind="checkin" type="button" style="font-size:12px;">Check-ins</button>
+        <button class="btn pl-kind" data-kind="lead" type="button" style="font-size:12px;">Lead forms</button>
         <button class="btn pl-kind" data-kind="habits" type="button" style="font-size:12px;">Habits</button>
         <button class="btn pl-kind" data-kind="workout" type="button" style="font-size:12px;">Weekly workouts</button>
         <button class="btn pl-kind" data-kind="workout_day" type="button" style="font-size:12px;">Day templates</button>
@@ -743,9 +781,9 @@
 
   /* ── My Plans: template + form builders (PM-954e) ── */
   var plKind = 'onboarding', plEditing = null, plItems = [], exerciseNames = [];
-  var IS_FORM = function(k){ return k === 'onboarding' || k === 'checkin'; };
-  var KIND_LABEL = { onboarding:'questionnaire', checkin:'check-in form', habits:'habits plan', workout:'workout plan', workout_day:'day template', program:'programme', nutrition:'nutrition plan', supplements:'supplement plan' };
-  var QTYPES = [['text','Short answer'],['textarea','Long answer'],['number','Number'],['scale','1\u201310 scale'],['select','Multiple choice'],['yesno','Yes / No'],['photo','Photo upload'],['video','Video upload']];
+  var IS_FORM = function(k){ return k === 'onboarding' || k === 'checkin' || k === 'lead'; };
+  var KIND_LABEL = { onboarding:'questionnaire', checkin:'check-in form', lead:'lead form', habits:'habits plan', workout:'workout plan', workout_day:'day template', program:'programme', nutrition:'nutrition plan', supplements:'supplement plan' };
+  var QTYPES = [['text','Short answer'],['textarea','Long answer'],['number','Number'],['scale','1\u201310 scale'],['stars','1\u20135 stars'],['select','Multiple choice'],['yesno','Yes / No'],['photo','Photo upload'],['video','Video upload']];
   var CHECKIN_DEFAULTS = [{label:'Tell us about your week',type:'textarea'},{label:'Did you stick to your plan?',type:'yesno'},{label:'How do you feel overall?',type:'scale'},{label:'Current photos (front, back, side)',type:'photo'},{label:'Anything else for your coach?',type:'textarea'}];
   function rowBtn(label, cls){ return '<button class="btn ' + (cls||'') + '" type="button" style="font-size:11.5px;padding:5px 10px;">' + label + '</button>'; }
   async function plLoad(){
@@ -893,10 +931,13 @@
   function addSPRow(sp){
     var d = document.createElement('div');
     d.style.cssText = 'border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;';
-    d.innerHTML = '<div style="display:grid;grid-template-columns:2fr 1fr 1fr 2fr;gap:8px;" class="sp-grid">' +
+    d.innerHTML = '<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px;" class="sp-grid">' +
       '<div class="field"><label>Supplement</label><input class="sp-name" type="text" value="' + esc(sp.name||'') + '" placeholder="e.g. Creatine"/></div>' +
       '<div class="field"><label>Dosage</label><input class="sp-dose" type="text" value="' + esc(sp.dosage||'') + '" placeholder="5g"/></div>' +
       '<div class="field"><label>Timing</label><input class="sp-time" type="text" value="' + esc(sp.timing||'') + '" placeholder="Morning"/></div>' +
+      '<div class="field"><label>Duration</label><input class="sp-dur" type="text" value="' + esc(sp.duration||'') + '" placeholder="8 weeks"/></div></div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">' +
+      '<div class="field"><label>Product link (your code/affiliate link, optional)</label><input class="sp-link" type="text" value="' + esc(sp.link||'') + '" placeholder="https://&hellip;"/></div>' +
       '<div class="field"><label>Notes</label><input class="sp-notes" type="text" value="' + esc(sp.notes||'') + '"/></div></div>' +
       '<div style="text-align:right;margin-top:6px;">' + rowBtn('Remove','sp-del') + '</div>';
     d.querySelector('.sp-del').addEventListener('click', function(){ d.remove(); });
@@ -959,7 +1000,7 @@
     var items = [];
     $c('sp-rows').querySelectorAll(':scope > div').forEach(function(d){
       var n = d.querySelector('.sp-name').value.trim();
-      if (n) items.push({ name: n, dosage: d.querySelector('.sp-dose').value.trim(), timing: d.querySelector('.sp-time').value.trim(), notes: d.querySelector('.sp-notes').value.trim() });
+      if (n) items.push({ name: n, dosage: d.querySelector('.sp-dose').value.trim(), timing: d.querySelector('.sp-time').value.trim(), duration: d.querySelector('.sp-dur').value.trim(), link: d.querySelector('.sp-link').value.trim(), notes: d.querySelector('.sp-notes').value.trim() });
     });
     return { payload: { items: items }, valid: items.length > 0, err: 'Add at least one supplement.' };
   }
@@ -991,6 +1032,123 @@
       exerciseNames = (rows||[]).map(function(r){ return r.exercise_name; }).filter(function(n){ if (!n || seen[n]) return false; seen[n] = 1; return true; });
     } catch(e){ exerciseNames = []; }
   }
+  /* ── Leads inbox + Calendar (PM-959) ── */
+  var leadFormMap = null, partnerSlug = null;
+  async function partnerSlugGet(){
+    if (partnerSlug !== null) return partnerSlug;
+    try { var p = await rest('/partner_partners?id=eq.' + partnerId + '&select=slug&limit=1'); partnerSlug = (p && p[0] && p[0].slug) || ''; }
+    catch(e){ partnerSlug = ''; }
+    return partnerSlug;
+  }
+  async function leadsLoad(){
+    var slug = await partnerSlugGet();
+    var link = slug ? ('www.vyvehealth.co.uk/lead/' + slug) : 'Link available once your partner profile has a handle \u2014 contact the VYVE team.';
+    $c('lead-link').textContent = link;
+    $c('lead-copy').style.display = slug ? '' : 'none';
+    var el = $c('lead-list');
+    var res = [[],[]];
+    try {
+      res = await Promise.all([
+        rest('/coach_leads?partner_id=eq.' + partnerId + '&order=created_at.desc&limit=100&select=id,name,email,answers,form_id,status,created_at'),
+        rest('/coach_forms?partner_id=eq.' + partnerId + '&kind=eq.lead&select=id,questions')
+      ]);
+    } catch(e){}
+    var leads = res[0] || [];
+    leadFormMap = {};
+    (res[1] || []).forEach(function(f){ leadFormMap[f.id] = f.questions || []; });
+    if (!leads.length){
+      el.innerHTML = '<div class="empty-state"><h3>No leads yet</h3><p>Build a lead form under Forms, then share your link \u2014 submissions land here and you get an email each time.</p></div>';
+      return;
+    }
+    el.innerHTML = leads.map(function(L){
+      var qs = leadFormMap[L.form_id] || [];
+      var extra = '';
+      qs.forEach(function(q){
+        var v = (L.answers || {})[q.id];
+        if (v === undefined || v === null || v === '') return;
+        extra += '<div style="font-size:12px;margin-top:3px;"><span style="color:var(--text-muted);">' + esc(q.label) + ':</span> ' + esc(String(v)) + '</div>';
+      });
+      var stBadge = L.status === 'new' ? '<span class="src-tag" style="background:rgba(232,131,74,.13);color:#E8834A;border:1px solid rgba(232,131,74,.45);">New</span>'
+        : L.status === 'contacted' ? '<span class="src-tag src-vyve">Contacted</span>' : '<span class="src-tag" style="opacity:.6;">Archived</span>';
+      var acts = '';
+      if (L.status === 'new') acts += '<button class="btn" data-ld-st="contacted" data-ld="' + L.id + '" style="font-size:11.5px;">Mark contacted</button> ';
+      if (L.status !== 'archived') acts += '<button class="btn" data-ld-st="archived" data-ld="' + L.id + '" style="font-size:11.5px;">Archive</button>';
+      return '<div style="border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;' + (L.status === 'new' ? 'border-left:3px solid #E8834A;' : '') + '">' +
+        '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;"><strong style="font-size:13.5px;">' + esc(L.name || 'Someone') + '</strong>' + stBadge +
+        '<span style="font-size:11.5px;color:var(--text-muted);margin-left:auto;">' + new Date(L.created_at).toLocaleDateString('en-GB') + '</span></div>' +
+        '<div style="font-size:12.5px;color:var(--teal-lt);margin-top:2px;">' + esc(L.email || '') + '</div>' + extra +
+        '<div style="display:flex;gap:6px;margin-top:8px;">' + acts + '</div></div>';
+    }).join('');
+    el.querySelectorAll('[data-ld]').forEach(function(b){
+      b.addEventListener('click', async function(){
+        b.disabled = true;
+        try { await rest('/coach_leads?id=eq.' + b.dataset.ld, { method: 'PATCH', body: { status: b.dataset.ldSt } }); leadsLoad(); }
+        catch(e){ alert('That didn\u2019t save: ' + e.message); b.disabled = false; }
+      });
+    });
+  }
+  $c('lead-copy').addEventListener('click', async function(){
+    try { await navigator.clipboard.writeText('https://' + $c('lead-link').textContent); this.textContent = 'Copied \u2713'; var self = this; setTimeout(function(){ self.textContent = 'Copy link'; }, 1800); }
+    catch(e){ prompt('Copy your lead link:', 'https://' + $c('lead-link').textContent); }
+  });
+
+  async function calLoad(){
+    var el = $c('cal-list');
+    el.innerHTML = '<p style="font-size:12.5px;color:var(--text-muted);">Loading\u2026</p>';
+    var rows = [];
+    try { rows = await rest('/coach_sessions?partner_id=eq.' + partnerId + '&status=eq.scheduled&starts_at=gte.' + encodeURIComponent(new Date(Date.now() - 3600e3).toISOString()) + '&order=starts_at.asc&limit=60&select=id,member_email,title,starts_at,duration_minutes,link_url,notes') || []; } catch(e){}
+    // client picker
+    var sel = $c('calf-client');
+    var actives = roster.filter(function(c){ return c.status !== 'archived'; });
+    sel.innerHTML = actives.map(function(c){ return '<option value="' + esc(c.member_email) + '">' + esc(nameOf(c)) + '</option>'; }).join('');
+    if (!rows.length){ el.innerHTML = '<div class="empty-state"><h3>Nothing booked</h3><p>Book a call and it appears in your client\u2019s VYVE app with a Join button.</p></div>'; return; }
+    var lastDay = null, html = '';
+    rows.forEach(function(s){
+      var d = new Date(s.starts_at);
+      var day = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' });
+      if (day !== lastDay){ html += '<div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin:14px 0 6px;">' + day + '</div>'; lastDay = day; }
+      var who = nameOf(roster.find(function(c){ return c.member_email === s.member_email; }) || { member_email: s.member_email });
+      html += '<div style="display:flex;gap:12px;align-items:center;padding:10px 8px;border-bottom:1px solid var(--border);flex-wrap:wrap;">' +
+        '<div style="font-weight:700;font-size:13px;min-width:52px;">' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + '</div>' +
+        '<div style="flex:1;min-width:180px;"><div style="font-size:13px;font-weight:600;">' + esc(s.title) + ' \u00b7 ' + esc(who) + '</div>' +
+        '<div style="font-size:11.5px;color:var(--text-muted);">' + s.duration_minutes + ' min' + (s.notes ? ' \u00b7 ' + esc(s.notes) : '') + '</div></div>' +
+        (s.link_url ? '<a class="btn" href="' + esc(s.link_url) + '" target="_blank" rel="noopener" style="font-size:11.5px;">Open link</a>' : '') +
+        '<button class="btn" data-cal-del="' + s.id + '" style="font-size:11.5px;">Cancel</button></div>';
+    });
+    el.innerHTML = html;
+    el.querySelectorAll('[data-cal-del]').forEach(function(b){
+      b.addEventListener('click', async function(){
+        if (!confirm('Cancel this call? Your client will stop seeing it in their app.')) return;
+        b.disabled = true;
+        try { await rest('/coach_sessions?id=eq.' + b.dataset.calDel, { method: 'PATCH', body: { status: 'cancelled' } }); calLoad(); }
+        catch(e){ alert('Cancel failed: ' + e.message); b.disabled = false; }
+      });
+    });
+  }
+  $c('cal-new').addEventListener('click', function(){ $c('cal-editor').style.display = ''; $c('calf-msg').textContent = ''; });
+  $c('calf-cancel').addEventListener('click', function(){ $c('cal-editor').style.display = 'none'; });
+  $c('calf-save').addEventListener('click', async function(){
+    var msg = $c('calf-msg');
+    var em = $c('calf-client').value, title = $c('calf-title').value.trim(), when = $c('calf-when').value;
+    var mins = parseInt($c('calf-mins').value) || 30, link = $c('calf-link').value.trim();
+    if (!em){ msg.textContent = 'Add a client first.'; return; }
+    if (!title){ msg.textContent = 'Give the call a title.'; return; }
+    if (!when){ msg.textContent = 'Pick a date and time.'; return; }
+    if (link && !/^https?:\/\//i.test(link)){ msg.textContent = 'The call link should start with https://'; return; }
+    this.disabled = true; msg.textContent = 'Booking\u2026';
+    try {
+      await rest('/coach_sessions', { method: 'POST', body: {
+        partner_id: partnerId, member_email: em, title: title,
+        starts_at: new Date(when).toISOString(), duration_minutes: mins,
+        link_url: link || null, notes: $c('calf-notes').value.trim() || null
+      }});
+      $c('cal-editor').style.display = 'none';
+      $c('calf-title').value = ''; $c('calf-link').value = ''; $c('calf-notes').value = '';
+      calLoad();
+    } catch(e){ msg.textContent = 'Booking failed: ' + e.message; }
+    this.disabled = false;
+  });
+
   /* ── Automations editor (PM-958g) ── */
   var AUTO_EVENTS_UI = [
     ['workout_updated', 'Workout plan updated'],
@@ -1188,6 +1346,7 @@
         body = u ? '<a href="' + u + '" target="_blank" rel="noopener"><img src="' + u + '" loading="lazy" style="width:110px;height:110px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"/></a>' : '<span style="color:var(--text-muted);">photo unavailable</span>';
       }
       else if (q && q.type === 'scale') body = '<strong>' + esc(String(v)) + '</strong>/10';
+      else if (q && q.type === 'stars'){ var sv = parseInt(v) || 0; body = '<span style="color:var(--vyve-gold, #C9A84C);font-size:15px;">' + '\u2605'.repeat(Math.min(sv,5)) + '\u2606'.repeat(Math.max(0, 5 - sv)) + '</span>'; }
       else if (q && q.type === 'yesno') body = '<strong>' + (String(v).toLowerCase() === 'yes' || v === true ? 'Yes' : 'No') + '</strong>';
       else body = esc(String(v));
       return '<div style="margin-bottom:8px;"><div style="font-size:11.5px;color:var(--text-muted);">' + esc(label) + '</div><div style="font-size:13px;">' + body + '</div></div>';
@@ -1495,13 +1654,12 @@
   }
 
   /* \u2500\u2500 Sidebar router (PM-955j Kahunas-style shell) \u2500\u2500 */
-  var SECTION_KINDS = { forms: ['onboarding','checkin','habits'], workouts: ['program','workout_day','workout'], nutrition: ['nutrition','supplements'] };
+  var SECTION_KINDS = { forms: ['onboarding','checkin','lead','habits'], workouts: ['program','workout_day','workout'], nutrition: ['nutrition','supplements'] };
   var SOON_COPY = {
     messages: ['Messages', 'Message your clients without leaving the portal \u2014 conversations sync to the VYVE app on their phone. Coming soon.'],
-    calendar: ['Calendar', 'Your session calendar and client bookings, powered by the VYVE booking engine. Coming soon.'],
     content: ['Content Library', 'Upload and share your own videos and resources with clients \u2014 unlisted, coach-only content. Coming soon.'],
   };
-  var VIEW_IDS = ['view-dashboard','view-clients','view-plans','view-exercises','view-notifs','view-autos','view-profile','view-soon','view-settings'];
+  var VIEW_IDS = ['view-dashboard','view-clients','view-leads','view-cal','view-plans','view-exercises','view-notifs','view-autos','view-profile','view-soon','view-settings'];
   function go(view){
     document.querySelectorAll('.cp-item').forEach(function(x){ x.classList.toggle('active', x.dataset.go === view); });
     var show = 'view-soon';
@@ -1512,6 +1670,8 @@
     else if (view === 'exercises') show = 'view-exercises';
     else if (view === 'notifications') show = 'view-notifs';
     else if (view === 'automations') show = 'view-autos';
+    else if (view === 'leads') show = 'view-leads';
+    else if (view === 'calendar') show = 'view-cal';
     else if (SECTION_KINDS[view]) show = 'view-plans';
     VIEW_IDS.forEach(function(id){ $c(id).style.display = id === show ? '' : 'none'; });
     if (SECTION_KINDS[view]){
@@ -1529,6 +1689,8 @@
     if (view === 'exercises') exInit();
     if (view === 'notifications') notifLoad(true);
     if (view === 'automations') autoLoad();
+    if (view === 'leads') leadsLoad();
+    if (view === 'calendar') calLoad();
     if (view === 'dashboard') renderDashboard();
     if (view === 'profile') renderProfile();
     if (view === 'settings') loadCoachTerms();
