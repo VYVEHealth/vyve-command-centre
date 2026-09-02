@@ -377,13 +377,13 @@
     if (consented){
       res = await Promise.all([
         rest('/weight_logs?member_email=eq.' + enc + '&order=logged_at.desc&limit=3&select=weight_kg,logged_at').catch(function(){return [];}),
-        rest('/workouts?member_email=eq.' + enc + '&completed_at=gte.' + encodeURIComponent(since30) + '&order=completed_at.desc&select=completed_at').catch(function(){return [];}),
-        rest('/daily_habits?member_email=eq.' + enc + '&completed_date=gte.' + since7 + '&select=id').catch(function(){return [];}),
+        rest('/workouts?member_email=eq.' + enc + '&logged_at=gte.' + encodeURIComponent(since30) + '&order=logged_at.desc&select=workout_name,duration_minutes,logged_at,difficulty_rating,member_note').catch(function(){return [];}),
+        rest('/daily_habits?member_email=eq.' + enc + '&activity_date=gte.' + since7 + '&select=id').catch(function(){return [];}),
         rest('/coach_form_responses?member_email=eq.' + enc + '&order=submitted_at.desc&limit=3&select=answers,week_start,submitted_at').catch(function(){return [];}),
         rest('/members?email=eq.' + enc + '&select=last_active_at,trial_ends_at,subscription_status').catch(function(){return [];})
       ]);
     }
-    var w = res[0] && res[0][0], wk = (res[1]||[]).length, hb = (res[2]||[]).length, cis = res[3]||[], mrow = (res[4]||[])[0] || {};
+    var w = res[0] && res[0][0], wkRows = res[1]||[], wk = wkRows.length, hb = (res[2]||[]).length, cis = res[3]||[], mrow = (res[4]||[])[0] || {};
 
     // ── Header stats ──
     var stats = '<div style="display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px;color:var(--text-muted);margin-bottom:14px;">' +
@@ -419,6 +419,14 @@
     if (c.archived_at && c.status === 'archived') events.push({ t: c.archived_at, label: 'Archived' });
     (res[1]||[]).slice(0,5).forEach(function(x){ events.push({ t: x.completed_at, label: 'Completed a workout' }); });
     (res[0]||[]).forEach(function(x){ events.push({ t: x.logged_at, label: 'Logged weight: ' + x.weight_kg + ' kg' }); });
+    // PM-956: workout completions with the member's post-session feedback (difficulty 1-5 + note).
+    var DIFF = { 1:'Easy', 2:'Fine', 3:'Solid', 4:'Hard', 5:'Brutal' };
+    wkRows.slice(0, 10).forEach(function(x){
+      var label = 'Completed ' + (x.workout_name || 'workout') + (x.duration_minutes ? ' (' + x.duration_minutes + ' min)' : '');
+      if (x.difficulty_rating) label += ' \u2014 felt ' + (DIFF[x.difficulty_rating] || x.difficulty_rating) + ' (' + x.difficulty_rating + '/5)';
+      if (x.member_note) label += ' \u2014 \u201c' + x.member_note + '\u201d';
+      events.push({ t: x.logged_at, label: label });
+    });
     cis.forEach(function(x){ events.push({ t: x.submitted_at, label: 'Submitted check-in' + (x.week_start ? ' (w/c ' + x.week_start + ')' : '') }); });
     events = events.filter(function(e){ return e.t; }).sort(function(a,b){ return new Date(b.t) - new Date(a.t); }).slice(0, 12);
     var logHtml = '<div style="font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);margin:4px 0 8px;">Activity log</div>' +
