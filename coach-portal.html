@@ -92,6 +92,28 @@
   .prof-row{display:flex;justify-content:space-between;gap:14px;padding:11px 2px;border-bottom:1px solid var(--border);font-size:13.5px;}
   .prof-row .k{color:var(--text-muted);}
 </style>
+<style id="bv2-css">
+  .ex-item{display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+  .ex-item .nm{font-weight:600;}
+  .ex-item .mt{font-size:12px;color:var(--text-muted);}
+  .src-tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;border-radius:99px;padding:2px 8px;margin-left:8px;vertical-align:1px;}
+  .src-vyve{background:rgba(77,170,170,.15);color:var(--teal-lt);border:1px solid rgba(77,170,170,.4);}
+  .src-mine{background:rgba(201,168,76,.13);color:#c9a84c;border:1px solid rgba(201,168,76,.45);}
+  .vid-tag{font-size:11px;color:var(--teal-lt);}
+  .de-row{border:1px solid var(--border);border-radius:10px;background:var(--surface-2);padding:10px;margin-bottom:8px;}
+  .de-row.grpd{border-left:3px solid #c9a84c;}
+  .de-grid{display:grid;grid-template-columns:2.2fr 52px 64px 64px 60px 48px 56px 1.6fr 28px;gap:6px;align-items:end;}
+  @media(max-width:760px){.de-grid{grid-template-columns:repeat(4,1fr);}}
+  .pg-tab{padding:6px 13px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--text-muted);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;}
+  .pg-tab.on{background:rgba(27,120,120,.2);color:var(--teal-lt);border-color:var(--vyve-teal);}
+  .pg-tab.ghost{border-style:dashed;}
+  .pg-slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:12px;}
+  .pg-slot{border:1px solid var(--border);border-radius:10px;background:var(--surface);min-height:96px;padding:9px;}
+  .pg-slot .d{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:7px;}
+  .pg-chip{background:rgba(27,120,120,.15);border:1px solid var(--vyve-teal);border-radius:8px;padding:7px 9px;font-size:12px;font-weight:600;color:var(--teal-lt);}
+  .pg-chip small{display:block;font-weight:400;font-size:10.5px;color:var(--text-muted);}
+  .pg-chip .lnk{font-size:10.5px;font-weight:600;color:var(--teal-lt);cursor:pointer;margin-right:8px;text-decoration:underline;}
+</style>
 </head>
 <body>
 <div id="login-overlay" class="show">
@@ -127,6 +149,7 @@
     <button class="cp-item" data-go="clients" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Clients</span></button>
     <button class="cp-item" data-go="nutrition" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4z"/></svg><span>Nutrition</span></button>
     <button class="cp-item" data-go="workouts" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11"/><path d="M17.5 6.5v11"/><path d="M3 9v6"/><path d="M21 9v6"/><path d="M6.5 12h11"/></svg><span>Workouts</span></button>
+    <button class="cp-item" data-go="exercises" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 6v12"/><path d="M7 10v4"/><path d="M17 10v4"/></svg><span>Exercise Library</span></button>
     <button class="cp-item" data-go="calendar" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>Calendar</span><span class="soon">SOON</span></button>
     <button class="cp-item" data-go="content" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m10 9 5 3-5 3z"/></svg><span>Content Library</span><span class="soon">SOON</span></button>
     <button class="cp-item" data-go="automations" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span>Automations</span><span class="soon">SOON</span></button>
@@ -251,6 +274,46 @@
       </div>
     </div>
   </div>
+  <div id="view-exercises" style="display:none;">
+    <div class="card">
+      <div class="card-title">Exercise library</div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">Use the VYVE library as-is, duplicate anything to make it your own, or add exercises with your own video. Your exercises are only ever visible to you and the clients you assign them to.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+        <button class="btn ex-scope active btn-primary" data-scope="all" type="button" style="font-size:12px;">All</button>
+        <button class="btn ex-scope" data-scope="mine" type="button" style="font-size:12px;">My exercises</button>
+        <button class="btn ex-scope" data-scope="vyve" type="button" style="font-size:12px;">VYVE library</button>
+        <input id="ex-f-q" type="search" placeholder="Search" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:13px;font-family:inherit;outline:none;min-width:150px;"/>
+        <select id="ex-f-cat" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:12.5px;font-family:inherit;"></select>
+        <select id="ex-f-eq" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:12.5px;font-family:inherit;"></select>
+        <button class="btn btn-primary" id="ex-new" type="button" style="font-size:12px;margin-left:auto;">+ New exercise</button>
+      </div>
+      <div id="ex-count" style="font-size:12px;color:var(--text-muted);margin-bottom:6px;"></div>
+      <div id="ex-list"></div>
+    </div>
+    <div class="card" id="ex-editor" style="display:none;">
+      <div class="card-title"><span id="ex-editor-title">New exercise</span>
+        <button class="btn" id="ex-cancel" type="button" style="margin-left:auto;font-size:12px;">Cancel</button>
+      </div>
+      <div class="field" style="margin-bottom:10px;"><label>Exercise name</label><input id="exf-name" type="text" maxlength="120" placeholder="e.g. Cable Fly"/></div>
+      <div class="field-row">
+        <div class="field"><label>Muscle group</label><input id="exf-cat" type="text" maxlength="60" list="ex-cat-names"/></div>
+        <div class="field"><label>Equipment</label><input id="exf-eq" type="text" maxlength="60" list="ex-eq-names"/></div>
+      </div>
+      <div class="field" style="margin-bottom:10px;"><label>Your video &mdash; unlisted YouTube link (optional)</label><input id="exf-video" type="text" placeholder="https://youtu.be/..."/>
+        <div id="exf-prev" style="display:none;align-items:center;gap:12px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:10px;margin-top:8px;">
+          <img id="exf-thumb" alt="" style="width:96px;height:54px;border-radius:6px;object-fit:cover;flex:none;"/>
+          <div><div style="font-size:12px;color:var(--teal-lt);">Video found &mdash; plays inside your client&rsquo;s workout screen.</div><div style="font-size:11px;color:var(--text-muted);">Keep it Unlisted on YouTube so only your clients see it.</div></div>
+        </div>
+        <div id="exf-vmsg" style="font-size:11.5px;color:var(--text-muted);margin-top:4px;">Leave blank to use the VYVE demo or library visual instead.</div>
+      </div>
+      <div class="field"><label>Coaching cues (shown to your client)</label><textarea id="exf-cues" rows="3" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:13px;font-family:inherit;"></textarea></div>
+      <datalist id="ex-cat-names"></datalist><datalist id="ex-eq-names"></datalist>
+      <div style="display:flex;gap:10px;align-items:center;margin-top:12px;">
+        <button class="btn btn-primary" id="ex-save" type="button">Save exercise</button>
+        <span id="ex-msg" style="font-size:12.5px;color:var(--text-muted);"></span>
+      </div>
+    </div>
+  </div>
   <div id="view-plans" style="display:none;">
     <div class="card">
       <div class="card-title">My plans &amp; forms</div>
@@ -259,7 +322,9 @@
         <button class="btn pl-kind active" data-kind="onboarding" type="button" style="font-size:12px;">Questionnaires</button>
         <button class="btn pl-kind" data-kind="checkin" type="button" style="font-size:12px;">Check-ins</button>
         <button class="btn pl-kind" data-kind="habits" type="button" style="font-size:12px;">Habits</button>
-        <button class="btn pl-kind" data-kind="workout" type="button" style="font-size:12px;">Workouts</button>
+        <button class="btn pl-kind" data-kind="workout" type="button" style="font-size:12px;">Weekly workouts</button>
+        <button class="btn pl-kind" data-kind="workout_day" type="button" style="font-size:12px;">Day templates</button>
+        <button class="btn pl-kind" data-kind="program" type="button" style="font-size:12px;">Programmes</button>
         <button class="btn pl-kind" data-kind="nutrition" type="button" style="font-size:12px;">Nutrition</button>
         <button class="btn pl-kind" data-kind="supplements" type="button" style="font-size:12px;">Supplements</button>
       </div>
@@ -400,7 +465,7 @@
       var cur = asg[key] || '';
       var pool = sl.slot === 'onboarding' || sl.slot === 'checkin'
         ? lib.forms.filter(function(f){ return f.kind === sl.slot; }).map(function(f){ return { id: f.id, label: f.title }; })
-        : lib.tpls.filter(function(t){ return t.kind === sl.slot; }).map(function(t){ return { id: t.id, label: t.name }; });
+        : lib.tpls.filter(function(t){ return wkKindMatch(sl.slot, t.kind); }).map(function(t){ return { id: t.id, label: t.name + (t.kind === 'program' ? ' (programme)' : '') }; });
       return '<div class="field"><label>' + sl.col + '</label><select class="cd-asg" data-key="' + key + '"><option value="">None</option>' +
         pool.map(function(p){ return '<option value="' + p.id + '"' + (p.id === cur ? ' selected' : '') + '>' + esc(p.label) + '</option>'; }).join('') + '</select></div>';
     }
@@ -504,7 +569,7 @@
     { slot:'onboarding',  col:'Onboarding questionnaire', sel:'asg-onboarding',  pool:function(){ return lib.forms.filter(function(f){return f.kind==='onboarding';}).map(function(f){return f.title;}); } },
     { slot:'checkin',     col:'Check-in form',            sel:'asg-checkin',     pool:function(){ return lib.forms.filter(function(f){return f.kind==='checkin';}).map(function(f){return f.title;}); } },
     { slot:'habits',      col:'Habits plan',              sel:'asg-habits',      pool:function(){ return lib.tpls.filter(function(t){return t.kind==='habits';}).map(function(t){return t.name;}); } },
-    { slot:'workout',     col:'Workout plan',             sel:'asg-workout',     pool:function(){ return lib.tpls.filter(function(t){return t.kind==='workout';}).map(function(t){return t.name;}); } },
+    { slot:'workout',     col:'Workout plan',             sel:'asg-workout',     pool:function(){ return lib.tpls.filter(function(t){return wkKindMatch('workout', t.kind);}).map(function(t){return t.name;}); } },
     { slot:'nutrition',   col:'Nutrition plan',           sel:'asg-nutrition',   pool:function(){ return lib.tpls.filter(function(t){return t.kind==='nutrition';}).map(function(t){return t.name;}); } },
     { slot:'supplements', col:'Supplement plan',          sel:'asg-supplements', pool:function(){ return lib.tpls.filter(function(t){return t.kind==='supplements';}).map(function(t){return t.name;}); } }
   ];
@@ -655,7 +720,7 @@
   /* ── My Plans: template + form builders (PM-954e) ── */
   var plKind = 'onboarding', plEditing = null, plItems = [], exerciseNames = [];
   var IS_FORM = function(k){ return k === 'onboarding' || k === 'checkin'; };
-  var KIND_LABEL = { onboarding:'questionnaire', checkin:'check-in form', habits:'habits plan', workout:'workout plan', nutrition:'nutrition plan', supplements:'supplement plan' };
+  var KIND_LABEL = { onboarding:'questionnaire', checkin:'check-in form', habits:'habits plan', workout:'workout plan', workout_day:'day template', program:'programme', nutrition:'nutrition plan', supplements:'supplement plan' };
   var QTYPES = [['text','Short answer'],['textarea','Long answer'],['number','Number'],['scale','1\u201310 scale'],['select','Multiple choice'],['yesno','Yes / No'],['photo','Photo upload'],['video','Video upload']];
   var CHECKIN_DEFAULTS = [{label:'Tell us about your week',type:'textarea'},{label:'Did you stick to your plan?',type:'yesno'},{label:'How do you feel overall?',type:'scale'},{label:'Current photos (front, back, side)',type:'photo'},{label:'Anything else for your coach?',type:'textarea'}];
   function rowBtn(label, cls){ return '<button class="btn ' + (cls||'') + '" type="button" style="font-size:11.5px;padding:5px 10px;">' + label + '</button>'; }
@@ -681,6 +746,8 @@
   function summarise(p){
     if (plKind === 'habits') return ((p.habits||[]).length) + ' habits';
     if (plKind === 'workout') return ((p.sessions||[]).length) + ' sessions / week';
+    if (plKind === 'workout_day') return ((p.exercises||[]).length) + ' exercises' + (dayHasGroups(p) ? ' \u00b7 supersets' : '');
+    if (plKind === 'program') return ((p.weeks||[]).length) + ' weeks \u00b7 ' + progDayCount(p) + ' training days';
     if (plKind === 'nutrition') return (p.calories ? p.calories + ' kcal' : 'targets') + (p.protein_g ? ' \u00b7 ' + p.protein_g + 'g protein' : '');
     if (plKind === 'supplements') return ((p.items||[]).length) + ' supplements';
     return '';
@@ -713,6 +780,22 @@
       var ss = (item && item.payload && item.payload.sessions && item.payload.sessions.length) ? item.payload.sessions : [{ name: 'Session 1', exercises: [{}] }];
       ss.forEach(addWSession);
       $c('w-add-session').addEventListener('click', function(){ addWSession({ name: 'Session ' + ($c('w-sessions').children.length + 1), exercises: [{}] }); });
+    } else if (plKind === 'workout_day'){
+      b.innerHTML = '<p style="font-size:12.5px;color:var(--text-muted);margin-bottom:10px;">A reusable training day. Drop it into any programme \u2014 each programme keeps its own copy, so editing here never changes what\u2019s already assigned. Give exercises the same letter to make a superset or circuit.</p><div id="dt-editor"></div>' + cexDatalist();
+      renderDayEditor($c('dt-editor'), (item && item.payload) || { exercises: [{}] });
+    } else if (plKind === 'program'){
+      progState = deepCopy((item && item.payload) || { instructions: '', weeks: [emptyWeek()] });
+      if (!progState.weeks || !progState.weeks.length) progState.weeks = [emptyWeek()];
+      progWeekIdx = 0; progEditingDay = null;
+      b.innerHTML = '<p style="font-size:12.5px;color:var(--text-muted);margin-bottom:10px;">Assemble day templates into weeks. Every week is its own copy \u2014 vary and progress each one. Empty slots are rest days.</p>' +
+        '<div class="field" style="margin-bottom:10px;"><label>Programme notes (shown to the client)</label><textarea id="pg-instructions" rows="2" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:13px;font-family:inherit;">' + esc(progState.instructions || '') + '</textarea></div>' +
+        '<div id="pg-tabs" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;"></div>' +
+        '<div id="pg-quick" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:8px 12px;margin-top:10px;"><span style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin-right:2px;">Progress this week</span>' + rowBtn('+1 set on all','pg-addset') + rowBtn('\u22121 RIR on all','pg-subrir') + '</div>' +
+        '<div id="pg-slots" class="pg-slots"></div>' +
+        '<div id="pg-dayedit" style="display:none;border:1px solid var(--vyve-teal);border-radius:12px;padding:14px;margin-top:12px;"></div>' + cexDatalist();
+      loadDayTplChoices().then(renderProg);
+      $c('pg-quick').querySelector('.pg-addset').addEventListener('click', function(){ progQuick('set'); });
+      $c('pg-quick').querySelector('.pg-subrir').addEventListener('click', function(){ progQuick('rir'); });
     } else if (plKind === 'nutrition'){
       var p = (item && item.payload) || {};
       b.innerHTML = '<div class="field-row">' +
@@ -835,6 +918,16 @@
       var instr = ($c('w-instructions') && $c('w-instructions').value.trim()) || '';
       return { payload: { sessions: ss, instructions: instr }, valid: ss.length > 0, err: 'Add at least one session with an exercise.' };
     }
+    if (plKind === 'workout_day'){
+      var day = collectDay($c('dt-editor'));
+      return { payload: day, valid: day.exercises.length > 0, err: 'Add at least one exercise.' };
+    }
+    if (plKind === 'program'){
+      if (progEditingDay) progDayDone();
+      progState.instructions = ($c('pg-instructions') && $c('pg-instructions').value.trim()) || '';
+      var hasWork = (progState.weeks || []).some(function(w){ return (w.days || []).some(function(d){ return d && (d.exercises || []).length; }); });
+      return { payload: progState, valid: hasWork, err: 'Add at least one training day to a week.' };
+    }
     if (plKind === 'nutrition'){
       var p = { calories: parseInt($c('nf-cal').value) || null, protein_g: parseInt($c('nf-pro').value) || null, fat_g: parseInt($c('nf-fat').value) || null, carbs_g: parseInt($c('nf-carb').value) || null, hydration_l: parseFloat($c('nf-water').value) || null, notes: $c('nf-notes').value.trim() };
       return { payload: p, valid: !!(p.calories || p.protein_g || p.notes), err: 'Set at least calories, protein, or notes.' };
@@ -874,8 +967,251 @@
       exerciseNames = (rows||[]).map(function(r){ return r.exercise_name; }).filter(function(n){ if (!n || seen[n]) return false; seen[n] = 1; return true; });
     } catch(e){ exerciseNames = []; }
   }
+  /* ── Builder v2: exercise library + day templates + programmes ── */
+  var cexRows = [], cexLoaded = false, cexEditing = null, cexDupFrom = null, exScope = 'all';
+  var dayTplChoices = [];
+  var progState = null, progWeekIdx = 0, progEditingDay = null;
+  function wkKindMatch(slot, kind){ return slot === 'workout' ? (kind === 'workout' || kind === 'program') : kind === slot; }
+  function deepCopy(o){ return JSON.parse(JSON.stringify(o)); }
+  function ytId(u){ var m = String(u||'').match(/(?:youtu\.be\/|[?&]v=|\/shorts\/|\/embed\/)([A-Za-z0-9_-]{11})/); return m ? m[1] : ''; }
+  function dayHasGroups(p){ return (p.exercises||[]).some(function(e){ return e.group; }); }
+  function progDayCount(p){ var n = 0; (p.weeks||[]).forEach(function(w){ (w.days||[]).forEach(function(d){ if (d && (d.exercises||[]).length) n++; }); }); return n; }
+  function emptyWeek(){ return { days: [null, null, null, null, null, null, null] }; }
+  function cexDatalist(){ return '<datalist id="cex-names">' + cexRows.map(function(r){ return '<option value="' + esc(r.name) + '">'; }).join('') + '</datalist>'; }
+  function cexByName(n){ n = (n||'').trim().toLowerCase(); if (!n) return null; for (var i = 0; i < cexRows.length; i++){ if ((cexRows[i].name||'').toLowerCase() === n) return cexRows[i]; } return null; }
+  async function exLoad(){
+    if (cexLoaded) return;
+    try {
+      cexRows = await rest('/coach_exercises?active=eq.true&select=id,partner_id,name,category,equipment,video_url,media_url,cues&order=name.asc&limit=2000') || [];
+      cexLoaded = true;
+      var cats = {}, eqs = {};
+      cexRows.forEach(function(r){ if (r.category) cats[r.category] = 1; if (r.equipment) eqs[r.equipment] = 1; });
+      var co = Object.keys(cats).sort(), eo = Object.keys(eqs).sort();
+      if ($c('ex-f-cat')) $c('ex-f-cat').innerHTML = '<option value="">All muscle groups</option>' + co.map(function(c){ return '<option>' + esc(c) + '</option>'; }).join('');
+      if ($c('ex-f-eq')) $c('ex-f-eq').innerHTML = '<option value="">Any equipment</option>' + eo.map(function(c){ return '<option>' + esc(c) + '</option>'; }).join('');
+      if ($c('ex-cat-names')) $c('ex-cat-names').innerHTML = co.map(function(c){ return '<option value="' + esc(c) + '">'; }).join('');
+      if ($c('ex-eq-names')) $c('ex-eq-names').innerHTML = eo.map(function(c){ return '<option value="' + esc(c) + '">'; }).join('');
+    } catch(e){ cexRows = []; }
+  }
+  async function exInit(){ await exLoad(); exRender(); }
+  function exRender(){
+    var q = ($c('ex-f-q').value || '').trim().toLowerCase();
+    var fc = $c('ex-f-cat').value, fe = $c('ex-f-eq').value;
+    var rows = cexRows.filter(function(r){
+      if (exScope === 'mine' && !r.partner_id) return false;
+      if (exScope === 'vyve' && r.partner_id) return false;
+      if (fc && r.category !== fc) return false;
+      if (fe && r.equipment !== fe) return false;
+      if (q && (r.name||'').toLowerCase().indexOf(q) < 0) return false;
+      return true;
+    });
+    var CAP = 80, shown = rows.slice(0, CAP);
+    $c('ex-count').textContent = rows.length > CAP ? ('Showing ' + CAP + ' of ' + rows.length + ' — narrow with search or filters.') : (rows.length + ' exercise' + (rows.length === 1 ? '' : 's'));
+    if (!rows.length){ $c('ex-list').innerHTML = '<div class="empty-state"><h3>Nothing matches</h3><p>Try a different search, or add your own exercise.</p></div>'; return; }
+    $c('ex-list').innerHTML = shown.map(function(r){
+      var mine = !!r.partner_id;
+      var tag = mine ? '<span class="src-tag src-mine">Yours</span>' : '<span class="src-tag src-vyve">VYVE</span>';
+      var vid = r.video_url ? ' \u00b7 <span class="vid-tag">your video</span>' : (r.media_url ? ' \u00b7 demo visual' : '');
+      var acts = mine
+        ? '<button class="btn" data-ex-edit="' + r.id + '" style="font-size:11.5px;">Edit</button> <button class="btn" data-ex-del="' + r.id + '" style="font-size:11.5px;">Remove</button>'
+        : '<button class="btn" data-ex-dup="' + r.id + '" style="font-size:11.5px;">Duplicate to my library</button>';
+      return '<div class="ex-item"><div style="flex:1;min-width:200px;"><div class="nm">' + esc(r.name) + tag + '</div><div class="mt">' + esc(r.category || '') + (r.equipment ? ' \u00b7 ' + esc(r.equipment) : '') + vid + '</div></div><div style="display:flex;gap:6px;">' + acts + '</div></div>';
+    }).join('');
+    $c('ex-list').querySelectorAll('[data-ex-edit]').forEach(function(b){ b.addEventListener('click', function(){ exOpen(cexRows.find(function(x){ return x.id === b.dataset.exEdit; }), null); }); });
+    $c('ex-list').querySelectorAll('[data-ex-dup]').forEach(function(b){ b.addEventListener('click', function(){ exOpen(null, cexRows.find(function(x){ return x.id === b.dataset.exDup; })); }); });
+    $c('ex-list').querySelectorAll('[data-ex-del]').forEach(function(b){ b.addEventListener('click', async function(){
+      if (!confirm('Remove this exercise from your library? Programmes it\u2019s already in are unaffected.')) return;
+      try { await rest('/coach_exercises?id=eq.' + b.dataset.exDel, { method: 'PATCH', body: { active: false } }); cexLoaded = false; await exLoad(); exRender(); }
+      catch(e){ alert('Remove failed: ' + e.message); }
+    }); });
+  }
+  function exVideoPreview(){
+    var id = ytId($c('exf-video').value);
+    if (id){ $c('exf-thumb').src = 'https://img.youtube.com/vi/' + id + '/hqdefault.jpg'; $c('exf-prev').style.display = 'flex'; $c('exf-vmsg').style.display = 'none'; }
+    else {
+      $c('exf-prev').style.display = 'none'; $c('exf-vmsg').style.display = '';
+      $c('exf-vmsg').textContent = $c('exf-video').value.trim() ? 'That doesn\u2019t look like a YouTube link \u2014 paste the full video URL.' : 'Leave blank to use the VYVE demo or library visual instead.';
+    }
+  }
+  function exOpen(row, dupFrom){
+    cexEditing = row || null; cexDupFrom = dupFrom || null;
+    var seed = row || dupFrom || {};
+    $c('ex-editor').style.display = '';
+    $c('ex-editor-title').textContent = row ? 'Edit exercise' : (dupFrom ? 'Duplicate to my library' : 'New exercise');
+    $c('exf-name').value = seed.name || '';
+    $c('exf-cat').value = seed.category || '';
+    $c('exf-eq').value = seed.equipment || '';
+    $c('exf-video').value = (row && row.video_url) || '';
+    $c('exf-cues').value = seed.cues || '';
+    $c('ex-msg').textContent = dupFrom ? 'Saving adds a copy you fully own \u2014 rename it or attach your own video.' : '';
+    exVideoPreview();
+    $c('ex-editor').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  async function exSave(){
+    var name = $c('exf-name').value.trim(), msg = $c('ex-msg');
+    if (!name){ msg.textContent = 'Give it a name.'; return; }
+    var vraw = $c('exf-video').value.trim();
+    if (vraw && !ytId(vraw)){ msg.textContent = 'That video link doesn\u2019t look like YouTube \u2014 fix or clear it.'; return; }
+    var body = { name: name, category: $c('exf-cat').value.trim() || null, equipment: $c('exf-eq').value.trim() || null, video_url: vraw || null, cues: $c('exf-cues').value.trim() || null };
+    if (cexDupFrom && cexDupFrom.media_url) body.media_url = cexDupFrom.media_url;
+    var btn = $c('ex-save'); btn.disabled = true; msg.textContent = 'Saving\u2026';
+    try {
+      if (cexEditing){ body.updated_at = new Date().toISOString(); await rest('/coach_exercises?id=eq.' + cexEditing.id, { method: 'PATCH', body: body }); }
+      else { body.partner_id = partnerId; await rest('/coach_exercises', { method: 'POST', body: body }); }
+      $c('ex-editor').style.display = 'none';
+      cexLoaded = false; await exLoad(); exRender();
+    } catch(e){ msg.textContent = 'Save failed: ' + (String(e.message).indexOf('409') >= 0 ? 'you already have an exercise with that name.' : e.message); }
+    btn.disabled = false;
+  }
+  document.querySelectorAll('.ex-scope').forEach(function(b){
+    b.addEventListener('click', function(){
+      document.querySelectorAll('.ex-scope').forEach(function(x){ x.classList.remove('active'); x.classList.remove('btn-primary'); });
+      b.classList.add('active'); b.classList.add('btn-primary');
+      exScope = b.dataset.scope; exRender();
+    });
+  });
+  ['ex-f-q','ex-f-cat','ex-f-eq'].forEach(function(id){ $c(id).addEventListener('input', exRender); });
+  $c('ex-new').addEventListener('click', function(){ exOpen(null, null); });
+  $c('ex-cancel').addEventListener('click', function(){ $c('ex-editor').style.display = 'none'; });
+  $c('ex-save').addEventListener('click', exSave);
+  $c('exf-video').addEventListener('input', exVideoPreview);
+
+  /* ── Day editor: shared by the day-template builder and per-week programme copies ── */
+  var GRP_OPTS = ['', 'A', 'B', 'C', 'D'];
+  function addDayRow(wrap, ex){
+    ex = ex || {};
+    var d = document.createElement('div');
+    d.className = 'de-row' + (ex.group ? ' grpd' : '');
+    d.innerHTML = '<div class="de-grid">' +
+      '<div class="field"><label>Exercise</label><input class="de-name" list="cex-names" type="text" value="' + esc(ex.name || '') + '"/></div>' +
+      '<div class="field"><label>Sets</label><input class="de-sets" type="text" value="' + esc(ex.sets != null ? ex.sets : '3') + '"/></div>' +
+      '<div class="field"><label>Reps</label><input class="de-reps" type="text" value="' + esc(ex.reps || '8-12') + '"/></div>' +
+      '<div class="field"><label>Tempo</label><input class="de-tempo" type="text" maxlength="8" placeholder="3010" value="' + esc(ex.tempo || '') + '"/></div>' +
+      '<div class="field"><label>Rest s</label><input class="de-rest" type="number" min="0" value="' + (ex.rest_seconds != null ? ex.rest_seconds : 90) + '"/></div>' +
+      '<div class="field"><label>RIR</label><input class="de-rir" type="text" maxlength="4" placeholder="2" value="' + esc(ex.rir != null ? ex.rir : '') + '"/></div>' +
+      '<div class="field"><label>Group</label><select class="de-grp">' + GRP_OPTS.map(function(g){ return '<option value="' + g + '"' + ((ex.group || '') === g ? ' selected' : '') + '>' + (g || '\u2014') + '</option>'; }).join('') + '</select></div>' +
+      '<div class="field"><label>Cue / note</label><input class="de-notes" type="text" value="' + esc(ex.notes || '') + '"/></div>' +
+      '<button class="btn de-del" type="button" style="font-size:11px;padding:6px 8px;">&times;</button></div>';
+    d.querySelector('.de-del').addEventListener('click', function(){ d.remove(); });
+    d.querySelector('.de-grp').addEventListener('change', function(){ d.classList.toggle('grpd', !!this.value); });
+    wrap.appendChild(d);
+  }
+  function renderDayEditor(container, day){
+    day = day || {};
+    container.innerHTML = '<div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin:6px 0 4px;">Warm up (optional)</div><div class="de-warm"></div><div style="margin-bottom:8px;">' + rowBtn('+ Warm up exercise', 'de-add-warm') + '</div>' +
+      '<div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin:6px 0 4px;">Workout</div><div class="de-main"></div><div style="margin-bottom:8px;">' + rowBtn('+ Exercise', 'de-add-main') + '</div>' +
+      '<div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin:6px 0 4px;">Cool down (optional)</div><div class="de-cool"></div>' + rowBtn('+ Cool down exercise', 'de-add-cool');
+    var wm = container.querySelector('.de-warm'), mm = container.querySelector('.de-main'), cm = container.querySelector('.de-cool');
+    (day.warmup || []).forEach(function(x){ addDayRow(wm, x); });
+    ((day.exercises && day.exercises.length) ? day.exercises : [{}]).forEach(function(x){ addDayRow(mm, x); });
+    (day.cooldown || []).forEach(function(x){ addDayRow(cm, x); });
+    container.querySelector('.de-add-warm').addEventListener('click', function(){ addDayRow(wm, { sets: '1', reps: '', rest_seconds: 0 }); });
+    container.querySelector('.de-add-main').addEventListener('click', function(){ addDayRow(mm, {}); });
+    container.querySelector('.de-add-cool').addEventListener('click', function(){ addDayRow(cm, { sets: '1', reps: '', rest_seconds: 0 }); });
+  }
+  function collectDay(container){
+    function grab(sel){
+      var out = [];
+      container.querySelectorAll(sel + ' > .de-row').forEach(function(e){
+        var nm = e.querySelector('.de-name').value.trim();
+        if (!nm) return;
+        var hit = cexByName(nm);
+        var row = { name: nm, sets: e.querySelector('.de-sets').value.trim() || '3', reps: e.querySelector('.de-reps').value.trim() || '8-12', rest_seconds: parseInt(e.querySelector('.de-rest').value) || 0, notes: e.querySelector('.de-notes').value.trim() };
+        var tempo = e.querySelector('.de-tempo').value.trim(); if (tempo) row.tempo = tempo;
+        var rir = e.querySelector('.de-rir').value.trim(); if (rir !== '') row.rir = rir;
+        var grp = e.querySelector('.de-grp').value; if (grp) row.group = grp;
+        if (hit) row.exercise_id = hit.id;
+        out.push(row);
+      });
+      return out;
+    }
+    return { warmup: grab('.de-warm'), exercises: grab('.de-main'), cooldown: grab('.de-cool') };
+  }
+
+  /* ── Programme builder ── */
+  async function loadDayTplChoices(){
+    try { dayTplChoices = await rest('/coach_templates?partner_id=eq.' + partnerId + '&kind=eq.workout_day&active=eq.true&select=id,name,payload&order=name.asc') || []; }
+    catch(e){ dayTplChoices = []; }
+  }
+  function renderProg(){
+    if (!progState) return;
+    var tabs = progState.weeks.map(function(w, i){
+      return '<button class="pg-tab' + (i === progWeekIdx ? ' on' : '') + '" data-pg-week="' + i + '" type="button">Week ' + (i + 1) + '</button>';
+    }).join('');
+    tabs += '<button class="pg-tab ghost" id="pg-dup" type="button">Duplicate week</button><button class="pg-tab ghost" id="pg-add" type="button">+ Add week</button>';
+    if (progState.weeks.length > 1) tabs += '<button class="pg-tab ghost" id="pg-rmw" type="button">Remove week</button>';
+    $c('pg-tabs').innerHTML = tabs;
+    $c('pg-tabs').querySelectorAll('[data-pg-week]').forEach(function(b){ b.addEventListener('click', function(){ if (progEditingDay) progDayDone(); progWeekIdx = parseInt(b.dataset.pgWeek); renderProg(); }); });
+    $c('pg-dup').addEventListener('click', function(){ if (progEditingDay) progDayDone(); progState.weeks.splice(progWeekIdx + 1, 0, deepCopy(progState.weeks[progWeekIdx])); progWeekIdx++; renderProg(); });
+    $c('pg-add').addEventListener('click', function(){ if (progEditingDay) progDayDone(); progState.weeks.push(emptyWeek()); progWeekIdx = progState.weeks.length - 1; renderProg(); });
+    var rmw = $c('pg-rmw'); if (rmw) rmw.addEventListener('click', function(){
+      if (!confirm('Remove week ' + (progWeekIdx + 1) + '?')) return;
+      if (progEditingDay) progEditingDay = null;
+      progState.weeks.splice(progWeekIdx, 1); progWeekIdx = Math.max(0, progWeekIdx - 1); renderProg();
+    });
+    var wk = progState.weeks[progWeekIdx];
+    var tplOpts = '<option value="">+ Add training day\u2026</option>' + dayTplChoices.map(function(t){ return '<option value="' + t.id + '">' + esc(t.name) + '</option>'; }).join('');
+    $c('pg-slots').innerHTML = wk.days.map(function(d, j){
+      var inner;
+      if (d && (d.exercises || []).length){
+        inner = '<div class="pg-chip"><div>' + esc(d.name || 'Training day') + '</div><small>' + d.exercises.length + ' exercises' + (dayHasGroups(d) ? ' \u00b7 supersets' : '') + '</small><div style="margin-top:5px;"><span class="lnk" data-pg-edit="' + j + '">Edit this week\u2019s copy</span><span class="lnk" data-pg-clear="' + j + '">Remove</span></div></div>';
+      } else if (dayTplChoices.length){
+        inner = '<select class="pg-pick" data-pg-slot="' + j + '" style="width:100%;padding:7px 8px;border:1px dashed var(--border);border-radius:8px;background:none;color:var(--text-muted);font-size:11.5px;font-family:inherit;">' + tplOpts + '</select>';
+      } else {
+        inner = '<div style="font-size:11.5px;color:var(--text-muted);">Rest \u2014 build a day template first to fill this slot.</div>';
+      }
+      return '<div class="pg-slot"><div class="d">Day ' + (j + 1) + '</div>' + inner + '</div>';
+    }).join('');
+    $c('pg-slots').querySelectorAll('.pg-pick').forEach(function(s){ s.addEventListener('change', function(){
+      var t = dayTplChoices.find(function(x){ return x.id === s.value; });
+      if (!t) return;
+      var snap = deepCopy(t.payload || {}); snap.name = t.name; snap.src_id = t.id;
+      progState.weeks[progWeekIdx].days[parseInt(s.dataset.pgSlot)] = snap;
+      renderProg();
+    }); });
+    $c('pg-slots').querySelectorAll('[data-pg-clear]').forEach(function(b){ b.addEventListener('click', function(){
+      if (progEditingDay && progEditingDay.j === parseInt(b.dataset.pgClear)) progEditingDay = null;
+      progState.weeks[progWeekIdx].days[parseInt(b.dataset.pgClear)] = null;
+      renderProg();
+    }); });
+    $c('pg-slots').querySelectorAll('[data-pg-edit]').forEach(function(b){ b.addEventListener('click', function(){ progDayOpen(parseInt(b.dataset.pgEdit)); }); });
+    if (!progEditingDay) $c('pg-dayedit').style.display = 'none';
+  }
+  function progDayOpen(j){
+    if (progEditingDay) progDayDone();
+    progEditingDay = { i: progWeekIdx, j: j };
+    var d = progState.weeks[progWeekIdx].days[j];
+    var host = $c('pg-dayedit');
+    host.style.display = '';
+    host.innerHTML = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;"><strong style="font-size:13.5px;">Week ' + (progWeekIdx + 1) + ' \u00b7 Day ' + (j + 1) + '</strong><input id="pg-day-name" type="text" maxlength="80" value="' + esc(d.name || '') + '" style="flex:1;padding:8px 11px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:13px;font-family:inherit;"/><button class="btn btn-primary" id="pg-day-done" type="button" style="font-size:12px;">Done</button></div><div id="pg-day-rows"></div><p style="font-size:11.5px;color:var(--text-muted);margin-top:8px;">Edits here change this week\u2019s copy only \u2014 the original template and every other week stay as they are.</p>';
+    renderDayEditor($c('pg-day-rows'), d);
+    $c('pg-day-done').addEventListener('click', progDayDone);
+    host.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function progDayDone(){
+    if (!progEditingDay) return;
+    var day = collectDay($c('pg-day-rows'));
+    var prev = progState.weeks[progEditingDay.i].days[progEditingDay.j] || {};
+    day.name = ($c('pg-day-name') && $c('pg-day-name').value.trim()) || prev.name || 'Training day';
+    if (prev.src_id) day.src_id = prev.src_id;
+    progState.weeks[progEditingDay.i].days[progEditingDay.j] = day;
+    progEditingDay = null;
+    renderProg();
+  }
+  function progQuick(mode){
+    if (progEditingDay) progDayDone();
+    (progState.weeks[progWeekIdx].days || []).forEach(function(d){
+      if (!d) return;
+      (d.exercises || []).forEach(function(e){
+        if (mode === 'set'){ var s = parseInt(e.sets); if (!isNaN(s)) e.sets = String(s + 1); }
+        if (mode === 'rir'){ var r = parseInt(e.rir); if (!isNaN(r) && r > 0) e.rir = String(r - 1); }
+      });
+    });
+    renderProg();
+  }
+
   /* \u2500\u2500 Sidebar router (PM-955j Kahunas-style shell) \u2500\u2500 */
-  var SECTION_KINDS = { forms: ['onboarding','checkin','habits'], workouts: ['workout'], nutrition: ['nutrition','supplements'] };
+  var SECTION_KINDS = { forms: ['onboarding','checkin','habits'], workouts: ['program','workout_day','workout'], nutrition: ['nutrition','supplements'] };
   var SOON_COPY = {
     messages: ['Messages', 'Message your clients without leaving the portal \u2014 conversations sync to the VYVE app on their phone. Coming soon.'],
     notifications: ['Notifications', 'A live feed of client activity \u2014 workouts finished, check-ins submitted, trials ending. Coming soon.'],
@@ -883,7 +1219,7 @@
     content: ['Content Library', 'Upload and share your own videos and resources with clients \u2014 unlisted, coach-only content. Coming soon.'],
     automations: ['Automations', 'Custom triggered messages \u2014 e.g. an automatic email to a client the moment you update their workout plan. Coming soon.']
   };
-  var VIEW_IDS = ['view-dashboard','view-clients','view-plans','view-profile','view-soon','view-settings'];
+  var VIEW_IDS = ['view-dashboard','view-clients','view-plans','view-exercises','view-profile','view-soon','view-settings'];
   function go(view){
     document.querySelectorAll('.cp-item').forEach(function(x){ x.classList.toggle('active', x.dataset.go === view); });
     var show = 'view-soon';
@@ -891,6 +1227,7 @@
     else if (view === 'clients') show = 'view-clients';
     else if (view === 'profile') show = 'view-profile';
     else if (view === 'settings') show = 'view-settings';
+    else if (view === 'exercises') show = 'view-exercises';
     else if (SECTION_KINDS[view]) show = 'view-plans';
     VIEW_IDS.forEach(function(id){ $c(id).style.display = id === show ? '' : 'none'; });
     if (SECTION_KINDS[view]){
@@ -903,8 +1240,9 @@
       });
       if (kinds.indexOf(plKind) < 0 && first) first.click();
       else { plLoad(); }
-      loadExerciseNames();
+      loadExerciseNames(); exLoad();
     }
+    if (view === 'exercises') exInit();
     if (view === 'dashboard') renderDashboard();
     if (view === 'profile') renderProfile();
     if (view === 'settings') loadCoachTerms();
