@@ -24,6 +24,7 @@ window.VYVE_NAV = [
     section: "VYVE",
     items: [
       { slug: "home", label: "Home", icon: "grid", status: "live" },
+      { slug: "links", label: "Links", icon: "link", status: "live", desc: "Every VYVE surface, portal and tool in one place." },
       { slug: "inbox", area: "partners", label: "Inbox", icon: "mail", status: "live", desc: "Partner messages, answered like a conversation." }
     ]
   },
@@ -62,6 +63,7 @@ window.VYVE_NAV = [
     section: "Partners",
     items: [
       { slug: "partner-management", area: "partners", label: "Partner Management", icon: "link", status: "live", desc: "Pipeline, go-live gates, moderation and payouts \u2014 now inside the CC shell." },
+      { href: "https://www.vyvehealth.co.uk/partner-onboarding.html", area: "partners", label: "Partner Onboarding", icon: "file-text", external: true, desc: "The public apply wizard \u2014 send this link to prospective partners." },
       { href: "/partner-portal.html", area: "partners", label: "Partner Portal",     icon: "video", external: false, desc: "What partners see \u2014 content, publishing, notify." },
       { slug: "bookings", area: "partners",             label: "Bookings",           icon: "calendar", status: "live", desc: "Employer expert requests to confirm + the booking ledger." }
     ]

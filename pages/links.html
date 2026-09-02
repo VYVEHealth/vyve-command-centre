@@ -1,0 +1,93 @@
+<div class="page active" id="page-links">
+  <div class="page-header">
+    <div class="hdr-row">
+      <div><div class="eyebrow">Directory</div><h1 class="page-title">Links</h1><p class="page-sub">Every VYVE surface, portal and tool in one place. External links open in a new tab.</p></div>
+    </div>
+  </div>
+
+  <style>
+    .lk-sec{margin:0 0 22px}
+    .lk-sec-h{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin:0 0 10px}
+    .lk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+    .lk-tile{display:block;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md,10px);padding:13px 14px;text-decoration:none;color:var(--text);transition:border-color .12s ease, background .12s ease}
+    .lk-tile:hover{border-color:var(--accent);background:var(--surface-2,var(--surface))}
+    .lk-title{font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:6px}
+    .lk-title .lk-ext{margin-left:auto;font-size:11px;opacity:.45}
+    .lk-sub{font-size:11.5px;color:var(--text-muted);margin-top:3px;word-break:break-all}
+    .lk-copy{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}
+    .lk-copy button{font-size:11px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--accent);cursor:pointer}
+    .lk-copy button:hover{border-color:var(--accent)}
+    @media (max-width:640px){.lk-grid{grid-template-columns:1fr 1fr}}
+  </style>
+
+  <div class="lk-sec">
+    <div class="lk-sec-h">Public &amp; member-facing</div>
+    <div class="lk-grid">
+      <a class="lk-tile" href="https://www.vyvehealth.co.uk" target="_blank" rel="noopener"><div class="lk-title">Marketing site<span class="lk-ext">&#8599;</span></div><div class="lk-sub">www.vyvehealth.co.uk</div></a>
+      <a class="lk-tile" href="https://online.vyvehealth.co.uk/signup.html" target="_blank" rel="noopener"><div class="lk-title">Signup door<span class="lk-ext">&#8599;</span></div><div class="lk-sub">online.vyvehealth.co.uk/signup.html</div></a>
+      <a class="lk-tile" href="https://www.vyvehealth.co.uk/vyve-podcast.html" target="_blank" rel="noopener"><div class="lk-title">Podcast page<span class="lk-ext">&#8599;</span></div><div class="lk-sub">vyve-podcast.html</div></a>
+    </div>
+  </div>
+
+  <div class="lk-sec">
+    <div class="lk-sec-h">Partners</div>
+    <div class="lk-grid">
+      <a class="lk-tile" href="https://www.vyvehealth.co.uk/partner-onboarding.html" target="_blank" rel="noopener" style="border-color:var(--accent)"><div class="lk-title">Partner onboarding<span class="lk-ext">&#8599;</span></div><div class="lk-sub">The public apply wizard &mdash; send this to prospective partners</div></a>
+      <a class="lk-tile" href="/partner-portal.html" target="_blank" rel="noopener"><div class="lk-title">Partner portal<span class="lk-ext">&#8599;</span></div><div class="lk-sub">admin.vyvehealth.co.uk/partner-portal.html</div></a>
+      <div class="lk-tile"><div class="lk-title">Join link pattern</div><div class="lk-sub">www.vyvehealth.co.uk/join/&lt;slug&gt;</div><div class="lk-copy"><span class="lk-sub" style="margin:0">Per-partner referral</span><button type="button" data-copy="https://www.vyvehealth.co.uk/join/">Copy base</button></div></div>
+      <div class="lk-tile"><div class="lk-title">Lead page pattern</div><div class="lk-sub">www.vyvehealth.co.uk/lead/&lt;slug&gt;</div><div class="lk-copy"><span class="lk-sub" style="margin:0">Coach lead capture</span><button type="button" data-copy="https://www.vyvehealth.co.uk/lead/">Copy base</button></div></div>
+    </div>
+  </div>
+
+  <div class="lk-sec">
+    <div class="lk-sec-h">Coaching, employers &amp; internal</div>
+    <div class="lk-grid">
+      <a class="lk-tile" href="/coach-portal.html" target="_blank" rel="noopener"><div class="lk-title">Coach portal<span class="lk-ext">&#8599;</span></div><div class="lk-sub">admin.vyvehealth.co.uk/coach-portal.html</div></a>
+      <a class="lk-tile" href="https://www.vyvehealth.co.uk/employer-portal.html" target="_blank" rel="noopener"><div class="lk-title">Employer portal (live)<span class="lk-ext">&#8599;</span></div><div class="lk-sub">Aggregate only, no PII</div></a>
+      <a class="lk-tile" href="https://www.vyvehealth.co.uk/employer-portal.html?demo=1" target="_blank" rel="noopener"><div class="lk-title">Employer sales demo<span class="lk-ext">&#8599;</span></div><div class="lk-sub">?demo=1 &mdash; for prospect calls</div></a>
+      <a class="lk-tile" href="/admin-console.html" target="_blank" rel="noopener"><div class="lk-title">Member admin<span class="lk-ext">&#8599;</span></div><div class="lk-sub">admin-console.html</div></a>
+      <a class="lk-tile" href="https://online.vyvehealth.co.uk/strategy.html" target="_blank" rel="noopener"><div class="lk-title">Strategy dashboard<span class="lk-ext">&#8599;</span></div><div class="lk-sub">online.vyvehealth.co.uk/strategy.html</div></a>
+    </div>
+  </div>
+
+  <div class="lk-sec">
+    <div class="lk-sec-h">Ops &amp; infrastructure</div>
+    <div class="lk-grid">
+      <a class="lk-tile" href="https://supabase.com/dashboard/project/ixjfklpckgxrwjlfsaaz" target="_blank" rel="noopener"><div class="lk-title">Supabase<span class="lk-ext">&#8599;</span></div><div class="lk-sub">Database, auth, edge functions</div></a>
+      <a class="lk-tile" href="https://dashboard.stripe.com" target="_blank" rel="noopener"><div class="lk-title">Stripe<span class="lk-ext">&#8599;</span></div><div class="lk-sub">Payments &amp; subscriptions</div></a>
+      <a class="lk-tile" href="https://app.brevo.com" target="_blank" rel="noopener"><div class="lk-title">Brevo<span class="lk-ext">&#8599;</span></div><div class="lk-sub">Transactional email</div></a>
+      <a class="lk-tile" href="https://eu.posthog.com/project/138491" target="_blank" rel="noopener"><div class="lk-title">PostHog<span class="lk-ext">&#8599;</span></div><div class="lk-sub">Analytics &mdash; EU project 138491</div></a>
+      <a class="lk-tile" href="https://app-eu1.hubspot.com" target="_blank" rel="noopener"><div class="lk-title">HubSpot<span class="lk-ext">&#8599;</span></div><div class="lk-sub">CRM &mdash; enterprise pipeline</div></a>
+      <a class="lk-tile" href="https://cloud.capawesome.io" target="_blank" rel="noopener"><div class="lk-title">Capawesome<span class="lk-ext">&#8599;</span></div><div class="lk-sub">OTA updates &mdash; app f9961f66</div></a>
+      <a class="lk-tile" href="https://dash.cloudflare.com" target="_blank" rel="noopener"><div class="lk-title">Cloudflare<span class="lk-ext">&#8599;</span></div><div class="lk-sub">Pages deploys + DNS</div></a>
+      <a class="lk-tile" href="https://github.com/VYVEHealth" target="_blank" rel="noopener"><div class="lk-title">GitHub<span class="lk-ext">&#8599;</span></div><div class="lk-sub">VYVEHealth org &mdash; all repos</div></a>
+      <a class="lk-tile" href="https://app.metricool.com/evolution/instagram?blogId=5565297&amp;userId=4317867" target="_blank" rel="noopener"><div class="lk-title">Metricool<span class="lk-ext">&#8599;</span></div><div class="lk-sub">Social scheduling &amp; analytics</div></a>
+      <a class="lk-tile" href="https://riverside.fm/dashboard/home" target="_blank" rel="noopener"><div class="lk-title">Riverside<span class="lk-ext">&#8599;</span></div><div class="lk-sub">Recording studios</div></a>
+      <a class="lk-tile" href="https://drive.google.com/drive/u/1/home" target="_blank" rel="noopener"><div class="lk-title">Shared Drive<span class="lk-ext">&#8599;</span></div><div class="lk-sub">Google Drive documents</div></a>
+      <a class="lk-tile" href="https://dashboard.daily.co" target="_blank" rel="noopener"><div class="lk-title">Daily.co<span class="lk-ext">&#8599;</span></div><div class="lk-sub">Meeting rooms (vyvehealth.daily.co)</div></a>
+    </div>
+  </div>
+
+  <script>
+  (function(){
+    var page = document.getElementById('page-links');
+    if (!page) return;
+    page.addEventListener('click', function(e){
+      var btn = e.target.closest('button[data-copy]');
+      if (!btn) return;
+      var url = btn.getAttribute('data-copy');
+      function done(){ var old = btn.textContent; btn.textContent = 'Copied'; setTimeout(function(){ btn.textContent = old; }, 1400); }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(done, function(){ fallback(); });
+      } else { fallback(); }
+      function fallback(){
+        var ta = document.createElement('textarea');
+        ta.value = url; ta.style.position = 'absolute'; ta.style.left = '-9999px';
+        document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); done(); } catch(_){}
+        document.body.removeChild(ta);
+      }
+    });
+  })();
+  </script>
+</div>
