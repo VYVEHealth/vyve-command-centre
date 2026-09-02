@@ -833,10 +833,32 @@
       seedQs.forEach(addQRow);
       $c('q-add').addEventListener('click', function(){ addQRow({}); });
     } else if (plKind === 'habits'){
-      b.innerHTML = '<div id="h-rows"></div><button class="btn" id="h-add" type="button" style="font-size:12px;margin-top:6px;">+ Add habit</button>';
+      b.innerHTML = '<p style="font-size:12.5px;color:var(--text-muted);margin-bottom:10px;">Mix and match: pick from the VYVE habit library (\u26a1 ones auto-tick from your client\u2019s linked health data \u2014 steps, sleep, workouts) or write your own. Your own habits can auto-track a daily step target too.</p><div id="h-rows"></div><div style="display:flex;gap:8px;margin-top:6px;"><button class="btn" id="h-add" type="button" style="font-size:12px;">+ Write your own</button><button class="btn" id="h-lib" type="button" style="font-size:12px;">+ From VYVE library</button></div><div id="h-libpick" style="display:none;max-height:260px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;margin-top:8px;padding:6px;"></div>';
       var hs = (item && item.payload && item.payload.habits && item.payload.habits.length) ? item.payload.habits : [{}];
       hs.forEach(addHRow);
       $c('h-add').addEventListener('click', function(){ addHRow({}); });
+      $c('h-lib').addEventListener('click', async function(){
+        var box = $c('h-libpick');
+        if (box.style.display !== 'none'){ box.style.display = 'none'; return; }
+        box.style.display = ''; box.innerHTML = '<p style="font-size:12px;color:var(--text-muted);padding:6px;">Loading\u2026</p>';
+        if (!stockHabits){
+          try { stockHabits = await rest('/habit_library?active=eq.true&or=(created_by.is.null,created_by.not.like.coach:*)&order=habit_title.asc&limit=100&select=id,habit_title,habit_description,health_rule') || []; }
+          catch(e){ box.innerHTML = '<p style="font-size:12px;color:var(--text-muted);padding:6px;">Couldn\u2019t load the library \u2014 try again.</p>'; stockHabits = null; return; }
+        }
+        box.innerHTML = stockHabits.map(function(sh, i){
+          return '<button type="button" class="h-libitem" data-i="' + i + '" style="display:flex;width:100%;text-align:left;gap:8px;align-items:center;background:none;border:none;border-bottom:1px solid var(--border);padding:9px 8px;cursor:pointer;color:var(--text);font-family:inherit;">' +
+            '<span style="flex:1;min-width:0;"><span style="font-size:13px;font-weight:600;">' + esc(sh.habit_title) + '</span>' +
+            (sh.habit_description ? '<span style="display:block;font-size:11.5px;color:var(--text-muted);">' + esc(sh.habit_description) + '</span>' : '') + '</span>' +
+            (sh.health_rule ? '<span style="font-size:10.5px;font-weight:800;color:var(--vyve-gold,#C9A84C);flex:none;">\u26a1 AUTO</span>' : '') + '</button>';
+        }).join('');
+        box.querySelectorAll('.h-libitem').forEach(function(btn){
+          btn.addEventListener('click', function(){
+            var sh = stockHabits[parseInt(btn.dataset.i)];
+            addHRow({ lib_id: sh.id, title: sh.habit_title, description: sh.habit_description || '', auto: !!sh.health_rule });
+            box.style.display = 'none';
+          });
+        });
+      });
     } else if (plKind === 'workout'){
       b.innerHTML = '<p style="font-size:12.5px;color:var(--text-muted);margin-bottom:10px;">Build one training week \u2014 it repeats until you change it. Exercise names matching the VYVE library get demo videos automatically in the app.</p><div class="field" style="margin-bottom:10px;"><label>Workout instructions (shown to the client)</label><textarea id="w-instructions" rows="2" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:13px;font-family:inherit;">' + esc((item && item.payload && item.payload.instructions) || '') + '</textarea></div><div id="w-sessions"></div><button class="btn" id="w-add-session" type="button" style="font-size:12px;margin-top:6px;">+ Add session</button><datalist id="ex-names">' + exerciseNames.map(function(n){ return '<option value="' + esc(n) + '">'; }).join('') + '</datalist>';
       var ss = (item && item.payload && item.payload.sessions && item.payload.sessions.length) ? item.payload.sessions : [{ name: 'Session 1', exercises: [{}] }];
@@ -888,12 +910,26 @@
     d.querySelector('.q-del').addEventListener('click', function(){ d.remove(); });
     $c('q-rows').appendChild(d);
   }
+  var stockHabits = null;
   function addHRow(h){
     var d = document.createElement('div');
     d.style.cssText = 'border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;';
-    d.innerHTML = '<div class="field-row"><div class="field"><label>Habit</label><input class="h-title" type="text" maxlength="120" value="' + esc(h.title||'') + '" placeholder="e.g. 10,000 steps"/></div>' +
-      '<div class="field"><label>Why / how (shown to client)</label><input class="h-desc" type="text" maxlength="240" value="' + esc(h.description||'') + '"/></div></div>' +
-      '<div style="text-align:right;">' + rowBtn('Remove','h-del') + '</div>';
+    if (h.lib_id){
+      d.dataset.libId = h.lib_id;
+      d.dataset.libTitle = h.title || '';
+      d.innerHTML = '<div style="display:flex;align-items:center;gap:10px;"><span style="flex:1;min-width:0;"><span style="font-size:13.5px;font-weight:600;">' + esc(h.title||'') + '</span>' +
+        (h.description ? '<span style="display:block;font-size:11.5px;color:var(--text-muted);">' + esc(h.description) + '</span>' : '') + '</span>' +
+        (h.auto ? '<span style="font-size:10.5px;font-weight:800;color:var(--vyve-gold,#C9A84C);flex:none;">\u26a1 AUTO</span>' : '') +
+        '<span style="font-size:10.5px;color:var(--text-muted);flex:none;">VYVE library</span>' + rowBtn('Remove','h-del') + '</div>';
+    } else {
+      d.innerHTML = '<div class="field-row"><div class="field"><label>Habit</label><input class="h-title" type="text" maxlength="120" value="' + esc(h.title||'') + '" placeholder="e.g. Read 10 pages"/></div>' +
+        '<div class="field"><label>Why / how (shown to client)</label><input class="h-desc" type="text" maxlength="240" value="' + esc(h.description||'') + '"/></div></div>' +
+        '<div style="display:flex;align-items:center;gap:10px;margin-top:2px;"><label style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-muted);cursor:pointer;margin:0;"><input type="checkbox" class="h-steps-on"' + (h.steps_target ? ' checked' : '') + ' style="accent-color:var(--vyve-teal);width:15px;height:15px;"/> Auto-track a daily step target</label>' +
+        '<input class="h-steps" type="number" min="500" step="500" value="' + (h.steps_target || '') + '" placeholder="10000" style="width:110px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:12.5px;font-family:inherit;' + (h.steps_target ? '' : 'display:none;') + '"/>' +
+        '<span style="flex:1;"></span>' + rowBtn('Remove','h-del') + '</div>';
+      var so = d.querySelector('.h-steps-on'), si = d.querySelector('.h-steps');
+      so.addEventListener('change', function(){ si.style.display = so.checked ? '' : 'none'; if (so.checked && !si.value) si.value = 10000; });
+    }
     d.querySelector('.h-del').addEventListener('click', function(){ d.remove(); });
     $c('h-rows').appendChild(d);
   }
@@ -960,8 +996,13 @@
     if (plKind === 'habits'){
       var hs = [];
       $c('h-rows').querySelectorAll(':scope > div').forEach(function(d){
+        if (d.dataset.libId){ hs.push({ lib_id: d.dataset.libId, title: d.dataset.libTitle }); return; }
         var t = d.querySelector('.h-title').value.trim();
-        if (t) hs.push({ title: t, description: d.querySelector('.h-desc').value.trim() });
+        if (!t) return;
+        var row = { title: t, description: d.querySelector('.h-desc').value.trim() };
+        var so = d.querySelector('.h-steps-on'), si = d.querySelector('.h-steps');
+        if (so && so.checked && parseInt(si.value) > 0) row.steps_target = parseInt(si.value);
+        hs.push(row);
       });
       return { payload: { habits: hs }, valid: hs.length > 0, err: 'Add at least one habit.' };
     }
