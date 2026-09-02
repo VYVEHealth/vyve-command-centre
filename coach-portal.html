@@ -336,7 +336,7 @@
     <div class="card">
       <div class="card-title">Automations</div>
       <p style="font-size:13px;color:var(--text-muted);margin-bottom:6px;">Automatic emails to a client the moment you change their plans. On by default with a ready-made message &mdash; switch any off, or make the wording yours.</p>
-      <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px;">Variables: <code style="background:var(--surface-2);padding:1px 6px;border-radius:5px;">{{first_name}}</code> <code style="background:var(--surface-2);padding:1px 6px;border-radius:5px;">{{coach_name}}</code> <code style="background:var(--surface-2);padding:1px 6px;border-radius:5px;">{{plan_name}}</code> &mdash; filled in automatically when the email sends. In-app messages join here when Messages launches.</p>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px;">Variables: <code style="background:var(--surface-2);padding:1px 6px;border-radius:5px;">{{first_name}}</code> <code style="background:var(--surface-2);padding:1px 6px;border-radius:5px;">{{coach_name}}</code> <code style="background:var(--surface-2);padding:1px 6px;border-radius:5px;">{{plan_name}}</code> &mdash; filled in automatically when it sends. Each automation can go as an email, an in-app message (lands in your Messages thread and pings their phone), or both.</p>
       <div id="auto-list"><p style="font-size:12.5px;color:var(--text-muted);">Loading&hellip;</p></div>
     </div>
   </div>
@@ -528,10 +528,12 @@
         rest('/workouts?member_email=eq.' + enc + '&logged_at=gte.' + encodeURIComponent(since30) + '&order=logged_at.desc&select=workout_name,duration_minutes,logged_at,difficulty_rating,member_note').catch(function(){return [];}),
         rest('/daily_habits?member_email=eq.' + enc + '&activity_date=gte.' + since7 + '&select=id').catch(function(){return [];}),
         rest('/coach_form_responses?member_email=eq.' + enc + '&order=submitted_at.desc&limit=3&select=answers,week_start,submitted_at').catch(function(){return [];}),
-        rest('/members?email=eq.' + enc + '&select=last_active_at,trial_ends_at,subscription_status').catch(function(){return [];})
+        rest('/members?email=eq.' + enc + '&select=last_active_at,trial_ends_at,subscription_status,macro_override,tdee_target').catch(function(){return [];}),
+        rest('/nutrition_logs?member_email=eq.' + enc + '&activity_date=gte.' + since7 + '&select=activity_date,calories_kcal,protein_g').catch(function(){return [];})
       ]);
     }
     var w = res[0] && res[0][0], wkRows = res[1]||[], wk = wkRows.length, hb = (res[2]||[]).length, cis = res[3]||[], mrow = (res[4]||[])[0] || {};
+    var nlogs = res[5] || [];
 
     // ── Header stats ──
     var stats = '<div style="display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px;color:var(--text-muted);margin-bottom:14px;">' +
@@ -557,6 +559,35 @@
       '<div class="field-row">' + slotSel(SLOTS[2]) + slotSel(SLOTS[3]) + '</div>' +
       '<div class="field-row">' + slotSel(SLOTS[4]) + slotSel(SLOTS[5]) + '</div>' +
       '<div style="display:flex;gap:10px;align-items:center;margin:4px 0 16px;"><button class="btn btn-primary" id="cd-asg-save" type="button" style="font-size:12px;">Save assignments</button><span id="cd-asg-msg" style="font-size:12px;color:var(--text-muted);"></span></div>';
+
+    // \u2500\u2500 Nutrition adherence (PM-960d) \u2500\u2500
+    var nutHtml = '';
+    if (consented){
+      var mo = mrow.macro_override || {};
+      var kcalT = parseInt(mo.calories || mrow.tdee_target || 0) || 0;
+      var protT = parseInt(mo.protein || 0) || 0;
+      var byDay = {};
+      nlogs.forEach(function(n){ var d = byDay[n.activity_date] = byDay[n.activity_date] || { k: 0, p: 0 }; d.k += (parseFloat(n.calories_kcal) || 0); d.p += (parseFloat(n.protein_g) || 0); });
+      var days = [];
+      for (var di = 6; di >= 0; di--){
+        var dd = new Date(Date.now() - di * 864e5);
+        var ds = dd.getFullYear() + '-' + String(dd.getMonth()+1).padStart(2,'0') + '-' + String(dd.getDate()).padStart(2,'0');
+        days.push({ label: dd.toLocaleDateString('en-GB', { weekday: 'short' }), d: byDay[ds] });
+      }
+      var loggedDays = days.filter(function(x){ return x.d && x.d.k > 0; }).length;
+      var rows7 = days.map(function(x){
+        var k = x.d ? Math.round(x.d.k) : 0, p = x.d ? Math.round(x.d.p) : 0;
+        var kPct = kcalT ? Math.min(100, Math.round(k / kcalT * 100)) : 0;
+        var kCol = !k ? 'var(--border)' : (kcalT && Math.abs(k - kcalT) <= kcalT * 0.1 ? '#3DB89F' : '#E8834A');
+        return '<div style="display:flex;align-items:center;gap:8px;font-size:12px;padding:3px 0;">' +
+          '<span style="width:34px;color:var(--text-muted);">' + x.label + '</span>' +
+          '<span style="flex:1;height:7px;border-radius:4px;background:var(--surface-2);overflow:hidden;"><span style="display:block;height:100%;width:' + kPct + '%;background:' + kCol + ';"></span></span>' +
+          '<span style="width:150px;text-align:right;color:' + (k ? 'var(--text)' : 'var(--text-muted)') + ';">' + (k ? (k + (kcalT ? '/' + kcalT : '') + ' kcal \u00b7 ' + p + (protT ? '/' + protT : '') + 'g P') : 'nothing logged') + '</span></div>';
+      }).join('');
+      nutHtml = '<div style="font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);margin:4px 0 8px;">Nutrition \u2014 last 7 days' + (kcalT ? ' (target ' + kcalT + ' kcal' + (protT ? ' \u00b7 ' + protT + 'g protein' : '') + ')' : '') + '</div>' +
+        '<div style="border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:16px;">' + rows7 +
+        '<div style="font-size:11px;color:var(--text-muted);margin-top:6px;">' + loggedDays + '/7 days logged' + (kcalT ? ' \u00b7 green = within 10% of target' : ' \u00b7 no coach targets set \u2014 assign a nutrition plan to track against') + '</div></div>';
+    }
 
     // ── Activity log ──
     var events = [];
@@ -588,7 +619,7 @@
 
     var waitNote = !consented ? '<div style="padding:10px 14px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;font-size:12.5px;color:var(--text-muted);margin-bottom:14px;">Training data unlocks when ' + esc(c.invited_first_name || 'they') + ' logs in and accepts your terms and data sharing. You can adjust their assigned plans in the meantime.</div>' : '';
 
-    body.innerHTML = stats + waitNote + asgHtml + logHtml + ciHtml;
+    body.innerHTML = stats + waitNote + asgHtml + nutHtml + logHtml + ciHtml;
     renderClientCheckins(c);
     $c('cd-asg-save').addEventListener('click', async function(){
       var na = {};
@@ -1231,7 +1262,7 @@
   async function autoLoad(){
     var el = $c('auto-list');
     try {
-      var rows = await rest('/coach_automations?partner_id=eq.' + partnerId + '&select=event,enabled,subject,body') || [];
+      var rows = await rest('/coach_automations?partner_id=eq.' + partnerId + '&select=event,enabled,subject,body,channel') || [];
       autoRows = {}; rows.forEach(function(r){ autoRows[r.event] = r; });
     } catch(e){ autoRows = {}; }
     el.innerHTML = AUTO_EVENTS_UI.map(function(ev){
@@ -1243,7 +1274,8 @@
       return '<div class="auto-card" data-ev="' + key + '" style="border:1px solid var(--border);border-radius:12px;padding:13px 15px;margin-bottom:12px;' + (on ? '' : 'opacity:.6;') + '">' +
         '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;"><strong style="font-size:13.5px;flex:1;">' + label + '</strong>' +
         '<label style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-muted);cursor:pointer;"><input type="checkbox" class="au-on"' + (on ? ' checked' : '') + ' style="accent-color:var(--vyve-teal);width:16px;height:16px;"/> ' + (on ? 'On' : 'Off') + '</label></div>' +
-        '<div class="field" style="margin-bottom:8px;"><label>Email subject</label><input class="au-subj" type="text" maxlength="160" value="' + esc(subj) + '"/></div>' +
+        '<div class="field" style="margin-bottom:8px;"><label>Send as</label><select class="au-chan"><option value="email"' + ((cfg.channel||'email')==='email'?' selected':'') + '>Email</option><option value="message"' + (cfg.channel==='message'?' selected':'') + '>In-app message</option><option value="both"' + (cfg.channel==='both'?' selected':'') + '>Email + in-app message</option></select></div>' +
+        '<div class="field" style="margin-bottom:8px;"><label>Subject (email only)</label><input class="au-subj" type="text" maxlength="160" value="' + esc(subj) + '"/></div>' +
         '<div class="field"><label>Email message</label><textarea class="au-body" rows="5" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:13px;font-family:inherit;">' + esc(bdy) + '</textarea></div>' +
         '<div style="display:flex;gap:10px;align-items:center;margin-top:8px;"><button class="btn btn-primary au-save" type="button" style="font-size:12px;">Save</button>' +
         '<button class="btn au-reset" type="button" style="font-size:12px;">Reset to default</button>' +
@@ -1257,6 +1289,7 @@
         var body = {
           partner_id: partnerId, event: key,
           enabled: onBox.checked,
+          channel: card.querySelector('.au-chan').value || 'email',
           subject: card.querySelector('.au-subj').value.trim() || null,
           body: card.querySelector('.au-body').value.trim() || null,
           updated_at: new Date().toISOString()
@@ -1266,11 +1299,13 @@
           else { await rest('/coach_automations', { method: 'POST', body: body }); autoRows[key] = body; }
           autoRows[key] = body;
           card.style.opacity = onBox.checked ? '' : '.6';
-          msg.textContent = onBox.checked ? 'Saved \u2014 sends automatically when you update this plan.' : 'Saved \u2014 this email is off.';
+          var chLbl = { email: 'as an email', message: 'as an in-app message', both: 'as email + in-app message' }[body.channel] || 'as an email';
+          msg.textContent = onBox.checked ? ('Saved \u2014 sends ' + chLbl + ' when you update this plan.') : 'Saved \u2014 this automation is off.';
         } catch(e){ msg.textContent = 'Save failed: ' + e.message; }
       }
       card.querySelector('.au-save').addEventListener('click', save);
       onBox.addEventListener('change', save);
+      card.querySelector('.au-chan').addEventListener('change', save);
       card.querySelector('.au-reset').addEventListener('click', function(){
         card.querySelector('.au-subj').value = AUTO_DEFAULTS[key].subject;
         card.querySelector('.au-body').value = AUTO_DEFAULTS[key].body;
@@ -1447,9 +1482,10 @@
       });
       var keys = Object.keys(groups).sort().reverse();
       if (!keys.length) return '<p style="font-size:12.5px;color:var(--text-muted);">No photos submitted yet.</p>';
-      return keys.map(function(k){
+      var cmpBar = '<div id="ci-cmp-bar" style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">Tap two photos to compare side by side.</div><div id="ci-cmp-panel" style="display:none;gap:10px;margin-bottom:14px;"></div>';
+      return cmpBar + keys.map(function(k){
         return '<div style="margin-bottom:14px;"><div style="font-size:11.5px;font-weight:700;color:var(--text-muted);margin-bottom:6px;">w/c ' + esc(k) + '</div><div style="display:flex;gap:8px;flex-wrap:wrap;">' +
-          groups[k].map(function(u){ return '<a href="' + u + '" target="_blank" rel="noopener"><img src="' + u + '" loading="lazy" style="width:110px;height:110px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"/></a>'; }).join('') +
+          groups[k].map(function(u){ return '<img src="' + u + '" loading="lazy" class="ci-cmp-img" data-url="' + u + '" style="width:110px;height:110px;object-fit:cover;border-radius:8px;border:2px solid var(--border);cursor:pointer;"/>'; }).join('') +
           '</div></div>';
       }).join('');
     }
@@ -1459,6 +1495,33 @@
         '<button class="btn ci-tab' + (tab === 'photos' ? ' btn-primary' : '') + '" data-ci-tab="photos" type="button" style="font-size:11.5px;">Photo timeline</button></div>' +
         (tab === 'list' ? resp.map(cardHtml).join('') : photoTimelineHtml());
       host.querySelectorAll('[data-ci-tab]').forEach(function(b){ b.addEventListener('click', function(){ paint(b.dataset.ciTab); }); });
+      if (tab === 'photos'){
+        var picked = [];
+        function renderCmp(){
+          var panel = host.querySelector('#ci-cmp-panel'), bar = host.querySelector('#ci-cmp-bar');
+          host.querySelectorAll('.ci-cmp-img').forEach(function(im){ im.style.borderColor = picked.indexOf(im.dataset.url) >= 0 ? '#C9A84C' : 'var(--border)'; });
+          if (!panel || !bar) return;
+          if (picked.length === 2){
+            panel.style.display = 'flex';
+            panel.innerHTML = picked.map(function(u){ return '<a href="' + u + '" target="_blank" rel="noopener" style="flex:1;min-width:0;"><img src="' + u + '" style="width:100%;max-height:420px;object-fit:contain;border-radius:10px;border:1px solid var(--border);background:var(--surface-2);"/></a>'; }).join('') +
+              '<button class="btn" id="ci-cmp-clear" type="button" style="font-size:11.5px;align-self:flex-start;">Clear</button>';
+            bar.textContent = 'Comparing \u2014 tap Clear to pick again.';
+            var cb = panel.querySelector('#ci-cmp-clear');
+            if (cb) cb.addEventListener('click', function(){ picked = []; renderCmp(); });
+          } else {
+            panel.style.display = 'none'; panel.innerHTML = '';
+            bar.textContent = picked.length === 1 ? 'One picked \u2014 tap a second photo to compare.' : 'Tap two photos to compare side by side.';
+          }
+        }
+        host.querySelectorAll('.ci-cmp-img').forEach(function(im){
+          im.addEventListener('click', function(){
+            var u = im.dataset.url, i = picked.indexOf(u);
+            if (i >= 0) picked.splice(i, 1);
+            else { picked.push(u); if (picked.length > 2) picked.shift(); }
+            renderCmp();
+          });
+        });
+      }
       host.querySelectorAll('[data-ci-rev]').forEach(function(b){
         b.addEventListener('click', async function(){
           b.disabled = true;
