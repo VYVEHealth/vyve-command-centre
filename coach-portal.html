@@ -144,7 +144,7 @@
     <div class="side-brand">VYVE</div>
     <button class="cp-item" data-go="profile" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Profile</span></button>
     <button class="cp-item" data-go="messages" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Messages</span><span class="soon">SOON</span></button>
-    <button class="cp-item" data-go="notifications" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span>Notifications</span><span class="soon">SOON</span></button>
+    <button class="cp-item" data-go="notifications" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span>Notifications</span><span class="cp-nbadge" id="cp-notif-badge" style="display:none;margin-left:auto;background:#E8834A;color:#fff;border-radius:99px;font-size:10px;font-weight:800;padding:2px 8px;">0</span></button>
     <button class="cp-item active" data-go="dashboard" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg><span>Dashboard</span></button>
     <button class="cp-item" data-go="clients" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Clients</span></button>
     <button class="cp-item" data-go="nutrition" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4z"/></svg><span>Nutrition</span></button>
@@ -272,6 +272,20 @@
         <button class="btn" id="ct-example" type="button" style="font-size:12.5px;">Use example template</button>
         <span id="ct-msg" style="font-size:12px;color:var(--text-muted);"></span>
       </div>
+    </div>
+  </div>
+  <div id="view-notifs" style="display:none;">
+    <div class="card">
+      <div class="card-title">Notifications</div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Everything your clients have done, newest first. Check-ins wait here until you mark them reviewed.</p>
+      <div id="nf-filters" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">
+        <button class="btn nf-f active btn-primary" data-f="all" type="button" style="font-size:12px;">All</button>
+        <button class="btn nf-f" data-f="workout" type="button" style="font-size:12px;">Workouts</button>
+        <button class="btn nf-f" data-f="checkin" type="button" style="font-size:12px;">Check-ins</button>
+        <button class="btn nf-f" data-f="client" type="button" style="font-size:12px;">Clients</button>
+        <button class="btn nf-f" data-f="trial" type="button" style="font-size:12px;">Trials</button>
+      </div>
+      <div id="nf-feed"></div>
     </div>
   </div>
   <div id="view-exercises" style="display:none;">
@@ -500,13 +514,13 @@
         return '<div style="margin-bottom:10px;"><div style="font-size:13px;">' + esc(e.label) + '</div><div style="font-size:11.5px;color:var(--text-muted);">' + d.toLocaleDateString('en-GB') + ' ' + d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) + '</div></div>';
       }).join('') + '</div>' : '<p style="font-size:12.5px;color:var(--text-muted);">No activity yet.</p>');
 
-    // ── Latest check-in answers ──
-    var ci = cis[0];
-    var ciHtml = ci ? '<div style="margin-top:12px;padding:12px 14px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;"><div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Latest check-in answers</div><pre style="white-space:pre-wrap;font-family:inherit;font-size:12.5px;margin:0;">' + esc(JSON.stringify(ci.answers, null, 1).replace(/[{}"]/g,'')) + '</pre></div>' : '';
+    // ── Check-ins: full review timeline rendered async into this host (PM-958e) ──
+    var ciHtml = '<div id="cd-checkins" style="margin-top:14px;"></div>';
 
     var waitNote = !consented ? '<div style="padding:10px 14px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;font-size:12.5px;color:var(--text-muted);margin-bottom:14px;">Training data unlocks when ' + esc(c.invited_first_name || 'they') + ' logs in and accepts your terms and data sharing. You can adjust their assigned plans in the meantime.</div>' : '';
 
     body.innerHTML = stats + waitNote + asgHtml + logHtml + ciHtml;
+    renderClientCheckins(c);
     $c('cd-asg-save').addEventListener('click', async function(){
       var na = {};
       body.querySelectorAll('.cd-asg').forEach(function(sel){ if (sel.value) na[sel.dataset.key] = sel.value; });
@@ -557,6 +571,7 @@
       await loadClients();
       renderDashboard();
       loadLibraries();
+      notifLoad(false).catch(function(){});
     } catch(e){ inited = false; }
   }
   $c('cl-add-btn').addEventListener('click', function(){ $c('cl-editor').style.display = ''; $c('clf-first').focus(); });
@@ -967,6 +982,201 @@
       exerciseNames = (rows||[]).map(function(r){ return r.exercise_name; }).filter(function(n){ if (!n || seen[n]) return false; seen[n] = 1; return true; });
     } catch(e){ exerciseNames = []; }
   }
+  /* ── Notifications feed + check-in review (PM-958e) ── */
+  var nfEvents = [], nfFilter = 'all', nfLoadedAt = 0;
+  var DIFF_LBL = { 1:'Easy', 2:'Fine', 3:'Solid', 4:'Hard', 5:'Brutal' };
+  function nfSeenKey(){ return 'vyve-coach-seen-' + (partnerId || ''); }
+  function nfSeen(){ try { return localStorage.getItem(nfSeenKey()) || ''; } catch(_) { return ''; } }
+  function nfBadge(){
+    var seen = nfSeen();
+    var n = nfEvents.filter(function(e){ return !seen || e.t > seen; }).length;
+    var b = $c('cp-notif-badge');
+    if (!b) return;
+    b.textContent = n > 20 ? '20+' : String(n);
+    b.style.display = n ? '' : 'none';
+  }
+  async function notifLoad(interactive){
+    if (!partnerId) return;
+    var now = Date.now();
+    if (!interactive && now - nfLoadedAt < 60000) { nfBadge(); return; }
+    var actives = roster.filter(function(c){ return c.status === 'active' && c.consent_accepted_at; });
+    var emails = actives.map(function(c){ return c.member_email; });
+    var inList = emails.map(function(e){ return '"' + e + '"'; }).join(',');
+    var qs = [
+      emails.length ? rest('/workouts?member_email=in.(' + encodeURIComponent(inList) + ')&order=logged_at.desc&limit=40&select=member_email,workout_name,duration_minutes,difficulty_rating,member_note,logged_at').catch(function(){ return []; }) : Promise.resolve([]),
+      rest('/coach_form_responses?partner_id=eq.' + partnerId + '&order=submitted_at.desc&limit=40&select=id,member_email,form_id,week_start,submitted_at,reviewed_at').catch(function(){ return []; }),
+      emails.length ? rest('/members?email=in.(' + encodeURIComponent(inList) + ')&select=email,trial_ends_at,subscription_status').catch(function(){ return []; }) : Promise.resolve([])
+    ];
+    var res = await Promise.all(qs);
+    var ev = [];
+    (res[0] || []).forEach(function(x){
+      var d = 'Completed ' + (x.workout_name || 'a workout') + (x.duration_minutes ? ' \u00b7 ' + x.duration_minutes + ' min' : '');
+      if (x.difficulty_rating) d += ' \u00b7 felt ' + (DIFF_LBL[x.difficulty_rating] || x.difficulty_rating) + ' (' + x.difficulty_rating + '/5)';
+      ev.push({ t: x.logged_at, kind: 'workout', email: x.member_email, title: d, note: x.member_note || '' });
+    });
+    (res[1] || []).forEach(function(x){
+      ev.push({ t: x.submitted_at, kind: 'checkin', email: x.member_email, title: 'Submitted a check-in' + (x.week_start ? ' (w/c ' + x.week_start + ')' : ''), note: '', unreviewed: !x.reviewed_at });
+    });
+    roster.forEach(function(c){
+      if (c.consent_accepted_at) ev.push({ t: c.consent_accepted_at, kind: 'client', email: c.member_email, title: 'Accepted your terms \u2014 coaching active', note: '' });
+    });
+    (res[2] || []).forEach(function(m){
+      if (!m.trial_ends_at || m.subscription_status !== 'trial') return;
+      var days = Math.ceil((new Date(m.trial_ends_at) - Date.now()) / 864e5);
+      if (days <= 5) ev.push({ t: new Date().toISOString(), kind: 'trial', email: m.email, title: days < 0 ? 'Trial ended \u2014 \u00a310/month email sent' : ('Trial ends in ' + days + ' day' + (days === 1 ? '' : 's')), note: '' });
+    });
+    nfEvents = ev.filter(function(e){ return e.t; }).sort(function(a, b){ return (b.t || '').localeCompare(a.t || ''); }).slice(0, 80);
+    nfLoadedAt = now;
+    nfBadge();
+    if (interactive){
+      nfRender();
+      try { localStorage.setItem(nfSeenKey(), new Date().toISOString()); } catch(_){}
+    }
+  }
+  function nfRender(){
+    var el = $c('nf-feed');
+    var seen = nfSeen();
+    var rows = nfEvents.filter(function(e){ return nfFilter === 'all' || e.kind === nfFilter; });
+    if (!rows.length){ el.innerHTML = '<div class="empty-state"><h3>Nothing yet</h3><p>Client activity lands here \u2014 workouts, check-ins, activations and trial deadlines.</p></div>'; nfBadge(); return; }
+    var ICON = { workout: '\ud83c\udfcb', checkin: '\ud83d\udcdd', client: '\u2705', trial: '\u23f3' };
+    function dayLabel(t){
+      var d = new Date(t), today = new Date();
+      var diff = Math.floor((new Date(today.getFullYear(), today.getMonth(), today.getDate()) - new Date(d.getFullYear(), d.getMonth(), d.getDate())) / 864e5);
+      return diff <= 0 ? 'Today' : diff === 1 ? 'Yesterday' : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    }
+    var html = '', lastDay = null;
+    rows.forEach(function(e){
+      var dl = dayLabel(e.t);
+      if (dl !== lastDay){ html += '<div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin:14px 0 6px;">' + dl + '</div>'; lastDay = dl; }
+      var who = nameOf(roster.find(function(c){ return c.member_email === e.email; }) || { member_email: e.email });
+      var fresh = !seen || e.t > seen;
+      html += '<div style="display:flex;gap:12px;align-items:flex-start;padding:10px 8px;border-bottom:1px solid var(--border);' + (fresh ? 'background:rgba(27,120,120,.06);border-radius:8px;' : '') + '">' +
+        '<div style="font-size:17px;flex:none;">' + ICON[e.kind] + '</div>' +
+        '<div style="flex:1;min-width:0;"><div style="font-size:13px;"><strong>' + esc(who) + '</strong> \u2014 ' + esc(e.title) + (e.unreviewed ? ' <span style="color:#E8834A;font-size:11px;font-weight:700;">\u25cf needs review</span>' : '') + '</div>' +
+        (e.note ? '<div style="font-size:12.5px;color:var(--text-muted);font-style:italic;">\u201c' + esc(e.note) + '\u201d</div>' : '') +
+        '<div style="font-size:11.5px;color:var(--text-muted);">' + new Date(e.t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + '</div></div>' +
+        '<button class="btn" data-nf-view="' + esc(e.email) + '" style="font-size:11.5px;flex:none;">' + (e.kind === 'checkin' ? 'Review' : 'View') + '</button></div>';
+    });
+    el.innerHTML = html;
+    el.querySelectorAll('[data-nf-view]').forEach(function(b){
+      b.addEventListener('click', function(){
+        go('clients');
+        viewClient(b.dataset.nfView);
+        setTimeout(function(){ var t = $c('cd-checkins'); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 600);
+      });
+    });
+    nfBadge();
+  }
+  document.querySelectorAll('.nf-f').forEach(function(b){
+    b.addEventListener('click', function(){
+      document.querySelectorAll('.nf-f').forEach(function(x){ x.classList.remove('active'); x.classList.remove('btn-primary'); });
+      b.classList.add('active'); b.classList.add('btn-primary');
+      nfFilter = b.dataset.f; nfRender();
+    });
+  });
+
+  /* ── Client check-in review timeline ── */
+  async function renderClientCheckins(c){
+    var host = $c('cd-checkins');
+    if (!host) return;
+    host.innerHTML = '<div style="font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);margin:4px 0 8px;">Check-ins</div><p style="font-size:12.5px;color:var(--text-muted);">Loading\u2026</p>';
+    var enc = encodeURIComponent(c.member_email);
+    var resp = [];
+    try { resp = await rest('/coach_form_responses?member_email=eq.' + enc + '&partner_id=eq.' + partnerId + '&order=submitted_at.desc&limit=26&select=id,form_id,answers,week_start,submitted_at,reviewed_at') || []; } catch(_){}
+    if (!resp.length){ host.innerHTML = '<div style="font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);margin:4px 0 8px;">Check-ins</div><p style="font-size:12.5px;color:var(--text-muted);">Nothing submitted yet.</p>'; return; }
+    var formIds = []; resp.forEach(function(r){ if (r.form_id && formIds.indexOf(r.form_id) < 0) formIds.push(r.form_id); });
+    var formMap = {};
+    if (formIds.length){
+      try {
+        var fs = await rest('/coach_forms?id=in.(' + formIds.map(function(i){ return '"' + i + '"'; }).join(',') + ')&select=id,kind,title,questions') || [];
+        fs.forEach(function(f){ formMap[f.id] = f; });
+      } catch(_){}
+    }
+    // collect photo answers for signed URLs (batch)
+    var photoPaths = [];
+    resp.forEach(function(r){
+      var a = r.answers || {};
+      Object.keys(a).forEach(function(k){ var v = a[k]; if (v && typeof v === 'object' && v.path) photoPaths.push(v.path); });
+    });
+    var urlMap = {};
+    if (photoPaths.length){
+      try {
+        var su = await sb().storage.from('coach-checkins').createSignedUrls(photoPaths, 3600);
+        (su.data || []).forEach(function(u, i){ if (u && u.signedUrl) urlMap[photoPaths[i]] = u.signedUrl; });
+      } catch(_){}
+    }
+    function answerHtml(q, v){
+      var label = q ? q.label : 'Answer';
+      var body;
+      if (v == null || v === '') body = '<span style="color:var(--text-muted);">\u2014</span>';
+      else if (typeof v === 'object' && v.path){
+        var u = urlMap[v.path];
+        body = u ? '<a href="' + u + '" target="_blank" rel="noopener"><img src="' + u + '" loading="lazy" style="width:110px;height:110px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"/></a>' : '<span style="color:var(--text-muted);">photo unavailable</span>';
+      }
+      else if (q && q.type === 'scale') body = '<strong>' + esc(String(v)) + '</strong>/10';
+      else if (q && q.type === 'yesno') body = '<strong>' + (String(v).toLowerCase() === 'yes' || v === true ? 'Yes' : 'No') + '</strong>';
+      else body = esc(String(v));
+      return '<div style="margin-bottom:8px;"><div style="font-size:11.5px;color:var(--text-muted);">' + esc(label) + '</div><div style="font-size:13px;">' + body + '</div></div>';
+    }
+    function cardHtml(r){
+      var f = formMap[r.form_id] || {};
+      var qs = (f.questions || []);
+      var a = r.answers || {};
+      var parts = '';
+      var doneKeys = {};
+      qs.forEach(function(q){ if (q.id in a){ parts += answerHtml(q, a[q.id]); doneKeys[q.id] = 1; } });
+      Object.keys(a).forEach(function(k){ if (!doneKeys[k]) parts += answerHtml(null, a[k]); });
+      var head = (f.title || (f.kind === 'onboarding' ? 'Onboarding questionnaire' : 'Check-in')) +
+        (r.week_start ? ' \u00b7 w/c ' + r.week_start : '') +
+        ' \u00b7 ' + new Date(r.submitted_at).toLocaleDateString('en-GB');
+      var rev = r.reviewed_at
+        ? '<span class="src-tag src-mine">Reviewed</span>'
+        : '<button class="btn" data-ci-rev="' + r.id + '" style="font-size:11.5px;">Mark reviewed</button>';
+      return '<div style="border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;' + (r.reviewed_at ? '' : 'border-left:3px solid #E8834A;') + '">' +
+        '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;"><strong style="font-size:13px;flex:1;">' + esc(head) + '</strong>' + rev + '</div>' + parts + '</div>';
+    }
+    function photoTimelineHtml(){
+      var groups = {};
+      resp.forEach(function(r){
+        var a = r.answers || {};
+        Object.keys(a).forEach(function(k){
+          var v = a[k];
+          if (v && typeof v === 'object' && v.path && urlMap[v.path]){
+            var key = r.week_start || r.submitted_at.slice(0, 10);
+            (groups[key] = groups[key] || []).push(urlMap[v.path]);
+          }
+        });
+      });
+      var keys = Object.keys(groups).sort().reverse();
+      if (!keys.length) return '<p style="font-size:12.5px;color:var(--text-muted);">No photos submitted yet.</p>';
+      return keys.map(function(k){
+        return '<div style="margin-bottom:14px;"><div style="font-size:11.5px;font-weight:700;color:var(--text-muted);margin-bottom:6px;">w/c ' + esc(k) + '</div><div style="display:flex;gap:8px;flex-wrap:wrap;">' +
+          groups[k].map(function(u){ return '<a href="' + u + '" target="_blank" rel="noopener"><img src="' + u + '" loading="lazy" style="width:110px;height:110px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"/></a>'; }).join('') +
+          '</div></div>';
+      }).join('');
+    }
+    function paint(tab){
+      host.innerHTML = '<div style="display:flex;align-items:center;gap:10px;margin:4px 0 10px;"><div style="font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);flex:1;">Check-ins (' + resp.length + ')</div>' +
+        '<button class="btn ci-tab' + (tab === 'list' ? ' btn-primary' : '') + '" data-ci-tab="list" type="button" style="font-size:11.5px;">Submissions</button>' +
+        '<button class="btn ci-tab' + (tab === 'photos' ? ' btn-primary' : '') + '" data-ci-tab="photos" type="button" style="font-size:11.5px;">Photo timeline</button></div>' +
+        (tab === 'list' ? resp.map(cardHtml).join('') : photoTimelineHtml());
+      host.querySelectorAll('[data-ci-tab]').forEach(function(b){ b.addEventListener('click', function(){ paint(b.dataset.ciTab); }); });
+      host.querySelectorAll('[data-ci-rev]').forEach(function(b){
+        b.addEventListener('click', async function(){
+          b.disabled = true;
+          try {
+            await rest('/coach_form_responses?id=eq.' + b.dataset.ciRev, { method: 'PATCH', body: { reviewed_at: new Date().toISOString() } });
+            var row = resp.find(function(x){ return x.id === b.dataset.ciRev; });
+            if (row) row.reviewed_at = new Date().toISOString();
+            nfEvents.forEach(function(e){ if (e.kind === 'checkin' && e.email === c.member_email) e.unreviewed = false; });
+            paint('list');
+          } catch(e2){ alert('Couldn\u2019t mark reviewed: ' + e2.message); b.disabled = false; }
+        });
+      });
+    }
+    paint('list');
+  }
+
   /* ── Builder v2: exercise library + day templates + programmes ── */
   var cexRows = [], cexLoaded = false, cexEditing = null, cexDupFrom = null, exScope = 'all';
   var dayTplChoices = [];
@@ -1214,12 +1424,11 @@
   var SECTION_KINDS = { forms: ['onboarding','checkin','habits'], workouts: ['program','workout_day','workout'], nutrition: ['nutrition','supplements'] };
   var SOON_COPY = {
     messages: ['Messages', 'Message your clients without leaving the portal \u2014 conversations sync to the VYVE app on their phone. Coming soon.'],
-    notifications: ['Notifications', 'A live feed of client activity \u2014 workouts finished, check-ins submitted, trials ending. Coming soon.'],
     calendar: ['Calendar', 'Your session calendar and client bookings, powered by the VYVE booking engine. Coming soon.'],
     content: ['Content Library', 'Upload and share your own videos and resources with clients \u2014 unlisted, coach-only content. Coming soon.'],
     automations: ['Automations', 'Custom triggered messages \u2014 e.g. an automatic email to a client the moment you update their workout plan. Coming soon.']
   };
-  var VIEW_IDS = ['view-dashboard','view-clients','view-plans','view-exercises','view-profile','view-soon','view-settings'];
+  var VIEW_IDS = ['view-dashboard','view-clients','view-plans','view-exercises','view-notifs','view-profile','view-soon','view-settings'];
   function go(view){
     document.querySelectorAll('.cp-item').forEach(function(x){ x.classList.toggle('active', x.dataset.go === view); });
     var show = 'view-soon';
@@ -1228,6 +1437,7 @@
     else if (view === 'profile') show = 'view-profile';
     else if (view === 'settings') show = 'view-settings';
     else if (view === 'exercises') show = 'view-exercises';
+    else if (view === 'notifications') show = 'view-notifs';
     else if (SECTION_KINDS[view]) show = 'view-plans';
     VIEW_IDS.forEach(function(id){ $c(id).style.display = id === show ? '' : 'none'; });
     if (SECTION_KINDS[view]){
@@ -1243,6 +1453,7 @@
       loadExerciseNames(); exLoad();
     }
     if (view === 'exercises') exInit();
+    if (view === 'notifications') notifLoad(true);
     if (view === 'dashboard') renderDashboard();
     if (view === 'profile') renderProfile();
     if (view === 'settings') loadCoachTerms();
