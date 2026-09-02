@@ -915,7 +915,7 @@
     if (plKind === 'workout') return ((p.sessions||[]).length) + ' sessions / week';
     if (plKind === 'workout_day') return ((p.exercises||[]).length) + ' exercises' + (dayHasGroups(p) ? ' \u00b7 supersets' : '');
     if (plKind === 'program') return ((p.weeks||[]).length) + ' weeks \u00b7 ' + progDayCount(p) + ' training days';
-    if (plKind === 'nutrition') return (p.calories ? p.calories + ' kcal' : 'targets') + (p.protein_g ? ' \u00b7 ' + p.protein_g + 'g protein' : '');
+    if (plKind === 'nutrition') return (p.calories ? p.calories + ' kcal' : (p.meals || p.pdf_path ? '' : 'targets')) + (p.protein_g ? ' \u00b7 ' + p.protein_g + 'g protein' : '') + (p.meals ? (p.calories ? ' \u00b7 ' : '') + p.meals.length + '-meal plan' : '') + (p.pdf_path ? (p.calories || p.meals ? ' \u00b7 ' : '') + 'PDF attached' : '');
     if (plKind === 'supplements') return ((p.items||[]).length) + ' supplements';
     return '';
   }
@@ -987,7 +987,24 @@
       $c('pg-quick').querySelector('.pg-subrir').addEventListener('click', function(){ progQuick('rir'); });
     } else if (plKind === 'nutrition'){
       var p = (item && item.payload) || {};
-      b.innerHTML = '<div class="field-row">' +
+      plPdf = p.pdf_path ? { path: p.pdf_path, name: p.pdf_name || 'plan.pdf' } : null;
+      b.innerHTML = '<div style="display:flex;gap:8px;margin-bottom:14px;">' +
+          '<button class="btn nf-mode btn-primary" data-m="targets" type="button" style="font-size:12px;">Targets &amp; TDEE</button>' +
+          '<button class="btn nf-mode" data-m="meals" type="button" style="font-size:12px;">Meal plan</button>' +
+          '<button class="btn nf-mode" data-m="pdf" type="button" style="font-size:12px;">PDF upload</button></div>' +
+        '<div id="nf-sec-targets">' +
+        '<div style="border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px;">' +
+          '<div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">TDEE calculator</div>' +
+          '<div class="field-row"><div class="field"><label>Weight (kg)</label><input id="td-w" type="number" min="30" step="0.1"/></div>' +
+          '<div class="field"><label>Height (cm)</label><input id="td-h" type="number" min="120"/></div>' +
+          '<div class="field"><label>Age</label><input id="td-a" type="number" min="16" max="90"/></div></div>' +
+          '<div class="field-row"><div class="field"><label>Sex</label><select id="td-s"><option value="m">Male</option><option value="f">Female</option></select></div>' +
+          '<div class="field"><label>Activity</label><select id="td-act"><option value="1.2">Sedentary</option><option value="1.375">Lightly active</option><option value="1.55" selected>Moderately active</option><option value="1.725">Very active</option><option value="1.9">Extremely active</option></select></div>' +
+          '<div class="field"><label>Goal</label><select id="td-g"><option value="-15">Fat loss (\u221215%)</option><option value="-10">Gentle cut (\u221210%)</option><option value="0" selected>Maintenance</option><option value="10">Lean gain (+10%)</option></select></div></div>' +
+          '<div style="display:flex;gap:12px;align-items:center;margin-top:4px;"><button class="btn" id="td-calc" type="button" style="font-size:12px;">Calculate &amp; fill targets</button>' +
+          '<span id="td-out" style="font-size:12.5px;color:var(--text-muted);"></span></div>' +
+          '<div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Mifflin-St Jeor \u00b7 protein defaults to 2g/kg, fat to 25% of calories, carbs take the rest \u2014 amend anything below before saving.</div></div>' +
+        '<div class="field-row">' +
         '<div class="field"><label>Daily calories (kcal)</label><input id="nf-cal" type="number" min="0" value="' + (p.calories||'') + '"/></div>' +
         '<div class="field"><label>Protein (g)</label><input id="nf-pro" type="number" min="0" value="' + (p.protein_g||'') + '"/></div></div>' +
         '<div class="field-row">' +
@@ -996,7 +1013,57 @@
         '<div class="field-row">' +
         '<div class="field"><label>Water (litres/day)</label><input id="nf-water" type="number" min="0" step="0.1" value="' + (p.hydration_l||'') + '"/></div>' +
         '<div class="field"></div></div>' +
-        '<div class="field"><label>Guidance notes for the client</label><textarea id="nf-notes" rows="4" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:13px;font-family:inherit;">' + esc(p.notes||'') + '</textarea></div>';
+        '<div class="field"><label>Guidance notes for the client</label><textarea id="nf-notes" rows="4" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:13px;font-family:inherit;">' + esc(p.notes||'') + '</textarea></div>' +
+        '</div>' +
+        '<div id="nf-sec-meals" style="display:none;">' +
+          '<div id="nm-meals"></div><button class="btn" id="nm-add" type="button" style="font-size:12px;">+ Add meal</button>' +
+          '<span id="nm-totals" style="font-size:12px;color:var(--text-muted);margin-left:12px;"></span></div>' +
+        '<div id="nf-sec-pdf" style="display:none;">' +
+          '<div style="border:1.5px dashed var(--border);border-radius:12px;padding:22px;text-align:center;">' +
+          '<div style="font-size:13px;font-weight:700;margin-bottom:4px;">Upload your plan as a PDF</div>' +
+          '<div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">Up to 10MB \u2014 your client sees it in their app exactly as you made it.</div>' +
+          '<input id="nf-pdf" type="file" accept="application/pdf" style="font-size:12px;"/></div>' +
+          '<div id="nf-pdf-status" style="font-size:12px;color:var(--text-muted);margin-top:8px;">' + (plPdf ? esc(plPdf.name) + ' \u00b7 attached' : 'No PDF attached.') + '</div></div>';
+      b.querySelectorAll('.nf-mode').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          b.querySelectorAll('.nf-mode').forEach(function(x){ x.classList.toggle('btn-primary', x === btn); });
+          ['targets','meals','pdf'].forEach(function(m){ $c('nf-sec-' + m).style.display = (m === btn.dataset.m) ? '' : 'none'; });
+        });
+      });
+      $c('td-calc').addEventListener('click', function(){
+        var w = parseFloat($c('td-w').value), ht = parseFloat($c('td-h').value), age = parseFloat($c('td-a').value);
+        if (!w || !ht || !age){ $c('td-out').textContent = 'Fill weight, height and age first.'; return; }
+        var bmr = 10 * w + 6.25 * ht - 5 * age + ($c('td-s').value === 'm' ? 5 : -161);
+        var tdee = Math.round(bmr * parseFloat($c('td-act').value));
+        var adj = parseFloat($c('td-g').value) / 100;
+        var kcal = Math.round(tdee * (1 + adj));
+        var pro = Math.round(w * 2);
+        var fat = Math.round(kcal * 0.25 / 9);
+        var carb = Math.max(0, Math.round((kcal - pro * 4 - fat * 9) / 4));
+        $c('nf-cal').value = kcal; $c('nf-pro').value = pro; $c('nf-fat').value = fat; $c('nf-carb').value = carb;
+        $c('td-out').textContent = 'TDEE ' + tdee.toLocaleString() + ' kcal \u2192 target ' + kcal.toLocaleString() + ' kcal filled below.';
+      });
+      var meals = (p.meals && p.meals.length) ? p.meals : [];
+      meals.forEach(addNMeal);
+      $c('nm-add').addEventListener('click', function(){ addNMeal({ name: '', items: [{}] }); });
+      $c('nm-meals').addEventListener('input', nmTotals);
+      nmTotals();
+      $c('nf-pdf').addEventListener('change', async function(){
+        var f = this.files && this.files[0];
+        if (!f) return;
+        var st = $c('nf-pdf-status');
+        if (f.type !== 'application/pdf'){ st.textContent = 'PDF files only.'; return; }
+        if (f.size > 10 * 1024 * 1024){ st.textContent = 'Too big \u2014 10MB max.'; return; }
+        st.textContent = 'Uploading\u2026';
+        try {
+          var safe = f.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 80);
+          var path = 'p-' + partnerId + '/' + Date.now() + '-' + safe;
+          var up = await sb().storage.from('coach-content').upload(path, f, { contentType: 'application/pdf', upsert: true });
+          if (up.error) throw up.error;
+          plPdf = { path: path, name: f.name };
+          st.textContent = f.name + ' \u00b7 uploaded \u2014 save the plan to attach it.';
+        } catch(e){ st.textContent = 'Upload failed: ' + (e.message || e); }
+      });
     } else if (plKind === 'supplements'){
       b.innerHTML = '<div id="sp-rows"></div><button class="btn" id="sp-add" type="button" style="font-size:12px;margin-top:6px;">+ Add supplement</button>';
       var sps = (item && item.payload && item.payload.items && item.payload.items.length) ? item.payload.items : [{}];
@@ -1016,6 +1083,7 @@
     $c('q-rows').appendChild(d);
   }
   var stockHabits = null;
+  var plPdf = null; // PM-962: uploaded nutrition PDF {path, name} for the open template
   function addHRow(h){
     var d = document.createElement('div');
     d.style.cssText = 'border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;';
@@ -1086,6 +1154,40 @@
     d.querySelector('.w-add-cool').addEventListener('click', function(){ addEx({ sets:'1', reps:'', rest_seconds:0 }, coolWrap); });
     d.querySelector('.w-del').addEventListener('click', function(){ d.remove(); });
     $c('w-sessions').appendChild(d);
+  }
+  function addNMeal(meal){
+    var d = document.createElement('div');
+    d.className = 'nm-meal';
+    d.style.cssText = 'border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;';
+    d.innerHTML = '<div style="display:flex;gap:8px;align-items:end;margin-bottom:6px;">' +
+      '<div class="field" style="flex:1;margin:0;"><label>Meal</label><input class="nm-name" type="text" maxlength="60" value="' + esc(meal.name||'') + '" placeholder="e.g. Breakfast"/></div>' +
+      rowBtn('+ Food','nm-addfood') + rowBtn('Remove meal','nm-del') + '</div><div class="nm-foods"></div>';
+    var wrap = d.querySelector('.nm-foods');
+    function addFood(it){
+      var e = document.createElement('div');
+      e.style.cssText = 'display:grid;grid-template-columns:2fr 1fr 80px 80px 28px;gap:6px;margin-bottom:6px;align-items:end;';
+      e.innerHTML = '<div class="field"><label>Food</label><input class="nm-food" type="text" maxlength="120" value="' + esc(it.food||'') + '"/></div>' +
+        '<div class="field"><label>Amount</label><input class="nm-amt" type="text" maxlength="40" value="' + esc(it.amount||'') + '" placeholder="200g"/></div>' +
+        '<div class="field"><label>kcal</label><input class="nm-kcal" type="number" min="0" value="' + (it.kcal!=null?it.kcal:'') + '"/></div>' +
+        '<div class="field"><label>Protein g</label><input class="nm-prot" type="number" min="0" value="' + (it.protein_g!=null?it.protein_g:'') + '"/></div>' +
+        '<button class="btn nm-delfood" type="button" style="font-size:11px;padding:6px 8px;">&times;</button>';
+      e.querySelector('.nm-delfood').addEventListener('click', function(){ e.remove(); nmTotals(); });
+      wrap.appendChild(e);
+    }
+    ((meal.items && meal.items.length) ? meal.items : [{}]).forEach(addFood);
+    d.querySelector('.nm-addfood').addEventListener('click', function(){ addFood({}); });
+    d.querySelector('.nm-del').addEventListener('click', function(){ d.remove(); nmTotals(); });
+    $c('nm-meals').appendChild(d);
+  }
+  function nmTotals(){
+    var el = $c('nm-totals');
+    if (!el) return;
+    var k = 0, pr = 0;
+    document.querySelectorAll('#nm-meals .nm-foods > div').forEach(function(e){
+      k += parseFloat(e.querySelector('.nm-kcal').value) || 0;
+      pr += parseFloat(e.querySelector('.nm-prot').value) || 0;
+    });
+    el.textContent = k || pr ? ('Day total: ' + Math.round(k).toLocaleString() + ' kcal \u00b7 ' + Math.round(pr) + 'g protein') : '';
   }
   function addSPRow(sp){
     var d = document.createElement('div');
@@ -1168,7 +1270,20 @@
     }
     if (plKind === 'nutrition'){
       var p = { calories: parseInt($c('nf-cal').value) || null, protein_g: parseInt($c('nf-pro').value) || null, fat_g: parseInt($c('nf-fat').value) || null, carbs_g: parseInt($c('nf-carb').value) || null, hydration_l: parseFloat($c('nf-water').value) || null, notes: $c('nf-notes').value.trim() };
-      return { payload: p, valid: !!(p.calories || p.protein_g || p.notes), err: 'Set at least calories, protein, or notes.' };
+      var mls = [];
+      document.querySelectorAll('#nm-meals .nm-meal').forEach(function(d){
+        var items = [];
+        d.querySelectorAll('.nm-foods > div').forEach(function(e){
+          var fd = e.querySelector('.nm-food').value.trim();
+          if (!fd) return;
+          items.push({ food: fd, amount: e.querySelector('.nm-amt').value.trim(), kcal: parseFloat(e.querySelector('.nm-kcal').value) || null, protein_g: parseFloat(e.querySelector('.nm-prot').value) || null });
+        });
+        var mn = d.querySelector('.nm-name').value.trim();
+        if (items.length) mls.push({ name: mn || 'Meal', items: items });
+      });
+      if (mls.length) p.meals = mls;
+      if (plPdf){ p.pdf_path = plPdf.path; p.pdf_name = plPdf.name; }
+      return { payload: p, valid: !!(p.calories || p.protein_g || p.notes || p.meals || p.pdf_path), err: 'Set targets, add a meal, or attach a PDF.' };
     }
     var items = [];
     $c('sp-rows').querySelectorAll(':scope > div').forEach(function(d){
