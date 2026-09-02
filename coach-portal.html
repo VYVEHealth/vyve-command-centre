@@ -526,7 +526,7 @@
       res = await Promise.all([
         rest('/weight_logs?member_email=eq.' + enc + '&order=logged_at.desc&limit=3&select=weight_kg,logged_at').catch(function(){return [];}),
         rest('/workouts?member_email=eq.' + enc + '&logged_at=gte.' + encodeURIComponent(since30) + '&order=logged_at.desc&select=workout_name,duration_minutes,logged_at,difficulty_rating,member_note').catch(function(){return [];}),
-        rest('/daily_habits?member_email=eq.' + enc + '&activity_date=gte.' + since7 + '&select=id').catch(function(){return [];}),
+        rest('/daily_habits?member_email=eq.' + enc + '&activity_date=gte.' + since7 + '&select=habit_id,activity_date,habit_completed,value,notes').catch(function(){return [];}),
         rest('/coach_form_responses?member_email=eq.' + enc + '&order=submitted_at.desc&limit=3&select=answers,week_start,submitted_at').catch(function(){return [];}),
         rest('/members?email=eq.' + enc + '&select=last_active_at,trial_ends_at,subscription_status,macro_override,tdee_target').catch(function(){return [];}),
         rest('/nutrition_logs?member_email=eq.' + enc + '&activity_date=gte.' + since7 + '&select=activity_date,calories_kcal,protein_g').catch(function(){return [];})
@@ -534,6 +534,16 @@
     }
     var w = res[0] && res[0][0], wkRows = res[1]||[], wk = wkRows.length, hb = (res[2]||[]).length, cis = res[3]||[], mrow = (res[4]||[])[0] || {};
     var nlogs = res[5] || [];
+    var mhRows = [], hlMap = {};
+    if (consented){
+      try {
+        mhRows = await rest('/member_habits?member_email=eq.' + enc + '&active=eq.true&select=habit_id') || [];
+        if (mhRows.length){
+          var ids = mhRows.map(function(x){ return x.habit_id; }).join(',');
+          (await rest('/habit_library?id=in.(' + ids + ')&select=id,habit_title,input_rule,health_rule') || []).forEach(function(x){ hlMap[x.id] = x; });
+        }
+      } catch(_){}
+    }
 
     // ── Header stats ──
     var stats = '<div style="display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px;color:var(--text-muted);margin-bottom:14px;">' +
@@ -619,7 +629,45 @@
 
     var waitNote = !consented ? '<div style="padding:10px 14px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;font-size:12.5px;color:var(--text-muted);margin-bottom:14px;">Training data unlocks when ' + esc(c.invited_first_name || 'they') + ' logs in and accepts your terms and data sharing. You can adjust their assigned plans in the meantime.</div>' : '';
 
-    body.innerHTML = stats + waitNote + asgHtml + nutHtml + logHtml + ciHtml;
+    // \u2500\u2500 Habits 7-day grid (PM-961) \u2500\u2500
+    var habHtml = '';
+    if (consented && mhRows.length){
+      var dhByKey = {};
+      (res[2] || []).forEach(function(r){ dhByKey[r.habit_id + '|' + r.activity_date] = r; });
+      var days7 = [];
+      for (var hi = 6; hi >= 0; hi--){
+        var hd = new Date(Date.now() - hi * 864e5);
+        days7.push({ ds: hd.getFullYear() + '-' + String(hd.getMonth()+1).padStart(2,'0') + '-' + String(hd.getDate()).padStart(2,'0'), lbl: hd.toLocaleDateString('en-GB', { weekday: 'short' }) });
+      }
+      var gridRows = mhRows.map(function(mh){
+        var hl = hlMap[mh.habit_id] || {};
+        var ir = hl.input_rule || null;
+        var cells = days7.map(function(dy){
+          var r = dhByKey[mh.habit_id + '|' + dy.ds];
+          if (!r) return '<td style="padding:5px 6px;border-top:1px solid var(--border);color:var(--text-muted);">\u2014</td>';
+          var v = r.value;
+          var done = r.habit_completed !== false;
+          if (v != null && typeof v === 'object' && 'n' in v){
+            var n = parseFloat(v.n) || 0;
+            var disp = n >= 1000 ? (Math.round(n/100)/10) + 'k' : String(n);
+            return '<td style="padding:5px 6px;border-top:1px solid var(--border);font-weight:700;color:' + (done ? '#3DB89F' : '#E8834A') + ';">' + disp + '</td>';
+          }
+          if (v != null && typeof v === 'object' && 's' in v) return '<td style="padding:5px 6px;border-top:1px solid var(--border);font-weight:700;">' + parseInt(v.s) + '</td>';
+          if (v != null && typeof v === 'object' && 't' in v){
+            var tt = String(v.t || '').slice(0, 18);
+            return '<td style="padding:5px 6px;border-top:1px solid var(--border);font-size:10.5px;color:var(--text-muted);" title="' + esc(String(v.t||'')) + '">\u201c' + esc(tt) + (String(v.t||'').length > 18 ? '\u2026' : '') + '\u201d</td>';
+          }
+          return done ? '<td style="padding:5px 6px;border-top:1px solid var(--border);color:#3DB89F;font-weight:700;">\u2713</td>' : '<td style="padding:5px 6px;border-top:1px solid var(--border);color:var(--text-muted);">\u2014</td>';
+        }).join('');
+        var typeTag = ir ? (ir.type === 'number' ? (ir.unit || 'number') : ir.type) : (hl.health_rule ? 'auto' : '');
+        return '<tr><td style="padding:5px 6px;border-top:1px solid var(--border);font-weight:600;">' + esc(hl.habit_title || 'Habit') + (typeTag ? ' <span style="font-size:9.5px;color:var(--text-muted);">' + esc(typeTag) + '</span>' : '') + '</td>' + cells + '</tr>';
+      }).join('');
+      habHtml = '<div style="font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);margin:4px 0 8px;">Habits \u2014 last 7 days</div>' +
+        '<div style="border:1px solid var(--border);border-radius:10px;padding:6px 10px;margin-bottom:16px;overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:11.5px;min-width:430px;"><tr><th style="text-align:left;color:var(--text-muted);font-weight:600;padding:5px 6px;"></th>' +
+        days7.map(function(dy){ return '<th style="text-align:left;color:var(--text-muted);font-weight:600;padding:5px 6px;">' + dy.lbl + '</th>'; }).join('') + '</tr>' +
+        gridRows + '</table></div>';
+    }
+    body.innerHTML = stats + waitNote + asgHtml + nutHtml + habHtml + logHtml + ciHtml;
     renderClientCheckins(c);
     $c('cd-asg-save').addEventListener('click', async function(){
       var na = {};
@@ -977,13 +1025,31 @@
         (h.auto ? '<span style="font-size:10.5px;font-weight:800;color:var(--vyve-gold,#C9A84C);flex:none;">\u26a1 AUTO</span>' : '') +
         '<span style="font-size:10.5px;color:var(--text-muted);flex:none;">VYVE library</span>' + rowBtn('Remove','h-del') + '</div>';
     } else {
+      var inp = (h.input && typeof h.input === 'object') ? h.input : {};
+      var htype = h.steps_target ? 'tick' : (inp.type || 'tick');
       d.innerHTML = '<div class="field-row"><div class="field"><label>Habit</label><input class="h-title" type="text" maxlength="120" value="' + esc(h.title||'') + '" placeholder="e.g. Read 10 pages"/></div>' +
         '<div class="field"><label>Why / how (shown to client)</label><input class="h-desc" type="text" maxlength="240" value="' + esc(h.description||'') + '"/></div></div>' +
-        '<div style="display:flex;align-items:center;gap:10px;margin-top:2px;"><label style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-muted);cursor:pointer;margin:0;"><input type="checkbox" class="h-steps-on"' + (h.steps_target ? ' checked' : '') + ' style="accent-color:var(--vyve-teal);width:15px;height:15px;"/> Auto-track a daily step target</label>' +
+        '<div style="display:flex;align-items:center;gap:10px;margin-top:2px;flex-wrap:wrap;">' +
+        '<div class="field" style="margin:0;"><label>Client logs it as</label><select class="h-type" style="min-width:130px;">' +
+          '<option value="tick"' + (htype==='tick'?' selected':'') + '>Tick (done / not)</option>' +
+          '<option value="number"' + (htype==='number'?' selected':'') + '>A number</option>' +
+          '<option value="scale"' + (htype==='scale'?' selected':'') + '>Scale 1\u201310</option>' +
+          '<option value="text"' + (htype==='text'?' selected':'') + '>Short text</option></select></div>' +
+        '<div class="field h-num-cfg" style="margin:0;' + (htype==='number'?'':'display:none;') + '"><label>Unit</label><input class="h-unit" type="text" maxlength="16" value="' + esc(inp.unit||'') + '" placeholder="kg, litres, mins" style="width:110px;"/></div>' +
+        '<div class="field h-num-cfg" style="margin:0;' + (htype==='number'?'':'display:none;') + '"><label>Daily target (optional)</label><input class="h-target" type="number" step="any" value="' + (inp.target != null ? inp.target : '') + '" placeholder="\u2014" style="width:110px;"/></div>' +
+        '<label class="h-steps-wrap" style="display:' + (htype==='tick'?'flex':'none') + ';align-items:center;gap:7px;font-size:12px;color:var(--text-muted);cursor:pointer;margin:0;"><input type="checkbox" class="h-steps-on"' + (h.steps_target ? ' checked' : '') + ' style="accent-color:var(--vyve-teal);width:15px;height:15px;"/> Auto-track a daily step target</label>' +
         '<input class="h-steps" type="number" min="500" step="500" value="' + (h.steps_target || '') + '" placeholder="10000" style="width:110px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:12.5px;font-family:inherit;' + (h.steps_target ? '' : 'display:none;') + '"/>' +
-        '<span style="flex:1;"></span>' + rowBtn('Remove','h-del') + '</div>';
-      var so = d.querySelector('.h-steps-on'), si = d.querySelector('.h-steps');
+        '<span style="flex:1;"></span>' + rowBtn('Remove','h-del') + '</div>' +
+        '<div class="h-hint" style="font-size:11px;color:var(--text-muted);margin-top:5px;' + (htype==='number'?'':'display:none;') + '">With a target, the habit completes itself when the number hits it. Unit \u201ckg\u201d also writes to the client\u2019s weight log.</div>';
+      var so = d.querySelector('.h-steps-on'), si = d.querySelector('.h-steps'), ht = d.querySelector('.h-type');
       so.addEventListener('change', function(){ si.style.display = so.checked ? '' : 'none'; if (so.checked && !si.value) si.value = 10000; });
+      ht.addEventListener('change', function(){
+        var isNum = ht.value === 'number', isTick = ht.value === 'tick';
+        d.querySelectorAll('.h-num-cfg').forEach(function(x){ x.style.display = isNum ? '' : 'none'; });
+        d.querySelector('.h-hint').style.display = isNum ? '' : 'none';
+        d.querySelector('.h-steps-wrap').style.display = isTick ? 'flex' : 'none';
+        if (!isTick){ so.checked = false; si.style.display = 'none'; }
+      });
     }
     d.querySelector('.h-del').addEventListener('click', function(){ d.remove(); });
     $c('h-rows').appendChild(d);
@@ -1057,6 +1123,15 @@
         var row = { title: t, description: d.querySelector('.h-desc').value.trim() };
         var so = d.querySelector('.h-steps-on'), si = d.querySelector('.h-steps');
         if (so && so.checked && parseInt(si.value) > 0) row.steps_target = parseInt(si.value);
+        var ht = d.querySelector('.h-type');
+        if (ht && ht.value !== 'tick' && !row.steps_target){
+          if (ht.value === 'number'){
+            var un = (d.querySelector('.h-unit').value || '').trim().toLowerCase();
+            var tg = parseFloat(d.querySelector('.h-target').value);
+            row.input = { type: 'number', unit: un || null, target: isNaN(tg) ? null : tg, writes: un === 'kg' ? 'weight' : null };
+          } else if (ht.value === 'scale') row.input = { type: 'scale', max: 10 };
+          else row.input = { type: 'text' };
+        }
         hs.push(row);
       });
       return { payload: { habits: hs }, valid: hs.length > 0, err: 'Add at least one habit.' };
