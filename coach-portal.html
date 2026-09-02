@@ -650,7 +650,9 @@
           if (v != null && typeof v === 'object' && 'n' in v){
             var n = parseFloat(v.n) || 0;
             var disp = n >= 1000 ? (Math.round(n/100)/10) + 'k' : String(n);
-            return '<td style="padding:5px 6px;border-top:1px solid var(--border);font-weight:700;color:' + (done ? '#3DB89F' : '#E8834A') + ';">' + disp + '</td>';
+            var tgt = ir && ir.type === 'number' && ir.target != null ? parseFloat(ir.target) : null;
+            var hitCol = tgt != null ? (n >= tgt ? '#3DB89F' : '#E8834A') : 'var(--text)';
+            return '<td style="padding:5px 6px;border-top:1px solid var(--border);font-weight:700;color:' + hitCol + ';">' + disp + '</td>';
           }
           if (v != null && typeof v === 'object' && 's' in v) return '<td style="padding:5px 6px;border-top:1px solid var(--border);font-weight:700;">' + parseInt(v.s) + '</td>';
           if (v != null && typeof v === 'object' && 't' in v){
