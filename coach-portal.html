@@ -152,7 +152,7 @@
     <button class="cp-item" data-go="exercises" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 6v12"/><path d="M7 10v4"/><path d="M17 10v4"/></svg><span>Exercise Library</span></button>
     <button class="cp-item" data-go="calendar" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>Calendar</span><span class="soon">SOON</span></button>
     <button class="cp-item" data-go="content" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m10 9 5 3-5 3z"/></svg><span>Content Library</span><span class="soon">SOON</span></button>
-    <button class="cp-item" data-go="automations" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span>Automations</span><span class="soon">SOON</span></button>
+    <button class="cp-item" data-go="automations" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span>Automations</span></button>
     <button class="cp-item" data-go="forms" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span>Forms</span></button>
     <button class="cp-item" data-go="settings" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><circle cx="9" cy="7" r="2"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="15" cy="17" r="2"/></svg><span>Settings</span></button>
   </aside>
@@ -272,6 +272,14 @@
         <button class="btn" id="ct-example" type="button" style="font-size:12.5px;">Use example template</button>
         <span id="ct-msg" style="font-size:12px;color:var(--text-muted);"></span>
       </div>
+    </div>
+  </div>
+  <div id="view-autos" style="display:none;">
+    <div class="card">
+      <div class="card-title">Automations</div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:6px;">Automatic emails to a client the moment you change their plans. On by default with a ready-made message &mdash; switch any off, or make the wording yours.</p>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px;">Variables: <code style="background:var(--surface-2);padding:1px 6px;border-radius:5px;">{{first_name}}</code> <code style="background:var(--surface-2);padding:1px 6px;border-radius:5px;">{{coach_name}}</code> <code style="background:var(--surface-2);padding:1px 6px;border-radius:5px;">{{plan_name}}</code> &mdash; filled in automatically when the email sends. In-app messages join here when Messages launches.</p>
+      <div id="auto-list"><p style="font-size:12.5px;color:var(--text-muted);">Loading&hellip;</p></div>
     </div>
   </div>
   <div id="view-notifs" style="display:none;">
@@ -536,7 +544,8 @@
           if (a.habits) bits.push(a.habits + ' habits');
           if (a.nutrition) bits.push('nutrition');
           if (a.supplements) bits.push(a.supplements + ' supplements');
-          msg.textContent = bits.length ? 'Saved — pushed to their app (' + bits.join(', ') + ').' : 'Saved.';
+          var autoBit = (r.automations && r.automations.length) ? ' Update email sent to your client.' : '';
+          msg.textContent = (bits.length ? 'Saved — pushed to their app (' + bits.join(', ') + ').' : 'Saved.') + autoBit;
         } else if (r.applied && r.applied.error) {
           msg.textContent = 'Saved, but apply failed: ' + r.applied.error;
         } else {
@@ -982,6 +991,71 @@
       exerciseNames = (rows||[]).map(function(r){ return r.exercise_name; }).filter(function(n){ if (!n || seen[n]) return false; seen[n] = 1; return true; });
     } catch(e){ exerciseNames = []; }
   }
+  /* ── Automations editor (PM-958g) ── */
+  var AUTO_EVENTS_UI = [
+    ['workout_updated', 'Workout plan updated'],
+    ['habits_updated', 'Habits updated'],
+    ['nutrition_updated', 'Nutrition updated'],
+    ['supplements_updated', 'Supplement plan updated']
+  ];
+  var AUTO_DEFAULTS = {
+    workout_updated: { subject: '{{coach_name}} updated your training plan', body: 'Hi {{first_name}},\n\n{{coach_name}} has just updated your training \u2014 "{{plan_name}}" is live in your VYVE app now. Open Workouts to see what\u2019s changed.\n\nKeep going,\nVYVE Health' },
+    habits_updated: { subject: '{{coach_name}} updated your daily habits', body: 'Hi {{first_name}},\n\n{{coach_name}} has refreshed your daily habits \u2014 "{{plan_name}}" is live in your VYVE app. They\u2019ll appear on your habits screen from today.\n\nKeep going,\nVYVE Health' },
+    nutrition_updated: { subject: '{{coach_name}} updated your nutrition targets', body: 'Hi {{first_name}},\n\n{{coach_name}} has updated your nutrition \u2014 "{{plan_name}}" now sets your calories and macros in the VYVE app. Open Nutrition to see your new targets.\n\nKeep going,\nVYVE Health' },
+    supplements_updated: { subject: '{{coach_name}} updated your supplement plan', body: 'Hi {{first_name}},\n\n{{coach_name}} has updated your supplement plan \u2014 "{{plan_name}}" is live in your VYVE app under Nutrition.\n\nKeep going,\nVYVE Health' }
+  };
+  var autoRows = {};
+  async function autoLoad(){
+    var el = $c('auto-list');
+    try {
+      var rows = await rest('/coach_automations?partner_id=eq.' + partnerId + '&select=event,enabled,subject,body') || [];
+      autoRows = {}; rows.forEach(function(r){ autoRows[r.event] = r; });
+    } catch(e){ autoRows = {}; }
+    el.innerHTML = AUTO_EVENTS_UI.map(function(ev){
+      var key = ev[0], label = ev[1];
+      var cfg = autoRows[key] || {};
+      var on = cfg.enabled !== false;
+      var subj = (cfg.subject != null && cfg.subject !== '') ? cfg.subject : AUTO_DEFAULTS[key].subject;
+      var bdy = (cfg.body != null && cfg.body !== '') ? cfg.body : AUTO_DEFAULTS[key].body;
+      return '<div class="auto-card" data-ev="' + key + '" style="border:1px solid var(--border);border-radius:12px;padding:13px 15px;margin-bottom:12px;' + (on ? '' : 'opacity:.6;') + '">' +
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;"><strong style="font-size:13.5px;flex:1;">' + label + '</strong>' +
+        '<label style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-muted);cursor:pointer;"><input type="checkbox" class="au-on"' + (on ? ' checked' : '') + ' style="accent-color:var(--vyve-teal);width:16px;height:16px;"/> ' + (on ? 'On' : 'Off') + '</label></div>' +
+        '<div class="field" style="margin-bottom:8px;"><label>Email subject</label><input class="au-subj" type="text" maxlength="160" value="' + esc(subj) + '"/></div>' +
+        '<div class="field"><label>Email message</label><textarea class="au-body" rows="5" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:13px;font-family:inherit;">' + esc(bdy) + '</textarea></div>' +
+        '<div style="display:flex;gap:10px;align-items:center;margin-top:8px;"><button class="btn btn-primary au-save" type="button" style="font-size:12px;">Save</button>' +
+        '<button class="btn au-reset" type="button" style="font-size:12px;">Reset to default</button>' +
+        '<span class="au-msg" style="font-size:12px;color:var(--text-muted);"></span></div></div>';
+    }).join('');
+    el.querySelectorAll('.auto-card').forEach(function(card){
+      var key = card.dataset.ev;
+      var onBox = card.querySelector('.au-on');
+      async function save(){
+        var msg = card.querySelector('.au-msg'); msg.textContent = 'Saving\u2026';
+        var body = {
+          partner_id: partnerId, event: key,
+          enabled: onBox.checked,
+          subject: card.querySelector('.au-subj').value.trim() || null,
+          body: card.querySelector('.au-body').value.trim() || null,
+          updated_at: new Date().toISOString()
+        };
+        try {
+          if (autoRows[key]) await rest('/coach_automations?partner_id=eq.' + partnerId + '&event=eq.' + key, { method: 'PATCH', body: body });
+          else { await rest('/coach_automations', { method: 'POST', body: body }); autoRows[key] = body; }
+          autoRows[key] = body;
+          card.style.opacity = onBox.checked ? '' : '.6';
+          msg.textContent = onBox.checked ? 'Saved \u2014 sends automatically when you update this plan.' : 'Saved \u2014 this email is off.';
+        } catch(e){ msg.textContent = 'Save failed: ' + e.message; }
+      }
+      card.querySelector('.au-save').addEventListener('click', save);
+      onBox.addEventListener('change', save);
+      card.querySelector('.au-reset').addEventListener('click', function(){
+        card.querySelector('.au-subj').value = AUTO_DEFAULTS[key].subject;
+        card.querySelector('.au-body').value = AUTO_DEFAULTS[key].body;
+        save();
+      });
+    });
+  }
+
   /* ── Notifications feed + check-in review (PM-958e) ── */
   var nfEvents = [], nfFilter = 'all', nfLoadedAt = 0;
   var DIFF_LBL = { 1:'Easy', 2:'Fine', 3:'Solid', 4:'Hard', 5:'Brutal' };
@@ -1426,9 +1500,8 @@
     messages: ['Messages', 'Message your clients without leaving the portal \u2014 conversations sync to the VYVE app on their phone. Coming soon.'],
     calendar: ['Calendar', 'Your session calendar and client bookings, powered by the VYVE booking engine. Coming soon.'],
     content: ['Content Library', 'Upload and share your own videos and resources with clients \u2014 unlisted, coach-only content. Coming soon.'],
-    automations: ['Automations', 'Custom triggered messages \u2014 e.g. an automatic email to a client the moment you update their workout plan. Coming soon.']
   };
-  var VIEW_IDS = ['view-dashboard','view-clients','view-plans','view-exercises','view-notifs','view-profile','view-soon','view-settings'];
+  var VIEW_IDS = ['view-dashboard','view-clients','view-plans','view-exercises','view-notifs','view-autos','view-profile','view-soon','view-settings'];
   function go(view){
     document.querySelectorAll('.cp-item').forEach(function(x){ x.classList.toggle('active', x.dataset.go === view); });
     var show = 'view-soon';
@@ -1438,6 +1511,7 @@
     else if (view === 'settings') show = 'view-settings';
     else if (view === 'exercises') show = 'view-exercises';
     else if (view === 'notifications') show = 'view-notifs';
+    else if (view === 'automations') show = 'view-autos';
     else if (SECTION_KINDS[view]) show = 'view-plans';
     VIEW_IDS.forEach(function(id){ $c(id).style.display = id === show ? '' : 'none'; });
     if (SECTION_KINDS[view]){
@@ -1454,6 +1528,7 @@
     }
     if (view === 'exercises') exInit();
     if (view === 'notifications') notifLoad(true);
+    if (view === 'automations') autoLoad();
     if (view === 'dashboard') renderDashboard();
     if (view === 'profile') renderProfile();
     if (view === 'settings') loadCoachTerms();
