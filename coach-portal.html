@@ -239,6 +239,17 @@
       <div class="prof-row"><span class="k">Appearance</span><button class="btn" id="set-theme" type="button" style="font-size:12.5px;">Toggle light / dark</button></div>
       <div class="prof-row"><span class="k">Account</span><button class="btn" id="set-signout" type="button" style="font-size:12.5px;">Sign out</button></div>
     </div>
+    <div class="card" style="max-width:640px;margin:18px auto;">
+      <h2 style="margin:0 0 6px;font-size:17px;">Your coaching terms</h2>
+      <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:12px;">Every new client reads and accepts these on their first login, before they see your plans. Write your own or start from our example. Saving publishes a new version &mdash; clients who already accepted an earlier version aren't re-prompted.</p>
+      <div id="ct-status" style="font-size:12px;color:var(--text-muted);margin-bottom:8px;"></div>
+      <textarea id="ct-editor" rows="14" style="width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:13px;font-family:inherit;line-height:1.6;" placeholder="No terms yet &mdash; clients currently skip this step. Write yours here or load the example."></textarea>
+      <div style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap;">
+        <button class="btn btn-primary" id="ct-save" type="button" style="font-size:12.5px;">Save &amp; publish</button>
+        <button class="btn" id="ct-example" type="button" style="font-size:12.5px;">Use example template</button>
+        <span id="ct-msg" style="font-size:12px;color:var(--text-muted);"></span>
+      </div>
+    </div>
   </div>
   <div id="view-plans" style="display:none;">
     <div class="card">
@@ -428,9 +439,22 @@
       body.querySelectorAll('.cd-asg').forEach(function(sel){ if (sel.value) na[sel.dataset.key] = sel.value; });
       var msg = $c('cd-asg-msg'); this.disabled = true; msg.textContent = 'Saving\u2026';
       try {
-        await rest('/coach_clients?id=eq.' + c.id, { method: 'PATCH', body: { assignments: na } });
-        c.assignments = na;
-        msg.textContent = 'Saved.';
+        // PM-956: saves route through the EF so an active + consented client gets the
+        // new plans materialised into their app immediately (auto-apply on save).
+        var r = await ef({ action: 'update_assignments', email: c.member_email, assignments: na });
+        c.assignments = r.assignments || na;
+        if (r.applied && !r.applied.error) {
+          var a = r.applied, bits = [];
+          if (a.workout) bits.push('programme');
+          if (a.habits) bits.push(a.habits + ' habits');
+          if (a.nutrition) bits.push('nutrition');
+          if (a.supplements) bits.push(a.supplements + ' supplements');
+          msg.textContent = bits.length ? 'Saved — pushed to their app (' + bits.join(', ') + ').' : 'Saved.';
+        } else if (r.applied && r.applied.error) {
+          msg.textContent = 'Saved, but apply failed: ' + r.applied.error;
+        } else {
+          msg.textContent = 'Saved — applies when they accept your terms.';
+        }
       } catch(e){ msg.textContent = 'Save failed: ' + e.message; }
       this.disabled = false;
     });
@@ -875,6 +899,7 @@
     }
     if (view === 'dashboard') renderDashboard();
     if (view === 'profile') renderProfile();
+    if (view === 'settings') loadCoachTerms();
     if (SOON_COPY[view]){ $c('soon-title').textContent = SOON_COPY[view][0]; $c('soon-desc').textContent = SOON_COPY[view][1]; }
     var side = $c('cp-side'); if (side) side.classList.remove('open');
     var ov = $c('cp-overlay'); if (ov) ov.classList.remove('show');
@@ -884,6 +909,51 @@
   $c('cp-overlay').addEventListener('click', function(){ $c('cp-side').classList.remove('open'); $c('cp-overlay').classList.remove('show'); });
   $c('set-theme').addEventListener('click', function(){ $c('cp-theme-toggle').click(); });
   $c('set-signout').addEventListener('click', function(){ $c('cp-signout').click(); });
+
+  // ── Coaching terms editor (PM-956) ─────────────────────────────────────────
+  var TERMS_EXAMPLE = '## Coaching Agreement\n\n' +
+    '**1. The service.** I provide training programmes, habit plans, nutrition targets and regular check-ins through the VYVE Health app.\n\n' +
+    '**2. Payment.** Coaching fees are agreed and paid directly between us, separate from your VYVE app subscription.\n\n' +
+    '**3. Your commitment.** Complete your check-ins honestly and tell me about any injury or health change straight away. The programme only works with accurate information.\n\n' +
+    '**4. Health disclaimer.** I am not a medical professional and nothing I provide is medical advice. Consult your GP before starting if you have any condition affecting exercise or diet.\n\n' +
+    '**5. Ending coaching.** Either of us can end the coaching arrangement with 7 days\u2019 notice. Your VYVE membership and your data in the app are unaffected.';
+  var ctCurrentVersion = 0;
+  async function loadCoachTerms(){
+    var st = $c('ct-status'); st.textContent = 'Loading\u2026';
+    try {
+      var rows = await rest('/coach_terms?partner_id=eq.' + partnerId + '&active=eq.true&select=version,content_md&order=version.desc&limit=1');
+      if (rows && rows.length){
+        ctCurrentVersion = rows[0].version;
+        $c('ct-editor').value = rows[0].content_md || '';
+        st.textContent = 'Live version: v' + ctCurrentVersion + '. Editing and saving publishes v' + (ctCurrentVersion + 1) + '.';
+      } else {
+        ctCurrentVersion = 0;
+        st.textContent = 'No terms published yet \u2014 new clients currently skip the terms step.';
+      }
+    } catch(e){ st.textContent = 'Couldn\u2019t load terms: ' + e.message; }
+  }
+  $c('ct-example').addEventListener('click', function(){
+    if ($c('ct-editor').value.trim() && !confirm('Replace what\u2019s in the editor with the example template?')) return;
+    $c('ct-editor').value = TERMS_EXAMPLE;
+  });
+  $c('ct-save').addEventListener('click', async function(){
+    var body = $c('ct-editor').value.trim();
+    var msg = $c('ct-msg');
+    if (!body){ msg.textContent = 'Write your terms first (or load the example).'; return; }
+    this.disabled = true; msg.textContent = 'Publishing\u2026';
+    try {
+      // Versioned publish: retire the active version, insert the next. Fresh max
+      // fetched at save time so parallel edits can't collide on version numbers.
+      var rows = await rest('/coach_terms?partner_id=eq.' + partnerId + '&select=version&order=version.desc&limit=1');
+      var next = ((rows && rows[0] && rows[0].version) || 0) + 1;
+      await rest('/coach_terms?partner_id=eq.' + partnerId + '&active=eq.true', { method: 'PATCH', body: { active: false } });
+      await rest('/coach_terms', { method: 'POST', body: { partner_id: partnerId, version: next, content_md: body, active: true } });
+      ctCurrentVersion = next;
+      msg.textContent = 'Published v' + next + ' \u2014 new clients see this from now on.';
+      $c('ct-status').textContent = 'Live version: v' + next + '. Editing and saving publishes v' + (next + 1) + '.';
+    } catch(e){ msg.textContent = 'Publish failed: ' + e.message; }
+    this.disabled = false;
+  });
   function renderDashboard(){
     var t = { total: roster.length, active: 0, invited: 0, archived: 0 };
     roster.forEach(function(c){ if (t[c.status] !== undefined) t[c.status]++; });
