@@ -1,0 +1,315 @@
+<div class="page active" id="page-ambassadors">
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+<style>
+#page-ambassadors .am-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+#page-ambassadors .am-stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md,10px);padding:13px 16px}
+#page-ambassadors .am-stat b{display:block;font-size:21px;font-weight:700;letter-spacing:-.02em}
+#page-ambassadors .am-stat span{font-size:12px;color:var(--text-muted)}
+#page-ambassadors table{width:100%;border-collapse:collapse}
+#page-ambassadors th{text-align:left;font-size:11.5px;color:var(--text-muted);font-weight:600;padding:10px 14px;border-bottom:1px solid var(--border)}
+#page-ambassadors td{padding:11px 14px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+#page-ambassadors tr.am-row{cursor:pointer}
+#page-ambassadors tr.am-row:hover{background:var(--surface-2)}
+#page-ambassadors .am-who small{display:block;color:var(--text-dim);font-size:11.5px}
+#page-ambassadors .am-mono{font-family:var(--font-mono,monospace);font-size:12px}
+#page-ambassadors .am-chip{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:600;white-space:nowrap}
+#page-ambassadors .am-chip.live{background:var(--success-pale);color:var(--success)}
+#page-ambassadors .am-chip.onboarding{background:var(--warning-pale);color:var(--warning)}
+#page-ambassadors .am-chip.suspended{background:var(--surface-2);color:var(--text-dim)}
+#page-ambassadors .am-btn{font:inherit;font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:7px;border:1px solid var(--border-strong);background:var(--surface);color:var(--text);cursor:pointer}
+#page-ambassadors .am-btn:hover{border-color:var(--accent)}
+#page-ambassadors .am-btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+#page-ambassadors .am-btn.danger{color:var(--danger)}
+#page-ambassadors .am-kit{display:grid;grid-template-columns:172px 1fr;gap:18px;padding:16px;background:var(--surface-sunken,var(--surface-2));border-radius:var(--r-md,10px)}
+#page-ambassadors .am-qr{width:160px;height:160px;background:#fff;border:1px solid var(--border);border-radius:10px;display:grid;place-items:center;line-height:0}
+#page-ambassadors .am-qr img{width:140px;height:140px;image-rendering:pixelated}
+#page-ambassadors .am-field{display:flex;gap:8px;align-items:center;margin-top:9px}
+#page-ambassadors .am-field input{flex:1;font:inherit;font-size:12.5px;padding:8px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text)}
+#page-ambassadors .am-hint{font-size:12px;color:var(--text-muted);margin-top:5px}
+#page-ambassadors .am-warn{background:var(--warning-pale);border:1px solid var(--warning);border-radius:8px;padding:8px 11px;font-size:12px;margin-top:10px}
+#page-ambassadors .am-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:3000;align-items:center;justify-content:center;padding:18px}
+#page-ambassadors .am-modal .card{max-width:460px;width:100%;padding:22px 24px;max-height:86vh;overflow:auto}
+#page-ambassadors .am-modal label{display:block;font-size:12px;font-weight:600;margin:12px 0 4px}
+#page-ambassadors .am-modal input{width:100%;font:inherit;padding:9px 11px;border:1px solid var(--border-strong);border-radius:7px;background:var(--surface);color:var(--text)}
+#page-ambassadors .am-2col{display:grid;grid-template-columns:1fr 120px;gap:10px}
+@media (max-width:760px){#page-ambassadors .am-stats{grid-template-columns:1fr 1fr}#page-ambassadors .am-kit{grid-template-columns:1fr}#page-ambassadors .am-hide-sm{display:none}}
+</style>
+
+  <div class="page-hero">
+    <div class="eyebrow">Partners · Live data</div>
+    <h1 class="page-title">Ambassadors</h1>
+    <p class="page-sub">People who sell VYVE and earn a share of every attributed member's payment. Add someone here and their join link, QR and code exist immediately — signups through any of them are attributed automatically.</p>
+  </div>
+
+  <div id="am-gate-notready" class="card" style="padding:30px 26px;text-align:center"><div style="font-size:14px;color:var(--text-muted)">Connecting…</div></div>
+  <div id="am-gate-denied" class="card" style="display:none;padding:30px 26px;text-align:center"><div style="font-size:14px;color:var(--text-muted)">Your account doesn't have access to Ambassadors.</div></div>
+
+  <div id="am-content" style="display:none">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:14px">
+      <button class="am-btn primary" id="am-add-btn">Add ambassador</button>
+    </div>
+    <div class="am-stats" id="am-stats"></div>
+    <div class="card" style="padding:4px 4px 0;overflow-x:auto">
+      <table>
+        <thead><tr>
+          <th>Ambassador</th><th>Slug / code</th><th class="am-hide-sm">Signups</th><th class="am-hide-sm">On trial</th><th>Paying</th><th>£ / month</th><th>Status</th>
+        </tr></thead>
+        <tbody id="am-rows"></tbody>
+      </table>
+      <div id="am-empty" style="display:none;padding:28px 0;text-align:center;color:var(--text-muted);font-size:13.5px">No ambassadors yet — add the first one.</div>
+    </div>
+  </div>
+
+  <div class="am-modal" id="am-modal" role="dialog">
+    <div class="card">
+      <h2 id="am-m-title" style="font-size:17px;margin:0 0 4px">Add ambassador</h2>
+      <p style="font-size:12.5px;color:var(--text-muted);margin:0 0 6px">Their join link and QR are ready the moment you save. They go live — and the link starts working — once the agreement is marked signed.</p>
+      <label>Full name</label>
+      <input id="am-m-name" placeholder="e.g. Maya Wilson">
+      <label>Email</label>
+      <input id="am-m-email" type="email" placeholder="For their payout record and portal login later">
+      <div class="am-2col">
+        <div><label>Link slug — becomes their code, can't change later</label><input id="am-m-slug" class="am-mono" placeholder="auto from name"></div>
+        <div><label>Rev share %</label><input id="am-m-share" type="number" min="0" max="100" value="50"></div>
+      </div>
+      <div class="am-hint" id="am-m-preview" style="margin-top:8px"></div>
+      <div id="am-m-err" style="display:none;color:var(--danger);font-size:12.5px;margin-top:10px"></div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:18px">
+        <button class="am-btn" id="am-m-cancel">Cancel</button>
+        <button class="am-btn primary" id="am-m-save">Save</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  var S = window.VYVE_SUPABASE;
+  if (!S) return;
+  var rows = [];
+  var openId = null;
+  var editing = null; // row being edited, null = adding
+
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function show(id){ ['am-gate-notready','am-gate-denied','am-content'].forEach(function(x){ $(x).style.display = (x===id) ? '' : 'none'; }); }
+  function toast(msg){ if (window.VYVE_UI && window.VYVE_UI.toast) window.VYVE_UI.toast(msg); else console.log('[ambassadors]', msg); }
+  function gbp(n){ return '£' + (Math.round(Number(n||0)*100)/100).toLocaleString('en-GB'); }
+  function joinUrl(slug){ return 'https://www.vyvehealth.co.uk/join/' + slug; }
+  function shareText(slug){ return "I'm an ambassador for VYVE Health — start your free week here: " + joinUrl(slug); }
+
+  async function load(){
+    var client = S.getClient();
+    var res = await client.rpc('ambassador_roster');
+    if (res.error){ toast('Load failed: ' + res.error.message); return; }
+    rows = res.data || [];
+    renderStats();
+    renderRows();
+  }
+
+  function renderStats(){
+    var live = rows.filter(function(r){ return r.status === 'live'; }).length;
+    var signups = rows.reduce(function(a,r){ return a + (r.signups||0); }, 0);
+    var paying = rows.reduce(function(a,r){ return a + (r.paying||0); }, 0);
+    var owed = rows.reduce(function(a,r){ return a + Number(r.monthly_payout||0); }, 0);
+    $('am-stats').innerHTML =
+      '<div class="am-stat"><b>' + live + '</b><span>Live ambassadors</span></div>' +
+      '<div class="am-stat"><b>' + signups + '</b><span>Signups via their links</span></div>' +
+      '<div class="am-stat"><b>' + paying + '</b><span>Paying attributed members</span></div>' +
+      '<div class="am-stat"><b>' + gbp(owed) + '</b><span>Share owed / month</span></div>';
+  }
+
+  function statusChip(r){
+    if (r.status === 'live') return '<span class="am-chip live">Live</span>';
+    if (r.status === 'suspended') return '<span class="am-chip suspended">Paused</span>';
+    return '<span class="am-chip onboarding">Awaiting agreement</span>';
+  }
+
+  function renderRows(){
+    var host = $('am-rows');
+    $('am-empty').style.display = rows.length ? 'none' : '';
+    host.innerHTML = rows.map(function(r){
+      var html = '<tr class="am-row" data-open="' + r.id + '">' +
+        '<td class="am-who"><strong>' + esc(r.name) + '</strong><small>' + esc(r.contact_email || 'no email on file') + '</small></td>' +
+        '<td class="am-mono">' + esc(r.slug) + '</td>' +
+        '<td class="am-hide-sm">' + (r.signups||0) + '</td>' +
+        '<td class="am-hide-sm">' + (r.on_trial||0) + '</td>' +
+        '<td>' + (r.paying||0) + '</td>' +
+        '<td><strong>' + gbp(r.monthly_payout) + '</strong></td>' +
+        '<td>' + statusChip(r) + '</td></tr>';
+      if (openId === r.id) html += '<tr><td colspan="7" style="padding:12px 14px;background:transparent">' + kitHtml(r) + '</td></tr>';
+      return html;
+    }).join('');
+    if (openId){
+      var r = rows.find(function(x){ return x.id === openId; });
+      if (r) renderQr(r.slug);
+    }
+  }
+
+  function kitHtml(r){
+    var isLive = r.status === 'live';
+    var actions = '';
+    if (r.status === 'onboarding' || (r.status === 'suspended' && !r.agreement_signed)){
+      actions += '<button class="am-btn primary" data-act="sign_and_live" data-id="' + r.id + '">Mark agreement signed &amp; go live</button> ';
+    } else if (r.status === 'live'){
+      actions += '<button class="am-btn danger" data-act="suspend" data-id="' + r.id + '">Pause</button> ';
+      if (!r.agreement_signed) actions += '<button class="am-btn" data-act="sign_and_live" data-id="' + r.id + '">Mark agreement signed</button> ';
+    } else if (r.status === 'suspended'){
+      actions += '<button class="am-btn primary" data-act="resume" data-id="' + r.id + '">Resume</button> ';
+    }
+    actions += '<button class="am-btn" data-edit="' + r.id + '">Edit</button>';
+
+    var warn = '';
+    if (!isLive) warn = '<div class="am-warn">Not live yet — the join link and code only work for live ambassadors. Mark the agreement signed to switch them on.</div>';
+    else if (!r.agreement_signed) warn = '<div class="am-warn">Live, but no signed agreement on record — worth chasing before the next payout run.</div>';
+
+    var shareInfo = 'Earns ' + Number(r.revenue_share_pct) + '% of each attributed member\'s payment';
+    if (r.paying) shareInfo += ' — currently ' + r.paying + ' paying member' + (r.paying===1?'':'s') + ' = ' + gbp(r.monthly_payout) + '/month';
+    shareInfo += '. Paid out with the monthly partner payout run.';
+
+    return '<div class="am-kit">' +
+      '<div><div class="am-qr" id="am-qr"></div>' +
+      '<button class="am-btn" style="width:160px;margin-top:8px" data-dlqr="' + esc(r.slug) + '">Download QR (PNG)</button></div>' +
+      '<div>' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">' +
+          '<div><strong style="font-size:14.5px">' + esc(r.name) + '\u2019s share kit</strong>' +
+          '<div class="am-hint">Send any of these — link, QR or spoken code all attribute to them.</div></div>' +
+          '<div style="white-space:nowrap">' + actions + '</div>' +
+        '</div>' +
+        '<div class="am-field"><input readonly value="' + esc(joinUrl(r.slug)) + '"><button class="am-btn" data-copy="' + esc(joinUrl(r.slug)) + '">Copy</button></div>' +
+        '<div class="am-field"><input readonly class="am-mono" style="max-width:180px" value="' + esc(r.slug.toUpperCase()) + '"><span class="am-hint" style="margin:0">typed in the app\u2019s referral box</span><button class="am-btn" data-copy="' + esc(r.slug) + '">Copy</button></div>' +
+        '<div class="am-field"><input readonly value="' + esc(shareText(r.slug)) + '"><button class="am-btn" data-copy="' + esc(shareText(r.slug)) + '">Copy</button></div>' +
+        '<div class="am-hint">' + esc(shareInfo) + '</div>' +
+        warn +
+      '</div></div>';
+  }
+
+  function renderQr(slug){
+    var el = $('am-qr');
+    if (!el) return;
+    var tries = 0;
+    (function attempt(){
+      if (!window.qrcode){ if (tries++ < 40) return void setTimeout(attempt, 100); return; }
+      try {
+        var qr = window.qrcode(0, 'M');
+        qr.addData(joinUrl(slug));
+        qr.make();
+        el.innerHTML = qr.createImgTag(4, 8);
+        var img = el.querySelector('img');
+        if (img){ img.alt = 'Join QR for ' + slug; }
+      } catch(_){}
+    })();
+  }
+
+  function downloadQr(slug){
+    var img = document.querySelector('#am-qr img');
+    if (!img){ toast('QR not ready yet'); return; }
+    var c = document.createElement('canvas'); var size = 640;
+    c.width = size; c.height = size;
+    var ctx = c.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, size, size);
+    ctx.drawImage(img, 0, 0, size, size);
+    var a = document.createElement('a');
+    a.href = c.toDataURL('image/png');
+    a.download = 'vyve-ambassador-' + slug + '.png';
+    a.click();
+  }
+
+  function copyText(text, btn){
+    function done(){ if (btn){ var o = btn.textContent; btn.textContent = 'Copied'; setTimeout(function(){ btn.textContent = o; }, 1400); } }
+    if (navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(done, function(){}); }
+  }
+
+  // ---- modal ----
+  function openModal(row){
+    editing = row || null;
+    $('am-m-title').textContent = row ? 'Edit ambassador' : 'Add ambassador';
+    $('am-m-name').value = row ? row.name : '';
+    $('am-m-email').value = row ? (row.contact_email || '') : '';
+    $('am-m-slug').value = row ? row.slug : '';
+    $('am-m-slug').disabled = !!row;
+    $('am-m-share').value = row ? Number(row.revenue_share_pct) : 50;
+    $('am-m-err').style.display = 'none';
+    updatePreview();
+    $('am-modal').style.display = 'flex';
+  }
+  function slugify(s){ return String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40); }
+  function updatePreview(){
+    var slug = slugify($('am-m-slug').value || $('am-m-name').value);
+    $('am-m-preview').textContent = slug ? ('Link: www.vyvehealth.co.uk/join/' + slug + ' \u00b7 Code: ' + slug.toUpperCase()) : '';
+  }
+  async function saveModal(){
+    var name = $('am-m-name').value.trim();
+    var email = $('am-m-email').value.trim();
+    var slug = editing ? null : slugify($('am-m-slug').value || name);
+    var share = parseFloat($('am-m-share').value);
+    if (name.length < 2){ return err('Enter their full name.'); }
+    if (!editing && !slug){ return err('Slug needed \u2014 letters and numbers only.'); }
+    if (isNaN(share) || share < 0 || share > 100){ return err('Rev share must be 0\u2013100.'); }
+    var btn = $('am-m-save'); btn.disabled = true; btn.textContent = 'Saving\u2026';
+    var client = S.getClient();
+    var res = await client.rpc('ambassador_upsert', {
+      p_name: name, p_email: email || null, p_slug: slug,
+      p_share: share, p_id: editing ? editing.id : null
+    });
+    btn.disabled = false; btn.textContent = 'Save';
+    if (res.error){
+      var m = res.error.message || '';
+      if (m.indexOf('slug_taken') >= 0) return err('That slug is already in use \u2014 pick another.');
+      return err('Save failed: ' + m);
+    }
+    $('am-modal').style.display = 'none';
+    if (!editing) openId = res.data;
+    toast(editing ? 'Ambassador updated' : 'Ambassador created \u2014 kit ready below');
+    await load();
+  }
+  function err(m){ var e = $('am-m-err'); e.textContent = m; e.style.display = ''; }
+
+  async function doStatus(id, act){
+    if (act === 'sign_and_live' && !window.confirm('Confirm the ambassador agreement is signed and on file? This is recorded against your login.')) return;
+    if (act === 'suspend' && !window.confirm('Pause this ambassador? Their join link and code stop working immediately.')) return;
+    var client = S.getClient();
+    var res = await client.rpc('ambassador_set_status', { p_id: id, p_action: act });
+    if (res.error){ toast('Action failed: ' + res.error.message); return; }
+    toast(act === 'suspend' ? 'Paused' : 'Live \u2014 link and code active');
+    await load();
+  }
+
+  // ---- events (delegated, re-entry safe) ----
+  var page = document.getElementById('page-ambassadors');
+  page.addEventListener('click', function(e){
+    var t;
+    if ((t = e.target.closest('[data-copy]'))) return copyText(t.getAttribute('data-copy'), t);
+    if ((t = e.target.closest('[data-dlqr]'))) return downloadQr(t.getAttribute('data-dlqr'));
+    if ((t = e.target.closest('[data-act]'))) return void doStatus(t.getAttribute('data-id'), t.getAttribute('data-act'));
+    if ((t = e.target.closest('[data-edit]'))){
+      var r = rows.find(function(x){ return x.id === t.getAttribute('data-edit'); });
+      if (r) openModal(r);
+      return;
+    }
+    if ((t = e.target.closest('tr[data-open]'))){
+      var id = t.getAttribute('data-open');
+      openId = (openId === id) ? null : id;
+      renderRows();
+    }
+  });
+  $('am-add-btn').onclick = function(){ openModal(null); };
+  $('am-m-cancel').onclick = function(){ $('am-modal').style.display = 'none'; };
+  $('am-m-save').onclick = saveModal;
+  $('am-m-name').addEventListener('input', updatePreview);
+  $('am-m-slug').addEventListener('input', updatePreview);
+  $('am-modal').addEventListener('click', function(e){ if (e.target === this) this.style.display = 'none'; });
+
+  async function boot(){
+    if (!S.isReady()){ show('am-gate-notready'); S.onReady(boot); return; }
+    var session = await S.getSession();
+    if (!session){ show('am-gate-denied'); return; }
+    var admin = await S.getCurrentAdmin();
+    if (!admin){ show('am-gate-denied'); return; }
+    show('am-content');
+    await load();
+  }
+  boot();
+})();
+</script>
+</div>

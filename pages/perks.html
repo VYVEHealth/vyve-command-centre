@@ -1,0 +1,302 @@
+<div class="page active" id="page-perks">
+<style>
+#page-perks .pk-live{display:flex;align-items:center;gap:10px;background:var(--accent-pale);border:1px solid var(--accent);border-radius:var(--r-md,10px);padding:9px 13px;font-size:12.5px;margin-bottom:16px;color:var(--text)}
+#page-perks .pk-live .dot{width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0}
+#page-perks .pk-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+#page-perks .pk-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg,14px);padding:15px;display:grid;grid-template-columns:50px 1fr auto;gap:13px}
+#page-perks .pk-card.pk-off{opacity:.6}
+#page-perks .pk-logo{width:50px;height:50px;border-radius:10px;background:var(--surface-2);border:1px solid var(--border);display:grid;place-items:center;font-weight:700;color:var(--accent);overflow:hidden}
+#page-perks .pk-logo img{width:100%;height:100%;object-fit:cover}
+#page-perks .pk-card h3{font-size:14.5px;margin:0}
+#page-perks .pk-hl{color:var(--gold);font-weight:600;font-size:13px;margin:1px 0 5px}
+#page-perks .pk-tag{display:inline-block;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:2px 9px;font-size:11px;margin:0 4px 4px 0;color:var(--text-muted)}
+#page-perks .pk-statline{margin-top:7px;font-size:12px;color:var(--text-muted);border-top:1px dashed var(--border);padding-top:7px}
+#page-perks .pk-statline b{color:var(--text)}
+#page-perks .pk-side{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+#page-perks .pk-toggle{width:38px;height:22px;border-radius:999px;background:var(--success);position:relative;cursor:pointer;border:none;padding:0}
+#page-perks .pk-toggle::after{content:"";position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:2px;right:2px}
+#page-perks .pk-toggle.off{background:var(--border-strong)}
+#page-perks .pk-toggle.off::after{right:auto;left:2px}
+#page-perks .pk-btn{font:inherit;font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:7px;border:1px solid var(--border-strong);background:var(--surface);color:var(--text);cursor:pointer}
+#page-perks .pk-btn:hover{border-color:var(--accent)}
+#page-perks .pk-btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+#page-perks .pk-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:3000;align-items:center;justify-content:center;padding:18px}
+#page-perks .pk-modal .card{max-width:540px;width:100%;padding:22px 24px;max-height:88vh;overflow:auto}
+#page-perks .pk-modal label{display:block;font-size:12px;font-weight:600;margin:12px 0 4px}
+#page-perks .pk-modal input,#page-perks .pk-modal select,#page-perks .pk-modal textarea{width:100%;font:inherit;padding:9px 11px;border:1px solid var(--border-strong);border-radius:7px;background:var(--surface);color:var(--text)}
+#page-perks .pk-2col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#page-perks .pk-seg{display:flex;border:1px solid var(--border-strong);border-radius:7px;overflow:hidden}
+#page-perks .pk-seg button{flex:1;font:inherit;font-size:12.5px;font-weight:600;padding:8px 4px;border:none;background:var(--surface);cursor:pointer;color:var(--text-muted)}
+#page-perks .pk-seg button.on{background:var(--accent-pale);color:var(--accent)}
+#page-perks .pk-drop{border:1.5px dashed var(--border-strong);border-radius:10px;padding:13px;text-align:center;color:var(--text-muted);font-size:12.5px;cursor:pointer}
+#page-perks .pk-drop img{max-height:56px;border-radius:8px}
+@media (max-width:820px){#page-perks .pk-grid{grid-template-columns:1fr}}
+</style>
+
+  <div class="page-hero">
+    <div class="eyebrow">Partners · Live data</div>
+    <h1 class="page-title">Discount partners</h1>
+    <p class="page-sub">Local businesses offering member discounts. Everything here is what members see in the app under More &rarr; Discounts, with per-business usage numbers you can share with the businesses.</p>
+  </div>
+
+  <div id="pk-gate-notready" class="card" style="padding:30px 26px;text-align:center"><div style="font-size:14px;color:var(--text-muted)">Connecting…</div></div>
+  <div id="pk-gate-denied" class="card" style="display:none;padding:30px 26px;text-align:center"><div style="font-size:14px;color:var(--text-muted)">Your account doesn't have access to Discount partners.</div></div>
+
+  <div id="pk-content" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap">
+      <div class="pk-live" style="margin:0"><span class="dot"></span>Changes go live in the app immediately — no deploy, no app update.</div>
+      <button class="pk-btn primary" id="pk-add-btn">Add discount partner</button>
+    </div>
+    <div class="pk-grid" id="pk-grid"></div>
+    <div id="pk-empty" style="display:none;padding:28px 0;text-align:center;color:var(--text-muted);font-size:13.5px">No discounts yet — add the first business.</div>
+  </div>
+
+  <div class="pk-modal" id="pk-modal" role="dialog">
+    <div class="card">
+      <h2 id="pk-m-title" style="font-size:17px;margin:0 0 4px">Add discount partner</h2>
+      <p style="font-size:12.5px;color:var(--text-muted);margin:0">Saved offers appear in the member app straight away.</p>
+      <div class="pk-2col">
+        <div><label>Business name</label><input id="pk-m-name" placeholder="e.g. Eat Clean"></div>
+        <div><label>Headline offer</label><input id="pk-m-headline" placeholder="e.g. 10% off food"></div>
+      </div>
+      <label>Description — shown when a member opens the offer</label>
+      <textarea id="pk-m-desc" rows="2" placeholder="A line or two about the business and what the offer covers"></textarea>
+      <div class="pk-2col">
+        <div><label>Category</label><input id="pk-m-cat" list="pk-cats" placeholder="Food &amp; drink"><datalist id="pk-cats"><option>Food &amp; drink</option><option>Fitness</option><option>Nutrition</option><option>Lifestyle</option><option>Wellness</option></datalist></div>
+        <div><label>Area — blank means Online / everywhere</label><input id="pk-m-area" placeholder="Newcastle"></div>
+      </div>
+      <label>How members redeem it</label>
+      <div class="pk-seg" id="pk-m-redeem">
+        <button type="button" data-rt="show_app">Show in app at till</button>
+        <button type="button" data-rt="code">Discount code</button>
+        <button type="button" data-rt="link">Website link</button>
+      </div>
+      <div id="pk-m-code-wrap" style="display:none"><label>Discount code</label><input id="pk-m-code" placeholder="e.g. VYVE10" style="text-transform:uppercase"></div>
+      <div id="pk-m-site-wrap" style="display:none"><label>Website URL</label><input id="pk-m-site" placeholder="https://&hellip;"></div>
+      <label>Instructions shown to the member</label>
+      <input id="pk-m-instr" placeholder="Show this screen at the counter to get your discount">
+      <div class="pk-2col">
+        <div><label>Valid from — optional</label><input id="pk-m-from" type="date"></div>
+        <div><label>Valid until — optional</label><input id="pk-m-until" type="date"></div>
+      </div>
+      <label>Logo — square PNG works best</label>
+      <div class="pk-drop" id="pk-m-drop">Tap to choose a logo<input id="pk-m-file" type="file" accept="image/png,image/jpeg,image/webp" style="display:none"></div>
+      <div id="pk-m-err" style="display:none;color:var(--danger);font-size:12.5px;margin-top:10px"></div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:18px">
+        <button class="pk-btn" id="pk-m-cancel">Cancel</button>
+        <button class="pk-btn primary" id="pk-m-save">Save — live in app</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  var S = window.VYVE_SUPABASE;
+  if (!S) return;
+  var perks = [];
+  var stats = {};      // perk_id -> {view, reveal, link_click}
+  var editing = null;  // perk row being edited
+  var redeemType = 'show_app';
+  var logoFile = null;
+
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function show(id){ ['pk-gate-notready','pk-gate-denied','pk-content'].forEach(function(x){ $(x).style.display = (x===id) ? '' : 'none'; }); }
+  function toast(msg){ if (window.VYVE_UI && window.VYVE_UI.toast) window.VYVE_UI.toast(msg); else console.log('[perks]', msg); }
+  function initials(name){ return String(name||'?').split(/\s+/).map(function(w){ return w[0]; }).join('').slice(0,2).toUpperCase(); }
+
+  async function load(){
+    var client = S.getClient();
+    var since = new Date(Date.now() - 30*24*3600*1000).toISOString();
+    var p = await client.from('member_perks').select('*').order('sort_order', { ascending: true }).order('created_at', { ascending: true });
+    if (p.error){ toast('Load failed: ' + p.error.message); return; }
+    perks = p.data || [];
+    stats = {};
+    var ev = await client.from('perk_events').select('perk_id,event').gte('created_at', since);
+    if (!ev.error){
+      (ev.data || []).forEach(function(e){
+        var s = stats[e.perk_id] || (stats[e.perk_id] = { view:0, reveal:0, link_click:0 });
+        if (s[e.event] != null) s[e.event]++;
+      });
+    }
+    render();
+  }
+
+  function windowState(pk){
+    var today = new Date().toISOString().slice(0,10);
+    if (pk.valid_until && pk.valid_until < today) return 'ended';
+    if (pk.valid_from && pk.valid_from > today) return 'upcoming';
+    return 'current';
+  }
+
+  function render(){
+    var host = $('pk-grid');
+    $('pk-empty').style.display = perks.length ? 'none' : '';
+    host.innerHTML = perks.map(function(pk){
+      var s = stats[pk.id] || { view:0, reveal:0, link_click:0 };
+      var w = windowState(pk);
+      var liveInApp = pk.active && w === 'current';
+      var tags = '';
+      if (pk.redemption_type === 'code') tags += '<span class="pk-tag">Code \u00b7 ' + esc(pk.code || '?') + '</span>';
+      else if (pk.redemption_type === 'link') tags += '<span class="pk-tag">Website link</span>';
+      else tags += '<span class="pk-tag">Show at till</span>';
+      tags += '<span class="pk-tag">' + esc(pk.area || 'Online') + '</span>';
+      if (pk.category) tags += '<span class="pk-tag">' + esc(pk.category) + '</span>';
+      if (w === 'ended') tags += '<span class="pk-tag">Ended ' + esc(pk.valid_until) + '</span>';
+      if (w === 'upcoming') tags += '<span class="pk-tag">Starts ' + esc(pk.valid_from) + '</span>';
+      var statline = '<b>' + s.view + '</b> members viewed \u00b7 <b>' + s.reveal + '</b> revealed the offer' +
+        (pk.redemption_type === 'link' ? ' \u00b7 <b>' + s.link_click + '</b> clicked through' : '') + ' \u00b7 last 30 days';
+      var logo = pk.logo_url
+        ? '<img src="' + esc(pk.logo_url) + '" alt="">'
+        : esc(initials(pk.business_name));
+      return '<div class="pk-card' + (liveInApp ? '' : ' pk-off') + '">' +
+        '<div class="pk-logo">' + logo + '</div>' +
+        '<div><h3>' + esc(pk.business_name) + '</h3>' +
+          '<div class="pk-hl">' + esc(pk.headline) + '</div>' +
+          '<div>' + tags + '</div>' +
+          '<div class="pk-statline">' + statline + '</div></div>' +
+        '<div class="pk-side">' +
+          '<button class="pk-toggle' + (pk.active ? '' : ' off') + '" data-toggle="' + pk.id + '" title="' + (pk.active ? 'Hide from app' : 'Show in app') + '"></button>' +
+          '<span style="font-size:11.5px;font-weight:600;color:' + (liveInApp ? 'var(--success)' : 'var(--text-dim)') + '">' + (liveInApp ? 'Live in app' : 'Hidden') + '</span>' +
+          '<button class="pk-btn" data-edit="' + pk.id + '">Edit</button>' +
+        '</div></div>';
+    }).join('');
+  }
+
+  // ---- modal ----
+  function setRedeem(rt){
+    redeemType = rt;
+    Array.prototype.forEach.call($('pk-m-redeem').children, function(b){ b.classList.toggle('on', b.getAttribute('data-rt') === rt); });
+    $('pk-m-code-wrap').style.display = rt === 'code' ? '' : 'none';
+    $('pk-m-site-wrap').style.display = rt === 'link' ? '' : 'none';
+  }
+  function openModal(pk){
+    editing = pk || null;
+    logoFile = null;
+    $('pk-m-title').textContent = pk ? 'Edit ' + pk.business_name : 'Add discount partner';
+    $('pk-m-name').value = pk ? pk.business_name : '';
+    $('pk-m-headline').value = pk ? pk.headline : '';
+    $('pk-m-desc').value = pk ? (pk.description || '') : '';
+    $('pk-m-cat').value = pk ? (pk.category || '') : '';
+    $('pk-m-area').value = pk ? (pk.area || '') : '';
+    $('pk-m-code').value = pk ? (pk.code || '') : '';
+    $('pk-m-site').value = pk ? (pk.website_url || '') : '';
+    $('pk-m-instr').value = pk ? (pk.instructions || '') : '';
+    $('pk-m-from').value = pk ? (pk.valid_from || '') : '';
+    $('pk-m-until').value = pk ? (pk.valid_until || '') : '';
+    setRedeem(pk ? (pk.redemption_type || 'show_app') : 'show_app');
+    var fileInput = $('pk-m-file');
+    var drop = $('pk-m-drop');
+    drop.innerHTML = (pk && pk.logo_url)
+      ? '<img src="' + esc(pk.logo_url) + '" alt=""> <div style="font-size:11.5px;margin-top:4px">Tap to replace</div>'
+      : 'Tap to choose a logo';
+    drop.appendChild(fileInput);
+    $('pk-m-err').style.display = 'none';
+    $('pk-modal').style.display = 'flex';
+  }
+  function err(m){ var e = $('pk-m-err'); e.textContent = m; e.style.display = ''; }
+
+  async function uploadLogo(client){
+    if (!logoFile) return editing ? (editing.logo_url || null) : null;
+    var ext = (logoFile.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g,'') || 'png';
+    var path = 'cc/' + Date.now() + '-' + Math.random().toString(36).slice(2,8) + '.' + ext;
+    var up = await client.storage.from('perk-logos').upload(path, logoFile, { upsert: false, contentType: logoFile.type || 'image/png' });
+    if (up.error) throw new Error('Logo upload failed: ' + up.error.message);
+    var pub = client.storage.from('perk-logos').getPublicUrl(path);
+    return pub && pub.data ? pub.data.publicUrl : null;
+  }
+
+  async function saveModal(){
+    var name = $('pk-m-name').value.trim();
+    var headline = $('pk-m-headline').value.trim();
+    if (!name) return err('Business name is required.');
+    if (!headline) return err('Headline offer is required.');
+    if (redeemType === 'code' && !$('pk-m-code').value.trim()) return err('Enter the discount code.');
+    if (redeemType === 'link' && !/^https?:\/\//.test($('pk-m-site').value.trim())) return err('Website link must start with https://');
+    var btn = $('pk-m-save'); btn.disabled = true; btn.textContent = 'Saving\u2026';
+    var client = S.getClient();
+    try {
+      var logoUrl = await uploadLogo(client);
+      var row = {
+        business_name: name,
+        headline: headline,
+        description: $('pk-m-desc').value.trim() || null,
+        category: $('pk-m-cat').value.trim() || null,
+        area: $('pk-m-area').value.trim() || null,
+        redemption_type: redeemType,
+        code: redeemType === 'code' ? $('pk-m-code').value.trim().toUpperCase() : null,
+        website_url: redeemType === 'link' ? $('pk-m-site').value.trim() : ($('pk-m-site').value.trim() || null),
+        instructions: $('pk-m-instr').value.trim() || null,
+        valid_from: $('pk-m-from').value || null,
+        valid_until: $('pk-m-until').value || null,
+        logo_url: logoUrl
+      };
+      var res;
+      if (editing) res = await client.from('member_perks').update(row).eq('id', editing.id).select();
+      else res = await client.from('member_perks').insert(Object.assign({ active: true }, row)).select();
+      if (res.error) throw new Error(res.error.message);
+      if (!res.data || !res.data.length) throw new Error('write returned no row \u2014 check access');
+      $('pk-modal').style.display = 'none';
+      toast(editing ? 'Saved \u2014 live in the app' : esc(name) + ' added \u2014 live in the app');
+      await load();
+    } catch(e2){
+      err(String(e2.message || e2));
+    } finally {
+      btn.disabled = false; btn.textContent = 'Save \u2014 live in app';
+    }
+  }
+
+  async function toggleActive(id){
+    var pk = perks.find(function(x){ return x.id === id; });
+    if (!pk) return;
+    var client = S.getClient();
+    var res = await client.from('member_perks').update({ active: !pk.active }).eq('id', id).select();
+    if (res.error || !res.data || !res.data.length){ toast('Update failed'); return; }
+    toast(!pk.active ? 'Shown in the app' : 'Hidden from the app');
+    await load();
+  }
+
+  // ---- events (delegated, re-entry safe) ----
+  var page = document.getElementById('page-perks');
+  page.addEventListener('click', function(e){
+    var t;
+    if ((t = e.target.closest('[data-toggle]'))) return void toggleActive(t.getAttribute('data-toggle'));
+    if ((t = e.target.closest('[data-edit]'))){
+      var pk = perks.find(function(x){ return x.id === t.getAttribute('data-edit'); });
+      if (pk) openModal(pk);
+      return;
+    }
+    if ((t = e.target.closest('#pk-m-redeem button'))) return setRedeem(t.getAttribute('data-rt'));
+    if (e.target.closest('#pk-m-drop')) return $('pk-m-file').click();
+  });
+  $('pk-add-btn').onclick = function(){ openModal(null); };
+  $('pk-m-cancel').onclick = function(){ $('pk-modal').style.display = 'none'; };
+  $('pk-m-save').onclick = saveModal;
+  $('pk-m-file').addEventListener('change', function(){
+    logoFile = this.files && this.files[0] ? this.files[0] : null;
+    if (!logoFile) return;
+    if (logoFile.size > 5 * 1024 * 1024){ err('Logo too large \u2014 max 5MB.'); logoFile = null; return; }
+    var reader = new FileReader();
+    var drop = $('pk-m-drop');
+    var fileInput = this;
+    reader.onload = function(ev){
+      drop.innerHTML = '<img src="' + ev.target.result + '" alt=""> <div style="font-size:11.5px;margin-top:4px">Tap to replace</div>';
+      drop.appendChild(fileInput);
+    };
+    reader.readAsDataURL(logoFile);
+  });
+  $('pk-modal').addEventListener('click', function(e){ if (e.target === this) this.style.display = 'none'; });
+
+  async function boot(){
+    if (!S.isReady()){ show('pk-gate-notready'); S.onReady(boot); return; }
+    var session = await S.getSession();
+    if (!session){ show('pk-gate-denied'); return; }
+    var admin = await S.getCurrentAdmin();
+    if (!admin){ show('pk-gate-denied'); return; }
+    show('pk-content');
+    await load();
+  }
+  boot();
+})();
+</script>
+</div>

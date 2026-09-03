@@ -65,6 +65,8 @@ window.VYVE_NAV = [
       { slug: "partner-management", area: "partners", label: "Partner Management", icon: "link", status: "live", desc: "Pipeline, go-live gates, moderation and payouts \u2014 now inside the CC shell." },
       { href: "https://www.vyvehealth.co.uk/partner-onboarding.html", area: "partners", label: "Partner Onboarding", icon: "file-text", external: true, desc: "The public apply wizard \u2014 send this link to prospective partners." },
       { href: "/partner-portal.html", area: "partners", label: "Partner Portal",     icon: "video", external: false, desc: "What partners see \u2014 content, publishing, notify." },
+      { slug: "ambassadors", area: "partners", label: "Ambassadors", icon: "share", status: "live", desc: "Referral sellers \u2014 join links, QR codes and rev-share earnings." },
+      { slug: "perks", area: "partners", label: "Discount Partners", icon: "target", status: "live", desc: "Local-business member discounts \u2014 live in the app's More menu." },
       { slug: "bookings", area: "partners",             label: "Bookings",           icon: "calendar", status: "live", desc: "Employer expert requests to confirm + the booking ledger." }
     ]
   },
