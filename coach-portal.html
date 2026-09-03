@@ -3021,7 +3021,9 @@
       if (sub) sub.classList.toggle('open', !open);
     });
   });
+  var goFromHash = false;
   function go(view){
+    if (!goFromHash){ try { history.replaceState(null, '', '#' + view); } catch(_){} }
     document.querySelectorAll('.cp-item').forEach(function(x){ x.classList.toggle('active', x.dataset.go === view); });
     // auto-open the group that owns the active sub-item
     var activeSub = document.querySelector('.cp-subitem[data-go="' + String(view).replace(/"/g, '') + '"]');
@@ -3088,6 +3090,31 @@
     var side = $c('cp-side'); if (side) side.classList.remove('open');
     var ov = $c('cp-overlay'); if (ov) ov.classList.remove('show');
   }
+  /* PM-983c: hash deep-links — #clients, #clients_checkins, #kindsel:program etc.
+     Back/forward + bookmarkable sections without splitting the SPA. */
+  var HASH_OK = /^(dashboard|clients|clients_checkins|clients_daily|profile|settings|terms|exercises|notifications|automations|leads|messages|calendar|content|kindsel:(onboarding|checkin|lead|habits|program|workout|workout_day|nutrition|supplements))$/;
+  function hashView(){
+    var h = decodeURIComponent((location.hash || '').slice(1));
+    return HASH_OK.test(h) ? h : null;
+  }
+  window.addEventListener('hashchange', function(){
+    var v = hashView();
+    if (!v) return;
+    goFromHash = true;
+    try { go(v); } finally { goFromHash = false; }
+  });
+  // Deep link on load: init() lands on dashboard by default; honour a valid hash instead.
+  (function(){
+    var v = hashView();
+    if (!v || v === 'dashboard') return;
+    var t = setInterval(function(){
+      if (!partnerId) return; // wait for init
+      clearInterval(t);
+      goFromHash = true;
+      try { go(v); } finally { goFromHash = false; }
+    }, 300);
+    setTimeout(function(){ clearInterval(t); }, 15000);
+  })();
   /* ============================ end PM-983 Wave 1 ============================ */
 
   boot();
