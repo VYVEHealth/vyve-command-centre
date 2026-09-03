@@ -212,8 +212,8 @@
   <!-- PM-753: duplicate supabase-js 2.39.3 removed — single 2.45.0 load below -->
 
   <!-- Config + libs -->
-  <script src="assets/sidebar-config.js?v=pm975"></script>
-  <script src="lib/acl.js?v=pm975"></script>
+  <script src="assets/sidebar-config.js?v=pm977"></script>
+  <script src="lib/acl.js?v=pm977"></script>
   <script src="lib/notify.js?v=pm913"></script>
   <script src="lib/ui.js"></script>
   <script src="lib/widgets.js"></script>
@@ -455,5 +455,29 @@
       paint((location.hash || '').replace(/^#\/?/, '').split('/')[0]);
     })();
   </script>
+<script>
+/* PM-977: global client-error reporter (report-error EF, PM-902 rail). Dedupe per message/session. */
+(function(){
+  var seen = {};
+  function rep(context, message, detail){
+    try {
+      var key = context + '|' + String(message).slice(0, 120);
+      if (seen[key]) return; seen[key] = 1;
+      fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/functions/v1/report-error', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true,
+        body: JSON.stringify({ surface: 'command-centre', context: context, severity: 'error',
+          message: String(message || '').slice(0, 500), detail: detail || null })
+      }).catch(function(){});
+    } catch (_) {}
+  }
+  window.addEventListener('error', function(e){
+    if (e && e.message) rep('js_error', e.message, { src: (e.filename || '') + ':' + (e.lineno || 0) });
+  });
+  window.addEventListener('unhandledrejection', function(e){
+    var r = e && e.reason;
+    rep('unhandled_rejection', (r && (r.message || r.toString())) || 'unknown', null);
+  });
+})();
+</script>
 </body>
 </html>

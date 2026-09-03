@@ -1,0 +1,164 @@
+<div class="page active" id="page-platform-health">
+<style>
+#page-platform-health .ph-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:10px;margin-bottom:20px}
+#page-platform-health .ph-tile{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md,10px);padding:12px 14px;position:relative}
+#page-platform-health .ph-tile.down{border-color:var(--danger);background:var(--danger-pale,var(--surface))}
+#page-platform-health .ph-dot{width:9px;height:9px;border-radius:50%;background:var(--success);position:absolute;top:14px;right:14px}
+#page-platform-health .ph-tile.down .ph-dot{background:var(--danger)}
+#page-platform-health .ph-tile b{display:block;font-size:13.5px;padding-right:16px}
+#page-platform-health .ph-tile small{display:block;color:var(--text-muted);font-size:11.5px;margin-top:3px}
+#page-platform-health .ph-sec{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin:0 0 10px}
+#page-platform-health .ph-row{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--border);font-size:13px}
+#page-platform-health .ph-row:last-child{border-bottom:0}
+#page-platform-health .ph-sev{font-size:10.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;padding:3px 9px;border-radius:999px;white-space:nowrap}
+#page-platform-health .ph-sev.critical{background:var(--danger-pale,rgba(220,80,80,.15));color:var(--danger)}
+#page-platform-health .ph-sev.error{background:var(--warning-pale);color:var(--warning)}
+#page-platform-health .ph-sev.warn,#page-platform-health .ph-sev.info{background:var(--surface-2);color:var(--text-muted)}
+#page-platform-health .ph-main{flex:1;min-width:0}
+#page-platform-health .ph-main small{display:block;color:var(--text-muted);font-size:11.5px;margin-top:2px;word-break:break-word}
+#page-platform-health .ph-btn{font:inherit;font-size:12px;font-weight:600;padding:5px 11px;border-radius:7px;border:1px solid var(--border-strong);background:var(--surface);color:var(--text);cursor:pointer;white-space:nowrap}
+#page-platform-health .ph-btn:hover{border-color:var(--accent)}
+#page-platform-health .ph-when{color:var(--text-muted);font-size:11.5px;white-space:nowrap}
+#page-platform-health .ph-filter{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+#page-platform-health .ph-filter button{font:inherit;font-size:12px;font-weight:600;padding:5px 12px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--text-muted);cursor:pointer}
+#page-platform-health .ph-filter button.on{border-color:var(--accent);color:var(--accent);background:var(--accent-pale)}
+</style>
+
+  <div class="page-hero">
+    <div class="eyebrow">Analytics · Live data</div>
+    <h1 class="page-title">Platform Health</h1>
+    <p class="page-sub">Every public surface shape-probed every 5 minutes, plus live client-side error reports from the member app, portals and this console. Anything critical also pushes to phones the moment it's caught.</p>
+  </div>
+
+  <div id="ph-gate-notready" class="card" style="padding:30px 26px;text-align:center"><div style="font-size:14px;color:var(--text-muted)">Connecting…</div></div>
+  <div id="ph-gate-denied" class="card" style="display:none;padding:30px 26px;text-align:center"><div style="font-size:14px;color:var(--text-muted)">Your account doesn't have access to Platform Health.</div></div>
+
+  <div id="ph-content" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">
+      <div class="ph-sec">Surfaces <span id="ph-probe-age" style="font-weight:400;text-transform:none;letter-spacing:0"></span></div>
+      <button class="ph-btn" id="ph-refresh">Refresh</button>
+    </div>
+    <div class="ph-grid" id="ph-tiles"></div>
+
+    <div class="ph-sec">Alerts</div>
+    <div class="card" style="padding:14px 18px;margin-bottom:20px">
+      <div class="ph-filter" id="ph-alert-filter">
+        <button data-f="open" class="on">Open</button>
+        <button data-f="all">All recent</button>
+      </div>
+      <div id="ph-alerts"></div>
+      <div id="ph-alerts-empty" style="display:none;padding:20px 0;text-align:center;color:var(--text-muted);font-size:13px">Nothing open — all quiet.</div>
+    </div>
+
+    <div class="ph-sec">Client errors — last 48h</div>
+    <div class="card" style="padding:14px 18px">
+      <div id="ph-errors"></div>
+      <div id="ph-errors-empty" style="display:none;padding:20px 0;text-align:center;color:var(--text-muted);font-size:13px">No client errors reported.</div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  var S = window.VYVE_SUPABASE;
+  if (!S) return;
+  var alertFilter = 'open';
+  var LABELS = { 'cc-shell':'Command Centre','partner-portal':'Partner Portal','coach-portal':'Coach Portal','admin-console':'Member Admin','member-login':'Member login','member-signup':'Signup door','member-onboarding':'Onboarding','marketing-home':'Marketing site','employer-portal':'Employer Portal','partner-onboarding':'Partner wizard' };
+
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function show(id){ ['ph-gate-notready','ph-gate-denied','ph-content'].forEach(function(x){ $(x).style.display = (x===id) ? '' : 'none'; }); }
+  function ago(iso){
+    if (!iso) return '—';
+    var s = Math.round((Date.now() - new Date(iso).getTime())/1000);
+    if (s < 90) return s + 's ago';
+    if (s < 5400) return Math.round(s/60) + 'm ago';
+    if (s < 129600) return Math.round(s/3600) + 'h ago';
+    return Math.round(s/86400) + 'd ago';
+  }
+
+  async function load(){
+    var client = S.getClient();
+    var since48 = new Date(Date.now() - 48*3600*1000).toISOString();
+
+    var wt = await client.from('watchtower_status').select('*').order('target');
+    if (!wt.error){
+      var rows = wt.data || [];
+      var newest = rows.reduce(function(a,r){ return r.checked_at > a ? r.checked_at : a; }, '');
+      $('ph-probe-age').textContent = newest ? '· last probe ' + ago(newest) : '';
+      $('ph-tiles').innerHTML = rows.map(function(r){
+        var label = LABELS[r.target] || r.target;
+        var sub = r.ok
+          ? (r.latency_ms + 'ms · ok')
+          : esc(r.reason || 'down') + (r.failing_since ? ' since ' + ago(r.failing_since).replace(' ago','') : '');
+        return '<a class="ph-tile' + (r.ok ? '' : ' down') + '" href="' + esc(r.url) + '" target="_blank" rel="noopener" style="text-decoration:none;color:var(--text)">' +
+          '<span class="ph-dot"></span><b>' + esc(label) + '</b><small>' + sub + '</small></a>';
+      }).join('');
+    }
+
+    var q = client.from('platform_alerts').select('*').order('created_at', { ascending: false }).limit(40);
+    if (alertFilter === 'open') q = q.eq('resolved', false);
+    var al = await q;
+    if (!al.error){
+      var arows = al.data || [];
+      $('ph-alerts-empty').style.display = arows.length ? 'none' : '';
+      $('ph-alerts').innerHTML = arows.map(function(a){
+        var d = null;
+        try { d = typeof a.details === 'string' ? JSON.parse(a.details) : a.details; } catch(_){}
+        var what = (d && d.label) ? d.label + ' — ' + (d.reason || a.type) : a.type;
+        return '<div class="ph-row">' +
+          '<span class="ph-sev ' + esc(a.severity) + '">' + esc(a.severity) + '</span>' +
+          '<div class="ph-main"><strong>' + esc(what) + '</strong>' +
+          '<small>' + esc(a.source) + (a.page ? ' · ' + esc(a.page) : '') + (a.member_email ? ' · ' + esc(a.member_email) : '') + '</small></div>' +
+          '<span class="ph-when">' + ago(a.created_at) + '</span>' +
+          (a.resolved ? '<span class="ph-when">resolved</span>' : '<button class="ph-btn" data-resolve="' + a.id + '">Resolve</button>') +
+          '</div>';
+      }).join('');
+    }
+
+    var ce = await client.from('client_errors').select('surface,context,severity,message,actor_email,created_at').gte('created_at', since48).order('created_at', { ascending: false }).limit(50);
+    if (!ce.error){
+      var erows = ce.data || [];
+      $('ph-errors-empty').style.display = erows.length ? 'none' : '';
+      $('ph-errors').innerHTML = erows.map(function(e){
+        return '<div class="ph-row">' +
+          '<span class="ph-sev ' + esc(e.severity) + '">' + esc(e.severity) + '</span>' +
+          '<div class="ph-main"><strong>' + esc(e.surface) + ' · ' + esc(e.context) + '</strong>' +
+          '<small>' + esc(e.message) + (e.actor_email ? ' · ' + esc(e.actor_email) : '') + '</small></div>' +
+          '<span class="ph-when">' + ago(e.created_at) + '</span></div>';
+      }).join('');
+    }
+  }
+
+  async function resolveAlert(id){
+    var client = S.getClient();
+    var res = await client.from('platform_alerts').update({ resolved: true }).eq('id', id).select();
+    if (res.error || !res.data || !res.data.length){ if (window.VYVE_UI && window.VYVE_UI.toast) window.VYVE_UI.toast('Resolve failed'); return; }
+    await load();
+  }
+
+  var page = document.getElementById('page-platform-health');
+  page.addEventListener('click', function(e){
+    var t;
+    if ((t = e.target.closest('[data-resolve]'))){ e.preventDefault(); return void resolveAlert(t.getAttribute('data-resolve')); }
+    if ((t = e.target.closest('#ph-alert-filter button'))){
+      alertFilter = t.getAttribute('data-f');
+      Array.prototype.forEach.call($('ph-alert-filter').children, function(b){ b.classList.toggle('on', b === t); });
+      load();
+      return;
+    }
+    if (e.target.closest('#ph-refresh')) return void load();
+  });
+
+  async function boot(){
+    if (!S.isReady()){ show('ph-gate-notready'); S.onReady(boot); return; }
+    var session = await S.getSession();
+    if (!session){ show('ph-gate-denied'); return; }
+    var admin = await S.getCurrentAdmin();
+    if (!admin){ show('ph-gate-denied'); return; }
+    show('ph-content');
+    await load();
+  }
+  boot();
+})();
+</script>
+</div>

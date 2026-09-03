@@ -83,6 +83,7 @@ window.VYVE_NAV = [
   {
     section: "Analytics",
     items: [
+      { slug: "platform-health", area: "analytics", label: "Platform Health", icon: "radar", status: "live", desc: "Watchtower surface probes, alerts and live client errors." },
       { slug: "app-health", area: "analytics",     label: "App Health",         icon: "activity",    status: "live" },
       { slug: "usage", area: "analytics",          label: "Overview & Members", icon: "grid",        status: "live" },
       { slug: "retention", area: "analytics",      label: "Retention",          icon: "trending-up", status: "live" },

@@ -2269,5 +2269,29 @@
   boot();
 })();
 </script>
+<script>
+/* PM-977: global client-error reporter (report-error EF, PM-902 rail). Dedupe per message/session. */
+(function(){
+  var seen = {};
+  function rep(context, message, detail){
+    try {
+      var key = context + '|' + String(message).slice(0, 120);
+      if (seen[key]) return; seen[key] = 1;
+      fetch('https://ixjfklpckgxrwjlfsaaz.supabase.co/functions/v1/report-error', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true,
+        body: JSON.stringify({ surface: 'coach-portal', context: context, severity: 'error',
+          message: String(message || '').slice(0, 500), detail: detail || null })
+      }).catch(function(){});
+    } catch (_) {}
+  }
+  window.addEventListener('error', function(e){
+    if (e && e.message) rep('js_error', e.message, { src: (e.filename || '') + ':' + (e.lineno || 0) });
+  });
+  window.addEventListener('unhandledrejection', function(e){
+    var r = e && e.reason;
+    rep('unhandled_rejection', (r && (r.message || r.toString())) || 'unknown', null);
+  });
+})();
+</script>
 </body>
 </html>
