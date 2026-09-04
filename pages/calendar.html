@@ -659,8 +659,10 @@
       var ev = state.events.find(function(e){ return e.id === id; });
       if (ev) openEventModal(ev);
     } else if (kind === 'session'){
-      // Sessions are read-only from the calendar - link to the sessions page
-      window.location.hash = '#/sessions';
+      // PM-1020: the sessions page is an unresolvable route (not in VYVE_NAV or
+      // VYVE_NAV_TOP), so this used to blank the CC to Not Found. Sessions stay
+      // read-only from the calendar; say so instead of navigating nowhere.
+      if (window.VYVE_UI && window.VYVE_UI.toast) window.VYVE_UI.toast('Live sessions are read-only here', 'info');
     }
   }
 
