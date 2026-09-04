@@ -79,6 +79,9 @@
   function $(id){ return document.getElementById(id); }
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
   function show(id){ ['ph-gate-notready','ph-gate-denied','ph-content'].forEach(function(x){ $(x).style.display = (x===id) ? '' : 'none'; }); }
+  // PM-1014: resolved_by is an email (or 'system'); show the local part inline
+  // and keep the full address + timestamp in the tooltip.
+  function who(e){ return !e ? '' : (e === 'system' ? 'system' : String(e).split('@')[0]); }
   function ago(iso){
     if (!iso) return '—';
     var s = Math.round((Date.now() - new Date(iso).getTime())/1000);
@@ -122,7 +125,11 @@
           '<div class="ph-main"><strong>' + esc(what) + '</strong>' +
           '<small>' + esc(a.source) + (a.page ? ' · ' + esc(a.page) : '') + (a.member_email ? ' · ' + esc(a.member_email) : '') + '</small></div>' +
           '<span class="ph-when">' + ago(a.created_at) + '</span>' +
-          (a.resolved ? '<span class="ph-when">resolved</span>' : '<button class="ph-btn" data-resolve="' + a.id + '">Resolve</button>') +
+          (a.resolved
+            ? '<span class="ph-when"' + (a.resolved_by ? ' title="Resolved by ' + esc(a.resolved_by) + (a.resolved_at ? ' on ' + esc(new Date(a.resolved_at).toLocaleString()) : '') + '"' : '') + '>' +
+              'resolved' + (a.resolved_by ? ' \u00b7 ' + esc(who(a.resolved_by)) : '') +
+              (a.resolved_at ? ' \u00b7 ' + ago(a.resolved_at) : '') + '</span>'
+            : '<button class="ph-btn" data-resolve="' + a.id + '">Resolve</button>') +
           '</div>';
       }).join('');
     }
