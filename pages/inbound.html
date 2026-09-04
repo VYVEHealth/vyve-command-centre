@@ -1,22 +1,24 @@
 <div class="page active" id="page-inbound">
 <style>
 /* Token-backed fields per §23.152 */
-#page-inbound select { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; }
-.ib-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 13px; flex-wrap: wrap; cursor: pointer; }
+#page-inbound select { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); border-radius: var(--input-radius); padding: 8px 10px; }
+.ib-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: var(--fs-sm); flex-wrap: wrap; cursor: pointer; }
 .ib-row:last-child { border-bottom: 0; }
 .ib-row:hover { background: var(--surface-2); }
-.ib-when { min-width: 130px; color: var(--text-muted); font-size: 12px; }
+.ib-when { min-width: 130px; color: var(--text-muted); font-size: var(--fs-xs); }
 .ib-main { flex: 1; min-width: 200px; }
-.ib-kind { font-size: 10.5px; font-weight: 800; letter-spacing: .4px; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+  .ib-when { flex-basis: 100%; min-width: 0; }
+  .ib-main { flex-basis: 100%; }
+.ib-kind { font-size: var(--fs-2xs); font-weight: 800; letter-spacing: .4px; text-transform: uppercase; padding: 3px 9px; border-radius: var(--r-pill); white-space: nowrap; }
 .ib-kind-role_application { background: rgba(61,184,159,.15); color: #3DB89F; }
 .ib-kind-contact { background: rgba(201,168,76,.16); color: #c9a84c; }
 .ib-kind-podcast_guest { background: rgba(120,150,230,.16); color: #8aa2e8; }
 .ib-kind-other { background: var(--surface-2); color: var(--text-muted); }
-.ib-status { font-size: 11.5px; font-weight: 700; white-space: nowrap; }
+.ib-status { font-size: var(--fs-2xs); font-weight: 700; white-space: nowrap; }
 .ib-new { color: #3DB89F; }
-@media (max-width: 640px) {
-  .ib-when { flex-basis: 100%; min-width: 0; }
-  .ib-main { flex-basis: 100%; }
+@media (min-width: 640px) {
+  .ib-when { flex-basis: auto; min-width: 130px; }
+  .ib-main { flex-basis: 0%; }
 }
 </style>
   <div class="page-hero">

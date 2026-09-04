@@ -7,24 +7,24 @@
      Responsive by construction: 3 col → 2 (≤860px) → 1 (≤560px).
      ===================================================================== -->
 <style>
-.dm-eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
-.dm-h1{font-size:22px;font-weight:700;letter-spacing:-.015em}
-.dm-meta{font-size:13px;color:var(--text-muted);margin:4px 0 20px;max-width:640px;line-height:1.5}
-.dm-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-@media(max-width:860px){.dm-tiles{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:560px){.dm-tiles{grid-template-columns:1fr}}
-.dm-tile{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;text-decoration:none;color:var(--text);display:flex;flex-direction:column;gap:8px;transition:border-color .15s,transform .12s;min-height:110px;box-shadow:var(--shadow-md)}
+.dm-eyebrow{font-family:var(--font-mono);font-size:var(--fs-2xs);letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.dm-h1{font-size:var(--fs-xl);font-weight:700;letter-spacing:-.015em}
+.dm-meta{font-size:var(--fs-sm);color:var(--text-muted);margin:4px 0 20px;max-width:640px;line-height:1.5}
+.dm-tiles{display:grid;grid-template-columns:1fr;gap:14px}
+@media(min-width:640px){.dm-tiles{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:900px){.dm-tiles{grid-template-columns:repeat(3,1fr)}}
+.dm-tile{background:var(--surface);border:1px solid var(--border);border-radius:var(--card-radius);padding:18px;text-decoration:none;color:var(--text);display:flex;flex-direction:column;gap:8px;transition:border-color .15s,transform .12s;min-height:110px;box-shadow:var(--shadow-md)}
 .dm-tile:hover{border-color:var(--accent);transform:translateY(-1px)}
 .dm-top{display:flex;align-items:center;justify-content:space-between}
-.dm-ic{width:38px;height:38px;border-radius:10px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;color:var(--accent)}
+.dm-ic{width:38px;height:38px;border-radius:var(--r-md);background:var(--surface-2);display:flex;align-items:center;justify-content:center;color:var(--accent)}
 .dm-ic svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.dm-tile h3{margin:0;font-size:15.5px;font-weight:700}
-.dm-tile p{margin:0;font-size:12.5px;color:var(--text-muted);line-height:1.45}
-.dm-pill{font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;border-radius:99px;padding:3px 9px}
+.dm-tile h3{margin:0;font-size:var(--fs-md);font-weight:700}
+.dm-tile p{margin:0;font-size:var(--fs-xs);color:var(--text-muted);line-height:1.45}
+.dm-pill{font-family:var(--font-mono);font-size:var(--fs-2xs);letter-spacing:.1em;text-transform:uppercase;border-radius:var(--r-pill);padding:3px 9px}
 .dm-pill.live{background:var(--success-pale);color:var(--success)}
 .dm-pill.skeleton{background:var(--warning-pale);color:var(--warning)}
 .dm-pill.ext{background:var(--surface-2);color:var(--text-dim)}
-.dm-empty{padding:30px;text-align:center;color:var(--text-muted);font-size:13px;background:var(--surface);border:1px solid var(--border);border-radius:14px}
+.dm-empty{padding:30px;text-align:center;color:var(--text-muted);font-size:var(--fs-sm);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg)}
 </style>
 
 <div class="dm-eyebrow">Domain</div>
