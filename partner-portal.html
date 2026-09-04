@@ -3655,5 +3655,275 @@ body.w1 .pp-content { grid-row:2; grid-column:2; max-width:1280px; width:100%; }
 })();
 </script>
 
+<style id="w5-style">
+/* ══ PM-996 WAVE 5: reach — leads for every partner, ratings surface, source split ══ */
+.w5-lead-q{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
+.w5-lead-q input{flex:1;}
+.w5-star{color:#E0B23D;letter-spacing:2px;font-size:14px;}
+.w5-star .off{color:var(--border);}
+.w5-rate-row{border:1px solid var(--border);border-radius:10px;padding:11px 14px;margin-bottom:10px;}
+.w5-split{font-size:12px;color:var(--text-muted);margin-top:8px;}
+</style>
+<script>
+/* ══ PM-996 WAVE 5 ZONE — reach: Leads view for EVERY partner type (coach_leads +
+     coach_forms RLS were already partner-generic; coach-lead-submit v2 dropped the
+     coach gate), with a mini lead-form editor (title + up to 6 free-text questions —
+     the coach portal's full Forms builder stays coach-side); member ratings surface
+     (stars + comment + where it came from — NEVER the member's identity); and the
+     referral source split (partner_referral_stats by_link/by_code/by_admin — the
+     Piece-1 joins-by-source remnant). Self-contained IIFE (§23.167), fail-open. ══ */
+(function(){
+  'use strict';
+  var REST = _SUPA_URL + '/rest/v1';
+  var inited = false, partnerId = null, mySlug = null, leadForm = null;
+  function $(id){ return document.getElementById(id); }
+  function esc(x){ return String(x==null?'':x).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  async function jwt(){ var r = await _getSB().auth.getSession(); return (r.data.session && r.data.session.access_token) || ''; }
+  async function rest(path, opts){
+    opts = opts || {};
+    var t = await jwt();
+    var h = { 'apikey': _SUPA_ANON, 'Authorization': 'Bearer ' + t, 'Content-Type': 'application/json' };
+    if (opts.method && opts.method !== 'GET') h['Prefer'] = 'return=representation';
+    var r = await fetch(REST + path, { method: opts.method || 'GET', headers: h, body: opts.body ? JSON.stringify(opts.body) : undefined });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    var tx = await r.text();
+    return tx ? JSON.parse(tx) : null;
+  }
+  function fmtD(s){ try { return new Date(s).toLocaleDateString('en-GB', { day:'numeric', month:'short' }); } catch(e){ return ''; } }
+
+  /* ── Leads view ───────────────────────────────────────── */
+  function buildLeads(){
+    var commBtn = document.querySelector('.w1-item[data-w1="community"]');
+    if (!commBtn || $('panel-w5leads')) return false;
+    var btn = document.createElement('button');
+    btn.className = 'w1-item'; btn.type = 'button'; btn.setAttribute('data-w5nav', 'leads');
+    btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg><span>Leads</span>';
+    commBtn.insertAdjacentElement('afterend', btn);
+    btn.addEventListener('click', function(e){ e.stopPropagation(); w5go(); });
+    var panel = document.createElement('div');
+    panel.className = 'pp-panel'; panel.id = 'panel-w5leads';
+    panel.innerHTML =
+      '<div class="card"><div class="card-title">Your lead link</div>' +
+      '<p style="font-size:12.5px;color:var(--text-muted);margin-bottom:10px;">Share this anywhere \u2014 anyone who fills it in lands below, and you get an email each time.</p>' +
+      '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">' +
+      '<code id="w5-lead-link" style="font-size:12.5px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;">\u2026</code>' +
+      '<button class="btn btn-ghost" id="w5-lead-copy" type="button" style="font-size:12px;display:none;">Copy link</button></div>' +
+      '<div id="w5-lead-hint" style="font-size:12px;color:#E09B3D;margin-top:8px;display:none;">Your link goes live once you\u2019ve created your lead form below.</div></div>' +
+      '<div class="card" id="w5-form-card"><div class="card-title">Your lead form</div><div id="w5-form-body"><p style="font-size:12.5px;color:var(--text-muted);">Loading\u2026</p></div></div>' +
+      '<div class="card"><div class="card-title">Leads</div><div id="w5-lead-list"><p style="font-size:12.5px;color:var(--text-muted);">Loading\u2026</p></div></div>';
+    document.querySelector('.pp-content').appendChild(panel);
+    $('w5-lead-copy').addEventListener('click', async function(){
+      var self = this;
+      try { await navigator.clipboard.writeText('https://' + $('w5-lead-link').textContent); self.textContent = 'Copied \u2713'; setTimeout(function(){ self.textContent = 'Copy link'; }, 1800); }
+      catch(e){ prompt('Copy your lead link:', 'https://' + $('w5-lead-link').textContent); }
+    });
+    window.addEventListener('hashchange', function(){ if ((location.hash || '') === '#leads') w5go(); });
+    return true;
+  }
+  function w5go(){
+    document.querySelectorAll('.pp-tab').forEach(function(t){ t.classList.remove('active'); });
+    document.querySelectorAll('.pp-panel').forEach(function(p){ p.classList.remove('active'); });
+    document.querySelectorAll('.w1-item').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-w5nav') === 'leads'); });
+    $('panel-w5leads').classList.add('active');
+    try { history.replaceState(null, '', '#leads'); } catch(e){}
+    window.scrollTo(0, 0);
+    leadsRefresh();
+  }
+
+  function linkRefresh(){
+    var link = $('w5-lead-link'), hint = $('w5-lead-hint'), copy = $('w5-lead-copy');
+    if (!link) return;
+    if (mySlug && leadForm){ link.textContent = 'www.vyvehealth.co.uk/lead/' + mySlug; copy.style.display = ''; hint.style.display = 'none'; }
+    else if (mySlug){ link.textContent = 'www.vyvehealth.co.uk/lead/' + mySlug; copy.style.display = 'none'; hint.style.display = ''; }
+    else { link.textContent = 'Link available once your partner profile is set up.'; copy.style.display = 'none'; hint.style.display = 'none'; }
+  }
+
+  var DEFAULT_QS = [
+    { id: 'q1', label: 'What would you like help with?', type: 'text' },
+    { id: 'q2', label: 'Anything else worth knowing before we chat?', type: 'text' }
+  ];
+  function formRender(){
+    var el = $('w5-form-body'); if (!el) return;
+    if (!leadForm){
+      el.innerHTML = '<p style="font-size:12.5px;color:var(--text-muted);margin-bottom:10px;">No lead form yet \u2014 create one and your link starts working straight away. You can reword the questions any time.</p>' +
+        '<button class="btn btn-teal" id="w5-form-create" type="button" style="font-size:12px;">Create my lead form</button>';
+      $('w5-form-create').addEventListener('click', async function(){
+        this.disabled = true;
+        try {
+          var rows = await rest('/coach_forms', { method:'POST', body: { partner_id: partnerId, kind: 'lead', title: 'Work with me', questions: DEFAULT_QS, active: true } });
+          leadForm = (rows || [])[0] || null;
+          formRender(); linkRefresh();
+        } catch(e){ alert('That didn\u2019t save \u2014 try again.'); this.disabled = false; }
+      });
+      return;
+    }
+    var qs = Array.isArray(leadForm.questions) ? leadForm.questions : [];
+    el.innerHTML = '<label style="font-size:12px;color:var(--text-muted);">Form title</label>' +
+      '<input id="w5-f-title" type="text" maxlength="120" value="' + esc(leadForm.title || '') + '" style="width:100%;margin:4px 0 12px;">' +
+      '<label style="font-size:12px;color:var(--text-muted);">Questions (free text, up to 6)</label>' +
+      '<div id="w5-f-qs" style="margin-top:6px;"></div>' +
+      '<div style="display:flex;gap:10px;margin-top:4px;flex-wrap:wrap;">' +
+      '<button class="btn btn-ghost" id="w5-f-add" type="button" style="font-size:12px;">+ Add question</button>' +
+      '<span style="flex:1;"></span>' +
+      '<button class="btn btn-teal" id="w5-f-save" type="button" style="font-size:12px;">Save form</button></div>' +
+      '<div id="w5-f-msg" style="font-size:12px;color:var(--vyve-teal);margin-top:6px;display:none;">Saved \u2713</div>';
+    var box = $('w5-f-qs');
+    function addRow(q){
+      if (box.children.length >= 6) return;
+      var row = document.createElement('div');
+      row.className = 'w5-lead-q';
+      row.setAttribute('data-qid', q.id || '');
+      row.innerHTML = '<input type="text" maxlength="200" value="' + esc(q.label || '') + '" placeholder="Your question"><button class="btn btn-ghost" type="button" style="font-size:11px;">Remove</button>';
+      row.querySelector('button').addEventListener('click', function(){ row.remove(); });
+      box.appendChild(row);
+    }
+    qs.forEach(addRow);
+    if (!qs.length) addRow({ id: '', label: '' });
+    $('w5-f-add').addEventListener('click', function(){ addRow({ id: '', label: '' }); });
+    $('w5-f-save').addEventListener('click', async function(){
+      var btn = this; btn.disabled = true;
+      // stable ids: kept rows keep theirs (old lead answers stay keyed); new rows get the next qN
+      var maxN = 0;
+      box.querySelectorAll('[data-qid]').forEach(function(r){ var m = /^q(\d+)$/.exec(r.getAttribute('data-qid') || ''); if (m) maxN = Math.max(maxN, parseInt(m[1], 10)); });
+      var out = [];
+      box.querySelectorAll('.w5-lead-q').forEach(function(r){
+        var label = r.querySelector('input').value.trim();
+        if (!label) return;
+        var qid = r.getAttribute('data-qid');
+        if (!qid){ maxN += 1; qid = 'q' + maxN; r.setAttribute('data-qid', qid); }
+        out.push({ id: qid, label: label, type: 'text' });
+      });
+      var title = $('w5-f-title').value.trim() || 'Work with me';
+      try {
+        await rest('/coach_forms?id=eq.' + leadForm.id, { method:'PATCH', body: { title: title, questions: out } });
+        leadForm.title = title; leadForm.questions = out;
+        var msg = $('w5-f-msg'); msg.style.display = ''; setTimeout(function(){ msg.style.display = 'none'; }, 2200);
+      } catch(e){ alert('That didn\u2019t save \u2014 try again.'); }
+      btn.disabled = false;
+    });
+  }
+
+  var leadQs = {};
+  function leadsRender(leads){
+    var el = $('w5-lead-list'); if (!el) return;
+    if (!leads.length){
+      el.innerHTML = '<div class="empty-state"><h3>No leads yet</h3><p>Share your lead link \u2014 submissions land here and you get an email each time.</p></div>';
+      return;
+    }
+    el.innerHTML = leads.map(function(L){
+      var qs = leadQs[L.form_id] || [];
+      var extra = '';
+      qs.forEach(function(q){
+        var v = (L.answers || {})[q.id];
+        if (v === undefined || v === null || v === '') return;
+        extra += '<div style="font-size:12px;margin-top:3px;"><span style="color:var(--text-muted);">' + esc(q.label) + ':</span> ' + esc(String(v)) + '</div>';
+      });
+      var badge = L.status === 'new' ? '<span style="font-size:11px;font-weight:600;padding:2px 9px;border-radius:10px;background:rgba(232,131,74,.13);color:#E8834A;border:1px solid rgba(232,131,74,.45);">New</span>'
+        : L.status === 'contacted' ? '<span style="font-size:11px;font-weight:600;padding:2px 9px;border-radius:10px;background:var(--surface-2);color:var(--vyve-teal);border:1px solid var(--border);">Contacted</span>'
+        : '<span style="font-size:11px;padding:2px 9px;border-radius:10px;background:var(--surface-2);color:var(--text-muted);border:1px solid var(--border);">Archived</span>';
+      var acts = '';
+      if (L.status === 'new') acts += '<button class="btn btn-ghost" data-w5st="contacted" data-w5ld="' + L.id + '" type="button" style="font-size:11.5px;">Mark contacted</button> ';
+      if (L.status !== 'archived') acts += '<button class="btn btn-ghost" data-w5st="archived" data-w5ld="' + L.id + '" type="button" style="font-size:11.5px;">Archive</button>';
+      return '<div style="border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;' + (L.status === 'new' ? 'border-left:3px solid #E8834A;' : '') + '">' +
+        '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;"><strong style="font-size:13.5px;">' + esc(L.name || 'Someone') + '</strong>' + badge +
+        '<span style="font-size:11.5px;color:var(--text-muted);margin-left:auto;">' + fmtD(L.created_at) + '</span></div>' +
+        '<div style="font-size:12.5px;color:var(--vyve-teal);margin-top:2px;">' + esc(L.email || '') + '</div>' + extra +
+        '<div style="display:flex;gap:6px;margin-top:8px;">' + acts + '</div></div>';
+    }).join('');
+    el.querySelectorAll('[data-w5ld]').forEach(function(b){
+      b.addEventListener('click', async function(){
+        b.disabled = true;
+        try { await rest('/coach_leads?id=eq.' + b.getAttribute('data-w5ld'), { method:'PATCH', body: { status: b.getAttribute('data-w5st') } }); leadsRefresh(); }
+        catch(e){ alert('That didn\u2019t save \u2014 try again.'); b.disabled = false; }
+      });
+    });
+  }
+  async function leadsRefresh(){
+    if (!partnerId) return;
+    try {
+      var res = await Promise.all([
+        rest('/coach_leads?partner_id=eq.' + partnerId + '&order=created_at.desc&limit=100&select=id,name,email,answers,form_id,status,created_at'),
+        rest('/coach_forms?partner_id=eq.' + partnerId + '&kind=eq.lead&select=id,title,questions,active&order=updated_at.desc')
+      ]);
+      leadQs = {};
+      (res[1] || []).forEach(function(f){ leadQs[f.id] = f.questions || []; });
+      leadForm = (res[1] || []).filter(function(f){ return f.active; })[0] || null;
+      formRender(); linkRefresh();
+      leadsRender(res[0] || []);
+    } catch(e){
+      var el = $('w5-lead-list'); if (el) el.innerHTML = '<p style="font-size:12.5px;color:var(--text-muted);">Leads aren\u2019t available right now \u2014 try again shortly.</p>';
+    }
+  }
+
+  /* ── Ratings surface (community panel) — NEVER the member's identity ── */
+  async function buildRatings(){
+    var panel = $('panel-community');
+    if (!panel || $('w5-ratings-card')) return;
+    var card = document.createElement('div');
+    card.className = 'card'; card.id = 'w5-ratings-card';
+    card.innerHTML = '<div class="card-title">Member ratings</div><div id="w5-ratings"><p style="font-size:12.5px;color:var(--text-muted);">Loading\u2026</p></div>';
+    panel.appendChild(card);
+    try {
+      var rows = await rest('/partner_ratings?partner_id=eq.' + partnerId + '&order=created_at.desc&limit=30&select=rating,comment,source_type,created_at');
+      var el = $('w5-ratings');
+      if (!rows || !rows.length){
+        el.innerHTML = '<div class="empty-state"><h3>No ratings yet</h3><p>Ratings appear here as members leave them \u2014 always anonymous to you.</p></div>';
+        return;
+      }
+      el.innerHTML = rows.map(function(r){
+        var n = Math.max(0, Math.min(5, Number(r.rating) || 0));
+        var stars = '<span class="w5-star">' + '\u2605'.repeat(n) + '<span class="off">' + '\u2605'.repeat(5 - n) + '</span></span>';
+        var src = r.source_type ? ' \u00b7 ' + esc(r.source_type) : '';
+        return '<div class="w5-rate-row"><div style="display:flex;align-items:center;gap:10px;">' + stars +
+          '<span style="font-size:11.5px;color:var(--text-muted);">A member' + src + ' \u00b7 ' + fmtD(r.created_at) + '</span></div>' +
+          (r.comment ? '<div style="font-size:13px;margin-top:6px;">' + esc(r.comment) + '</div>' : '') + '</div>';
+      }).join('');
+    } catch(e){
+      var el2 = $('w5-ratings'); if (el2) el2.innerHTML = '<p style="font-size:12.5px;color:var(--text-muted);">Ratings aren\u2019t available right now.</p>';
+    }
+  }
+
+  /* ── Source split under the funnel chips ──────────────── */
+  async function buildSplit(){
+    var funnel = $('ref-funnel');
+    if (!funnel || $('w5-split')) return;
+    try {
+      var rows = await rest('/rpc/partner_referral_stats', { method:'POST', body:{} });
+      var st = (Array.isArray(rows) ? rows[0] : rows) || {};
+      var total = (st.by_link || 0) + (st.by_code || 0) + (st.by_admin || 0);
+      if (!total) return; // nothing attributed by source yet — say nothing rather than a row of zeros
+      var div = document.createElement('div');
+      div.className = 'w5-split'; div.id = 'w5-split';
+      div.textContent = 'How they arrived: ' + (st.by_link || 0) + ' via your link \u00b7 ' + (st.by_code || 0) + ' typed your code \u00b7 ' + (st.by_admin || 0) + ' added by VYVE';
+      funnel.insertAdjacentElement('afterend', div);
+    } catch(e){ /* additive only */ }
+  }
+
+  /* ── boot ─────────────────────────────────────────────── */
+  var initialHash = location.hash || '';
+  var poll = setInterval(async function(){
+    var shell = $('shell');
+    if (!shell || !shell.classList.contains('ready') || inited) return;
+    inited = true; clearInterval(poll);
+    try {
+      var pr = await rest('/rpc/get_my_partner_id', { method:'POST', body:{} }).catch(function(){ return null; });
+      partnerId = pr || null;
+      if (!partnerId) return; // demo/anon — leads/ratings need a real partner context
+      if (!buildLeads()) return;
+      try {
+        var row = await rest('/partner_partners?id=eq.' + partnerId + '&select=slug');
+        mySlug = ((row || [])[0] || {}).slug || null;
+      } catch(e){ mySlug = null; }
+      leadsRefresh();
+      buildRatings();
+      buildSplit(); setTimeout(buildSplit, 4000); // legacy funnel renders async; retry once after it lands
+      if (initialHash === '#leads') w5go();
+    } catch(e){
+      try { window.reportError && window.reportError('w5_zone_boot', e); } catch(_){}
+    }
+  }, 350);
+})();
+</script>
+
 </body>
 </html>

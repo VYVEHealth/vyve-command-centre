@@ -838,6 +838,58 @@ async function apiEdit(action, params = {}) {
   }
 }
 
+// Partner attribution (PM-996 — attribution spec Piece 5) ------------------
+// CC-only manual grant: set/clear a member's partner pre-conversion, stamped
+// attribution_source='admin' + the approving admin; locked once converted, never
+// for B2B. Exceptions route: member support -> team@vyvehealth.co.uk -> here.
+
+async function loadAttributionCard(email) {
+  const host = document.getElementById('attribution-card');
+  if (!host) return;
+  host.innerHTML = '<div class="edit-section"><h3>Partner attribution</h3><div style="font-size:12.5px;color:var(--text-muted);">Loading…</div></div>';
+  const res = await apiEdit('get_attribution', { member_email: email });
+  if (!res.success) { host.innerHTML = ''; return; }
+  const a = res.attribution || {};
+  const locked = res.converted || res.enterprise;
+  const lockMsg = res.converted ? 'Member has converted — attribution is locked (the ledger has already credited it).'
+    : res.enterprise ? 'B2B member — employer seats never carry partner attribution.' : '';
+  const current = a.signup_campaign_code
+    ? `<strong>${escapeHtml(a.signup_campaign_code)}</strong> <span style="color:var(--text-muted);">· via ${escapeHtml(a.attribution_source || 'unknown')}${a.attribution_admin ? ' (' + escapeHtml(a.attribution_admin) + ')' : ''}</span>`
+    : '<span style="color:var(--text-muted);">None</span>';
+  const opts = (res.partners || []).map(p =>
+    `<option value="${escapeHtml(p.slug)}"${p.slug === a.signup_campaign_code ? ' selected' : ''}>${escapeHtml(p.name)} (${escapeHtml(p.status)})</option>`).join('');
+  host.innerHTML = `
+    <div class="edit-section">
+      <h3>Partner attribution</h3>
+      <div style="font-size:13px;margin-bottom:8px;">Current: ${current}</div>
+      ${locked
+        ? `<div style="font-size:12.5px;color:var(--text-muted);">${lockMsg}</div>`
+        : `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <select id="attr-partner-sel" style="padding:7px 10px;background:var(--surface-2);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:12.5px;font-family:inherit;max-width:320px;"><option value="">— choose partner —</option>${opts}</select>
+            <button id="attr-set-btn" type="button" style="padding:7px 16px;background:var(--accent);color:#fff;border:0;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">Set</button>
+            ${a.signup_campaign_code ? '<button id="attr-clear-btn" type="button" style="padding:7px 16px;background:transparent;color:var(--text-muted);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">Clear</button>' : ''}
+          </div>
+          <div style="font-size:11.5px;color:var(--text-muted);margin-top:6px;">Manual grants stamp source “admin” + your email, and are audit-logged. Locked automatically once the member converts.</div>`}
+    </div>`;
+  const setBtn = document.getElementById('attr-set-btn');
+  if (setBtn) setBtn.addEventListener('click', async () => {
+    const slug = document.getElementById('attr-partner-sel').value;
+    if (!slug) { showToast('Choose a partner first', 'error'); return; }
+    setBtn.disabled = true;
+    const r = await apiEdit('set_attribution', { member_email: email, slug });
+    if (r.success) { showToast('Attribution set', 'success'); loadAttributionCard(email); }
+    else { showToast(r.error || 'Failed', 'error'); setBtn.disabled = false; }
+  });
+  const clearBtn = document.getElementById('attr-clear-btn');
+  if (clearBtn) clearBtn.addEventListener('click', async () => {
+    if (!confirm('Clear this member\u2019s partner attribution?')) return;
+    clearBtn.disabled = true;
+    const r = await apiEdit('set_attribution', { member_email: email, slug: null });
+    if (r.success) { showToast('Attribution cleared', 'success'); loadAttributionCard(email); }
+    else { showToast(r.error || 'Failed', 'error'); clearBtn.disabled = false; }
+  });
+}
+
 // Toast --------------------------------------------------------------------
 
 function showToast(msg, kind = 'info', timeoutMs = 3200) {
@@ -1490,6 +1542,7 @@ async function loadMemberDetail(email) {
     total_certificates: (response.certificates || []).length
   };
   renderMemberDetail(augmented);
+  loadAttributionCard(augmented.email);
 }
 
 function renderMemberDetail(member) {
@@ -1555,6 +1608,8 @@ function renderMemberDetail(member) {
         </div>
       </div>
     </div>
+
+    <div id="attribution-card"></div>
 
     ${renderQuickEdit(member)}
 
