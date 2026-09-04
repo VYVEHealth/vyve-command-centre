@@ -653,6 +653,31 @@
   var REST = SUPA_URL + '/rest/v1';
   var EF = SUPA_URL + '/functions/v1/coach-provision-client';
   var inited = false, partnerId = null, roster = [], memberMap = {};
+  /* PM-1029 W2: VYVE scope. Staff logins (admin_users admin|team) with no partner row resolve to partnerId=null
+     and administer the VYVE library (partner_id IS NULL) instead of seeing "Not linked". Every REST filter goes
+     through pscope(); for a coach (partnerId non-null) it resolves to the byte-identical string as before. */
+  var vyveScope = false;
+  function pscope(){ return partnerId ? ('partner_id=eq.' + partnerId) : 'partner_id=is.null'; }
+  function pprefix(){ return partnerId ? ('p-' + partnerId) : 'vyve'; }
+  var VYVE_HIDE_GO = ['profile','messages','notifications','dashboard','clients','clients_checkins','clients_daily','leads','calendar','content','automations','kindsel:onboarding','kindsel:checkin','kindsel:lead','terms'];
+  var VYVE_HIDE_GRP = ['clients'];
+  function applyVyveScopeChrome(){
+    if (!vyveScope) return;
+    VYVE_HIDE_GO.forEach(function(v){ document.querySelectorAll('.cp-item[data-go="' + v + '"]').forEach(function(b){ b.style.display = 'none'; }); });
+    VYVE_HIDE_GRP.forEach(function(g){
+      var h = document.querySelector('.cp-ghead[data-grp="' + g + '"]'); if (h) h.style.display = 'none';
+      var s = document.querySelector('.cp-sub[data-sub="' + g + '"]'); if (s) s.style.display = 'none';
+    });
+    var fh = document.querySelector('.cp-ghead[data-grp="forms"] span'); if (fh) fh.textContent = 'Habits';
+    var lab = document.querySelector('.cp-label'); if (lab) lab.textContent = 'VYVE Library';
+    var em = $c('cp-user-email'); if (em && em.textContent.indexOf('VYVE library') < 0) em.innerHTML = '<span style="display:inline-block;padding:2px 8px;border-radius:99px;background:var(--gold);color:#0D2B2B;font-weight:800;font-size:10.5px;margin-right:8px;">VYVE library</span>' + esc(em.textContent);
+    var bell = $c('cp-bell'); if (bell && bell.parentNode) bell.parentNode.style.display = 'none';
+    document.querySelectorAll('.ex-scope').forEach(function(b){
+      if (b.dataset.scope === 'mine') b.style.display = 'none';
+      var on = b.dataset.scope === 'vyve';
+      b.classList.toggle('active', on); b.classList.toggle('btn-primary', on);
+    });
+  }
   function $c(id){ return document.getElementById(id); }
   function esc(x){ return String(x==null?'':x).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
   async function jwt(){ var r = await sb().auth.getSession(); return (r.data.session && r.data.session.access_token) || ''; }
@@ -698,7 +723,7 @@
     el.querySelectorAll('[data-act]').forEach(function(b){ b.addEventListener('click', function(){ act(b.dataset.act, b.dataset.em, b); }); });
   }
   async function loadClients(){
-    roster = await rest('/coach_clients?partner_id=eq.' + partnerId + '&order=created_at.desc&select=*') || [];
+    roster = await rest('/coach_clients?' + pscope() + '&order=created_at.desc&select=*') || [];
     var emails = roster.map(function(c){ return '"' + c.member_email + '"'; }).join(',');
     memberMap = {};
     if (roster.length){
@@ -929,7 +954,16 @@
       var t = await jwt();
       var r = await fetch(REST + '/rpc/get_my_partner_id', { method: 'POST', headers: { 'apikey': SUPA_ANON, 'Authorization': 'Bearer ' + t, 'Content-Type': 'application/json' }, body: '{}' });
       partnerId = await r.json();
-      if (!partnerId){ $c('cl-list').innerHTML = '<div class="empty-state"><h3>Not linked</h3><p>Your login isn\u2019t linked to a partner record \u2014 contact the VYVE team.</p></div>'; return; }
+      if (!partnerId){
+        var st = false;
+        try { st = await rest('/rpc/is_admin_or_team', { method: 'POST', body: {} }); } catch(_){ st = false; }
+        if (st !== true){ $c('cl-list').innerHTML = '<div class="empty-state"><h3>Not linked</h3><p>Your login isn\u2019t linked to a partner record \u2014 contact the VYVE team.</p></div>'; return; }
+        vyveScope = true; exScope = 'vyve';
+        applyVyveScopeChrome();
+        loadLibraries();
+        go('kindsel:program');
+        return;
+      }
       await loadClients();
       renderDashboard();
       loadLibraries();
@@ -954,8 +988,8 @@
   async function loadLibraries(){
     try {
       var res = await Promise.all([
-        rest('/coach_forms?partner_id=eq.' + partnerId + '&active=eq.true&select=id,kind,title'),
-        rest('/coach_templates?partner_id=eq.' + partnerId + '&active=eq.true&select=id,kind,name')
+        rest('/coach_forms?' + pscope() + '&active=eq.true&select=id,kind,title'),
+        rest('/coach_templates?' + pscope() + '&active=eq.true&select=id,kind,name')
       ]);
       lib.forms = res[0] || []; lib.tpls = res[1] || [];
     } catch(e){ lib = { forms: [], tpls: [] }; }
@@ -1106,8 +1140,8 @@
     var el = $c('pl-list');
     el.innerHTML = '<p style="color:var(--text-muted);font-size:12.5px;">Loading\u2026</p>';
     try {
-      if (IS_FORM(plKind)) plItems = await rest('/coach_forms?partner_id=eq.' + partnerId + '&kind=eq.' + plKind + '&active=eq.true&order=created_at.desc&select=*') || [];
-      else plItems = await rest('/coach_templates?partner_id=eq.' + partnerId + '&kind=eq.' + plKind + '&active=eq.true&order=created_at.desc&select=*') || [];
+      if (IS_FORM(plKind)) plItems = await rest('/coach_forms?' + pscope() + '&kind=eq.' + plKind + '&active=eq.true&order=created_at.desc&select=*') || [];
+      else plItems = await rest('/coach_templates?' + pscope() + '&kind=eq.' + plKind + '&active=eq.true&order=created_at.desc&select=*') || [];
     } catch(e){ plItems = []; }
     if (!plItems.length){ el.innerHTML = '<div class="empty-state"><h3>Nothing here yet</h3><p>Create your first ' + KIND_LABEL[plKind] + ' and it becomes assignable to clients.</p></div>'; return; }
     el.innerHTML = plItems.map(function(it){
@@ -1270,7 +1304,7 @@
         st.textContent = 'Uploading\u2026';
         try {
           var safe = f.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 80);
-          var path = 'p-' + partnerId + '/' + Date.now() + '-' + safe;
+          var path = pprefix() + '/' + Date.now() + '-' + safe;
           var up = await sb().storage.from('coach-content').upload(path, f, { contentType: 'application/pdf', upsert: true });
           if (up.error) throw up.error;
           plPdf = { path: path, name: f.name };
@@ -1550,8 +1584,8 @@
     var res = [[],[]];
     try {
       res = await Promise.all([
-        rest('/coach_leads?partner_id=eq.' + partnerId + '&order=created_at.desc&limit=100&select=id,name,email,answers,form_id,status,created_at'),
-        rest('/coach_forms?partner_id=eq.' + partnerId + '&kind=eq.lead&select=id,questions')
+        rest('/coach_leads?' + pscope() + '&order=created_at.desc&limit=100&select=id,name,email,answers,form_id,status,created_at'),
+        rest('/coach_forms?' + pscope() + '&kind=eq.lead&select=id,questions')
       ]);
     } catch(e){}
     var leads = res[0] || [];
@@ -1597,7 +1631,7 @@
     var el = $c('cal-list');
     el.innerHTML = '<p style="font-size:12.5px;color:var(--text-muted);">Loading\u2026</p>';
     var rows = [];
-    try { rows = await rest('/coach_sessions?partner_id=eq.' + partnerId + '&status=eq.scheduled&starts_at=gte.' + encodeURIComponent(new Date(Date.now() - 3600e3).toISOString()) + '&order=starts_at.asc&limit=60&select=id,member_email,title,starts_at,duration_minutes,link_url,notes') || []; } catch(e){}
+    try { rows = await rest('/coach_sessions?' + pscope() + '&status=eq.scheduled&starts_at=gte.' + encodeURIComponent(new Date(Date.now() - 3600e3).toISOString()) + '&order=starts_at.asc&limit=60&select=id,member_email,title,starts_at,duration_minutes,link_url,notes') || []; } catch(e){}
     // client picker
     var sel = $c('calf-client');
     var actives = roster.filter(function(c){ return c.status !== 'archived'; });
@@ -1667,7 +1701,7 @@
   async function autoLoad(){
     var el = $c('auto-list');
     try {
-      var rows = await rest('/coach_automations?partner_id=eq.' + partnerId + '&select=event,enabled,subject,body,channel') || [];
+      var rows = await rest('/coach_automations?' + pscope() + '&select=event,enabled,subject,body,channel') || [];
       autoRows = {}; rows.forEach(function(r){ autoRows[r.event] = r; });
     } catch(e){ autoRows = {}; }
     el.innerHTML = AUTO_EVENTS_UI.map(function(ev){
@@ -1700,7 +1734,7 @@
           updated_at: new Date().toISOString()
         };
         try {
-          if (autoRows[key]) await rest('/coach_automations?partner_id=eq.' + partnerId + '&event=eq.' + key, { method: 'PATCH', body: body });
+          if (autoRows[key]) await rest('/coach_automations?' + pscope() + '&event=eq.' + key, { method: 'PATCH', body: body });
           else { await rest('/coach_automations', { method: 'POST', body: body }); autoRows[key] = body; }
           autoRows[key] = body;
           card.style.opacity = onBox.checked ? '' : '.6';
@@ -1741,7 +1775,7 @@
     var inList = emails.map(function(e){ return '"' + e + '"'; }).join(',');
     var qs = [
       emails.length ? rest('/workouts?member_email=in.(' + encodeURIComponent(inList) + ')&order=logged_at.desc&limit=40&select=member_email,workout_name,duration_minutes,difficulty_rating,member_note,logged_at').catch(function(){ return []; }) : Promise.resolve([]),
-      rest('/coach_form_responses?partner_id=eq.' + partnerId + '&order=submitted_at.desc&limit=40&select=id,member_email,form_id,week_start,submitted_at,reviewed_at').catch(function(){ return []; }),
+      rest('/coach_form_responses?' + pscope() + '&order=submitted_at.desc&limit=40&select=id,member_email,form_id,week_start,submitted_at,reviewed_at').catch(function(){ return []; }),
       emails.length ? rest('/members?email=in.(' + encodeURIComponent(inList) + ')&select=email,trial_ends_at,subscription_status').catch(function(){ return []; }) : Promise.resolve([])
     ];
     var res = await Promise.all(qs);
@@ -1819,7 +1853,7 @@
     host.innerHTML = '<div style="font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);margin:4px 0 8px;">Check-ins</div><p style="font-size:12.5px;color:var(--text-muted);">Loading\u2026</p>';
     var enc = encodeURIComponent(c.member_email);
     var resp = [];
-    try { resp = await rest('/coach_form_responses?member_email=eq.' + enc + '&partner_id=eq.' + partnerId + '&order=submitted_at.desc&limit=26&select=id,form_id,answers,week_start,submitted_at,reviewed_at') || []; } catch(_){}
+    try { resp = await rest('/coach_form_responses?member_email=eq.' + enc + '&' + pscope() + '&order=submitted_at.desc&limit=26&select=id,form_id,answers,week_start,submitted_at,reviewed_at') || []; } catch(_){}
     if (!resp.length){ host.innerHTML = '<div style="font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);margin:4px 0 8px;">Check-ins</div><p style="font-size:12.5px;color:var(--text-muted);">Nothing submitted yet.</p>'; return; }
     var formIds = []; resp.forEach(function(r){ if (r.form_id && formIds.indexOf(r.form_id) < 0) formIds.push(r.form_id); });
     var formMap = {};
@@ -1994,7 +2028,7 @@
     $c('ex-count').textContent = rows.length > CAP ? ('Showing ' + CAP + ' of ' + rows.length + ' — narrow with search or filters.') : (rows.length + ' exercise' + (rows.length === 1 ? '' : 's'));
     if (!rows.length){ $c('ex-list').innerHTML = '<div class="empty-state"><h3>Nothing matches</h3><p>Try a different search, or add your own exercise.</p></div>'; return; }
     $c('ex-list').innerHTML = shown.map(function(r){
-      var mine = !!r.partner_id;
+      var mine = vyveScope ? !r.partner_id : !!r.partner_id;
       var tag = mine ? '<span class="src-tag src-mine">Yours</span>' : '<span class="src-tag src-vyve">VYVE</span>';
       var vid = r.video_url ? ' \u00b7 <span style="color:var(--gold);font-weight:700;">\u25b6 your video</span>' : (r.media_url ? ' \u00b7 <span style="color:var(--gold);font-weight:700;">\u25b6 VYVE video</span>' : '');
       var acts = mine
@@ -2116,7 +2150,7 @@
 
   /* ── Programme builder ── */
   async function loadDayTplChoices(){
-    try { dayTplChoices = await rest('/coach_templates?partner_id=eq.' + partnerId + '&kind=eq.workout_day&active=eq.true&select=id,name,payload&order=name.asc') || []; }
+    try { dayTplChoices = await rest('/coach_templates?' + pscope() + '&kind=eq.workout_day&active=eq.true&select=id,name,payload&order=name.asc') || []; }
     catch(e){ dayTplChoices = []; }
   }
   function renderProg(){
@@ -2206,7 +2240,7 @@
   async function msgBadgeRefresh(){
     if (!partnerId) return;
     try {
-      var rows = await rest('/coach_messages?partner_id=eq.' + partnerId + '&sender=eq.member&read_at=is.null&select=member_email&limit=200') || [];
+      var rows = await rest('/coach_messages?' + pscope() + '&sender=eq.member&read_at=is.null&select=member_email&limit=200') || [];
       msgUnread = {};
       rows.forEach(function(r){ var k = (r.member_email||'').toLowerCase(); msgUnread[k] = (msgUnread[k]||0) + 1; });
       msgSetBadge(rows.length);
@@ -2272,7 +2306,7 @@
     renderThreadList();
     msgRows = []; msgLastId = null; msgRender();
     try {
-      msgRows = await rest('/coach_messages?partner_id=eq.' + partnerId + '&member_email=eq.' + encodeURIComponent(email) + '&order=created_at.asc&limit=200&select=id,sender,body,created_at,read_at') || [];
+      msgRows = await rest('/coach_messages?' + pscope() + '&member_email=eq.' + encodeURIComponent(email) + '&order=created_at.asc&limit=200&select=id,sender,body,created_at,read_at') || [];
       if (msgRows.length) msgLastId = msgRows[msgRows.length - 1].created_at;
       msgRender();
       msgMarkRead(email);
@@ -2281,7 +2315,7 @@
   function msgMarkRead(email){
     var k = email.toLowerCase();
     if (!msgUnread[k]) return;
-    rest('/coach_messages?partner_id=eq.' + partnerId + '&member_email=eq.' + encodeURIComponent(email) + '&sender=eq.member&read_at=is.null', { method: 'PATCH', body: { read_at: new Date().toISOString() } }).then(function(){
+    rest('/coach_messages?' + pscope() + '&member_email=eq.' + encodeURIComponent(email) + '&sender=eq.member&read_at=is.null', { method: 'PATCH', body: { read_at: new Date().toISOString() } }).then(function(){
       delete msgUnread[k];
       var total = 0; Object.keys(msgUnread).forEach(function(x){ total += msgUnread[x]; });
       msgSetBadge(total); renderThreadList();
@@ -2290,7 +2324,7 @@
   async function msgPoll(){
     if (!msgThread) return;
     try {
-      var q = '/coach_messages?partner_id=eq.' + partnerId + '&member_email=eq.' + encodeURIComponent(msgThread) + '&order=created_at.asc&limit=50&select=id,sender,body,created_at,read_at' + (msgLastId ? '&created_at=gt.' + encodeURIComponent(msgLastId) : '');
+      var q = '/coach_messages?' + pscope() + '&member_email=eq.' + encodeURIComponent(msgThread) + '&order=created_at.asc&limit=50&select=id,sender,body,created_at,read_at' + (msgLastId ? '&created_at=gt.' + encodeURIComponent(msgLastId) : '');
       var fresh = await rest(q) || [];
       if (fresh.length){
         var seen = {}; msgRows.forEach(function(m){ seen[m.id] = 1; });
@@ -2382,7 +2416,7 @@
   async function loadCoachTerms(){
     var st = $c('ct-status'); st.textContent = 'Loading\u2026';
     try {
-      var rows = await rest('/coach_terms?partner_id=eq.' + partnerId + '&active=eq.true&select=version,content_md&order=version.desc&limit=1');
+      var rows = await rest('/coach_terms?' + pscope() + '&active=eq.true&select=version,content_md&order=version.desc&limit=1');
       if (rows && rows.length){
         ctCurrentVersion = rows[0].version;
         $c('ct-editor').value = rows[0].content_md || '';
@@ -2405,9 +2439,9 @@
     try {
       // Versioned publish: retire the active version, insert the next. Fresh max
       // fetched at save time so parallel edits can't collide on version numbers.
-      var rows = await rest('/coach_terms?partner_id=eq.' + partnerId + '&select=version&order=version.desc&limit=1');
+      var rows = await rest('/coach_terms?' + pscope() + '&select=version&order=version.desc&limit=1');
       var next = ((rows && rows[0] && rows[0].version) || 0) + 1;
-      await rest('/coach_terms?partner_id=eq.' + partnerId + '&active=eq.true', { method: 'PATCH', body: { active: false } });
+      await rest('/coach_terms?' + pscope() + '&active=eq.true', { method: 'PATCH', body: { active: false } });
       await rest('/coach_terms', { method: 'POST', body: { partner_id: partnerId, version: next, content_md: body, active: true } });
       ctCurrentVersion = next;
       msg.textContent = 'Published v' + next + ' \u2014 new clients see this from now on.';
@@ -2461,7 +2495,7 @@
   function showLogin(){
     $g('shell').classList.remove('show');
     $g('login-overlay').classList.add('show');
-    inited = false; partnerId = null;
+    inited = false; partnerId = null; vyveScope = false;
   }
   async function boot(){
     var client = sb();
@@ -2509,7 +2543,7 @@
 
   /* ── loadClients v2: roster + member enrichment + check-in/message context ── */
   async function loadClients(){
-    roster = await rest('/coach_clients?partner_id=eq.' + partnerId + '&order=created_at.desc&select=*') || [];
+    roster = await rest('/coach_clients?' + pscope() + '&order=created_at.desc&select=*') || [];
     memberMap = {};
     if (roster.length){
       try {
@@ -2521,7 +2555,7 @@
     // Enrichment is never fatal to the roster render.
     clExtra = { lastCi: {}, ci7: 0, unrev: {}, unread: {} };
     try {
-      var resp = await rest('/coach_form_responses?partner_id=eq.' + partnerId + '&order=submitted_at.desc&limit=400&select=member_email,submitted_at,reviewed_at') || [];
+      var resp = await rest('/coach_form_responses?' + pscope() + '&order=submitted_at.desc&limit=400&select=member_email,submitted_at,reviewed_at') || [];
       var wk = Date.now() - 7 * 864e5;
       resp.forEach(function(r){
         var em = (r.member_email || '').toLowerCase();
@@ -2531,7 +2565,7 @@
       });
     } catch(_){}
     try {
-      var um = await rest('/coach_messages?partner_id=eq.' + partnerId + '&sender=eq.member&read_at=is.null&select=member_email&limit=200') || [];
+      var um = await rest('/coach_messages?' + pscope() + '&sender=eq.member&read_at=is.null&select=member_email&limit=200') || [];
       um.forEach(function(r){ var em = (r.member_email||'').toLowerCase(); clExtra.unread[em] = (clExtra.unread[em] || 0) + 1; });
     } catch(_){}
     renderRoster();
@@ -2747,7 +2781,7 @@
     st.textContent = 'Uploading\u2026';
     try {
       var safe = f.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 80);
-      var path = 'p-' + partnerId + '/pack-' + Date.now() + '-' + safe;
+      var path = pprefix() + '/pack-' + Date.now() + '-' + safe;
       var up = await sb().storage.from('coach-content').upload(path, f, { contentType: 'application/pdf', upsert: true });
       if (up.error) throw up.error;
       wzPackPath = path;
@@ -2822,7 +2856,7 @@
     $c('dash-recent').querySelectorAll('.dr-msg').forEach(function(b){ b.addEventListener('click', function(){ go('messages'); setTimeout(function(){ msgOpen(b.dataset.em.toLowerCase()); }, 250); }); });
     // Latest check-ins
     try {
-      var resp = await rest('/coach_form_responses?partner_id=eq.' + partnerId + '&order=submitted_at.desc&limit=5&select=member_email,form_id,week_start,submitted_at,reviewed_at') || [];
+      var resp = await rest('/coach_form_responses?' + pscope() + '&order=submitted_at.desc&limit=5&select=member_email,form_id,week_start,submitted_at,reviewed_at') || [];
       $c('dash-checkins').innerHTML = resp.length ? resp.map(function(r){
         var c = roster.find(function(x){ return x.member_email === r.member_email; }) || { member_email: r.member_email };
         return '<div style="display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px solid var(--border);">' +
@@ -2839,7 +2873,7 @@
     } catch(_){ $c('dash-checkins').innerHTML = '<p style="font-size:12.5px;color:var(--text-muted);">Couldn\u2019t load check-ins.</p>'; }
     // Latest messages
     try {
-      var ms = await rest('/coach_messages?partner_id=eq.' + partnerId + '&order=created_at.desc&limit=5&select=member_email,sender,body,created_at,read_at') || [];
+      var ms = await rest('/coach_messages?' + pscope() + '&order=created_at.desc&limit=5&select=member_email,sender,body,created_at,read_at') || [];
       $c('dash-msgs').innerHTML = ms.length ? ms.map(function(m){
         var c = roster.find(function(x){ return (x.member_email||'').toLowerCase() === (m.member_email||'').toLowerCase(); }) || { member_email: m.member_email };
         var unread = m.sender === 'member' && !m.read_at;
@@ -2948,7 +2982,7 @@
     host.innerHTML = '<p style="font-size:12.5px;color:var(--text-muted);">Loading\u2026</p>';
     var resp = [], formMap = {};
     try {
-      resp = await rest('/coach_form_responses?partner_id=eq.' + partnerId + '&order=submitted_at.desc&limit=100&select=id,member_email,form_id,week_start,submitted_at,reviewed_at') || [];
+      resp = await rest('/coach_form_responses?' + pscope() + '&order=submitted_at.desc&limit=100&select=id,member_email,form_id,week_start,submitted_at,reviewed_at') || [];
       var ids = [];
       resp.forEach(function(r){ if (r.form_id && ids.indexOf(r.form_id) < 0) ids.push(r.form_id); });
       if (ids.length){
@@ -3139,7 +3173,7 @@
     var v = hashView();
     if (!v || v === 'dashboard') return;
     var t = setInterval(function(){
-      if (!partnerId) return; // wait for init
+      if (!partnerId && !vyveScope) return; // wait for init (scope resolved)
       clearInterval(t);
       goFromHash = true;
       try { go(v); } finally { goFromHash = false; }
@@ -3486,7 +3520,7 @@
         if (plEditing) await rest('/coach_forms?id=eq.' + fid, { method: 'PATCH', body: { title: name, questions: qs, updated_at: new Date().toISOString() } });
         else {
           await rest('/coach_forms', { method: 'POST', body: { partner_id: partnerId, kind: plKind, title: name, questions: qs } });
-          var got = await rest('/coach_forms?partner_id=eq.' + partnerId + '&kind=eq.' + plKind + '&title=eq.' + encodeURIComponent(name) + '&active=eq.true&order=created_at.desc&limit=1&select=id');
+          var got = await rest('/coach_forms?' + pscope() + '&kind=eq.' + plKind + '&title=eq.' + encodeURIComponent(name) + '&active=eq.true&order=created_at.desc&limit=1&select=id');
           fid = got && got[0] && got[0].id;
         }
         if (fid){
@@ -3506,7 +3540,7 @@
   async function w2SetDefault(id){
     // One default per coach per kind among active (partial unique index) —
     // clear the incumbent first, then set. Sequential on purpose.
-    await rest('/coach_forms?partner_id=eq.' + partnerId + '&kind=eq.' + plKind + '&is_default=eq.true&id=neq.' + id, { method: 'PATCH', body: { is_default: false } });
+    await rest('/coach_forms?' + pscope() + '&kind=eq.' + plKind + '&is_default=eq.true&id=neq.' + id, { method: 'PATCH', body: { is_default: false } });
     await rest('/coach_forms?id=eq.' + id, { method: 'PATCH', body: { is_default: true } });
   }
 
@@ -3517,8 +3551,8 @@
     var el = $c('pl-list');
     el.innerHTML = '<p style="color:var(--text-muted);font-size:12.5px;">Loading\u2026</p>';
     try {
-      if (IS_FORM(plKind)) plItems = await rest('/coach_forms?partner_id=eq.' + partnerId + '&kind=eq.' + plKind + '&active=eq.true&order=created_at.desc&select=*') || [];
-      else plItems = await rest('/coach_templates?partner_id=eq.' + partnerId + '&kind=eq.' + plKind + '&active=eq.true&order=created_at.desc&select=*') || [];
+      if (IS_FORM(plKind)) plItems = await rest('/coach_forms?' + pscope() + '&kind=eq.' + plKind + '&active=eq.true&order=created_at.desc&select=*') || [];
+      else plItems = await rest('/coach_templates?' + pscope() + '&kind=eq.' + plKind + '&active=eq.true&order=created_at.desc&select=*') || [];
     } catch(e){ plItems = []; }
     if (!plItems.length){ el.innerHTML = '<div class="empty-state"><h3>Nothing here yet</h3><p>Create your first ' + KIND_LABEL[plKind] + ' and it becomes assignable to clients.</p></div>'; return; }
     var defable = plKind === 'onboarding' || plKind === 'checkin';
@@ -3715,7 +3749,7 @@
     list.classList.add('w3-grid');
     if (!rows.length){ list.classList.remove('w3-grid'); list.innerHTML = '<div class="empty-state"><h3>Nothing matches</h3><p>Try a different search, or add your own exercise.</p></div>'; return; }
     list.innerHTML = shown.map(function(r){
-      var mine = !!r.partner_id;
+      var mine = vyveScope ? !r.partner_id : !!r.partner_id;
       var vid = r.video_url ? '<span style="color:var(--gold);font-weight:700;font-size:10.5px;">\u25b6 your video</span>' : (r.media_url ? '<span style="color:var(--gold);font-weight:700;font-size:10.5px;">\u25b6 VYVE video</span>' : '');
       var dur = r.exercise_type === 'duration' ? '<span class="w3-chip" style="color:var(--gold);border-color:var(--gold);">\u23f1 timed</span>' : '';
       var presets = r.default_sets ? '<span style="font-size:10.5px;color:var(--text-muted);">' + esc(r.default_sets) + '\u00d7' + esc(r.exercise_type === 'duration' ? ((r.default_duration_seconds || 30) + 's') : (r.default_reps || '8-12')) + (r.default_rest_seconds ? ' \u00b7 rest ' + r.default_rest_seconds + 's' : '') + '</span>' : '';
@@ -4083,7 +4117,7 @@
   var w3AsgEl = null, w3ClientsCache = null;
   async function w3Clients(){
     if (w3ClientsCache) return w3ClientsCache;
-    try { w3ClientsCache = await rest('/coach_clients?partner_id=eq.' + partnerId + '&select=member_email,first_name,last_name,status,assignments&order=first_name.asc&limit=500') || []; }
+    try { w3ClientsCache = await rest('/coach_clients?' + pscope() + '&select=member_email,first_name,last_name,status,assignments&order=first_name.asc&limit=500') || []; }
     catch(e){ w3ClientsCache = []; }
     return w3ClientsCache;
   }
@@ -4139,8 +4173,8 @@
     var el = $c('pl-list');
     el.innerHTML = '<p style="color:var(--text-muted);font-size:12.5px;">Loading\u2026</p>';
     try {
-      if (IS_FORM(plKind)) plItems = await rest('/coach_forms?partner_id=eq.' + partnerId + '&kind=eq.' + plKind + '&active=eq.true&order=created_at.desc&select=*') || [];
-      else plItems = await rest('/coach_templates?partner_id=eq.' + partnerId + '&kind=eq.' + plKind + '&active=eq.true&order=created_at.desc&select=*') || [];
+      if (IS_FORM(plKind)) plItems = await rest('/coach_forms?' + pscope() + '&kind=eq.' + plKind + '&active=eq.true&order=created_at.desc&select=*') || [];
+      else plItems = await rest('/coach_templates?' + pscope() + '&kind=eq.' + plKind + '&active=eq.true&order=created_at.desc&select=*') || [];
     } catch(e){ plItems = []; }
     if (!plItems.length){ el.innerHTML = '<div class="empty-state"><h3>Nothing here yet</h3><p>Create your first ' + KIND_LABEL[plKind] + ' and it becomes assignable to clients.</p></div>'; return; }
 
@@ -4307,7 +4341,7 @@
   var w4MyFoodsCache = null;
   async function w4MyFoods(force){
     if (w4MyFoodsCache && !force) return w4MyFoodsCache;
-    try { w4MyFoodsCache = await rest('/coach_foods?partner_id=eq.' + partnerId + '&active=eq.true&order=food_name.asc&limit=500&select=*') || []; }
+    try { w4MyFoodsCache = await rest('/coach_foods?' + pscope() + '&active=eq.true&order=food_name.asc&limit=500&select=*') || []; }
     catch(e){ w4MyFoodsCache = []; }
     return w4MyFoodsCache;
   }
@@ -4468,7 +4502,7 @@
       st.textContent = 'Uploading\u2026';
       try {
         var safe = f.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 80);
-        var path = 'p-' + partnerId + '/' + Date.now() + '-' + safe;
+        var path = pprefix() + '/' + Date.now() + '-' + safe;
         var up = await sb().storage.from('coach-content').upload(path, f, { contentType: 'application/pdf', upsert: true });
         if (up.error) throw up.error;
         w4Pdf = { path: path, name: f.name };
@@ -4484,7 +4518,7 @@
       if (box.style.display !== 'none'){ box.style.display = 'none'; return; }
       box.style.display = ''; box.innerHTML = '<p style="font-size:12px;color:var(--text-muted);padding:6px;">Loading\u2026</p>';
       var tpls = [];
-      try { tpls = await rest('/coach_templates?partner_id=eq.' + partnerId + '&kind=eq.meal&active=eq.true&order=name.asc&limit=200&select=id,name,payload') || []; } catch(e){}
+      try { tpls = await rest('/coach_templates?' + pscope() + '&kind=eq.meal&active=eq.true&order=name.asc&limit=200&select=id,name,payload') || []; } catch(e){}
       if (!tpls.length){ box.innerHTML = '<p style="font-size:12px;color:var(--text-muted);padding:6px;">No saved meals yet \u2014 build them under Nutrition \u2192 Meals.</p>'; return; }
       box.innerHTML = tpls.map(function(t, i){
         var tt = w4Tot((t.payload || {}).items);
@@ -4764,7 +4798,7 @@
       st.textContent = 'Uploading\u2026';
       try {
         var safe = f.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 80);
-        var path = 'p-' + partnerId + '/' + Date.now() + '-' + safe;
+        var path = pprefix() + '/' + Date.now() + '-' + safe;
         var up = await sb().storage.from('coach-content').upload(path, f, { contentType: f.type, upsert: true });
         if (up.error) throw up.error;
         w4SuppDoc = { path: path, name: f.name };
@@ -5024,8 +5058,8 @@
     el.innerHTML = '<p style="color:var(--text-muted);font-size:12.5px;">Loading\u2026</p>';
     if (plKind === 'food'){ plItems = []; w4FoodList(el); return; }
     try {
-      if (IS_FORM(plKind)) plItems = await rest('/coach_forms?partner_id=eq.' + partnerId + '&kind=eq.' + plKind + '&active=eq.true&order=created_at.desc&select=*') || [];
-      else plItems = await rest('/coach_templates?partner_id=eq.' + partnerId + '&kind=eq.' + plKind + '&active=eq.true&order=created_at.desc&select=*') || [];
+      if (IS_FORM(plKind)) plItems = await rest('/coach_forms?' + pscope() + '&kind=eq.' + plKind + '&active=eq.true&order=created_at.desc&select=*') || [];
+      else plItems = await rest('/coach_templates?' + pscope() + '&kind=eq.' + plKind + '&active=eq.true&order=created_at.desc&select=*') || [];
     } catch(e){ plItems = []; }
     if (!plItems.length){
       var hint = plKind === 'meal' ? 'Create your first meal \u2014 reuse it across every nutrition plan you build.' : 'Create your first ' + KIND_LABEL[plKind] + ' and it becomes assignable to clients.';
@@ -5303,7 +5337,7 @@
     var res = await Promise.all([
       rest('/members?email=eq.' + enc + '&select=first_name,last_name,dob,last_active_at,trial_ends_at,subscription_status,macro_override,tdee_target,weight_kg').catch(function(){ return []; }),
       w5consented() ? rest('/weight_logs?member_email=eq.' + enc + '&order=logged_at.desc&limit=400&select=weight_kg,logged_at,logged_date').catch(function(){ return []; }) : Promise.resolve([]),
-      rest('/coach_form_responses?member_email=eq.' + enc + '&partner_id=eq.' + partnerId + '&order=submitted_at.desc&limit=40&select=id,form_id,answers,week_start,submitted_at,reviewed_at').catch(function(){ return []; })
+      rest('/coach_form_responses?member_email=eq.' + enc + '&' + pscope() + '&order=submitted_at.desc&limit=40&select=id,form_id,answers,week_start,submitted_at,reviewed_at').catch(function(){ return []; })
     ]);
     w5.member = (res[0] || [])[0] || {};
     w5.weights = res[1] || [];
@@ -5385,7 +5419,7 @@
   async function w5Overview(){
     var pane = $c('w5-pane'), c = w5.c, enc = encodeURIComponent(c.member_email);
     var res = await Promise.all([
-      rest('/coach_client_events?partner_id=eq.' + partnerId + '&member_email=eq.' + enc + '&order=created_at.desc&limit=40&select=kind,label,created_at').catch(function(){ return []; }),
+      rest('/coach_client_events?' + pscope() + '&member_email=eq.' + enc + '&order=created_at.desc&limit=40&select=kind,label,created_at').catch(function(){ return []; }),
       w5consented() ? rest('/workouts?member_email=eq.' + enc + '&order=logged_at.desc&limit=10&select=workout_name,duration_minutes,logged_at,difficulty_rating,member_note').catch(function(){ return []; }) : Promise.resolve([])
     ]);
     if (w5.tab !== 'overview') return;
@@ -5848,7 +5882,7 @@
   /* ── Goals (#56) ── */
   async function w5Goals(){
     var pane = $c('w5-pane'), c = w5.c, enc = encodeURIComponent(c.member_email);
-    var goals = await rest('/coach_client_goals?partner_id=eq.' + partnerId + '&member_email=eq.' + enc + '&active=eq.true&order=created_at.desc&select=*').catch(function(){ return []; }) || [];
+    var goals = await rest('/coach_client_goals?' + pscope() + '&member_email=eq.' + enc + '&active=eq.true&order=created_at.desc&select=*').catch(function(){ return []; }) || [];
     if (w5.tab !== 'goals') return;
     function daysTo(d){ if (!d) return null; return Math.ceil((new Date(d + 'T00:00:00').getTime() - Date.now()) / 864e5); }
     pane.innerHTML =
@@ -5978,7 +6012,7 @@
     document.body.appendChild(el);
     async function load(){
       try {
-        var ms = await rest('/coach_messages?partner_id=eq.' + partnerId + '&member_email=eq.' + encodeURIComponent(w5.c.member_email) + '&order=created_at.desc&limit=30&select=sender,body,created_at') || [];
+        var ms = await rest('/coach_messages?' + pscope() + '&member_email=eq.' + encodeURIComponent(w5.c.member_email) + '&order=created_at.desc&limit=30&select=sender,body,created_at') || [];
         var log = $c('w5-chat-log'); if (!log) return;
         log.innerHTML = ms.reverse().map(function(m){
           return '<div class="w5-msg ' + (m.sender === 'coach' ? 'me' : 'them') + '">' + esc(m.body) + '<div style="font-size:9.5px;opacity:.7;margin-top:2px;">' + w5fmt(m.created_at) + '</div></div>';
@@ -6100,11 +6134,11 @@
   async function w6load(){
     var r = w6range(), fi = r.from.toISOString(), ti = r.to.toISOString();
     var res = await Promise.all([
-      rest('/coach_events?partner_id=eq.' + partnerId + '&status=neq.cancelled&starts_at=gte.' + w6enc(fi) + '&starts_at=lt.' + w6enc(ti) + '&order=starts_at.asc&limit=400').catch(function(){ return []; }),
-      rest('/coach_sessions?partner_id=eq.' + partnerId + '&status=eq.scheduled&starts_at=gte.' + w6enc(fi) + '&starts_at=lt.' + w6enc(ti) + '&order=starts_at.asc&limit=200&select=id,member_email,title,starts_at,duration_minutes,link_url,notes').catch(function(){ return []; }),
-      rest('/bookings?partner_id=eq.' + partnerId + '&status=eq.confirmed&starts_at=gte.' + w6enc(fi) + '&starts_at=lt.' + w6enc(ti) + '&order=starts_at.asc&limit=200&select=id,member_email,employer_name,starts_at,ends_at,service_id,meeting_link,delivery_mode').catch(function(){ return []; }),
-      rest('/bookings?partner_id=eq.' + partnerId + '&status=in.(pending_payment,requested)&starts_at=gte.' + w6enc(new Date(Date.now() - 864e5).toISOString()) + '&order=starts_at.asc&limit=100&select=id,member_email,employer_name,starts_at,ends_at,service_id,status,created_at').catch(function(){ return []; }),
-      rest('/booking_services?partner_id=eq.' + partnerId + '&select=id,title,duration_min').catch(function(){ return []; })
+      rest('/coach_events?' + pscope() + '&status=neq.cancelled&starts_at=gte.' + w6enc(fi) + '&starts_at=lt.' + w6enc(ti) + '&order=starts_at.asc&limit=400').catch(function(){ return []; }),
+      rest('/coach_sessions?' + pscope() + '&status=eq.scheduled&starts_at=gte.' + w6enc(fi) + '&starts_at=lt.' + w6enc(ti) + '&order=starts_at.asc&limit=200&select=id,member_email,title,starts_at,duration_minutes,link_url,notes').catch(function(){ return []; }),
+      rest('/bookings?' + pscope() + '&status=eq.confirmed&starts_at=gte.' + w6enc(fi) + '&starts_at=lt.' + w6enc(ti) + '&order=starts_at.asc&limit=200&select=id,member_email,employer_name,starts_at,ends_at,service_id,meeting_link,delivery_mode').catch(function(){ return []; }),
+      rest('/bookings?' + pscope() + '&status=in.(pending_payment,requested)&starts_at=gte.' + w6enc(new Date(Date.now() - 864e5).toISOString()) + '&order=starts_at.asc&limit=100&select=id,member_email,employer_name,starts_at,ends_at,service_id,status,created_at').catch(function(){ return []; }),
+      rest('/booking_services?' + pscope() + '&select=id,title,duration_min').catch(function(){ return []; })
     ]);
     var svc = {}; (res[4] || []).forEach(function(s){ svc[s.id] = s; });
     var items = [];
@@ -6137,7 +6171,7 @@
   }
   async function w6badgeBoot(){
     try {
-      var rows = await rest('/bookings?partner_id=eq.' + partnerId + '&status=in.(pending_payment,requested)&starts_at=gte.' + w6enc(new Date(Date.now() - 864e5).toISOString()) + '&limit=100&select=id') || [];
+      var rows = await rest('/bookings?' + pscope() + '&status=in.(pending_payment,requested)&starts_at=gte.' + w6enc(new Date(Date.now() - 864e5).toISOString()) + '&limit=100&select=id') || [];
       w6.reqs = w6.reqs.length ? w6.reqs : rows;
       var el = $c('w6-nav-badge');
       if (el){ el.style.display = rows.length ? '' : 'none'; el.textContent = rows.length; }
@@ -6283,7 +6317,7 @@
         if (!confirm('Decline this request? The slot frees up straight away.')) return;
         btn.disabled = true;
         try {
-          await rest('/bookings?id=eq.' + btn.dataset.w6decl + '&partner_id=eq.' + partnerId, { method: 'PATCH', body: { status: 'cancelled', cancelled_at: new Date().toISOString(), cancel_reason: 'coach_declined' } });
+          await rest('/bookings?id=eq.' + btn.dataset.w6decl + '&' + pscope(), { method: 'PATCH', body: { status: 'cancelled', cancelled_at: new Date().toISOString(), cancel_reason: 'coach_declined' } });
           calLoad();
         } catch(e){ alert('Decline failed: ' + e.message); btn.disabled = false; }
       });
@@ -6407,7 +6441,7 @@
       if (!confirm(it.src === 'call' ? 'Cancel this call? Your client will stop seeing it in their app.' : 'Cancel this booked session?')) return;
       try {
         if (it.src === 'call') await rest('/coach_sessions?id=eq.' + it.id, { method: 'PATCH', body: { status: 'cancelled' } });
-        else await rest('/bookings?id=eq.' + it.id + '&partner_id=eq.' + partnerId, { method: 'PATCH', body: { status: 'cancelled', cancelled_at: new Date().toISOString(), cancel_reason: 'coach_cancelled' } });
+        else await rest('/bookings?id=eq.' + it.id + '&' + pscope(), { method: 'PATCH', body: { status: 'cancelled', cancelled_at: new Date().toISOString(), cancel_reason: 'coach_cancelled' } });
         m.remove(); calLoad();
       } catch(e){ alert('Cancel failed: ' + e.message); }
     });
@@ -6431,11 +6465,11 @@
   async function w6ContentLoad(){
     var list = $c('w6c-list');
     list.innerHTML = '<p style="font-size:12.5px;color:var(--text-muted);">Loading\u2026</p>';
-    try { w6c.items = await rest('/coach_content_items?partner_id=eq.' + partnerId + '&active=eq.true&order=folder.asc.nullsfirst,sort.asc,created_at.desc&limit=300') || []; }
+    try { w6c.items = await rest('/coach_content_items?' + pscope() + '&active=eq.true&order=folder.asc.nullsfirst,sort.asc,created_at.desc&limit=300') || []; }
     catch(e){ list.innerHTML = '<p style="font-size:12.5px;color:#E8834A;">Load failed: ' + esc(e.message) + '</p>'; return; }
     var counts = {};
     try {
-      var acc = await rest('/coach_content_access?partner_id=eq.' + partnerId + '&select=item_id') || [];
+      var acc = await rest('/coach_content_access?' + pscope() + '&select=item_id') || [];
       acc.forEach(function(a){ counts[a.item_id] = (counts[a.item_id] || 0) + 1; });
     } catch(_){}
     w6c.counts = counts;
@@ -6545,7 +6579,7 @@
             if (f.size > cap) throw new Error('Too big \u2014 ' + (isVideo ? '200MB' : '20MB') + ' max.');
             m.querySelector('#w6cm-fst').textContent = 'Uploading\u2026';
             var safe = f.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 80);
-            var path = 'p-' + partnerId + '/content/' + Date.now() + '-' + safe;
+            var path = pprefix() + '/content/' + Date.now() + '-' + safe;
             var up = await sb().storage.from('coach-content').upload(path, f, { contentType: f.type || 'application/octet-stream', upsert: true });
             if (up.error) throw up.error;
             body.storage_path = path; body.file_name = f.name; body.mime = f.type; body.size_bytes = f.size;
@@ -6555,7 +6589,7 @@
         if (isNew){
           await rest('/coach_content_items', { method: 'POST', body: body });
           // rest() has no Prefer support (PM-984 lesson) — re-fetch the new row
-          var re = await rest('/coach_content_items?partner_id=eq.' + partnerId + '&title=eq.' + w6enc(title) + '&order=created_at.desc&limit=1');
+          var re = await rest('/coach_content_items?' + pscope() + '&title=eq.' + w6enc(title) + '&order=created_at.desc&limit=1');
           saved = (re || [])[0];
         } else {
           await rest('/coach_content_items?id=eq.' + it.id, { method: 'PATCH', body: body });
@@ -6583,9 +6617,9 @@
     var pane = $c('w5-pane'), c = w5.c, enc = encodeURIComponent(c.member_email);
     var since = new Date(Date.now() - 30 * 864e5).toISOString();
     var res = await Promise.all([
-      rest('/coach_events?partner_id=eq.' + partnerId + '&member_email=eq.' + enc + '&status=neq.cancelled&starts_at=gte.' + w6enc(since) + '&order=starts_at.asc&limit=100').catch(function(){ return []; }),
-      rest('/coach_sessions?partner_id=eq.' + partnerId + '&member_email=eq.' + enc + '&status=eq.scheduled&starts_at=gte.' + w6enc(since) + '&order=starts_at.asc&limit=50&select=id,title,starts_at,duration_minutes,link_url').catch(function(){ return []; }),
-      rest('/bookings?partner_id=eq.' + partnerId + '&member_email=eq.' + enc + '&status=in.(confirmed,pending_payment)&starts_at=gte.' + w6enc(since) + '&order=starts_at.asc&limit=50&select=id,starts_at,status').catch(function(){ return []; })
+      rest('/coach_events?' + pscope() + '&member_email=eq.' + enc + '&status=neq.cancelled&starts_at=gte.' + w6enc(since) + '&order=starts_at.asc&limit=100').catch(function(){ return []; }),
+      rest('/coach_sessions?' + pscope() + '&member_email=eq.' + enc + '&status=eq.scheduled&starts_at=gte.' + w6enc(since) + '&order=starts_at.asc&limit=50&select=id,title,starts_at,duration_minutes,link_url').catch(function(){ return []; }),
+      rest('/bookings?' + pscope() + '&member_email=eq.' + enc + '&status=in.(confirmed,pending_payment)&starts_at=gte.' + w6enc(since) + '&order=starts_at.asc&limit=50&select=id,starts_at,status').catch(function(){ return []; })
     ]);
     if (w5.tab !== 'calendar') return;
     var rows = [];
@@ -6780,7 +6814,7 @@
       stEl.textContent = 'Uploading\u2026';
       try {
         var safe = f.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 60);
-        var path = 'p-' + partnerId + '/profile/' + kind + '-' + Date.now() + '-' + safe;
+        var path = pprefix() + '/profile/' + kind + '-' + Date.now() + '-' + safe;
         var up = await sb().storage.from('coach-content').upload(path, f, { contentType: f.type, upsert: true });
         if (up.error) throw up.error;
         w7Pend[kind + '_path'] = path;
