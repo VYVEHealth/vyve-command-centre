@@ -19,6 +19,32 @@
   .mt-when { min-width: 0; flex-basis: 100%; font-size: var(--fs-xs); }
   .mt-main { flex-basis: 100%; }
   .mt-actions { flex-basis: 100%; }
+/* PM-1018: month folders on Past meetings + the Right-away/Schedule mode toggle */
+#page-meetings .mt-month { border-top: 1px solid var(--border); }
+#page-meetings .mt-month:first-of-type { border-top: 0; }
+#page-meetings .mt-month > summary {
+  list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px;
+  padding: 11px 0; font-size: var(--fs-sm); font-weight: 600; color: var(--text);
+}
+#page-meetings .mt-month > summary::-webkit-details-marker { display: none; }
+#page-meetings .mt-month > summary::before {
+  content: "\25B8"; display: inline-block; color: var(--text-dim);
+  transition: transform var(--t-fast);
+}
+#page-meetings .mt-month[open] > summary::before { transform: rotate(90deg); }
+#page-meetings .mt-month > summary:hover { color: var(--accent); }
+#page-meetings .mt-month-count {
+  margin-left: auto; font-size: var(--fs-2xs); font-weight: 700; color: var(--text-muted);
+  background: var(--surface-2); border-radius: var(--r-pill); padding: 2px 9px;
+}
+#page-meetings .mt-month-body { padding-bottom: 6px; }
+#page-meetings .mt-mode { display: flex; border: 1px solid var(--border-strong); border-radius: var(--btn-radius); overflow: hidden; }
+#page-meetings .mt-mode button {
+  font: inherit; font-size: var(--fs-xs); font-weight: 600; padding: 9px 13px;
+  border: 0; background: var(--surface); color: var(--text-muted); cursor: pointer; white-space: nowrap;
+}
+#page-meetings .mt-mode button + button { border-left: 1px solid var(--border-strong); }
+#page-meetings .mt-mode button.active { background: var(--accent); color: var(--on-accent); }
 @media (min-width: 640px) {
   .mt-row { row-gap: 12px; }
   .mt-when { min-width: 150px; flex-basis: auto; font-size: inherit; }
@@ -64,7 +90,12 @@
             <input type="text" id="mt-f-title" maxlength="120" placeholder="Weekly team meeting" style="width:100%"/></div>
           <div><label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">Type</label>
             <select id="mt-f-type"><option value="internal">Internal</option><option value="client">Client</option></select></div>
-          <div><label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">When (optional)</label>
+          <div><label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">When</label>
+            <div class="mt-mode" id="mt-f-mode">
+              <button type="button" data-mt-mode="now" class="active">Right away</button>
+              <button type="button" data-mt-mode="later">Schedule</button>
+            </div></div>
+          <div id="mt-f-when-wrap" style="display:none"><label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">Date &amp; time</label>
             <input type="datetime-local" id="mt-f-when"/></div>
           <div style="display:flex;align-items:center;gap:6px;padding-bottom:8px">
             <input type="checkbox" id="mt-f-transcribe" checked/><label for="mt-f-transcribe" style="font-size:12.5px;color:var(--text-muted)">Transcribe</label></div>
@@ -175,11 +206,34 @@
       + '<div class="mt-actions">'+btns+'</div></div>';
   }
 
+  // PM-1018: past meetings collapse into one folder per calendar month, newest first.
+  // Newest month opens by default; the rest stay shut so the card stops growing forever.
+  function whenOf(m){ return m.scheduled_at || m.started_at || m.created_at; }
+  function monthFolders(list){
+    var order = [], buckets = {};
+    list.slice().sort(function(a,b){ var x=whenOf(a), y=whenOf(b); if(!x) return 1; if(!y) return -1; return new Date(y) - new Date(x); })
+      .forEach(function(m){
+        var w = whenOf(m), d = w ? new Date(w) : null;
+        var bad = !d || isNaN(d.getTime());   // new Date(null) is the 1970 epoch, NOT NaN — guard the value, not the Date
+        var key = bad ? 'undated' : d.getFullYear() + '-' + ('0'+(d.getMonth()+1)).slice(-2);
+        if (!buckets[key]) { buckets[key] = { label: bad ? 'Undated' : d.toLocaleDateString('en-GB',{month:'long',year:'numeric'}), rows: [] }; order.push(key); }
+        buckets[key].rows.push(m);
+      });
+    return order.map(function(key, i){
+      var b = buckets[key];
+      return '<details class="mt-month"' + (i === 0 ? ' open' : '') + '>'
+        + '<summary>' + esc(b.label)
+        + '<span class="mt-month-count">' + b.rows.length + '</span></summary>'
+        + '<div class="mt-month-body">' + b.rows.map(function(m){ return rowHtml(m, true); }).join('') + '</div>'
+        + '</details>';
+    }).join('');
+  }
+
   function render(){
     var up = rows.filter(function(m){ return m.status==='scheduled'||m.status==='live'; });
     var past = rows.filter(function(m){ return m.status==='ended'||m.status==='cancelled'; });
     document.getElementById('mt-upcoming').innerHTML = up.length ? up.map(function(m){return rowHtml(m,false);}).join('') : '<div style="font-size:13px;color:var(--text-muted);padding:6px 0">Nothing scheduled — create one above.</div>';
-    document.getElementById('mt-past').innerHTML = past.length ? past.slice(0,40).map(function(m){return rowHtml(m,true);}).join('') : '<div style="font-size:13px;color:var(--text-muted);padding:6px 0">No past meetings yet.</div>';
+    document.getElementById('mt-past').innerHTML = past.length ? monthFolders(past) : '<div style="font-size:13px;color:var(--text-muted);padding:6px 0">No past meetings yet.</div>';
   }
 
   async function load(){
@@ -244,13 +298,22 @@
     var f = document.getElementById('mt-create-form');
     f.style.display = f.style.display==='none' ? '' : 'none';
   };
+  document.getElementById('mt-f-mode').onclick = function(e){
+    var b = e.target.closest('button[data-mt-mode]'); if (!b) return;
+    var later = b.getAttribute('data-mt-mode') === 'later';
+    this.querySelectorAll('button').forEach(function(x){ x.classList.toggle('active', x === b); });
+    document.getElementById('mt-f-when-wrap').style.display = later ? '' : 'none';
+    // Right away sends scheduled_at:null — the same path every ad-hoc meeting has always used.
+    if (!later) document.getElementById('mt-f-when').value = '';
+  };
   document.getElementById('mt-f-create').onclick = async function(){
     var btn = this, msg = document.getElementById('mt-f-msg');
     var title = document.getElementById('mt-f-title').value.trim();
     if (!title){ msg.textContent = 'Give the meeting a title.'; return; }
     btn.disabled = true; msg.textContent = 'Creating…';
     try {
-      var when = document.getElementById('mt-f-when').value;
+      var scheduling = document.querySelector('#mt-f-mode button[data-mt-mode="later"]').classList.contains('active');
+      var when = scheduling ? document.getElementById('mt-f-when').value : '';
       var j = await efCall({ action:'create', title:title,
         meeting_type: document.getElementById('mt-f-type').value,
         scheduled_at: when ? new Date(when).toISOString() : null,
