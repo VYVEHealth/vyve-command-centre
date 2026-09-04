@@ -379,7 +379,7 @@
     if (!sel) return;
     try {
       var sb = window.VYVE_SUPABASE.client;
-      var r = await sb.from('members').select('company').not('company','is',null);
+      var r = await sb.from('members_staff_view').select('company').not('company','is',null);
       if (r.error){ console.warn(r.error); return; }
       var seen = {};
       (r.data || []).forEach(function(row){ if (row.company){ seen[row.company] = (seen[row.company]||0)+1; } });

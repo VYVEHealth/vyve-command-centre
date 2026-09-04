@@ -2108,7 +2108,7 @@ supa.auth.onAuthStateChange((event, session) => {
 // =======================================================================
 //   Shell 3 Sub-scope A — Cross-table admin endpoints
 //   - admin-member-habits v3       (habits: list, assign, deactivate, reactivate)
-//   - admin-member-programme v3    (programme: pause, resume, advance_week, swap_plan)
+//   - admin-member-programme v4    (programme: rows by surface; pause/resume/advance by row id; assign_template)
 //   - admin-member-weekly-goals v3 (weekly goals: get, upsert)
 //   - admin-programme-library v1   (library: list, get, duplicate) — Phase 1 content mgmt
 //   Gateway: verify_jwt:false. In-code JWT verification via anon.auth.getUser()
@@ -2198,16 +2198,19 @@ async function submitReasonModal() {
 }
 
 // ============================================================
-// Panel 1 — Programme admin controls
+// Panel 1 — Programme admin controls (W1 2026-09-05: rewritten against
+// admin-member-programme v4 — one ACTIVE workout_plan_cache row per
+// (member, surface), history retained; pause/resume/advance are ROW-level
+// by id; assign_template deactivates the active row on the template's
+// surface and inserts a new one, source='vyve'.)
 // ============================================================
-let programmeAdminState = { loaded: false, programme: null, library: null };
+let programmeAdminState = { loaded: false, rows: [], by_surface: {}, library: null };
 
 async function renderProgrammeAdminPanel() {
   const target = document.getElementById('programme-admin-content');
   if (!target || !currentMember) return;
   target.innerHTML = '<div style="padding:20px;color:var(--text-muted);font-size:13px">Loading programme…</div>';
 
-  // Parallel: member's current programme + full library (for the swap dropdown)
   const [result, libRes] = await Promise.all([
     apiProgramme('get_programme', { member_email: currentMember }),
     apiProgrammeLib('list_programmes', { include_inactive: true })
@@ -2216,71 +2219,89 @@ async function renderProgrammeAdminPanel() {
     target.innerHTML = `<div class="error-banner">${escapeHtml(result.error || 'Failed to load programme')}</div>`;
     return;
   }
-  const p = result.programme;
-  programmeAdminState.programme = p;
+  const rows = result.rows || [];
+  programmeAdminState.rows = rows;
+  programmeAdminState.by_surface = result.by_surface || {};
   programmeAdminState.library = libRes.success ? (libRes.programmes || []) : [];
 
-  if (!p) {
-    target.innerHTML = '<div class="empty"><h3>No programme</h3><p>This member has no entry in workout_plan_cache yet.</p></div>';
+  const header = `
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+      <div style="font-size:12px;color:var(--text-muted)">${rows.length} row${rows.length === 1 ? '' : 's'} · ${result.active_count || 0} active · one active per surface, history retained</div>
+      <button class="edit-save" type="button" onclick="programmeAction('assign')">Assign library plan…</button>
+    </div>`;
+
+  if (!rows.length) {
+    target.innerHTML = `<div class="edit-section">${header}<div class="empty"><h3>No programme</h3><p>This member has no rows in workout_plan_cache yet.</p></div></div>`;
     return;
   }
 
-  const statusBits = [
-    p.is_active ? '<span style="color:var(--success)">Active</span>' : '<span style="color:var(--text-dim)">Paused</span>',
-    `Week ${p.current_week}/${p.plan_duration_weeks}`,
-    `Session ${p.current_session}`,
-    p.source ? `Source: ${escapeHtml(p.source)}` : ''
-  ].filter(Boolean).join(' · ');
+  const surfaces = {};
+  for (const r of rows) { const s = r.surface || 'unknown'; (surfaces[s] = surfaces[s] || []).push(r); }
+
+  const rowHtml = (r) => {
+    const statusBits = [
+      r.is_active ? '<span style="color:var(--success)">Active</span>' : '<span style="color:var(--text-dim)">Inactive</span>',
+      `Week ${r.current_week}/${r.plan_duration_weeks || r.weeks_count || '?'}`,
+      `Session ${r.current_session}`,
+      r.source ? `Source: ${escapeHtml(r.source)}` : ''
+    ].filter(Boolean).join(' · ');
+    return `
+      <div class="edit-row" style="flex-direction:row;align-items:flex-start;justify-content:space-between;gap:12px;padding:10px 0">
+        <div style="flex:1;min-width:200px">
+          <div style="font-weight:600;font-size:14px;margin-bottom:3px">${escapeHtml(r.programme_name || 'Untitled programme')}</div>
+          <div style="font-size:12px;color:var(--text-muted);line-height:1.55">${statusBits}</div>
+          ${r.paused_at ? `<div style="font-size:11.5px;color:var(--warning);margin-top:3px">Paused at ${formatDate(r.paused_at)}</div>` : ''}
+          <div style="font-size:11px;color:var(--text-dim);margin-top:3px">Generated ${formatDate(r.generated_at)} · id ${escapeHtml(String(r.id).slice(0, 8))}</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          ${r.is_active
+            ? `<button class="edit-cancel" type="button" onclick="programmeAction('pause','${r.id}')">Pause</button>
+               <button class="edit-cancel" type="button" onclick="programmeAction('advance','${r.id}')">Advance week…</button>`
+            : `<button class="edit-save" type="button" onclick="programmeAction('resume','${r.id}')">Make active</button>`}
+        </div>
+      </div>`;
+  };
 
   target.innerHTML = `
     <div class="edit-section">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
-        <div style="flex:1;min-width:200px">
-          <div style="font-weight:600;font-size:15px;margin-bottom:4px">${escapeHtml(p.programme_name || 'Untitled programme')}</div>
-          <div style="font-size:12.5px;color:var(--text-muted);line-height:1.55">${statusBits}</div>
-          ${p.paused_at ? `<div style="font-size:11.5px;color:var(--warning);margin-top:4px">Paused at ${formatDate(p.paused_at)}</div>` : ''}
-          <div style="font-size:11.5px;color:var(--text-dim);margin-top:4px">Generated ${formatDate(p.generated_at)}</div>
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          ${p.is_active
-            ? '<button class="edit-cancel" type="button" onclick="programmeAction(\'pause\')">Pause</button>'
-            : '<button class="edit-save"   type="button" onclick="programmeAction(\'resume\')">Resume</button>'}
-          <button class="edit-cancel" type="button" onclick="programmeAction('advance')">Advance week…</button>
-          <button class="edit-cancel" type="button" onclick="programmeAction('swap')">Swap plan…</button>
-        </div>
-      </div>
+      ${header}
+      ${Object.keys(surfaces).sort().map(s => `
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:14px 0 4px">${escapeHtml(s)}</div>
+        ${surfaces[s].map(rowHtml).join('')}
+      `).join('')}
     </div>
   `;
 }
 
-async function programmeAction(kind) {
+async function programmeAction(kind, rowId) {
   if (!currentMember) return;
-  const p = programmeAdminState.programme;
-  if (!p) { showToast('Programme state not loaded', 'warning'); return; }
+  const row = rowId ? (programmeAdminState.rows || []).find(r => r.id === rowId) : null;
+  if (kind !== 'assign' && !row) { showToast('Programme row not loaded', 'warning'); return; }
 
   if (kind === 'pause' || kind === 'resume') {
     openReasonModal({
-      title: kind === 'pause' ? 'Pause programme' : 'Resume programme',
+      title: kind === 'pause' ? 'Pause programme' : 'Make this programme active',
       bodyHtml: `<div class="field"><label>Member</label><div class="current">${escapeHtml(currentMember)}</div></div>
-                 <div class="field"><label>Programme</label><div class="current">${escapeHtml(p.programme_name || 'Untitled')}</div></div>`,
-      confirmLabel: kind === 'pause' ? 'Pause' : 'Resume',
+                 <div class="field"><label>Programme</label><div class="current">${escapeHtml(row.programme_name || 'Untitled')} (${escapeHtml(row.surface || '?')})</div></div>
+                 ${kind === 'resume' ? '<div class="hint">Any other active programme on the same surface is deactivated (kept as history).</div>' : ''}`,
+      confirmLabel: kind === 'pause' ? 'Pause' : 'Make active',
       onConfirm: async (reason) => {
         const action = kind === 'pause' ? 'pause_programme' : 'resume_programme';
-        const res = await apiProgramme(action, { member_email: currentMember, reason });
+        const res = await apiProgramme(action, { id: rowId, reason });
         if (!res.success) { showToast(res.error || 'Action failed', 'error'); return; }
         if (res.no_op)    { showToast(res.message || 'No change', 'info'); }
-        else              { showToast(kind === 'pause' ? 'Programme paused' : 'Programme resumed', 'info'); }
+        else              { showToast(kind === 'pause' ? 'Programme paused' : 'Programme now active', 'info'); }
         closeReasonModal();
         renderProgrammeAdminPanel();
       }
     });
   } else if (kind === 'advance') {
-    const maxWeek = p.plan_duration_weeks || 8;
+    const maxWeek = row.plan_duration_weeks || row.weeks_count || 8;
     openReasonModal({
       title: 'Advance to week',
-      bodyHtml: `<div class="field"><label>Current</label><div class="current">Week ${p.current_week}/${maxWeek}, session ${p.current_session}</div></div>
+      bodyHtml: `<div class="field"><label>Current</label><div class="current">Week ${row.current_week}/${maxWeek}, session ${row.current_session}</div></div>
                  <div class="field"><label for="prog-advance-target">Target week</label>
-                   <input id="prog-advance-target" type="number" min="1" max="${maxWeek}" value="${Math.min(p.current_week + 1, maxWeek)}" />
+                   <input id="prog-advance-target" type="number" min="1" max="${maxWeek}" value="${Math.min(row.current_week + 1, maxWeek)}" />
                    <div class="hint">Session resets to 1.</div>
                  </div>`,
       confirmLabel: 'Advance',
@@ -2289,7 +2310,7 @@ async function programmeAction(kind) {
         if (!Number.isInteger(v) || v < 1 || v > maxWeek) {
           showToast(`Week must be between 1 and ${maxWeek}`, 'warning'); return;
         }
-        const res = await apiProgramme('advance_week', { member_email: currentMember, to_week: v, reason });
+        const res = await apiProgramme('advance_week', { id: rowId, to_week: v, reason });
         if (!res.success) { showToast(res.error || 'Advance failed', 'error'); return; }
         if (res.no_op)    { showToast(res.message || 'No change', 'info'); }
         else              { showToast(`Advanced to week ${res.current_week}`, 'info'); }
@@ -2297,23 +2318,23 @@ async function programmeAction(kind) {
         renderProgrammeAdminPanel();
       }
     });
-  } else if (kind === 'swap') {
+  } else if (kind === 'assign') {
     const library = programmeAdminState.library || [];
     if (!library.length) {
       showToast('No library programmes available', 'warning'); return;
     }
-    // Build dropdown options. Inactive programmes are shown but marked so Dean
-    // can see everything per product decision, but won't accidentally assign a draft.
     const options = library.map(l => {
-      const bits = [l.difficulty, l.equipment, `${l.duration_weeks}w/${l.days_per_week}dpw`].filter(Boolean).join(' · ');
+      const bits = [l.category, l.difficulty, l.equipment, `${l.duration_weeks}w/${l.days_per_week}dpw`].filter(Boolean).join(' · ');
       const suffix = l.is_active ? '' : ' [INACTIVE]';
       return `<option value="${escapeHtml(l.id)}">${escapeHtml(l.programme_name)}${suffix} — ${escapeHtml(bits)}</option>`;
     }).join('');
+    const active = programmeAdminState.by_surface || {};
+    const currentBits = Object.keys(active).map(s => `${escapeHtml(s)}: ${escapeHtml(active[s].programme_name || 'Untitled')}`).join(' · ') || 'none';
 
     openReasonModal({
-      title: 'Swap to library plan',
-      bodyHtml: `<div class="warn">This replaces the member's entire programme JSON with a library plan. Current week resets to 1.</div>
-                 <div class="field"><label>Current</label><div class="current">${escapeHtml(p.programme_name || 'Untitled')}</div></div>
+      title: 'Assign library plan',
+      bodyHtml: `<div class="warn">The active programme on the plan's surface is deactivated (kept as history) and a new row is inserted at week 1, session 1. The member sees it on next open.</div>
+                 <div class="field"><label>Currently active</label><div class="current">${currentBits}</div></div>
                  <div class="field"><label for="prog-swap-select">Library programme</label>
                    <select id="prog-swap-select">
                      <option value="">— select a programme —</option>
@@ -2322,17 +2343,17 @@ async function programmeAction(kind) {
                    <div style="margin-top:8px;display:flex;gap:8px">
                      <button type="button" class="edit-cancel" onclick="previewSelectedSwapProgramme()">Preview selected</button>
                    </div>
-                   <div class="hint">Inactive programmes (drafts/duplicates) are shown but generally shouldn't be assigned.</div>
+                   <div class="hint">Inactive programmes (drafts/duplicates) are shown but cannot be assigned.</div>
                  </div>`,
-      confirmLabel: 'Swap',
+      confirmLabel: 'Assign',
       onConfirm: async (reason) => {
         const id = (document.getElementById('prog-swap-select').value || '').trim();
         if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
           showToast('Please select a programme', 'warning'); return;
         }
-        const res = await apiProgramme('swap_plan', { member_email: currentMember, library_programme_id: id, reason });
-        if (!res.success) { showToast(res.error || 'Swap failed', 'error'); return; }
-        showToast(`Swapped to "${res.programme_name}"`, 'info');
+        const res = await apiProgramme('assign_template', { member_email: currentMember, library_programme_id: id, reason });
+        if (!res.success) { showToast(res.error || 'Assign failed', 'error'); return; }
+        showToast(`Assigned "${res.programme_name}" (${res.surface})`, 'info');
         closeReasonModal();
         renderProgrammeAdminPanel();
       }
@@ -2590,7 +2611,10 @@ async function renderHabitsAdminPanel() {
         <div style="font-size:12px;color:var(--text-muted)">
           ${activeCount} active · ${inactiveCount} inactive
         </div>
-        <button class="edit-save" type="button" onclick="habitAction('assign')">Assign new habit…</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="edit-cancel" type="button" onclick="habitAction('create')">New library habit…</button>
+          <button class="edit-save" type="button" onclick="habitAction('assign')">Assign new habit…</button>
+        </div>
       </div>
       ${habitsAdminState.habits.length
         ? rowHtml
@@ -2653,6 +2677,35 @@ async function habitAction(kind, habitId) {
         else              { showToast(`Assigned "${res.habit?.title || 'habit'}"`, 'info'); }
         closeReasonModal();
         renderHabitsAdminPanel();
+      }
+    });
+  } else if (kind === 'create') {
+    // W1: "new library habit" form — one insert into habit_library, created_by='admin'.
+    const pots = ['sleep', 'movement', 'nutrition', 'mindfulness', 'social'];
+    const diffs = ['easy', 'medium', 'hard'];
+    openReasonModal({
+      title: 'New library habit',
+      bodyHtml: `<div class="field"><label for="hab-new-pot">Pot</label>
+                   <select id="hab-new-pot">${pots.map(p => `<option value="${p}">${p}</option>`).join('')}</select></div>
+                 <div class="field"><label for="hab-new-title">Title</label>
+                   <input id="hab-new-title" type="text" maxlength="120" placeholder="e.g. 10-minute walk after lunch" /></div>
+                 <div class="field"><label for="hab-new-desc">Description (optional)</label>
+                   <input id="hab-new-desc" type="text" maxlength="400" placeholder="What the member sees under the title" /></div>
+                 <div class="field"><label for="hab-new-diff">Difficulty</label>
+                   <select id="hab-new-diff">${diffs.map(d => `<option value="${d}"${d === 'easy' ? ' selected' : ''}>${d}</option>`).join('')}</select></div>
+                 <div class="hint">Goes live in the library immediately (active). Assign it to this member from “Assign new habit…” afterwards.</div>`,
+      confirmLabel: 'Create habit',
+      onConfirm: async (reason) => {
+        const habit_pot = document.getElementById('hab-new-pot').value;
+        const habit_title = (document.getElementById('hab-new-title').value || '').trim();
+        const habit_description = (document.getElementById('hab-new-desc').value || '').trim();
+        const difficulty = document.getElementById('hab-new-diff').value;
+        if (habit_title.length < 3) { showToast('Title needs at least 3 characters', 'warning'); return; }
+        const res = await apiHabits('create_library_habit', { habit_pot, habit_title, habit_description, difficulty, reason });
+        if (!res.success) { showToast(res.error || 'Create failed', 'error'); return; }
+        showToast(`Created "${res.habit?.habit_title || habit_title}"`, 'info');
+        habitsAdminState.library = null; // force the assign picker to reload
+        closeReasonModal();
       }
     });
   }

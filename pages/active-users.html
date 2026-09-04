@@ -200,7 +200,7 @@
     if (!S.client) return;
 
     // Members table (rich profile data)
-    var membersRes = await S.client.from('members').select('id,email,first_name,last_name,persona,subscription_status,last_active_at,onboarding_complete,re_engagement_stream,created_at').order('last_active_at', { ascending: false, nullsFirst: false });
+    var membersRes = await S.client.from('members_staff_view').select('id,email,first_name,last_name,persona,subscription_status,last_active_at,onboarding_complete,re_engagement_stream,created_at').order('last_active_at', { ascending: false, nullsFirst: false });
     if (membersRes.error){
       console.error('[active-users] members fetch failed', membersRes.error);
       state.members = [];

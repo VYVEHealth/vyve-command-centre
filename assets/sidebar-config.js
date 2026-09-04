@@ -52,9 +52,9 @@ window.VYVE_NAV = [
   {
     section: "Members",
     items: [
-      /* PM-1012 SOFT-KILL: Member Admin (/admin-console.html) delinked at Dean's
-         instruction. File is PRESERVED in the repo — restore by uncommenting. */
-      // { href: "/admin-console.html", area: "members", label: "Member Admin", icon: "users", external: false, desc: "Member list, detail and edit \u2014 the members admin surface." },
+      /* W1 (PM-1027): Member Admin RESTORED as the interim surface until member-admin.html (W3) ships.
+         PM-1012 soft-killed it; re-retire by commenting this line out again. */
+      { href: "/admin-console.html", area: "members", label: "Member Admin", icon: "users", external: false, desc: "Member list, detail and edit \u2014 interim until member-admin.html." },
       { slug: "broadcast", area: "members",    label: "Broadcast",    icon: "share", status: "live", desc: "Push notifications to member devices." },
       { slug: "active-users", area: "members", label: "Active Users", icon: "users", status: "live", desc: "Who\u2019s in the app right now." },
       { slug: "complaints", area: "complaints",   label: "Complaints",   icon: "shield", status: "live", desc: "Member reports from Help & Support \u2014 triage and resolve." }
