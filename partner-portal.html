@@ -2830,5 +2830,220 @@ body.w1 .pp-content { grid-row:2; grid-column:2; max-width:1280px; width:100%; }
 })();
 </script>
 
+<style id="w2-style">
+/* ══ PM-992 WAVE 2: Account area — tabs, completion bar, checklist, settings ══ */
+.w2-tabs { display:flex; gap:4px; margin-bottom:18px; border-bottom:1px solid var(--border); }
+.w2-tab { padding:9px 16px; border:none; background:none; color:var(--text-muted); font-size:13.5px; font-weight:600; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; }
+.w2-tab.active { color:var(--vyve-teal); border-bottom-color:var(--vyve-teal); }
+.w2-body { display:none; } .w2-body.active { display:block; }
+.w2-comp-bar { height:8px; border-radius:999px; background:var(--surface-2); overflow:hidden; margin:10px 0 6px; }
+.w2-comp-fill { height:100%; background:var(--vyve-teal); border-radius:999px; transition:width .4s; }
+.w2-comp-hints { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+.w2-chip { font-size:11.5px; padding:4px 10px; border-radius:999px; border:1px solid var(--border); color:var(--text-muted); display:inline-flex; align-items:center; gap:5px; }
+.w2-chip.done { border-color:color-mix(in srgb, var(--vyve-teal) 45%, transparent); color:var(--vyve-teal); }
+.w2-ck-row { display:flex; align-items:center; gap:14px; padding:14px 4px; border-bottom:1px solid var(--border); }
+.w2-ck-row:last-child { border-bottom:none; }
+.w2-ck-dot { flex:0 0 26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:2px solid var(--border); color:var(--text-muted); font-size:13px; }
+.w2-ck-row.done .w2-ck-dot { border-color:var(--vyve-teal); background:var(--vyve-teal); color:#fff; }
+.w2-ck-t { font-size:14px; font-weight:600; } .w2-ck-s { font-size:12px; color:var(--text-muted); margin-top:2px; }
+.w2-ck-go { margin-left:auto; }
+.w2-np-grid { display:grid; grid-template-columns:1fr 70px 70px; gap:6px 10px; align-items:center; max-width:520px; }
+.w2-np-grid .h { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--text-muted); text-align:center; }
+.w2-np-name { font-size:13.5px; } .w2-np-sub { font-size:11.5px; color:var(--text-muted); }
+.w2-np-grid input[type=checkbox] { width:18px; height:18px; accent-color:var(--vyve-teal); margin:0 auto; display:block; cursor:pointer; }
+</style>
+<script>
+/* ══ PM-992 WAVE 2 ZONE — Account area inside My Space: Overview (existing editor + completion bar) /
+     Checklist (post-approval steps) / Settings (notification prefs via own-row PATCH + password change).
+     Self-contained IIFE (§23.167). Wraps panel-profile's existing children — never rebuilds them,
+     so every legacy listener (cropper, saves, uploads) keeps its targets. ══ */
+(function(){
+  'use strict';
+  var REST = _SUPA_URL + '/rest/v1';
+  var inited = false, partnerId = null, myRow = null, ckData = {};
+  function $(id){ return document.getElementById(id); }
+  function esc(x){ return String(x==null?'':x).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  async function jwt(){ var r = await _getSB().auth.getSession(); return (r.data.session && r.data.session.access_token) || ''; }
+  async function rest(path, opts){
+    opts = opts || {};
+    var t = await jwt();
+    var h = { 'apikey': _SUPA_ANON, 'Authorization': 'Bearer ' + t, 'Content-Type': 'application/json' };
+    if (opts.rep) h['Prefer'] = 'return=representation';
+    var r = await fetch(REST + path, { method: opts.method || 'GET', headers: h, body: opts.body ? JSON.stringify(opts.body) : undefined });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    var tx = await r.text();
+    return tx ? JSON.parse(tx) : null;
+  }
+  var NP_EVENTS = [
+    { k:'booking_request', n:'Booking requests', s:'a member or employer requests a session', de:true, dp:true },
+    { k:'booking_cancelled', n:'Booking cancellations', s:'an upcoming booking is cancelled', de:true, dp:false },
+    { k:'content_review', n:'Content review results', s:'your uploads are approved or need changes', de:true, dp:true },
+    { k:'payout', n:'Payouts', s:'a payout is recorded or sent', de:true, dp:false },
+    { k:'support_reply', n:'Support replies', s:'the VYVE team replies to your message', de:true, dp:true },
+    { k:'rating', n:'New ratings', s:'a member rates your community', de:false, dp:true }
+  ];
+  function buildTabs(){
+    var panel = $('panel-profile'); if (!panel || $('w2-tabs')) return false;
+    var ov = document.createElement('div'); ov.className = 'w2-body active'; ov.id = 'w2-ov';
+    while (panel.firstChild) ov.appendChild(panel.firstChild);
+    var strip = document.createElement('div'); strip.className = 'w2-tabs'; strip.id = 'w2-tabs';
+    strip.innerHTML = '<button class="w2-tab active" data-w2="ov" type="button">Overview</button>' +
+      '<button class="w2-tab" data-w2="ck" type="button">Launch checklist</button>' +
+      '<button class="w2-tab" data-w2="st" type="button">Settings</button>';
+    var ck = document.createElement('div'); ck.className = 'w2-body'; ck.id = 'w2-ck';
+    ck.innerHTML = '<div class="card"><div class="card-title">Launch checklist</div><p style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">Everything the VYVE team looks for before your space goes live to members.</p><div id="w2-ck-rows"><div style="color:var(--text-muted);font-size:13px;padding:12px 0;">Loading\u2026</div></div></div>';
+    var st = document.createElement('div'); st.className = 'w2-body'; st.id = 'w2-st';
+    st.innerHTML =
+      '<div class="card" style="margin-bottom:16px;"><div class="card-title">Notifications</div>' +
+      '<p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">Choose how we let you know about activity in your partner space. Push notifications arrive on the VYVE app on your phone.</p>' +
+      '<div class="w2-np-grid" id="w2-np-grid"><div></div><div class="h">Email</div><div class="h">Push</div></div>' +
+      '<div style="margin-top:16px;"><button class="btn btn-teal" id="w2-np-save" type="button">Save preferences</button> <span id="w2-np-msg" style="font-size:12px;color:var(--text-muted);margin-left:10px;"></span></div></div>' +
+      '<div class="card"><div class="card-title">Change password</div>' +
+      '<div style="max-width:360px;"><label style="display:block;font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:6px;">New password</label>' +
+      '<input id="w2-pw1" type="password" autocomplete="new-password" style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:14px;margin-bottom:12px;"/>' +
+      '<label style="display:block;font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:6px;">Confirm new password</label>' +
+      '<input id="w2-pw2" type="password" autocomplete="new-password" style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:14px;margin-bottom:14px;"/>' +
+      '<button class="btn btn-teal" id="w2-pw-save" type="button">Update password</button> <span id="w2-pw-msg" style="font-size:12px;color:var(--text-muted);margin-left:10px;"></span></div></div>';
+    panel.appendChild(strip); panel.appendChild(ov); panel.appendChild(ck); panel.appendChild(st);
+    strip.addEventListener('click', function(e){
+      var b = e.target.closest('.w2-tab'); if (!b) return;
+      strip.querySelectorAll('.w2-tab').forEach(function(t){ t.classList.toggle('active', t === b); });
+      ['ov','ck','st'].forEach(function(k){ $('w2-' + k).classList.toggle('active', b.getAttribute('data-w2') === k); });
+      if (b.getAttribute('data-w2') === 'ck') renderChecklist();
+      if (b.getAttribute('data-w2') === 'st') renderSettings();
+    });
+    // completion card at the top of Overview
+    var comp = document.createElement('div');
+    comp.className = 'card'; comp.style.marginBottom = '16px'; comp.id = 'w2-comp-card';
+    comp.innerHTML = '<div class="card-title">Profile completion <span id="w2-comp-pct" style="margin-left:auto;font-size:14px;color:var(--vyve-teal);"></span></div><div class="w2-comp-bar"><div class="w2-comp-fill" id="w2-comp-fill" style="width:0%"></div></div><div class="w2-comp-hints" id="w2-comp-hints"></div>';
+    ov.insertBefore(comp, ov.firstChild);
+    return true;
+  }
+  async function loadCk(){
+    var nowIso = new Date().toISOString();
+    var r = await Promise.all([
+      rest('/partner_partners?id=eq.' + partnerId + '&select=name,role_title,bio,why,feel,avatar_url,cover_url,status,partner_notification_prefs').catch(function(){ return []; }),
+      rest('/partner_content_items?partner_id=eq.' + partnerId + '&select=id,is_welcome,moderation_status').catch(function(){ return []; }),
+      rest('/partner_bank_details?partner_id=eq.' + partnerId + '&select=partner_id').catch(function(){ return []; }),
+      rest('/calendar_occurrences?partner_id=eq.' + partnerId + '&starts_at=gte.' + nowIso + '&select=id&limit=1').catch(function(){ return []; })
+    ]);
+    myRow = (r[0]||[])[0] || {};
+    var items = r[1] || [];
+    ckData = {
+      welcome: items.some(function(i){ return i.is_welcome === true; }),
+      content: items.length > 0,
+      bank: (r[2]||[]).length > 0,
+      session: (r[3]||[]).length > 0,
+      live: myRow.status === 'live'
+    };
+    return ckData;
+  }
+  function compChecks(){
+    var f = function(id){ var el = $(id); return !!(el && String(el.value || '').trim()); };
+    return [
+      { n:'Name', ok: f('profile-name') || !!myRow.name },
+      { n:'Tagline', ok: f('profile-role-title') || !!myRow.role_title },
+      { n:'Bio', ok: f('profile-bio') || !!myRow.bio },
+      { n:'Why you\u2019re here', ok: f('profile-why') || !!myRow.why },
+      { n:'Community feel', ok: f('profile-feel') || !!myRow.feel },
+      { n:'Profile photo', ok: !!myRow.avatar_url },
+      { n:'Cover photo', ok: !!myRow.cover_url },
+      { n:'Welcome video', ok: !!ckData.welcome },
+      { n:'First content', ok: !!ckData.content },
+      { n:'Bank details', ok: !!ckData.bank }
+    ];
+  }
+  function renderComp(){
+    var checks = compChecks();
+    var done = checks.filter(function(c){ return c.ok; }).length;
+    var pct = Math.round(done / checks.length * 100);
+    if ($('w2-comp-pct')) $('w2-comp-pct').textContent = pct + '%';
+    if ($('w2-comp-fill')) $('w2-comp-fill').style.width = pct + '%';
+    if ($('w2-comp-hints')) $('w2-comp-hints').innerHTML = checks.map(function(c){
+      return '<span class="w2-chip' + (c.ok ? ' done' : '') + '">' + (c.ok ? '\u2713 ' : '') + esc(c.n) + '</span>';
+    }).join('');
+  }
+  function ckRow(done, t, s, view){
+    return '<div class="w2-ck-row' + (done ? ' done' : '') + '"><div class="w2-ck-dot">' + (done ? '\u2713' : '') + '</div>' +
+      '<div><div class="w2-ck-t">' + t + '</div><div class="w2-ck-s">' + s + '</div></div>' +
+      (done || !view ? '' : '<button class="btn btn-ghost w2-ck-go" type="button" onclick="w1Go(\'' + view + '\')">Go \u2192</button>') + '</div>';
+  }
+  async function renderChecklist(){
+    var el = $('w2-ck-rows'); if (!el) return;
+    try {
+      await loadCk();
+      var comp = compChecks();
+      var profDone = comp.slice(0, 7).every(function(c){ return c.ok; });
+      el.innerHTML =
+        ckRow(profDone, 'Polish your space', profDone ? 'Profile, photos and story all in place' : 'Finish your profile, photos and story on the Overview tab', null) +
+        ckRow(ckData.welcome, 'Record your welcome video', 'A short hello that goes live to members the moment you\u2019re approved', 'content') +
+        ckRow(ckData.content, 'Upload your first piece of content', 'Give members something to watch on day one', 'content') +
+        ckRow(ckData.session, 'Schedule your first live session', 'Sessions appear in the member app calendar', 'sessions') +
+        ckRow(ckData.bank, 'Add your bank details', 'Needed before any payout can reach you', 'earnings') +
+        ckRow(ckData.live, ckData.live ? 'You\u2019re live' : 'Go live', ckData.live ? 'Your space is visible to members' : 'The VYVE team flips this once the steps above are done', null);
+      renderComp();
+    } catch(e){ el.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">Couldn\u2019t load the checklist \u2014 try again shortly.</div>'; }
+  }
+  function renderSettings(){
+    var grid = $('w2-np-grid'); if (!grid || grid.getAttribute('data-built')) return;
+    grid.setAttribute('data-built', '1');
+    var prefs = (myRow && myRow.partner_notification_prefs) || {};
+    var pe = prefs.events || {};
+    NP_EVENTS.forEach(function(ev){
+      var o = pe[ev.k] || {};
+      var em = typeof o.email === 'boolean' ? o.email : ev.de;
+      var pu = typeof o.push === 'boolean' ? o.push : ev.dp;
+      grid.insertAdjacentHTML('beforeend',
+        '<div><div class="w2-np-name">' + esc(ev.n) + '</div><div class="w2-np-sub">' + esc(ev.s) + '</div></div>' +
+        '<input type="checkbox" data-np="' + ev.k + ':email"' + (em ? ' checked' : '') + '/>' +
+        '<input type="checkbox" data-np="' + ev.k + ':push"' + (pu ? ' checked' : '') + '/>');
+    });
+    $('w2-np-save').addEventListener('click', async function(){
+      var out = { events: {} };
+      grid.querySelectorAll('input[data-np]').forEach(function(cb){
+        var p = cb.getAttribute('data-np').split(':');
+        out.events[p[0]] = out.events[p[0]] || {};
+        out.events[p[0]][p[1]] = cb.checked;
+      });
+      var msg = $('w2-np-msg'); msg.textContent = 'Saving\u2026';
+      try {
+        await rest('/partner_partners?id=eq.' + partnerId, { method:'PATCH', body:{ partner_notification_prefs: out } });
+        if (myRow) myRow.partner_notification_prefs = out;
+        msg.textContent = 'Saved \u2713'; setTimeout(function(){ msg.textContent = ''; }, 2500);
+      } catch(e){ msg.textContent = 'Couldn\u2019t save \u2014 try again.'; }
+    });
+    $('w2-pw-save').addEventListener('click', async function(){
+      var a = $('w2-pw1').value, b = $('w2-pw2').value, msg = $('w2-pw-msg');
+      if (a.length < 8) { msg.textContent = 'At least 8 characters.'; return; }
+      if (a !== b) { msg.textContent = 'Passwords don\u2019t match.'; return; }
+      msg.textContent = 'Updating\u2026';
+      var r = await _getSB().auth.updateUser({ password: a });
+      if (r.error) { msg.textContent = 'Couldn\u2019t update: ' + r.error.message; return; }
+      $('w2-pw1').value = ''; $('w2-pw2').value = '';
+      msg.textContent = 'Password updated \u2713'; setTimeout(function(){ msg.textContent = ''; }, 3000);
+    });
+  }
+  var poll = setInterval(async function(){
+    var shell = $('shell');
+    if (!shell || !shell.classList.contains('ready') || inited) return;
+    inited = true; clearInterval(poll);
+    try {
+      if (!buildTabs()) return;
+      var pr = await rest('/rpc/get_my_partner_id', { method:'POST', body:{} }).catch(function(){ return null; });
+      partnerId = pr || null;
+      if (!partnerId) return;
+      await loadCk();
+      renderComp();
+      // recompute the bar as the legacy editor populates / the partner types
+      var ov = $('w2-ov');
+      ov.addEventListener('input', function(){ clearTimeout(ov._w2t); ov._w2t = setTimeout(renderComp, 600); });
+      setTimeout(renderComp, 2500);
+    } catch(e){
+      try { window.reportError && window.reportError('w2_account_boot', e); } catch(_){}
+    }
+  }, 350);
+})();
+</script>
+
 </body>
 </html>
