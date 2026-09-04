@@ -5,37 +5,37 @@
      ===================================================================== -->
 <style>
 .hm-head{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px}
-.hm-eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.hm-eyebrow{font-family:var(--font-mono);font-size:var(--fs-2xs);letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:6px;display:flex;align-items:center;gap:8px}
 .hm-dot{width:7px;height:7px;border-radius:50%;background:var(--success);box-shadow:0 0 0 3px var(--success-pale)}
-.hm-h1{font-size:25px;font-weight:700;letter-spacing:-.015em}
-.hm-meta{font-size:13px;color:var(--text-muted)}
-.hm-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
-.hm-kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow-md)}
-.hm-kl{font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim)}
-.hm-kv{font-size:24px;font-weight:700;letter-spacing:-.02em;margin:4px 0 2px;font-variant-numeric:tabular-nums}
+.hm-h1{font-size:var(--fs-2xl);font-weight:700;letter-spacing:-.015em}
+.hm-meta{font-size:var(--fs-sm);color:var(--text-muted)}
+.hm-kpis{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.hm-kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--card-radius);padding:14px 16px;box-shadow:var(--shadow-md)}
+.hm-kl{font-family:var(--font-mono);font-size:var(--fs-2xs);letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim)}
+.hm-kv{font-size:var(--fs-2xl);font-weight:700;letter-spacing:-.02em;margin:4px 0 2px;font-variant-numeric:tabular-nums}
 .hm-kv.gold{color:var(--gold)}
-.hm-ks{font-family:var(--font-mono);font-size:11px;color:var(--text-muted)}
+.hm-ks{font-family:var(--font-mono);font-size:var(--fs-2xs);color:var(--text-muted)}
 .hm-ks.good{color:var(--success)}.hm-ks.warn{color:var(--warning)}
-.hm-today{display:grid;grid-template-columns:1.5fr 1fr;gap:12px;margin-bottom:26px}
-.hm-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow-md)}
+.hm-today{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:26px}
+.hm-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--card-radius);box-shadow:var(--shadow-md)}
 .hm-ch{display:flex;justify-content:space-between;align-items:center;padding:13px 16px;border-bottom:1px solid var(--border)}
-.hm-ch h3{font-size:14px;font-weight:600}
-.hm-ch a{font-size:12.5px;color:var(--accent);text-decoration:none;font-weight:600}
-.hm-row{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border);font-size:13.5px}
+.hm-ch h3{font-size:var(--fs-base);font-weight:600}
+.hm-ch a{font-size:var(--fs-xs);color:var(--accent);text-decoration:none;font-weight:600}
+.hm-row{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border);font-size:var(--fs-sm)}
 .hm-row:last-child{border-bottom:0}
-.hm-time{font-family:var(--font-mono);font-size:11.5px;color:var(--text-dim);min-width:44px}
+.hm-time{font-family:var(--font-mono);font-size:var(--fs-2xs);color:var(--text-dim);min-width:44px}
 .hm-row b{font-weight:600}
-.hm-sub{color:var(--text-muted);font-size:12.5px}
-.hm-pill{margin-left:auto;font-size:11px;font-weight:600;border-radius:99px;padding:2px 9px;flex-shrink:0}
+.hm-sub{color:var(--text-muted);font-size:var(--fs-xs)}
+.hm-pill{margin-left:auto;font-size:var(--fs-2xs);font-weight:600;border-radius:var(--r-pill);padding:2px 9px;flex-shrink:0}
 .hm-pill.live{background:var(--success-pale);color:var(--success)}
 .hm-pill.aired{background:var(--surface-2);color:var(--text-muted)}
 .hm-pill.upcoming{background:var(--accent-pale);color:var(--accent)}
 .hm-pill.critical,.hm-pill.high{background:var(--danger-pale);color:var(--danger)}
 .hm-pill.info{background:var(--accent-pale);color:var(--accent)}
-.hm-sect{font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--text-dim);margin:0 0 12px;display:flex;align-items:center;gap:10px}
+.hm-sect{font-family:var(--font-mono);font-size:var(--fs-2xs);letter-spacing:.16em;text-transform:uppercase;color:var(--text-dim);margin:0 0 12px;display:flex;align-items:center;gap:10px}
 .hm-sect::after{content:"";flex:1;height:1px;background:var(--border)}
-.hm-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-.hm-tile{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px;box-shadow:var(--shadow-md);color:var(--text);display:flex;flex-direction:column;gap:10px;transition:border-color .15s,transform .12s}
+.hm-tiles{display:grid;grid-template-columns:1fr;gap:14px}
+.hm-tile{background:var(--surface);border:1px solid var(--border);border-radius:var(--card-radius);padding:18px;box-shadow:var(--shadow-md);color:var(--text);display:flex;flex-direction:column;gap:10px;transition:border-color .15s,transform .12s}
 .hm-tile:hover{border-color:var(--accent);transform:translateY(-2px)}
 /* PM-776: tiles were <a> wrapping <a class="hm-tl"> — nested anchors are
    invalid HTML; the parser split each tile and ejected .hm-tlinks as its
@@ -44,23 +44,23 @@
 .hm-tile-main{display:flex;flex-direction:column;gap:10px;flex:1;text-decoration:none;color:inherit}
 .hm-tile-main:hover{color:inherit}
 .hm-tt{display:flex;align-items:center;justify-content:space-between}
-.hm-tic{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;background:var(--accent-pale);color:var(--accent)}
+.hm-tic{width:38px;height:38px;border-radius:var(--r-md);display:grid;place-items:center;background:var(--accent-pale);color:var(--accent)}
 .hm-tic svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 .hm-tile.gold .hm-tic{background:var(--gold-pale);color:var(--gold)}
-.hm-badge{font-family:var(--font-mono);font-size:10.5px;border-radius:99px;padding:3px 9px;background:var(--surface-2);color:var(--text-muted)}
+.hm-badge{font-family:var(--font-mono);font-size:var(--fs-2xs);border-radius:var(--r-pill);padding:3px 9px;background:var(--surface-2);color:var(--text-muted)}
 .hm-badge.alert{background:var(--danger-pale);color:var(--danger)}
 .hm-badge.gold{background:var(--gold-pale);color:var(--gold)}
-.hm-tile h2{font-size:16.5px;font-weight:700;letter-spacing:-.01em}
-.hm-tile p{font-size:12.5px;color:var(--text-muted);flex:1;margin:0}
+.hm-tile h2{font-size:var(--fs-md);font-weight:700;letter-spacing:-.01em}
+.hm-tile p{font-size:var(--fs-xs);color:var(--text-muted);flex:1;margin:0}
 .hm-tlinks{display:flex;flex-wrap:wrap;gap:6px}
-.hm-tl{font-size:11.5px;font-weight:600;color:var(--accent);background:var(--accent-pale);border-radius:7px;padding:4px 9px;text-decoration:none}
+.hm-tl{font-size:var(--fs-2xs);font-weight:600;color:var(--accent);background:var(--accent-pale);border-radius:var(--r-sm);padding:4px 9px;text-decoration:none}
 .hm-tl:hover{background:var(--surface-2);color:var(--accent)}
-.hm-empty{padding:16px;color:var(--text-muted);font-size:13px}
-.hm-skel{height:14px;border-radius:6px;background:var(--surface-2);animation:hmPulse 1.4s infinite}
+.hm-empty{padding:16px;color:var(--text-muted);font-size:var(--fs-sm)}
+.hm-skel{height:14px;border-radius:var(--r-sm);background:var(--surface-2);animation:hmPulse 1.4s infinite}
 @keyframes hmPulse{0%,100%{opacity:1}50%{opacity:.45}}
-.hm-error{background:var(--danger-pale);border:1px solid var(--border);border-radius:12px;padding:14px 16px;color:var(--danger);font-size:13.5px;margin-bottom:14px;display:none}
-@media(max-width:900px){.hm-kpis{grid-template-columns:1fr 1fr}.hm-today{grid-template-columns:1fr}.hm-tiles{grid-template-columns:1fr 1fr}}
-@media(max-width:560px){.hm-tiles{grid-template-columns:1fr}}
+.hm-error{background:var(--danger-pale);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px 16px;color:var(--danger);font-size:var(--fs-sm);margin-bottom:14px;display:none}
+@media(min-width:640px){.hm-tiles{grid-template-columns:1fr 1fr}}
+@media(min-width:900px){.hm-kpis{grid-template-columns:repeat(4,1fr)}.hm-today{grid-template-columns:1.5fr 1fr}.hm-tiles{grid-template-columns:repeat(3,1fr)}}
 </style>
 
 <div class="hm-head">
