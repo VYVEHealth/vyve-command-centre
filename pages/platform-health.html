@@ -22,6 +22,10 @@
 #page-platform-health .ph-filter{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
 #page-platform-health .ph-filter button{font:inherit;font-size:12px;font-weight:600;padding:5px 12px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--text-muted);cursor:pointer}
 #page-platform-health .ph-filter button.on{border-color:var(--accent);color:var(--accent);background:var(--accent-pale)}
+#page-platform-health .ph-alerts-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+#page-platform-health .ph-alerts-bar .ph-filter{margin-bottom:0}
+#page-platform-health .ph-btn.danger{border-color:var(--danger);color:var(--danger)}
+#page-platform-health .ph-btn:disabled{opacity:.5;cursor:default}
 </style>
 
   <div class="page-hero">
@@ -42,9 +46,15 @@
 
     <div class="ph-sec">Alerts</div>
     <div class="card" style="padding:14px 18px;margin-bottom:20px">
-      <div class="ph-filter" id="ph-alert-filter">
-        <button data-f="open" class="on">Open</button>
-        <button data-f="all">All recent</button>
+      <div class="ph-alerts-bar">
+        <div class="ph-filter" id="ph-alert-filter">
+          <button data-f="open" class="on">Open</button>
+          <button data-f="all">All recent</button>
+        </div>
+        <!-- PM-1013: bulk resolve. Outside #ph-alert-filter on purpose - the
+             filter handler matches '#ph-alert-filter button' and would read this
+             as a filter pill with a null data-f. -->
+        <button class="ph-btn" id="ph-resolve-all" style="margin-left:auto;display:none">Resolve all open</button>
       </div>
       <div id="ph-alerts"></div>
       <div id="ph-alerts-empty" style="display:none;padding:20px 0;text-align:center;color:var(--text-muted);font-size:13px">Nothing open — all quiet.</div>
@@ -62,6 +72,8 @@
   var S = window.VYVE_SUPABASE;
   if (!S) return;
   var alertFilter = 'open';
+  var openCount = 0;
+  var confirmingAll = false, confirmTimer = null;
   var LABELS = { 'cc-shell':'Command Centre','partner-portal':'Partner Portal','coach-portal':'Coach Portal','admin-console':'Member Admin','member-login':'Member login','member-signup':'Signup door','member-onboarding':'Onboarding','marketing-home':'Marketing site','employer-portal':'Employer Portal','partner-onboarding':'Partner wizard' };
 
   function $(id){ return document.getElementById(id); }
@@ -115,6 +127,12 @@
       }).join('');
     }
 
+    // PM-1013: true open count, independent of the 40-row list cap and of the
+    // Open/All-recent filter, so the bulk button says what it will actually do.
+    var oc = await client.from('platform_alerts').select('id', { count: 'exact', head: true }).eq('resolved', false);
+    openCount = (oc && typeof oc.count === 'number') ? oc.count : 0;
+    resetResolveAll();
+
     var ce = await client.from('client_errors').select('surface,context,severity,message,actor_email,created_at').gte('created_at', since48).order('created_at', { ascending: false }).limit(50);
     if (!ce.error){
       var erows = ce.data || [];
@@ -129,6 +147,43 @@
     }
   }
 
+  function resetResolveAll(){
+    if (confirmTimer){ clearTimeout(confirmTimer); confirmTimer = null; }
+    confirmingAll = false;
+    var b = $('ph-resolve-all');
+    if (!b) return;
+    b.disabled = false;
+    b.classList.remove('danger');
+    b.style.display = openCount ? '' : 'none';
+    b.textContent = 'Resolve all open (' + openCount + ')';
+  }
+
+  // PM-1013: two-click confirm rather than a modal - bulk, and there is no
+  // resolved_at/resolved_by to undo it with. Reverts itself after 6s.
+  async function resolveAllOpen(btn){
+    if (!confirmingAll){
+      confirmingAll = true;
+      btn.classList.add('danger');
+      btn.textContent = 'Confirm \u2014 resolve ' + openCount + '?';
+      confirmTimer = setTimeout(resetResolveAll, 6000);
+      return;
+    }
+    if (confirmTimer){ clearTimeout(confirmTimer); confirmTimer = null; }
+    confirmingAll = false;
+    btn.disabled = true;
+    btn.textContent = 'Resolving\u2026';
+    var client = S.getClient();
+    var res = await client.from('platform_alerts').update({ resolved: true }).eq('resolved', false).select('id');
+    if (res.error){
+      if (window.VYVE_UI && window.VYVE_UI.toast) window.VYVE_UI.toast('Resolve all failed');
+      resetResolveAll();
+      return;
+    }
+    var n = (res.data || []).length;
+    if (window.VYVE_UI && window.VYVE_UI.toast) window.VYVE_UI.toast('Resolved ' + n + ' alert' + (n === 1 ? '' : 's'));
+    await load();
+  }
+
   async function resolveAlert(id){
     var client = S.getClient();
     var res = await client.from('platform_alerts').update({ resolved: true }).eq('id', id).select();
@@ -140,6 +195,7 @@
   page.addEventListener('click', function(e){
     var t;
     if ((t = e.target.closest('[data-resolve]'))){ e.preventDefault(); return void resolveAlert(t.getAttribute('data-resolve')); }
+    if ((t = e.target.closest('#ph-resolve-all'))){ e.preventDefault(); return void resolveAllOpen(t); }
     if ((t = e.target.closest('#ph-alert-filter button'))){
       alertFilter = t.getAttribute('data-f');
       Array.prototype.forEach.call($('ph-alert-filter').children, function(b){ b.classList.toggle('on', b === t); });
