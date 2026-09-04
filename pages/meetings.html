@@ -20,24 +20,30 @@
   .mt-main { flex-basis: 100%; }
   .mt-actions { flex-basis: 100%; }
 /* PM-1018: month folders on Past meetings + the Right-away/Schedule mode toggle */
-#page-meetings .mt-month { border-top: 1px solid var(--border); }
-#page-meetings .mt-month:first-of-type { border-top: 0; }
-#page-meetings .mt-month > summary {
+#page-meetings .mt-month, #page-meetings .mt-year { border-top: 1px solid var(--border); }
+#page-meetings .mt-month:first-of-type, #page-meetings .mt-year:first-of-type { border-top: 0; }
+#page-meetings .mt-month > summary, #page-meetings .mt-year > summary {
   list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px;
   padding: 11px 0; font-size: var(--fs-sm); font-weight: 600; color: var(--text);
 }
-#page-meetings .mt-month > summary::-webkit-details-marker { display: none; }
-#page-meetings .mt-month > summary::before {
+#page-meetings .mt-month > summary::-webkit-details-marker,
+#page-meetings .mt-year > summary::-webkit-details-marker { display: none; }
+#page-meetings .mt-month > summary::before, #page-meetings .mt-year > summary::before {
   content: "\25B8"; display: inline-block; color: var(--text-dim);
   transition: transform var(--t-fast);
 }
-#page-meetings .mt-month[open] > summary::before { transform: rotate(90deg); }
-#page-meetings .mt-month > summary:hover { color: var(--accent); }
+#page-meetings .mt-month[open] > summary::before,
+#page-meetings .mt-year[open] > summary::before { transform: rotate(90deg); }
+#page-meetings .mt-month > summary:hover, #page-meetings .mt-year > summary:hover { color: var(--accent); }
+#page-meetings .mt-year > summary { color: var(--text-muted); letter-spacing: var(--ls-snug); }
 #page-meetings .mt-month-count {
   margin-left: auto; font-size: var(--fs-2xs); font-weight: 700; color: var(--text-muted);
   background: var(--surface-2); border-radius: var(--r-pill); padding: 2px 9px;
 }
 #page-meetings .mt-month-body { padding-bottom: 6px; }
+/* Year folders nest their months one level in, on a hairline spine. */
+#page-meetings .mt-year-body { margin: 0 0 6px 5px; padding-left: 13px; border-left: 1px solid var(--border); }
+#page-meetings .mt-year-body .mt-month:first-of-type { border-top: 0; }
 #page-meetings .mt-mode { display: flex; border: 1px solid var(--border-strong); border-radius: var(--btn-radius); overflow: hidden; }
 #page-meetings .mt-mode button {
   font: inherit; font-size: var(--fs-xs); font-weight: 600; padding: 9px 13px;
@@ -206,34 +212,61 @@
       + '<div class="mt-actions">'+btns+'</div></div>';
   }
 
-  // PM-1018: past meetings collapse into one folder per calendar month, newest first.
-  // Newest month opens by default; the rest stay shut so the card stops growing forever.
+  // PM-1018/1019: past meetings collapse into folders — months for the current year at
+  // the top level, and everything older rolled into one folder per YEAR with its own
+  // months nested inside. The newest top-level folder opens by default (and if that is a
+  // year, its newest month opens too); everything else stays shut.
   function whenOf(m){ return m.scheduled_at || m.started_at || m.created_at; }
-  function monthFolders(list){
-    var order = [], buckets = {};
+  function monthHtml(b, open){
+    return '<details class="mt-month"' + (open ? ' open' : '') + '>'
+      + '<summary>' + esc(b.label)
+      + '<span class="mt-month-count">' + b.rows.length + '</span></summary>'
+      + '<div class="mt-month-body">' + b.rows.map(function(m){ return rowHtml(m, true); }).join('') + '</div>'
+      + '</details>';
+  }
+  function pastFolders(list){
+    var years = [], byYear = {}, undated = [];
     list.slice().sort(function(a,b){ var x=whenOf(a), y=whenOf(b); if(!x) return 1; if(!y) return -1; return new Date(y) - new Date(x); })
       .forEach(function(m){
         var w = whenOf(m), d = w ? new Date(w) : null;
-        var bad = !d || isNaN(d.getTime());   // new Date(null) is the 1970 epoch, NOT NaN — guard the value, not the Date
-        var key = bad ? 'undated' : d.getFullYear() + '-' + ('0'+(d.getMonth()+1)).slice(-2);
-        if (!buckets[key]) { buckets[key] = { label: bad ? 'Undated' : d.toLocaleDateString('en-GB',{month:'long',year:'numeric'}), rows: [] }; order.push(key); }
-        buckets[key].rows.push(m);
+        // new Date(null) is the 1970 epoch, NOT NaN — guard the value, not the Date
+        if (!d || isNaN(d.getTime())) { undated.push(m); return; }
+        var y = d.getFullYear(), key = y + '-' + ('0'+(d.getMonth()+1)).slice(-2);
+        if (!byYear[y]) { byYear[y] = { order: [], months: {} }; years.push(y); }
+        var Y = byYear[y];
+        if (!Y.months[key]) { Y.months[key] = { label: d.toLocaleDateString('en-GB',{month:'long',year:'numeric'}), rows: [] }; Y.order.push(key); }
+        Y.months[key].rows.push(m);
       });
-    return order.map(function(key, i){
-      var b = buckets[key];
-      return '<details class="mt-month"' + (i === 0 ? ' open' : '') + '>'
-        + '<summary>' + esc(b.label)
-        + '<span class="mt-month-count">' + b.rows.length + '</span></summary>'
-        + '<div class="mt-month-body">' + b.rows.map(function(m){ return rowHtml(m, true); }).join('') + '</div>'
-        + '</details>';
-    }).join('');
+
+    var thisYear = new Date().getFullYear(), html = '', firstTopUsed = false;
+    years.forEach(function(y){
+      var Y = byYear[y];
+      if (y === thisYear){
+        // Current year: its months sit at the top level, no year wrapper.
+        Y.order.forEach(function(k){
+          html += monthHtml(Y.months[k], !firstTopUsed);
+          firstTopUsed = true;
+        });
+      } else {
+        var total = Y.order.reduce(function(n,k){ return n + Y.months[k].rows.length; }, 0);
+        var open = !firstTopUsed;   // only if nothing newer exists to open instead
+        firstTopUsed = true;
+        html += '<details class="mt-year"' + (open ? ' open' : '') + '>'
+          + '<summary>' + y + '<span class="mt-month-count">' + total + '</span></summary>'
+          + '<div class="mt-year-body">'
+          + Y.order.map(function(k, i){ return monthHtml(Y.months[k], open && i === 0); }).join('')
+          + '</div></details>';
+      }
+    });
+    if (undated.length) html += monthHtml({ label: 'Undated', rows: undated }, false);
+    return html;
   }
 
   function render(){
     var up = rows.filter(function(m){ return m.status==='scheduled'||m.status==='live'; });
     var past = rows.filter(function(m){ return m.status==='ended'||m.status==='cancelled'; });
     document.getElementById('mt-upcoming').innerHTML = up.length ? up.map(function(m){return rowHtml(m,false);}).join('') : '<div style="font-size:13px;color:var(--text-muted);padding:6px 0">Nothing scheduled — create one above.</div>';
-    document.getElementById('mt-past').innerHTML = past.length ? monthFolders(past) : '<div style="font-size:13px;color:var(--text-muted);padding:6px 0">No past meetings yet.</div>';
+    document.getElementById('mt-past').innerHTML = past.length ? pastFolders(past) : '<div style="font-size:13px;color:var(--text-muted);padding:6px 0">No past meetings yet.</div>';
   }
 
   async function load(){
