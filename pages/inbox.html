@@ -5,45 +5,47 @@
      replies go through the partner-support EF (emails + limits enforced).
      ===================================================================== -->
 <style>
-.ib-wrap{display:grid;grid-template-columns:320px 1fr;gap:0;border:1px solid var(--border);border-radius:16px;background:var(--surface);box-shadow:var(--shadow-md);overflow:hidden;min-height:560px;height:calc(100vh - 220px)}
+.ib-wrap{display:grid;grid-template-columns:1fr;gap:0;border:1px solid var(--border);border-radius:var(--card-radius);background:var(--surface);box-shadow:var(--shadow-md);overflow:hidden;min-height:560px;height:calc(100vh - 190px)}
+.ib-wrap.showing-conv .ib-list{display:none}
+.ib-wrap:not(.showing-conv) .ib-conv{display:none}
 .ib-list{border-right:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column}
 .ib-list-head{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.ib-list-head h3{font-size:14px;font-weight:700}
-.ib-count{font-size:11px;font-weight:700;background:var(--danger-pale,#fbe9e9);color:var(--danger,#c0392b);border-radius:99px;padding:2px 9px}
+.ib-list-head h3{font-size:var(--fs-base);font-weight:700}
+.ib-count{font-size:var(--fs-2xs);font-weight:700;background:var(--danger-pale,#fbe9e9);color:var(--danger,#c0392b);border-radius:var(--r-pill);padding:2px 9px}
 .ib-thread{padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;gap:10px;align-items:flex-start}
 .ib-thread:hover{background:var(--surface-2)}
 .ib-thread.active{background:var(--accent-pale)}
-.ib-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--vyve-teal,#4DAAAA),var(--vyve-teal-light,#6FB8B8));color:#fff;display:grid;place-items:center;font-size:12px;font-weight:700;flex-shrink:0;text-transform:uppercase}
+.ib-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--vyve-teal,#4DAAAA),var(--vyve-teal-light,#6FB8B8));color:#fff;display:grid;place-items:center;font-size:var(--fs-xs);font-weight:700;flex-shrink:0;text-transform:uppercase}
 .ib-tmain{flex:1;min-width:0}
-.ib-tname{font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px}
-.ib-tsnip{font-size:12px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
-.ib-ttime{font-size:10.5px;color:var(--text-dim);font-family:var(--font-mono);flex-shrink:0}
+.ib-tname{font-size:var(--fs-sm);font-weight:700;display:flex;align-items:center;gap:6px}
+.ib-tsnip{font-size:var(--fs-xs);color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.ib-ttime{font-size:var(--fs-2xs);color:var(--text-dim);font-family:var(--font-mono);flex-shrink:0}
 .ib-dot{width:8px;height:8px;border-radius:50%;background:var(--danger,#c0392b);flex-shrink:0}
-.ib-chip{font-size:9.5px;font-weight:700;border-radius:99px;padding:1px 7px;text-transform:uppercase;letter-spacing:.06em}
+.ib-chip{font-size:var(--fs-2xs);font-weight:700;border-radius:var(--r-pill);padding:1px 7px;text-transform:uppercase;letter-spacing:.06em}
 .ib-chip.open{background:var(--danger-pale,#fbe9e9);color:var(--danger,#c0392b)}
 .ib-chip.replied{background:var(--success-pale,#e7f5e7);color:var(--success,#3a9c3a)}
 .ib-chip.closed{background:var(--surface-2);color:var(--text-muted)}
 .ib-conv{display:flex;flex-direction:column;min-width:0}
 .ib-conv-head{padding:13px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
-.ib-conv-head .ib-back{display:none;background:none;border:0;font-size:18px;cursor:pointer;color:var(--text)}
+.ib-conv-head .ib-back{display:block;background:none;border:0;font-size:var(--fs-lg);cursor:pointer;color:var(--text)}
 .ib-conv-title{flex:1;min-width:0}
-.ib-conv-title b{font-size:14.5px}
-.ib-conv-sub{font-size:11.5px;color:var(--text-muted)}
+.ib-conv-title b{font-size:var(--fs-base)}
+.ib-conv-sub{font-size:var(--fs-2xs);color:var(--text-muted)}
 .ib-msgs{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:10px;background:var(--bg)}
-.ib-bubble{max-width:76%;padding:10px 14px;border-radius:16px;font-size:13.5px;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+.ib-bubble{max-width:88%;padding:10px 14px;border-radius:var(--r-lg);font-size:var(--fs-sm);line-height:1.5;white-space:pre-wrap;word-break:break-word}
 .ib-bubble.partner{align-self:flex-start;background:var(--surface);border:1px solid var(--border);border-bottom-left-radius:5px}
 .ib-bubble.admin{align-self:flex-end;background:var(--vyve-teal,#4DAAAA);color:#fff;border-bottom-right-radius:5px}
-.ib-meta{font-size:10px;color:var(--text-dim);margin-top:5px;font-family:var(--font-mono)}
+.ib-meta{font-size:var(--fs-2xs);color:var(--text-dim);margin-top:5px;font-family:var(--font-mono)}
 .ib-bubble.admin .ib-meta{color:rgba(255,255,255,.75)}
 .ib-compose{border-top:1px solid var(--border);padding:12px 14px;display:flex;gap:10px;align-items:flex-end;background:var(--surface)}
-.ib-compose textarea{flex:1;resize:none;border:1px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text);padding:10px 12px;font-size:13.5px;font-family:inherit;min-height:44px;max-height:140px}
-.ib-empty{display:grid;place-items:center;color:var(--text-muted);font-size:13.5px;height:100%;padding:30px;text-align:center}
-@media(max-width:820px){
-  .ib-wrap{grid-template-columns:1fr;height:calc(100vh - 190px)}
-  .ib-wrap.showing-conv .ib-list{display:none}
-  .ib-wrap:not(.showing-conv) .ib-conv{display:none}
-  .ib-conv-head .ib-back{display:block}
-  .ib-bubble{max-width:88%}
+.ib-compose textarea{flex:1;resize:none;border:1px solid var(--border);border-radius:var(--input-radius);background:var(--bg);color:var(--text);padding:10px 12px;font-size:var(--fs-sm);font-family:inherit;min-height:44px;max-height:140px}
+.ib-empty{display:grid;place-items:center;color:var(--text-muted);font-size:var(--fs-sm);height:100%;padding:30px;text-align:center}
+@media(min-width:900px){
+  .ib-wrap{grid-template-columns:320px 1fr;height:calc(100vh - 220px)}
+  .ib-wrap.showing-conv .ib-list{display:flex}
+  .ib-wrap:not(.showing-conv) .ib-conv{display:flex}
+  .ib-conv-head .ib-back{display:none}
+  .ib-bubble{max-width:76%}
 }
 </style>
 

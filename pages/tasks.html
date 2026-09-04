@@ -110,21 +110,21 @@
 </div>
 
 <style>
-  .seg-btn { background:transparent;border:0;padding:6px 12px;font-size:12px;font-weight:600;color:var(--text-muted);cursor:pointer;border-radius:calc(var(--r-md) - 3px);transition:background .15s,color .15s; }
+  .seg-btn { background:transparent;border:0;padding:6px 12px;font-size:var(--fs-xs);font-weight:600;color:var(--text-muted);cursor:pointer;border-radius:calc(var(--r-md) - 3px);transition:background .15s,color .15s; }
   .seg-btn.active { background:var(--surface);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.06); }
 
-  .tk-board { display:grid;grid-template-columns:repeat(4, 1fr);gap:14px;align-items:start; }
+  .tk-board { display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;gap:12px;padding-bottom:10px; }
   /* PM-923: on mobile the board becomes swipeable columns instead of 4 crushed grid tracks */
-  @media (max-width: 900px) {
-    .tk-board { display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;gap:12px;padding-bottom:10px; }
-    .tk-col { min-width:80vw;max-width:80vw;flex:0 0 auto;scroll-snap-align:start; }
+  @media (min-width: 900px) {
+    .tk-board { display:grid;grid-template-columns:repeat(4, 1fr);gap:14px;align-items:start;overflow-x:visible;scroll-snap-type:none;padding-bottom:0; }
+    .tk-col { min-width:0;max-width:none;flex:initial;scroll-snap-align:none; }
   }
-  .tk-col { background:var(--surface-2);border-radius:var(--r-lg);padding:12px;min-height:200px; }
+  .tk-col { background:var(--surface-2);border-radius:var(--r-lg);padding:12px;min-height:200px;min-width:80vw;max-width:80vw;flex:0 0 auto;scroll-snap-align:start; }
   .tk-col-header { display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding:0 4px; }
-  .tk-col-title { font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted); }
-  .tk-col-count { background:var(--surface);color:var(--text-muted);font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:var(--r-pill); }
+  .tk-col-title { font-size:var(--fs-2xs);font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted); }
+  .tk-col-count { background:var(--surface);color:var(--text-muted);font-size:var(--fs-2xs);font-weight:700;padding:1px 7px;border-radius:var(--r-pill); }
   .tk-col[data-stage="doing"] .tk-col-title { color:var(--vyve-teal,#4DAAAA); }
-  .tk-col[data-stage="blocked"] .tk-col-title { color:var(--vyve-coral,#D17F6E); }
+  .tk-col[data-stage="blocked"] .tk-col-title { color:var(--pillar-social); }
   .tk-col[data-stage="done"] .tk-col-title { color:var(--success,#3a9c3a); }
 
   .tk-card {
@@ -133,28 +133,28 @@
     border-left:3px solid var(--border);
   }
   .tk-card:hover { transform:translateY(-1px);box-shadow:0 3px 8px rgba(0,0,0,.08); }
-  .tk-card.priority-high { border-left-color:var(--vyve-coral,#D17F6E); }
+  .tk-card.priority-high { border-left-color:var(--pillar-social); }
   .tk-card.priority-medium { border-left-color:var(--vyve-gold,#D49B2C); }
   .tk-card.priority-low { border-left-color:var(--vyve-teal,#4DAAAA); }
   .tk-card.overdue { background:rgba(224,96,96,.04); }
 
-  .tk-card-title { font-size:13px;font-weight:600;line-height:1.35;margin-bottom:6px; }
-  .tk-card-meta { display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text-muted);flex-wrap:wrap; }
-  .tk-card-meta .pill { padding:1px 6px;border-radius:var(--r-pill);background:var(--surface-2);font-weight:600;font-size:10px;text-transform:capitalize; }
+  .tk-card-title { font-size:var(--fs-sm);font-weight:600;line-height:1.35;margin-bottom:6px; }
+  .tk-card-meta { display:flex;align-items:center;gap:8px;font-size:var(--fs-2xs);color:var(--text-muted);flex-wrap:wrap; }
+  .tk-card-meta .pill { padding:1px 6px;border-radius:var(--r-pill);background:var(--surface-2);font-weight:600;font-size:var(--fs-2xs);text-transform:capitalize; }
   .tk-card-meta .pill.pillar-physical { background:rgba(77,170,170,.12);color:var(--vyve-teal,#4DAAAA); }
   .tk-card-meta .pill.pillar-mental { background:rgba(212,155,44,.12);color:var(--vyve-gold,#D49B2C); }
-  .tk-card-meta .pill.pillar-social { background:rgba(209,127,110,.12);color:var(--vyve-coral,#D17F6E); }
+  .tk-card-meta .pill.pillar-social { background:rgba(209,127,110,.12);color:var(--pillar-social); }
 
   .tk-card-due { font-variant-numeric:tabular-nums; }
   .tk-card-due.overdue { color:var(--danger,#d05050);font-weight:700; }
-  .tk-avatar { width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg, var(--vyve-teal,#4DAAAA), var(--vyve-teal-light,#6FB8B8));color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:700;text-transform:uppercase; }
+  .tk-avatar { width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg, var(--vyve-teal,#4DAAAA), var(--vyve-teal-light,#6FB8B8));color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:var(--fs-2xs);font-weight:700;text-transform:uppercase; }
 
-  .tk-th { text-align:left;padding:11px 16px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--text-muted);border-bottom:1px solid var(--border); }
+  .tk-th { text-align:left;padding:11px 16px;font-size:var(--fs-2xs);text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--text-muted);border-bottom:1px solid var(--border); }
   .tk-row { transition:background .1s;cursor:pointer; }
   .tk-row:hover { background:var(--surface-2); }
-  .tk-row td { padding:11px 16px;font-size:13px;border-bottom:1px solid var(--border); }
+  .tk-row td { padding:11px 16px;font-size:var(--fs-sm);border-bottom:1px solid var(--border); }
   .tk-row td:first-child { font-weight:600; }
-  .tk-empty { padding:30px 12px;text-align:center;color:var(--text-muted);font-size:12px; }
+  .tk-empty { padding:30px 12px;text-align:center;color:var(--text-muted);font-size:var(--fs-xs); }
 </style>
 
 <script>
@@ -306,7 +306,7 @@
     if (!rows.length){ body.innerHTML = '<tr><td colspan="7" style="padding:30px;text-align:center;color:var(--text-muted)">No tasks match.</td></tr>'; return; }
     body.innerHTML = rows.map(function(t){
       var overdue = isOverdue(t.due_date, t.stage);
-      var stageColor = { todo: 'var(--text-muted)', doing: 'var(--vyve-teal,#4DAAAA)', blocked: 'var(--vyve-coral,#D17F6E)', done: 'var(--success,#3a9c3a)' }[t.stage] || 'var(--text-muted)';
+      var stageColor = { todo: 'var(--text-muted)', doing: 'var(--vyve-teal,#4DAAAA)', blocked: 'var(--pillar-social)', done: 'var(--success,#3a9c3a)' }[t.stage] || 'var(--text-muted)';
       return '<tr class="tk-row" data-id="' + t.id + '">' +
         '<td>' + escape(t.title) + '</td>' +
         '<td><span style="color:' + stageColor + ';font-weight:600;text-transform:capitalize">' + (t.stage || '—') + '</span></td>' +

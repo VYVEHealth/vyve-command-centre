@@ -7,47 +7,47 @@
      ===================================================================== -->
 <style>
 .ig-head{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px}
-.ig-eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
-.ig-h1{font-size:22px;font-weight:700;letter-spacing:-.015em}
-.ig-meta{font-size:13px;color:var(--text-muted)}
-.ig-btn{border:0;border-radius:9px;padding:9px 16px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:var(--font-body)}
+.ig-eyebrow{font-family:var(--font-mono);font-size:var(--fs-2xs);letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.ig-h1{font-size:var(--fs-xl);font-weight:700;letter-spacing:-.015em}
+.ig-meta{font-size:var(--fs-sm);color:var(--text-muted)}
+.ig-btn{border:0;border-radius:var(--btn-radius);padding:9px 16px;font-size:var(--fs-sm);font-weight:600;cursor:pointer;font-family:var(--font-body)}
 .ig-btn.primary{background:var(--accent);color:var(--on-accent)}
 .ig-btn.primary:hover{background:var(--accent-hover)}
 .ig-btn.secondary{background:var(--surface-2);color:var(--text);border:1px solid var(--border-strong)}
 .ig-btn.danger{background:var(--danger-pale);color:var(--danger)}
-.ig-sect{font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--text-dim);margin:26px 0 12px;display:flex;align-items:center;gap:10px}
+.ig-sect{font-family:var(--font-mono);font-size:var(--fs-2xs);letter-spacing:.16em;text-transform:uppercase;color:var(--text-dim);margin:26px 0 12px;display:flex;align-items:center;gap:10px}
 .ig-sect:first-of-type{margin-top:0}
 .ig-sect::after{content:"";flex:1;height:1px;background:var(--border)}
 .ig-sect button{margin-left:auto}
-.ig-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow-md);overflow-x:auto}
+.ig-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--card-radius);box-shadow:var(--shadow-md);overflow-x:auto}
 .ig-table{width:100%;border-collapse:collapse}
-.ig-table th{font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim);text-align:left;padding:10px 16px;border-bottom:1px solid var(--border)}
-.ig-table td{padding:11px 16px;border-bottom:1px solid var(--border);font-size:13.5px;vertical-align:middle}
+.ig-table th{font-family:var(--font-mono);font-size:var(--fs-2xs);letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim);text-align:left;padding:10px 16px;border-bottom:1px solid var(--border)}
+.ig-table td{padding:11px 16px;border-bottom:1px solid var(--border);font-size:var(--fs-sm);vertical-align:middle}
 .ig-table td.num{font-variant-numeric:tabular-nums;font-weight:600}
 .ig-table tbody tr:last-child td{border-bottom:0}
 .ig-table tbody tr{cursor:pointer;transition:background .12s}
 .ig-table tbody tr:hover{background:var(--accent-pale)}
-.ig-pill{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;border-radius:99px;padding:3px 10px}
+.ig-pill{display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-2xs);font-weight:600;border-radius:var(--r-pill);padding:3px 10px}
 .ig-pill i{width:6px;height:6px;border-radius:50%;background:currentColor}
 .ig-pill.cold,.ig-pill.identified{background:var(--surface-2);color:var(--text-muted)}
 .ig-pill.intro,.ig-pill.meeting,.ig-pill.applying{background:var(--accent-pale);color:var(--accent)}
 .ig-pill.due-diligence,.ig-pill.submitted{background:var(--warning-pale);color:var(--warning)}
 .ig-pill.term-sheet,.ig-pill.awarded{background:var(--success-pale);color:var(--success)}
 .ig-pill.passed,.ig-pill.rejected{background:var(--danger-pale);color:var(--danger)}
-.ig-empty{padding:22px;text-align:center;color:var(--text-muted);font-size:13px}
-.ig-error{background:var(--danger-pale);border-radius:12px;padding:12px 16px;color:var(--danger);font-size:13.5px;margin-bottom:14px;display:none}
-.ig-overlay{position:fixed;inset:0;background:rgba(4,12,12,.6);backdrop-filter:blur(3px);z-index:80;display:flex;align-items:center;justify-content:center;padding:18px}
-.ig-modal{background:var(--surface);border:1px solid var(--border-strong);border-radius:16px;max-width:460px;width:100%;box-shadow:var(--shadow-lg);max-height:92vh;overflow-y:auto}
-.ig-mh{padding:18px 20px 0}.ig-mh h3{font-size:16px;font-weight:700}
+.ig-empty{padding:22px;text-align:center;color:var(--text-muted);font-size:var(--fs-sm)}
+.ig-error{background:var(--danger-pale);border-radius:var(--r-lg);padding:12px 16px;color:var(--danger);font-size:var(--fs-sm);margin-bottom:14px;display:none}
+.ig-overlay{position:fixed;inset:0;background:rgba(4,12,12,.6);backdrop-filter:blur(3px);z-index:80;display:flex;align-items:flex-end;justify-content:center;padding:0}
+.ig-modal{background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--modal-radius) var(--modal-radius) 0 0;max-width:100%;width:100%;box-shadow:var(--shadow-lg);max-height:92vh;overflow-y:auto}
+.ig-mh{padding:18px 20px 0}.ig-mh h3{font-size:var(--fs-md);font-weight:700}
 .ig-mb{padding:12px 20px 4px}
 .ig-field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
-.ig-field label{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim)}
-.ig-in{background:var(--surface-2);border:1px solid var(--border-strong);border-radius:9px;padding:9px 12px;font-size:13.5px;color:var(--text);font-family:var(--font-body);width:100%}
+.ig-field label{font-family:var(--font-mono);font-size:var(--fs-2xs);letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim)}
+.ig-in{background:var(--surface-2);border:1px solid var(--border-strong);border-radius:var(--input-radius);padding:9px 12px;font-size:var(--fs-sm);color:var(--text);font-family:var(--font-body);width:100%}
 .ig-in:focus{outline:2px solid var(--accent);outline-offset:0;border-color:transparent}
 .ig-two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .ig-mf{display:flex;justify-content:space-between;gap:10px;padding:16px 20px 18px}
 .ig-mf-right{display:flex;gap:10px}
-@media(max-width:640px){.ig-overlay{padding:0;align-items:flex-end}.ig-modal{max-width:100%;width:100%;border-radius:16px 16px 0 0;max-height:92vh;overflow-y:auto}}
+@media(min-width:640px){.ig-overlay{align-items:center;padding:18px}.ig-modal{border-radius:var(--modal-radius);max-width:460px}}
 </style>
 
 <div class="ig-head">

@@ -1,38 +1,39 @@
 <div class="page active" id="page-ambassadors">
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <style>
-#page-ambassadors .am-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+#page-ambassadors .am-stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}
 #page-ambassadors .am-stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md,10px);padding:13px 16px}
-#page-ambassadors .am-stat b{display:block;font-size:21px;font-weight:700;letter-spacing:-.02em}
-#page-ambassadors .am-stat span{font-size:12px;color:var(--text-muted)}
+#page-ambassadors .am-stat b{display:block;font-size:var(--fs-xl);font-weight:700;letter-spacing:-.02em}
+#page-ambassadors .am-stat span{font-size:var(--fs-xs);color:var(--text-muted)}
 #page-ambassadors table{width:100%;border-collapse:collapse}
-#page-ambassadors th{text-align:left;font-size:11.5px;color:var(--text-muted);font-weight:600;padding:10px 14px;border-bottom:1px solid var(--border)}
-#page-ambassadors td{padding:11px 14px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+#page-ambassadors th{text-align:left;font-size:var(--fs-2xs);color:var(--text-muted);font-weight:600;padding:10px 14px;border-bottom:1px solid var(--border)}
+#page-ambassadors td{padding:11px 14px;border-bottom:1px solid var(--border);font-size:var(--fs-sm);vertical-align:middle}
 #page-ambassadors tr.am-row{cursor:pointer}
 #page-ambassadors tr.am-row:hover{background:var(--surface-2)}
-#page-ambassadors .am-who small{display:block;color:var(--text-dim);font-size:11.5px}
-#page-ambassadors .am-mono{font-family:var(--font-mono,monospace);font-size:12px}
-#page-ambassadors .am-chip{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:600;white-space:nowrap}
+#page-ambassadors .am-who small{display:block;color:var(--text-dim);font-size:var(--fs-2xs)}
+#page-ambassadors .am-mono{font-family:var(--font-mono,monospace);font-size:var(--fs-xs)}
+#page-ambassadors .am-chip{display:inline-block;padding:3px 9px;border-radius:var(--r-pill);font-size:var(--fs-2xs);font-weight:600;white-space:nowrap}
 #page-ambassadors .am-chip.live{background:var(--success-pale);color:var(--success)}
 #page-ambassadors .am-chip.onboarding{background:var(--warning-pale);color:var(--warning)}
 #page-ambassadors .am-chip.suspended{background:var(--surface-2);color:var(--text-dim)}
-#page-ambassadors .am-btn{font:inherit;font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:7px;border:1px solid var(--border-strong);background:var(--surface);color:var(--text);cursor:pointer}
+#page-ambassadors .am-btn{font:inherit;font-size:var(--fs-xs);font-weight:600;padding:6px 12px;border-radius:var(--btn-radius);border:1px solid var(--border-strong);background:var(--surface);color:var(--text);cursor:pointer}
 #page-ambassadors .am-btn:hover{border-color:var(--accent)}
 #page-ambassadors .am-btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 #page-ambassadors .am-btn.danger{color:var(--danger)}
-#page-ambassadors .am-kit{display:grid;grid-template-columns:172px 1fr;gap:18px;padding:16px;background:var(--surface-sunken,var(--surface-2));border-radius:var(--r-md,10px)}
-#page-ambassadors .am-qr{width:160px;height:160px;background:#fff;border:1px solid var(--border);border-radius:10px;display:grid;place-items:center;line-height:0}
+#page-ambassadors .am-kit{display:grid;grid-template-columns:1fr;gap:18px;padding:16px;background:var(--surface-sunken,var(--surface-2));border-radius:var(--r-md,10px)}
+#page-ambassadors .am-hide-sm{display:none}
+#page-ambassadors .am-qr{width:160px;height:160px;background:#fff;border:1px solid var(--border);border-radius:var(--r-md);display:grid;place-items:center;line-height:0}
 #page-ambassadors .am-qr img{width:140px;height:140px;image-rendering:pixelated}
 #page-ambassadors .am-field{display:flex;gap:8px;align-items:center;margin-top:9px}
-#page-ambassadors .am-field input{flex:1;font:inherit;font-size:12.5px;padding:8px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text)}
-#page-ambassadors .am-hint{font-size:12px;color:var(--text-muted);margin-top:5px}
-#page-ambassadors .am-warn{background:var(--warning-pale);border:1px solid var(--warning);border-radius:8px;padding:8px 11px;font-size:12px;margin-top:10px}
+#page-ambassadors .am-field input{flex:1;font:inherit;font-size:var(--fs-xs);padding:8px 10px;border:1px solid var(--border);border-radius:var(--input-radius);background:var(--surface);color:var(--text)}
+#page-ambassadors .am-hint{font-size:var(--fs-xs);color:var(--text-muted);margin-top:5px}
+#page-ambassadors .am-warn{background:var(--warning-pale);border:1px solid var(--warning);border-radius:var(--r-md);padding:8px 11px;font-size:var(--fs-xs);margin-top:10px}
 #page-ambassadors .am-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:3000;align-items:center;justify-content:center;padding:18px}
 #page-ambassadors .am-modal .card{max-width:460px;width:100%;padding:22px 24px;max-height:86vh;overflow:auto}
-#page-ambassadors .am-modal label{display:block;font-size:12px;font-weight:600;margin:12px 0 4px}
-#page-ambassadors .am-modal input{width:100%;font:inherit;padding:9px 11px;border:1px solid var(--border-strong);border-radius:7px;background:var(--surface);color:var(--text)}
+#page-ambassadors .am-modal label{display:block;font-size:var(--fs-xs);font-weight:600;margin:12px 0 4px}
+#page-ambassadors .am-modal input{width:100%;font:inherit;padding:9px 11px;border:1px solid var(--border-strong);border-radius:var(--input-radius);background:var(--surface);color:var(--text)}
 #page-ambassadors .am-2col{display:grid;grid-template-columns:1fr 120px;gap:10px}
-@media (max-width:760px){#page-ambassadors .am-stats{grid-template-columns:1fr 1fr}#page-ambassadors .am-kit{grid-template-columns:1fr}#page-ambassadors .am-hide-sm{display:none}}
+@media (min-width:900px){#page-ambassadors .am-stats{grid-template-columns:repeat(4,1fr)}#page-ambassadors .am-kit{grid-template-columns:172px 1fr}#page-ambassadors .am-hide-sm{display:table-cell}}
 </style>
 
   <div class="page-hero">
