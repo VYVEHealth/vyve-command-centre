@@ -32,28 +32,116 @@
 </div>
 
 <style>
-  .ap-filter.active { background: var(--vyve-teal-dark); color: var(--text); border-color: var(--vyve-teal); }
+  /* ===================================================================
+     PM-1016 (CC design system, Wave 4): the .ap-* rules that lived at the
+     tail of assets/components.css are merged in here, where they belong —
+     they were never primitives. MERGED, not appended: the router injects
+     this <style> after components.css, so every selector this page already
+     defined was already winning on source order. Only the declarations
+     components.css uniquely supplied have been added.
+
+     The mobile block below deliberately keeps BOTH its !important flags and
+     its max-width query. Those rules exist to beat inline styles emitted by
+     the renderer further down this file (.ap-member-head, .ap-action-row and
+     .ap-status-pill are all written with an inline style= by renderMember /
+     renderAction). Min-width authoring cannot express that without hardcoding
+     the renderer's inline values into CSS, so Law 1 yields here exactly as it
+     yielded for shell.css in Wave 0. Logged, not accidental.
+     =================================================================== */
+
+  /* Preserved from components.css. Zero DOM consumers today — the renderer
+     emits class="ap-member card", not "ap-member-card". Kept rather than
+     dropped (soft-kill discipline). */
+  .ap-member-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    margin-bottom: 14px;
+    overflow: hidden;
+    box-shadow: var(--shadow-xs);
+    transition: box-shadow var(--t-fast), border-color var(--t-fast);
+  }
+  .ap-member-card:hover { box-shadow: var(--shadow-sm); }
+  .ap-member-card.open { border-color: var(--accent); }
+
+  /* The renderer's inline style supplies display/align-items/gap/padding/cursor.
+     These two are the only declarations components.css uniquely contributed. */
+  .ap-member-head { user-select: none; transition: background var(--t-fast); }
   .ap-member-head:hover { background: var(--surface-2); }
+
   .ap-action-row { transition: background .15s; }
   .ap-action-row:hover { background: var(--surface-2); }
-  .ap-progress-track { width: 120px; height: 6px; background: var(--surface-2); border-radius: 3px; overflow: hidden; }
+
+  /* flex-shrink came from components.css; the rest is this page's own rule. */
+  .ap-progress-track { width: 120px; height: 6px; background: var(--surface-2); border-radius: var(--r-sm); overflow: hidden; flex-shrink: 0; }
   .ap-progress-fill { height: 100%; background: linear-gradient(90deg, var(--vyve-teal), var(--vyve-teal-light)); transition: width .3s; }
-  .ap-status-pill { flex-shrink: 0; font-size: 10.5px; font-weight: 600; padding: 4px 10px; border-radius: 12px; min-width: 96px; text-align: center; text-transform: uppercase; letter-spacing: .4px; }
-  .ap-avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, var(--vyve-teal), var(--vyve-teal-light)); display: flex; align-items: center; justify-content: center; font-family: var(--font-head); font-weight: 700; color: #fff; font-size: 14px; flex-shrink: 0; box-shadow: var(--shadow-xs); }
+
+  .ap-status-pill { flex-shrink: 0; font-size: var(--fs-2xs); font-weight: 600; padding: 4px 10px; border-radius: var(--r-lg); min-width: 96px; text-align: center; text-transform: uppercase; letter-spacing: .4px; }
+
+  .ap-avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, var(--vyve-teal), var(--vyve-teal-light)); display: flex; align-items: center; justify-content: center; font-family: var(--font-head); font-weight: 700; color: #fff; font-size: var(--fs-base); flex-shrink: 0; box-shadow: var(--shadow-xs); }
   .ap-avatar.physical { background: linear-gradient(135deg, var(--pillar-physical), #E5B454); }
   .ap-avatar.mental   { background: linear-gradient(135deg, var(--pillar-mental), #6BC2C2); }
   .ap-avatar.social   { background: linear-gradient(135deg, var(--pillar-social), #E59A89); }
+
+  /* Base .ap-filter came from components.css and had no page-local copy —
+     it is live and moves across whole. The filter buttons also carry
+     .btn.btn-ghost; .ap-filter sat after .btn-ghost in components.css and
+     still sits after it here, so the cascade order is unchanged.
+     NOTE: --vyve-teal-dark on .active is undefined repo-wide (pre-existing,
+     reported separately) — left exactly as it renders today. */
+  .ap-filter {
+    padding: 6px 14px;
+    border-radius: var(--r-pill);
+    font-size: var(--fs-sm);
+    font-weight: var(--fw-medium);
+    color: var(--text-muted);
+    background: var(--surface-2);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all var(--t-fast);
+  }
+  .ap-filter:hover { color: var(--text); }
+  .ap-filter.active { background: var(--vyve-teal-dark); color: var(--text); border-color: var(--vyve-teal); font-weight: var(--fw-semi); }
+
   .ap-edit-form .form-group { margin-bottom: 14px; }
-  .ap-edit-form label { display: block; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; font-weight: 600; }
+  .ap-edit-form label { display: block; font-size: var(--fs-2xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; font-weight: 600; }
   .ap-edit-form input[type="date"], .ap-edit-form select, .ap-edit-form textarea {
     width: 100%; padding: 9px 11px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-sm);
-    color: var(--text); font-family: var(--font-body); font-size: 13px;
+    color: var(--text); font-family: var(--font-body); font-size: var(--fs-sm);
   }
   .ap-edit-form textarea { resize: vertical; min-height: 90px; }
   .ap-edit-form input[type="range"] { width: 100%; accent-color: var(--vyve-teal-light); }
   .ap-edit-form .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .ap-action-text { font-size: 13px; line-height: 1.55; color: var(--text); }
+  .ap-action-text { font-size: var(--fs-sm); line-height: 1.55; color: var(--text); }
   .ap-action-text.done { opacity: .6; text-decoration: line-through; }
+
+  /* Moved verbatim from components.css — see the note at the top of this block
+     for why the !important flags and the max-width query both stay. */
+  @media (max-width: 720px) {
+    .ap-member-head {
+      flex-wrap: wrap !important;
+      gap: 12px !important;
+      padding: 16px !important;
+      min-height: 56px;
+    }
+    .ap-member-head > div:last-child {
+      width: 100%;
+      justify-content: space-between !important;
+    }
+    .ap-progress-track { display: none; }
+    .ap-action-row {
+      flex-wrap: wrap !important;
+      padding: 14px 16px !important;
+    }
+    .ap-status-pill {
+      min-width: auto !important;
+      padding: 5px 11px !important;
+      font-size: var(--fs-xs) !important;
+    }
+    .ap-avatar { width: 40px !important; height: 40px !important; }
+    .ap-filter { padding: 7px 13px !important; }
+    .ap-edit-form .form-row { grid-template-columns: 1fr !important; }
+  }
 </style>
 
 <script>
