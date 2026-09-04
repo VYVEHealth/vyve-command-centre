@@ -1192,7 +1192,7 @@ main.main::-webkit-scrollbar-thumb { background: var(--border-strong); border-ra
 }
 .acl-people-table th {
   text-align: left;
-  font-size: var(--fs-xxs);
+  font-size: var(--fs-2xs);
   font-weight: var(--fw-bold);
   letter-spacing: var(--ls-wide);
   text-transform: uppercase;

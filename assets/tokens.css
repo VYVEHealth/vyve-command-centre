@@ -60,13 +60,6 @@
   --fs-md: 16px; --fs-lg: 18px; --fs-xl: 22px; --fs-2xl: 28px;
   --fs-3xl: 34px; --fs-4xl: 44px;
 
-  /* Compat aliases — RETIRE IN WAVE 4 with their last consumers.
-     --fs-xxs: 12 refs (components, shell, org/delivery/brief/knowledge/
-     dashboard/commercial/marketing). --fs-hero: 2 refs (components
-     .stat-hero, brief). Part A drops both; Part C's "nearest canonical by
-     inspection" applies until those pages are snapped in their own wave. */
-  --fs-xxs: var(--fs-2xs); --fs-hero: 56px;
-
   --fw-normal: 400; --fw-medium: 500; --fw-semi: 600; --fw-bold: 700;
   --ls-tight: -0.02em; --ls-snug: -0.01em; --ls-normal: 0; --ls-wide: 0.04em; --ls-mega: 0.12em;
   --lh-tight: 1.2; --lh-base: 1.5; --lh-dense: 1.35;
