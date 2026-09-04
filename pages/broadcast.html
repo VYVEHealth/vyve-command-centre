@@ -147,6 +147,38 @@
   .bc-recent-title { font-weight:600;color:var(--text);font-size:var(--fs-sm); }
   .bc-recent-meta { font-size:var(--fs-2xs);color:var(--text-muted);margin-top:2px; }
   .bc-recent-count { font-weight:700;color:var(--vyve-teal,#4DAAAA);font-size:var(--fs-sm);white-space:nowrap; }
+
+  /* PM-1021: month/year folders for Recent broadcasts — same chrome as the
+     Meetings past-meeting folders (PM-1018/1019) so the two read identically. */
+  #page-broadcast .bc-fold, #page-broadcast .bc-year { border-top:1px solid var(--border); }
+  #page-broadcast .bc-fold:first-of-type, #page-broadcast .bc-year:first-of-type { border-top:0; }
+  #page-broadcast .bc-fold > summary, #page-broadcast .bc-year > summary {
+    cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;
+    padding:9px 0;font-size:var(--fs-sm);font-weight:600;color:var(--text);
+  }
+  #page-broadcast .bc-fold > summary::-webkit-details-marker,
+  #page-broadcast .bc-year > summary::-webkit-details-marker { display:none; }
+  #page-broadcast .bc-fold > summary::before, #page-broadcast .bc-year > summary::before {
+    content:'';width:0;height:0;flex:none;border-left:5px solid currentColor;
+    border-top:4px solid transparent;border-bottom:4px solid transparent;transition:transform .15s;
+  }
+  #page-broadcast .bc-fold[open] > summary::before,
+  #page-broadcast .bc-year[open] > summary::before { transform:rotate(90deg); }
+  #page-broadcast .bc-fold > summary:hover, #page-broadcast .bc-year > summary:hover { color:var(--accent); }
+  #page-broadcast .bc-year > summary { color:var(--text-muted); }
+  #page-broadcast .bc-fold-count {
+    margin-left:auto;background:var(--surface-2);color:var(--text-muted);
+    font-size:var(--fs-2xs);font-weight:700;padding:1px 8px;border-radius:var(--r-pill);
+  }
+  #page-broadcast .bc-fold-body { padding-bottom:6px; }
+  #page-broadcast .bc-year-body { margin:0 0 6px 5px;padding-left:13px;border-left:1px solid var(--border); }
+  #page-broadcast .bc-year-body .bc-fold:first-of-type { border-top:0; }
+  #page-broadcast .bc-hidden { display:none; }
+  #page-broadcast .bc-more {
+    display:block;width:100%;text-align:left;background:none;border:0;cursor:pointer;
+    padding:8px 0;font-family:var(--font-body);font-size:var(--fs-2xs);font-weight:600;color:var(--accent);
+  }
+  #page-broadcast .bc-more:hover { text-decoration:underline; }
 </style>
 
 <script>
@@ -363,6 +395,83 @@
     } catch (e){ console.warn('[broadcast] loadCompanies', e); }
   }
 
+  // PM-1021: Recent broadcasts collapse into folders, matching the Meetings page
+  // (PM-1018/1019): months for the CURRENT year sit at the top level, everything older
+  // rolls into one folder per YEAR with that year's months nested inside. The newest
+  // top-level folder opens by default; if that is a year folder, its newest month opens
+  // with it, so the card is never a page of shut boxes. Each month renders at most
+  // BC_VISIBLE rows with a "Show all" toggle, so no folder can dump a wall of history.
+  var BC_VISIBLE = 10;
+
+  function bcRowHtml(row){
+    var when = new Date(row.sent_at);
+    var whenStr = when.toLocaleString('en-GB', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' });
+    var statusColor = row.error ? 'var(--pillar-social)' : 'var(--vyve-teal,#4DAAAA)';
+    return '<div class="bc-recent-row">' +
+        '<div class="bc-recent-time">' + whenStr + '</div>' +
+        '<div>' +
+          '<div class="bc-recent-title">' + escapeHtml(row.title || '—') + '</div>' +
+          '<div class="bc-recent-meta">' +
+            escapeHtml(row.body || '').slice(0, 80) +
+            ' · <span style="color:' + statusColor + '">' + (row.source || 'manual') + '</span>' +
+            ' · ' + escapeHtml(row.sent_by || '') +
+            (row.error ? ' · <span style="color:var(--pillar-social)">err: ' + escapeHtml(String(row.error).slice(0,40)) + '</span>' : '') +
+          '</div>' +
+        '</div>' +
+        '<div class="bc-recent-count">' + (row.recipient_count || 0) + '</div>' +
+      '</div>';
+  }
+
+  function bcMonthHtml(b, open){
+    var body = b.rows.map(function(row, i){
+      var h = bcRowHtml(row);
+      return i < BC_VISIBLE ? h : h.replace('class="bc-recent-row"', 'class="bc-recent-row bc-hidden"');
+    }).join('');
+    if (b.rows.length > BC_VISIBLE){
+      body += '<button class="bc-more" type="button" data-bc-more="1">Show all ' + b.rows.length + '</button>';
+    }
+    return '<details class="bc-fold"' + (open ? ' open' : '') + '>' +
+        '<summary>' + escapeHtml(b.label) + '<span class="bc-fold-count">' + b.rows.length + '</span></summary>' +
+        '<div class="bc-fold-body">' + body + '</div>' +
+      '</details>';
+  }
+
+  function bcFolders(list){
+    var years = [], byYear = {}, undated = [];
+    list.slice().sort(function(a,b){
+      if (!a.sent_at) return 1; if (!b.sent_at) return -1;
+      return new Date(b.sent_at) - new Date(a.sent_at);
+    }).forEach(function(row){
+      // new Date(null) is the 1970 epoch, NOT NaN — guard the value, not the Date
+      var d = row.sent_at ? new Date(row.sent_at) : null;
+      if (!d || isNaN(d.getTime())) { undated.push(row); return; }
+      var y = d.getFullYear(), key = y + '-' + ('0' + (d.getMonth()+1)).slice(-2);
+      if (!byYear[y]) { byYear[y] = { order: [], months: {} }; years.push(y); }
+      var Y = byYear[y];
+      if (!Y.months[key]) { Y.months[key] = { label: d.toLocaleDateString('en-GB',{month:'long',year:'numeric'}), rows: [] }; Y.order.push(key); }
+      Y.months[key].rows.push(row);
+    });
+
+    var thisYear = new Date().getFullYear(), html = '', firstTopUsed = false;
+    years.forEach(function(y){
+      var Y = byYear[y];
+      if (y === thisYear){
+        Y.order.forEach(function(k){ html += bcMonthHtml(Y.months[k], !firstTopUsed); firstTopUsed = true; });
+      } else {
+        var total = Y.order.reduce(function(n,k){ return n + Y.months[k].rows.length; }, 0);
+        var open = !firstTopUsed;
+        firstTopUsed = true;
+        html += '<details class="bc-year"' + (open ? ' open' : '') + '>' +
+            '<summary>' + y + '<span class="bc-fold-count">' + total + '</span></summary>' +
+            '<div class="bc-year-body">' +
+              Y.order.map(function(k, i){ return bcMonthHtml(Y.months[k], open && i === 0); }).join('') +
+            '</div></details>';
+      }
+    });
+    if (undated.length) html += bcMonthHtml({ label: 'Undated', rows: undated }, false);
+    return html;
+  }
+
   async function loadRecent(){
     var el = $('bc-recent-list');
     if (!el) return;
@@ -372,31 +481,11 @@
       var r = await sb.from('admin_broadcast_log')
         .select('sent_at,sent_by,source,title,body,push_type,recipient_count,error')
         .order('sent_at', { ascending: false })
-        .limit(20);
+        .limit(200);
       if (r.error){ el.textContent = r.error.message; return; }
       var rows = r.data || [];
       if (!rows.length){ el.textContent = 'No broadcasts sent yet.'; return; }
-      el.innerHTML = '';
-      rows.forEach(function(row){
-        var when = new Date(row.sent_at);
-        var whenStr = when.toLocaleString('en-GB', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' });
-        var div = document.createElement('div');
-        div.className = 'bc-recent-row';
-        var statusColor = row.error ? 'var(--pillar-social)' : 'var(--vyve-teal,#4DAAAA)';
-        div.innerHTML =
-          '<div class="bc-recent-time">' + whenStr + '</div>' +
-          '<div>' +
-            '<div class="bc-recent-title">' + escapeHtml(row.title || '—') + '</div>' +
-            '<div class="bc-recent-meta">' +
-              escapeHtml(row.body || '').slice(0, 80) +
-              ' · <span style="color:' + statusColor + '">' + (row.source || 'manual') + '</span>' +
-              ' · ' + escapeHtml(row.sent_by || '') +
-              (row.error ? ' · <span style="color:var(--pillar-social)">err: ' + escapeHtml(row.error.slice(0,40)) + '</span>' : '') +
-            '</div>' +
-          '</div>' +
-          '<div class="bc-recent-count">' + (row.recipient_count || 0) + '</div>';
-        el.appendChild(div);
-      });
+      el.innerHTML = bcFolders(rows);
     } catch (e){ el.textContent = String(e); }
   }
 
@@ -430,6 +519,17 @@
     $('bc-preview-btn').addEventListener('click', doPreview);
     $('bc-send-btn').addEventListener('click', doSend);
     $('bc-recent-refresh').addEventListener('click', loadRecent);
+    // Delegated once at init, never inside loadRecent — loadRecent re-runs on Refresh
+    // and per-render listeners would stack.
+    $('bc-recent-list').addEventListener('click', function(e){
+      var btn = e.target && e.target.closest ? e.target.closest('[data-bc-more]') : null;
+      if (!btn) return;
+      var body = btn.parentNode;
+      Array.prototype.forEach.call(body.querySelectorAll('.bc-recent-row.bc-hidden'), function(r){
+        r.classList.remove('bc-hidden');
+      });
+      btn.remove();
+    });
     loadCompanies();
     loadRecent();
   }
