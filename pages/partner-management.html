@@ -897,7 +897,7 @@ async function openAppDetail(id){
         <div style="margin-top:16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:8px">Current stage</div>
         ${pill(p.status)}
         <div style="display:flex;flex-direction:column;gap:8px;margin-top:20px">
-          ${nextLabel?`<button class="tb-btn primary" onclick="advancePartner('${id}','${nextStage}')">${nextLabel}</button>`:''}
+          ${nextLabel?`<button class="tb-btn primary" ${nextStage==='live'?'id="goLiveBtn" disabled style="opacity:.55;cursor:not-allowed"':''} onclick="advancePartner('${id}','${nextStage}')">${nextLabel}</button>${nextStage==='live'?'<div id="goLiveReason" style="font-size:11.5px;color:var(--muted);line-height:1.4">Checking portal minimums…</div>':''}`:''}
           <button class="tb-btn" onclick="openRequestInfoModal(this.closest('[data-id]')?.dataset.id || currentDetailId)">Request more info</button>
           ${p.status!=='declined'&&p.status!=='live'?`<button class="tb-btn" style="color:var(--danger)" onclick="advancePartner('${id}','declined')">Decline application</button>`:''}
           ${p.status==='declined'?`<button class="tb-btn" onclick="if(confirm('Restore this application to the Applied column?'))advancePartner('${id}','applied')">Restore to Applied</button>`:''}
@@ -913,6 +913,18 @@ async function openAppDetail(id){
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:8px">Their documents</div>
       <div id="rev-docs" data-pid="${id}"><div class="empty-state" style="padding:10px">Loading documents…</div></div>
     </div>`);
+  /* PM-993 (W2b): portal-minimums panel — only meaningful when the next step is Go Live.
+     Renders the same checks the portal's own completion bar uses (PM-992 compChecks), admin-side
+     from live DB, so the CC shows honestly WHY Go Live is or isn't available instead of a
+     bounced toast (the PM-880 lesson). */
+  if(nextStage==='live'){
+    document.getElementById('appDetailBody').insertAdjacentHTML('beforeend',`
+      <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--line)">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:8px">Portal minimums for go-live</div>
+        <div id="goLiveMinimums" data-pid="${id}"><div class="empty-state" style="padding:10px">Checking against the partner's live portal state…</div></div>
+      </div>`);
+    renderPortalMinimums(id);
+  }
   document.getElementById('appDetail').style.display='block';
   document.getElementById('appDetail').scrollIntoView({behavior:'smooth',block:'start'});
   setIcons(document.getElementById('appDetail'));
@@ -920,8 +932,88 @@ async function openAppDetail(id){
   loadPartnerDocs(p,'rev-docs');
 }
 
+/* ── PM-993 (W2b): PORTAL MINIMUMS — the go-live floor ─────────────────────────
+   Gating (must ALL pass): the 7 profile checks from the partner portal's PM-992
+   completion bar (name/tagline/bio/why/feel/photo/cover on partner_partners) plus a
+   welcome video APPROVED (is_welcome + moderation_status='approved' — PM-900
+   auto-push means approved ⇒ live to members, so approval is the honest check).
+   Advisory (shown amber, never blocks): first non-welcome content, bank details —
+   neither should stop a partner becoming member-visible; bank only bites at payout.
+   All reads covered by existing admin_all_* / partner_bank_admin_read RLS — verified
+   live 4 Sep 2026, zero new policies. The PM-880 deferred-assessments posture gate is
+   untouched and runs AFTER these minimums in advancePartner. */
+async function portalMinimums(id){
+  const need=v=>!!(v&&String(v).trim());
+  const [pr,cr,br]=await Promise.all([
+    sb.from('partner_partners').select('name,role_title,bio,why,feel,avatar_url,cover_url').eq('id',id).single(),
+    sb.from('partner_content_items').select('id,is_welcome,moderation_status').eq('partner_id',id),
+    sb.from('partner_bank_details').select('partner_id').eq('partner_id',id),
+  ]);
+  if(pr.error) throw pr.error;
+  const p=pr.data||{}, items=cr.data||[], bank=br.data||[];
+  const gating=[
+    {n:'Name',ok:need(p.name)},
+    {n:'Tagline',ok:need(p.role_title)},
+    {n:'Bio',ok:need(p.bio)},
+    {n:'Why they\u2019re here',ok:need(p.why)},
+    {n:'Community feel',ok:need(p.feel)},
+    {n:'Profile photo',ok:!!p.avatar_url},
+    {n:'Cover photo',ok:!!p.cover_url},
+    {n:'Welcome video approved',ok:items.some(i=>i.is_welcome&&i.moderation_status==='approved')},
+  ];
+  const advisory=[
+    {n:'First content beyond the welcome video',ok:items.some(i=>!i.is_welcome)},
+    {n:'Bank details on file',ok:bank.length>0},
+  ];
+  return {ok:gating.every(c=>c.ok),gating,advisory};
+}
+function minimumChip(c,advisoryStyle){
+  const done=c.ok;
+  const bg=done?'rgba(61,184,159,.15)':advisoryStyle?'rgba(224,155,61,.12)':'rgba(239,83,80,.12)';
+  const fg=done?'var(--mint)':advisoryStyle?'var(--warning)':'var(--danger)';
+  return `<span style="display:inline-flex;align-items:center;gap:5px;font-size:11.5px;padding:3px 9px;border-radius:10px;margin:0 6px 6px 0;background:${bg};color:${fg}">${done?'&#10003;':advisoryStyle?'&#9675;':'&#10007;'} ${c.n}</span>`;
+}
+async function renderPortalMinimums(id){
+  const el=document.getElementById('goLiveMinimums');
+  const btn=document.getElementById('goLiveBtn');
+  const reason=document.getElementById('goLiveReason');
+  const enable=()=>{if(btn){btn.disabled=false;btn.style.opacity='';btn.style.cursor='';}};
+  try{
+    const m=await portalMinimums(id);
+    if(el&&el.dataset.pid===String(id)){
+      const missing=m.gating.filter(c=>!c.ok).length;
+      el.innerHTML=
+        `<div style="margin-bottom:4px">${m.gating.map(c=>minimumChip(c,false)).join('')}</div>`+
+        `<div style="font-size:11px;color:var(--muted);margin:2px 0 6px">Recommended before launch (never blocks):</div>`+
+        `<div>${m.advisory.map(c=>minimumChip(c,true)).join('')}</div>`+
+        (m.ok?`<div style="font-size:12px;color:var(--mint);margin-top:6px">All minimums met — Go Live is available.</div>`
+             :`<div style="font-size:12px;color:var(--danger);margin-top:6px">${missing} minimum${missing===1?'':'s'} outstanding — the partner completes these in their portal (My Space / Content).</div>`);
+    }
+    if(m.ok){enable();if(reason)reason.textContent='';}
+    else if(reason){reason.textContent='Blocked on portal minimums \u2014 see the checklist below.';reason.style.color='var(--warning)';}
+  }catch(e){
+    /* Fail-open in the UI (W1 ethos) — advancePartner rechecks and asks explicitly on error,
+       so a transient read failure can't silently bypass the gate NOR strand Dean. */
+    if(el)el.innerHTML=`<div style="font-size:12px;color:var(--warning)">Couldn\u2019t verify portal minimums (${esc(e.message||'read failed')}) — Go Live will ask for explicit confirmation instead.</div>`;
+    enable();if(reason)reason.textContent='';
+  }
+}
+window.renderPortalMinimums=renderPortalMinimums;
+
 async function advancePartner(id,newStatus){
   if(newStatus==='live'){
+    /* PM-993 (W2b): portal minimums are the FIRST gate — rechecked here fresh so the
+       kanban drag-to-live path is covered too, not just the (disabled-until-green)
+       detail button. alert(), not toast — the PM-880 bounced-toast lesson. */
+    try{
+      const m=await portalMinimums(id);
+      if(!m.ok){
+        alert('Cannot go live \u2014 portal minimums not met:\n\n'+m.gating.filter(c=>!c.ok).map(c=>'\u2717 '+c.n).join('\n')+'\n\nThe partner completes these in their portal (My Space / Content). The detail view shows the full checklist.');
+        return;
+      }
+    }catch(e){
+      if(!confirm('Portal minimums could not be verified ('+(e.message||'read failed')+').\n\nGo live anyway without the minimums check?')){return;}
+    }
     /* PM-880: the old gate (safeguarding && gdpr && pct=100) was UNPASSABLE for the
        PM-659/857 deferred-assessment cohort — those flags are false by design, so the
        first real Go Live click bounced with only a toast (which Dean never saw).
