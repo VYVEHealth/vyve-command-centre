@@ -12,7 +12,7 @@
 // landings can never drift. Item `desc` (below) supplies tile copy.
 window.VYVE_DOMAINS = {
   "rtb":       { section: "Run the Business", label: "Run the Business", desc: "Pipeline, finance, investors, content, tasks and the operating calendar." },
-  "members":   { section: "Members",          label: "Members",          desc: "Member admin, broadcast push and who's active right now." },
+  "members":   { section: "Members",          label: "Members",          desc: "Broadcast push and who's active right now." },
   "partners":  { section: "Partners",         label: "Partners",         desc: "Pipeline, go-live gates, content moderation, payouts and the partner portal." },
   "employers": { section: "Employers",        label: "Employers",        desc: "Employer accounts, benchmarks, the live portal and the sales demo." },
   "analytics": { section: "Analytics",        label: "Analytics",        desc: "App health, usage, retention, wellbeing, platform, revenue and AI." }
@@ -52,7 +52,9 @@ window.VYVE_NAV = [
   {
     section: "Members",
     items: [
-      { href: "/admin-console.html", area: "members", label: "Member Admin", icon: "users", external: false, desc: "Member list, detail and edit \u2014 the members admin surface." },
+      /* PM-1012 SOFT-KILL: Member Admin (/admin-console.html) delinked at Dean's
+         instruction. File is PRESERVED in the repo — restore by uncommenting. */
+      // { href: "/admin-console.html", area: "members", label: "Member Admin", icon: "users", external: false, desc: "Member list, detail and edit \u2014 the members admin surface." },
       { slug: "broadcast", area: "members",    label: "Broadcast",    icon: "share", status: "live", desc: "Push notifications to member devices." },
       { slug: "active-users", area: "members", label: "Active Users", icon: "users", status: "live", desc: "Who\u2019s in the app right now." },
       { slug: "complaints", area: "complaints",   label: "Complaints",   icon: "shield", status: "live", desc: "Member reports from Help & Support \u2014 triage and resolve." }

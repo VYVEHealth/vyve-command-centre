@@ -412,7 +412,9 @@ document.addEventListener('DOMContentLoaded', function(){
     <div class="nav-item" onclick="openPreview()">
       <span class="ic" data-i="phone"></span>Live app preview
     </div>
-    <div class="nav-item" onclick="location.href='admin-console.html'">
+    <!-- PM-1012: this item is labelled "Command Centre" but pointed at the
+         soft-killed admin-console.html; repointed to the actual CC shell. -->
+    <div class="nav-item" onclick="location.href='index.html'">
       <span class="ic" data-i="layers"></span>Command Centre
     </div>
     <div class="side-foot">

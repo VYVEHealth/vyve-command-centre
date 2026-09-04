@@ -45,7 +45,7 @@ On top of the data layer sits an **enterprise hub layer**: a central entity regi
 ├── README.md                   # this file
 ├── CHANGELOG.md                # commit-by-commit history
 ├── Dashboard.html              # legacy (preserved)
-├── admin-console.html          # Dean's legacy console (preserved)
+├── admin-console.html          # SOFT-KILLED PM-1012 — delinked from all nav, file preserved
 ├── assets/
 │   ├── tokens.css              # CSS variables (colours, fonts, radii, spacing)
 │   ├── shell.css               # layout (sidebar, topbar, login overlay, mobile drawer)
