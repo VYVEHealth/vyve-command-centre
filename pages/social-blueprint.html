@@ -112,7 +112,7 @@
     <div style="display:flex;flex-direction:column;gap:8px">
       <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--vyve-teal-light);border-radius:var(--r);padding:18px">
         <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px">
-          <span class="badge" style="background:var(--vyve-teal-dark);color:var(--text)">Layer 1</span>
+          <span class="badge" style="background:var(--selected-bg);color:var(--text)">Layer 1</span>
           <span style="font-family:var(--font-head);font-weight:600;color:var(--text);font-size:15px">Intelligence</span>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:8px">
@@ -125,7 +125,7 @@
       <div style="text-align:center;color:var(--vyve-teal-light);font-size:20px;line-height:1">↓</div>
       <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--vyve-teal-light);border-radius:var(--r);padding:18px">
         <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px">
-          <span class="badge" style="background:var(--vyve-teal-dark);color:var(--text)">Layer 2</span>
+          <span class="badge" style="background:var(--selected-bg);color:var(--text)">Layer 2</span>
           <span style="font-family:var(--font-head);font-weight:600;color:var(--text);font-size:15px">Generation</span>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:8px">
@@ -137,7 +137,7 @@
       <div style="text-align:center;color:var(--vyve-teal-light);font-size:20px;line-height:1">↓</div>
       <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--vyve-teal-light);border-radius:var(--r);padding:18px">
         <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px">
-          <span class="badge" style="background:var(--vyve-teal-dark);color:var(--text)">Layer 3</span>
+          <span class="badge" style="background:var(--selected-bg);color:var(--text)">Layer 3</span>
           <span style="font-family:var(--font-head);font-weight:600;color:var(--text);font-size:15px">Publishing</span>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:8px">
@@ -149,7 +149,7 @@
       <div style="text-align:center;color:var(--vyve-teal-light);font-size:20px;line-height:1">↓</div>
       <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--vyve-teal-light);border-radius:var(--r);padding:18px">
         <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px">
-          <span class="badge" style="background:var(--vyve-teal-dark);color:var(--text)">Layer 4</span>
+          <span class="badge" style="background:var(--selected-bg);color:var(--text)">Layer 4</span>
           <span style="font-family:var(--font-head);font-weight:600;color:var(--text);font-size:15px">Optimization</span>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:8px">
@@ -398,7 +398,7 @@
       var done = getDone('fix', 'step' + s.n);
       var div = document.createElement('div');
       div.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-left:4px solid ' + (done ? '#39a576' : 'var(--vyve-teal)') + ';border-radius:var(--r);padding:18px;cursor:pointer;transition:.15s;opacity:' + (done ? '.55' : '1');
-      div.innerHTML = '<div style="display:flex;align-items:center;gap:14px;margin-bottom:8px"><span style="background:' + (done ? '#39a576' : 'var(--vyve-teal-dark)') + ';color:var(--text);min-width:32px;height:32px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-head);font-weight:700;font-size:14px">' + (done ? '✓' : s.n) + '</span><div style="font-family:var(--font-head);font-weight:600;color:var(--text);font-size:15px;' + (done ? 'text-decoration:line-through' : '') + '">' + s.title + '</div></div><div style="font-size:13px;color:var(--text-muted);line-height:1.6">' + s.body + '</div>';
+      div.innerHTML = '<div style="display:flex;align-items:center;gap:14px;margin-bottom:8px"><span style="background:' + (done ? '#39a576' : 'var(--selected-bg)') + ';color:var(--text);min-width:32px;height:32px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-head);font-weight:700;font-size:14px">' + (done ? '✓' : s.n) + '</span><div style="font-family:var(--font-head);font-weight:600;color:var(--text);font-size:15px;' + (done ? 'text-decoration:line-through' : '') + '">' + s.title + '</div></div><div style="font-size:13px;color:var(--text-muted);line-height:1.6">' + s.body + '</div>';
       div.onclick = function(e){ if(e.target.tagName === 'A' || e.target.tagName === 'CODE') return; setDone('fix', 'step' + s.n, !done); renderFix(); };
       c.appendChild(div);
     });

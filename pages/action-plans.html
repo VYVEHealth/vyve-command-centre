@@ -87,8 +87,13 @@
      it is live and moves across whole. The filter buttons also carry
      .btn.btn-ghost; .ap-filter sat after .btn-ghost in components.css and
      still sits after it here, so the cascade order is unchanged.
-     NOTE: --vyve-teal-dark on .active is undefined repo-wide (pre-existing,
-     reported separately) — left exactly as it renders today. */
+     PM-1020: --vyve-teal-dark was undefined repo-wide AND has never been
+     defined anywhere in this repo's history, so .active's background was
+     invalid-at-computed-value and rendered transparent. Resolved to
+     --selected-bg: the rule pairs it with color:var(--text), so a dark fill
+     was never coherent in a dual-theme CC; base is --surface-2/--text-muted
+     and active adds a --vyve-teal border plus full-strength text, i.e. a
+     selected chip. */
   .ap-filter {
     padding: 6px 14px;
     border-radius: var(--r-pill);
@@ -101,7 +106,7 @@
     transition: all var(--t-fast);
   }
   .ap-filter:hover { color: var(--text); }
-  .ap-filter.active { background: var(--vyve-teal-dark); color: var(--text); border-color: var(--vyve-teal); font-weight: var(--fw-semi); }
+  .ap-filter.active { background: var(--selected-bg); color: var(--text); border-color: var(--vyve-teal); font-weight: var(--fw-semi); }
 
   .ap-edit-form .form-group { margin-bottom: 14px; }
   .ap-edit-form label { display: block; font-size: var(--fs-2xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; font-weight: 600; }

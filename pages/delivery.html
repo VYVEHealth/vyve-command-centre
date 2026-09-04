@@ -185,7 +185,7 @@
     sub.textContent = thisWeek.length + ' upcoming';
     document.getElementById('dlv-sessions').innerHTML = thisWeek.slice(0, 7).map(function(s){
       var p = D.parseDate(s.date);
-      var pillarColor = { 'physical':'var(--vyve-gold)','mental':'var(--vyve-teal)','social':'var(--vyve-coral)' }[(s.pillar||'').toLowerCase()] || 'var(--text-muted)';
+      var pillarColor = { 'physical':'var(--vyve-gold)','mental':'var(--vyve-teal)','social':'var(--pillar-social)' }[(s.pillar||'').toLowerCase()] || 'var(--text-muted)';
       return '<a class="list-row" href="#/sessions" style="padding:12px 22px;border-bottom:1px solid var(--border);text-decoration:none;color:inherit;display:flex;align-items:center;gap:10px">' +
         '<div style="width:6px;height:36px;background:' + pillarColor + ';border-radius:3px;flex-shrink:0"></div>' +
         '<div class="list-row-main">' +
