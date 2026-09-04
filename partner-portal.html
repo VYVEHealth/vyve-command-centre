@@ -895,7 +895,7 @@
   }
   function fmtGBP(n) { return n == null ? '—' : '£' + Number(n).toFixed(2); }
 
-  // PM-XXX (finding D): all partner-content-upload calls are JWT-authenticated.
+  // PM-991 (finding D): all partner-content-upload calls are JWT-authenticated.
   // The EF derives the partner server-side for partner logins; admins pass
   // partner_id explicitly (demo/ops path).
   /* PM-862: every PostgREST call from this portal must carry BOTH the anon apikey and the
@@ -963,7 +963,7 @@
   }
 
   // ── Load partner profile ──────────────────────────────────────────────────
-  // PM-XXX (finding D): partner identity comes from the session, not a hardcoded
+  // PM-991 (finding D): partner identity comes from the session, not a hardcoded
   // id. get_my_partner_id() maps auth.email() -> partner_partners.contact_email
   // for active role='partner' logins. Admins (Dean/Lewis demoing) get the demo
   // partner as a fallback — the EF accepts explicit partner_id for admins only.
@@ -2522,5 +2522,313 @@
   $b('bx-add').addEventListener('click', blockDay);
 })();
 </script>
+<style id="w1-style">
+/* ══ PM-991 WAVE 1: premium shell — sidebar IA, dashboard, notifications ══ */
+body.w1 .pp-tabs { display:none; }
+body.w1 #shell.ready { display:grid; grid-template-columns:232px 1fr; grid-template-rows:auto 1fr; min-height:100vh; }
+body.w1 .pp-topbar { grid-column:1 / -1; }
+#w1-side {
+  grid-row:2; grid-column:1; background:var(--sidebar-bg); border-right:1px solid var(--border);
+  padding:18px 12px 28px; display:flex; flex-direction:column; gap:2px; overflow-y:auto;
+  position:sticky; top:0; align-self:start; height:calc(100vh - 57px);
+}
+.w1-group { font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--text-muted); opacity:.7; padding:16px 12px 6px; }
+.w1-item {
+  display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:8px; border:none;
+  background:none; color:var(--sidebar-text, var(--text)); font-size:13.5px; font-weight:500;
+  cursor:pointer; text-align:left; width:100%; transition:background .12s,color .12s; position:relative;
+}
+.w1-item:hover { background:color-mix(in srgb, var(--vyve-teal) 10%, transparent); }
+.w1-item.active { background:var(--vyve-teal); color:#fff; font-weight:600; }
+.w1-item svg { flex:0 0 16px; opacity:.85; }
+.w1-badge {
+  margin-left:auto; background:#e8834a; color:#fff; font-size:10.5px; font-weight:700;
+  border-radius:999px; min-width:18px; height:18px; display:none; align-items:center; justify-content:center; padding:0 5px;
+}
+.w1-badge.show { display:inline-flex; }
+body.w1 .pp-content { grid-row:2; grid-column:2; max-width:1280px; width:100%; }
+/* Dashboard */
+.w1-tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:14px; margin-bottom:20px; }
+.w1-tile { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px 18px; }
+.w1-tile .t-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:var(--text-muted); margin-bottom:6px; }
+.w1-tile .t-val { font-size:24px; font-weight:700; font-family:var(--font-head); line-height:1.15; }
+.w1-tile .t-sub { font-size:12px; color:var(--text-muted); margin-top:4px; }
+.w1-tile.warn .t-val { color:#e8834a; }
+.w1-qa { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:20px; }
+.w1-qa button {
+  display:flex; align-items:center; gap:8px; padding:9px 16px; border-radius:10px;
+  border:1px solid var(--border); background:var(--surface); color:var(--text);
+  font-size:13px; font-weight:600; cursor:pointer; transition:border-color .12s, color .12s;
+}
+.w1-qa button:hover { border-color:var(--vyve-teal); color:var(--vyve-teal); }
+.w1-feed { display:flex; flex-direction:column; }
+.w1-feed-item { display:flex; gap:12px; padding:12px 4px; border-bottom:1px solid var(--border); align-items:flex-start; }
+.w1-feed-item:last-child { border-bottom:none; }
+.w1-feed-ico { flex:0 0 32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; background:color-mix(in srgb, var(--vyve-teal) 14%, transparent); color:var(--vyve-teal); }
+.w1-feed-ico.orange { background:color-mix(in srgb, #e8834a 16%, transparent); color:#e8834a; }
+.w1-feed-ico.gold { background:color-mix(in srgb, #c9a84c 18%, transparent); color:#c9a84c; }
+.w1-feed-t { font-size:13.5px; font-weight:600; }
+.w1-feed-s { font-size:12px; color:var(--text-muted); margin-top:2px; }
+.w1-feed-time { margin-left:auto; font-size:11.5px; color:var(--text-muted); white-space:nowrap; padding-top:2px; }
+.w1-feed-item.unread .w1-feed-t::after { content:''; display:inline-block; width:7px; height:7px; border-radius:50%; background:#e8834a; margin-left:7px; vertical-align:middle; }
+.w1-empty { color:var(--text-muted); font-size:13px; padding:18px 4px; }
+@media (max-width:900px){
+  body.w1 #shell.ready { grid-template-columns:1fr; }
+  #w1-side { grid-column:1; grid-row:2; position:static; height:auto; flex-direction:row; overflow-x:auto; padding:8px 12px; gap:6px; border-right:none; border-bottom:1px solid var(--border); }
+  .w1-group { display:none; }
+  .w1-item { width:auto; white-space:nowrap; padding:8px 12px; }
+  body.w1 .pp-content { grid-row:3; grid-column:1; }
+}
+</style>
+<script>
+/* ══ PM-991 WAVE 1 ZONE — premium shell: sidebar IA + dashboard cockpit + notifications feed + hash routing.
+     Self-contained IIFE (§23.167). Legacy pp-tab buttons kept in the DOM (hidden) — sidebar drives them via
+     .click() so every lazy-init listener (bookings esp.) keeps working. Do not remove .pp-tabs markup. ══ */
+(function(){
+  'use strict';
+  var REST = _SUPA_URL + '/rest/v1';
+  var inited = false, partnerId = null, notifItems = [], lastSeen = 0;
+  var LEGACY = ['profile','content','community','sessions','earnings','bookings','help'];
+  var VIEWS  = ['dashboard','notifs'].concat(LEGACY);
+  function $(id){ return document.getElementById(id); }
+  function esc(x){ return String(x==null?'':x).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  async function jwt(){ var r = await _getSB().auth.getSession(); return (r.data.session && r.data.session.access_token) || ''; }
+  async function rest(path, opts){
+    opts = opts || {};
+    var t = await jwt();
+    var h = { 'apikey': _SUPA_ANON, 'Authorization': 'Bearer ' + t, 'Content-Type': 'application/json' };
+    var r = await fetch(REST + path, { method: opts.method || 'GET', headers: h, body: opts.body ? JSON.stringify(opts.body) : undefined });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    var tx = await r.text();
+    return tx ? JSON.parse(tx) : null;
+  }
+  function ico(name){
+    var P = {
+      home:'<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+      bell:'<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
+      user:'<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+      film:'<rect x="2" y="2" width="20" height="20" rx="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/>',
+      chat:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+      cal:'<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+      pound:'<path d="M18 7c0-2.2-1.8-4-4-4s-4 1.8-4 4v10H6"/><line x1="6" y1="12" x2="14" y2="12"/><path d="M6 17c1.5 0 2.5 1 4.5 1s3.5-1 5.5-1"/>',
+      book:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/><path d="M9 16l2 2 4-4"/>',
+      help:'<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+      star:'<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
+      check:'<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>'
+    };
+    return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + (P[name]||P.home) + '</svg>';
+  }
+  var NAV = [
+    { view:'dashboard', label:'Dashboard', icon:'home' },
+    { view:'notifs', label:'Notifications', icon:'bell', badge:true },
+    { group:'Your space' },
+    { view:'profile', label:'My Space', icon:'user' },
+    { view:'content', label:'My Content', icon:'film' },
+    { view:'community', label:'Community', icon:'chat' },
+    { view:'sessions', label:'Live Sessions', icon:'cal' },
+    { group:'Business' },
+    { view:'bookings', label:'Bookings', icon:'book' },
+    { view:'earnings', label:'Earnings', icon:'pound' },
+    { group:'Support' },
+    { view:'help', label:'Help & Support', icon:'help' }
+  ];
+  function buildShell(){
+    document.body.classList.add('w1');
+    var aside = document.createElement('aside');
+    aside.id = 'w1-side';
+    var h = '';
+    NAV.forEach(function(n){
+      if (n.group){ h += '<div class="w1-group">' + esc(n.group) + '</div>'; return; }
+      h += '<button class="w1-item" type="button" data-w1="' + n.view + '">' + ico(n.icon) + '<span>' + esc(n.label) + '</span>' +
+           (n.badge ? '<span class="w1-badge" id="w1-nbadge">0</span>' : '') + '</button>';
+    });
+    aside.innerHTML = h;
+    var shell = $('shell');
+    shell.insertBefore(aside, shell.querySelector('.pp-content'));
+    aside.addEventListener('click', function(e){
+      var b = e.target.closest('.w1-item'); if (!b) return;
+      go(b.getAttribute('data-w1'));
+    });
+    // New panels
+    var content = shell.querySelector('.pp-content');
+    var dash = document.createElement('div');
+    dash.className = 'pp-panel'; dash.id = 'panel-dashboard';
+    dash.innerHTML =
+      '<div class="card" style="margin-bottom:16px;"><div class="card-title">' + ico('home') + '<span id="w1-hello">Welcome back</span></div>' +
+      '<div class="w1-tiles" id="w1-tiles"></div>' +
+      '<div class="w1-qa">' +
+        '<button type="button" data-qa="content">' + ico('film') + 'Upload content</button>' +
+        '<button type="button" data-qa="community">' + ico('chat') + 'New post</button>' +
+        '<button type="button" data-qa="sessions">' + ico('cal') + 'Schedule a session</button>' +
+        '<button type="button" data-qa="bookings">' + ico('book') + 'Booking services</button>' +
+        '<button type="button" data-qa="profile">' + ico('user') + 'Edit my space</button>' +
+      '</div></div>' +
+      '<div class="card"><div class="card-title">' + ico('bell') + 'Latest activity</div><div class="w1-feed" id="w1-dash-feed"><div class="w1-empty">Loading\u2026</div></div></div>';
+    content.appendChild(dash);
+    dash.querySelector('.w1-qa').addEventListener('click', function(e){
+      var b = e.target.closest('button[data-qa]'); if (!b) return; go(b.getAttribute('data-qa'));
+    });
+    var nf = document.createElement('div');
+    nf.className = 'pp-panel'; nf.id = 'panel-notifs';
+    nf.innerHTML = '<div class="card"><div class="card-title">' + ico('bell') + 'Notifications</div><div class="w1-feed" id="w1-notif-feed"><div class="w1-empty">Loading\u2026</div></div></div>';
+    content.appendChild(nf);
+  }
+  function setActive(view){
+    document.querySelectorAll('.w1-item').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-w1') === view); });
+  }
+  function go(view){
+    if (VIEWS.indexOf(view) === -1) view = 'dashboard';
+    if (LEGACY.indexOf(view) !== -1){
+      var tab = document.querySelector('.pp-tab[data-tab="' + view + '"]');
+      if (tab) tab.click(); // drives legacy active classes + lazy inits (bookings)
+    } else {
+      document.querySelectorAll('.pp-tab').forEach(function(t){ t.classList.remove('active'); });
+      document.querySelectorAll('.pp-panel').forEach(function(p){ p.classList.remove('active'); });
+      var p = $('panel-' + view); if (p) p.classList.add('active');
+      if (view === 'dashboard') renderDashboard();
+      if (view === 'notifs') openNotifs();
+    }
+    setActive(view);
+    try { history.replaceState(null, '', '#' + view); } catch(e){}
+    window.scrollTo(0, 0);
+  }
+  window.addEventListener('hashchange', function(){
+    var v = (location.hash || '').replace('#','');
+    if (VIEWS.indexOf(v) !== -1) go(v);
+  });
+  // ── Data ──
+  function ago(ts){
+    var s = Math.max(0, (Date.now() - ts) / 1000);
+    if (s < 3600) return Math.max(1, Math.floor(s/60)) + 'm ago';
+    if (s < 86400) return Math.floor(s/3600) + 'h ago';
+    var d = Math.floor(s/86400);
+    return d === 1 ? 'Yesterday' : (d < 30 ? d + 'd ago' : new Date(ts).toLocaleDateString('en-GB', {day:'numeric', month:'short'}));
+  }
+  function gbp(n){ return '\u00a3' + (Math.round(Number(n||0) * 100) / 100).toLocaleString('en-GB'); }
+  async function fetchNotifs(){
+    var since = new Date(Date.now() - 60*86400000).toISOString();
+    var res = await Promise.all([
+      rest('/bookings?partner_id=eq.' + partnerId + '&created_at=gte.' + since + '&order=created_at.desc&limit=20&select=id,status,starts_at,member_email,employer_name,created_at').catch(function(){ return []; }),
+      rest('/partner_ratings?partner_id=eq.' + partnerId + '&order=created_at.desc&limit=10&select=rating,comment,created_at').catch(function(){ return []; }),
+      rest('/partner_payouts?partner_id=eq.' + partnerId + '&order=created_at.desc&limit=5&select=period,payout_amount,status,created_at,paid_at').catch(function(){ return []; }),
+      rest('/partner_content_items?partner_id=eq.' + partnerId + '&reviewed_at=not.is.null&order=reviewed_at.desc&limit=10&select=title,moderation_status,reviewed_at').catch(function(){ return []; }),
+      rest('/partner_support_replies?sender_role=eq.admin&order=created_at.desc&limit=10&select=body,created_at').catch(function(){ return []; })
+    ]);
+    var items = [];
+    (res[0]||[]).forEach(function(b){
+      var who = b.employer_name || b.member_email || 'A member';
+      var when = b.starts_at ? new Date(b.starts_at).toLocaleDateString('en-GB', {day:'numeric', month:'short'}) : '';
+      if (b.status === 'pending_payment' || b.status === 'requested')
+        items.push({ ts:+new Date(b.created_at), icon:'book', cls:'orange', t:'New booking request', s:esc(who) + (when ? ' \u00b7 ' + when : ''), view:'bookings' });
+      else if (b.status === 'confirmed')
+        items.push({ ts:+new Date(b.created_at), icon:'check', cls:'', t:'Booking confirmed', s:esc(who) + (when ? ' \u00b7 ' + when : ''), view:'bookings' });
+    });
+    (res[1]||[]).forEach(function(r){
+      items.push({ ts:+new Date(r.created_at), icon:'star', cls:'gold', t:'New rating \u2014 ' + '\u2605'.repeat(Math.max(1, Math.min(5, r.rating||0))), s:esc((r.comment||'').slice(0,80)), view:'dashboard' });
+    });
+    (res[2]||[]).forEach(function(p){
+      items.push({ ts:+new Date(p.paid_at || p.created_at), icon:'pound', cls:'', t:(p.status === 'paid' ? 'Payout sent \u2014 ' : 'Payout \u2014 ') + gbp(p.payout_amount), s:esc(p.period || ''), view:'earnings' });
+    });
+    (res[3]||[]).forEach(function(c){
+      var ok = c.moderation_status === 'approved';
+      items.push({ ts:+new Date(c.reviewed_at), icon:'film', cls:ok ? '' : 'orange', t:'Content ' + (ok ? 'approved' : 'needs changes'), s:esc(c.title||''), view:'content' });
+    });
+    (res[4]||[]).forEach(function(r){
+      items.push({ ts:+new Date(r.created_at), icon:'help', cls:'', t:'VYVE replied to your message', s:esc((r.body||'').slice(0,80)), view:'help' });
+    });
+    items.sort(function(a,b){ return b.ts - a.ts; });
+    notifItems = items.slice(0, 50);
+    updateBadge();
+    return notifItems;
+  }
+  function updateBadge(){
+    var n = notifItems.filter(function(i){ return i.ts > lastSeen; }).length;
+    var b = $('w1-nbadge'); if (!b) return;
+    b.textContent = n > 9 ? '9+' : String(n);
+    b.classList.toggle('show', n > 0);
+  }
+  function feedHtml(items, markUnread){
+    if (!items.length) return '<div class="w1-empty">Nothing yet \u2014 booking requests, ratings, payouts and content reviews will land here.</div>';
+    return items.map(function(i){
+      return '<div class="w1-feed-item' + (markUnread && i.ts > lastSeen ? ' unread' : '') + '" style="cursor:pointer" onclick="w1Go(\'' + i.view + '\')">' +
+        '<div class="w1-feed-ico ' + i.cls + '">' + ico(i.icon) + '</div>' +
+        '<div><div class="w1-feed-t">' + i.t + '</div>' + (i.s ? '<div class="w1-feed-s">' + i.s + '</div>' : '') + '</div>' +
+        '<div class="w1-feed-time">' + ago(i.ts) + '</div></div>';
+    }).join('');
+  }
+  async function openNotifs(){
+    var el = $('w1-notif-feed');
+    try {
+      var items = notifItems.length ? notifItems : await fetchNotifs();
+      el.innerHTML = feedHtml(items, true);
+      lastSeen = Date.now();
+      try { localStorage.setItem('w1_seen_' + partnerId, String(lastSeen)); } catch(e){}
+      updateBadge();
+    } catch(e){ el.innerHTML = '<div class="w1-empty">Couldn\u2019t load notifications \u2014 try again shortly.</div>'; }
+  }
+  async function renderDashboard(){
+    var tiles = $('w1-tiles'), feed = $('w1-dash-feed');
+    if (!partnerId){
+      tiles.innerHTML = '<div class="w1-empty">Your login isn\u2019t linked to a partner record \u2014 contact the VYVE team.</div>';
+      feed.innerHTML = '<div class="w1-empty">\u2014</div>';
+      return;
+    }
+    var nowIso = new Date().toISOString();
+    var r = await Promise.all([
+      rest('/rpc/partner_referral_stats', { method:'POST', body:{} }).catch(function(){ return null; }),
+      rest('/bookings?partner_id=eq.' + partnerId + '&status=in.(pending_payment,requested)&starts_at=gte.' + nowIso + '&select=id').catch(function(){ return []; }),
+      rest('/partner_content_items?partner_id=eq.' + partnerId + '&moderation_status=eq.in_review&select=id').catch(function(){ return []; }),
+      rest('/calendar_occurrences?partner_id=eq.' + partnerId + '&active=eq.true&starts_at=gte.' + nowIso + '&order=starts_at.asc&limit=1&select=name,session_title,starts_at').catch(function(){ return []; }),
+      rest('/partner_payouts?partner_id=eq.' + partnerId + '&order=created_at.desc&limit=1&select=period,payout_amount,status').catch(function(){ return []; }),
+      rest('/partner_ratings?partner_id=eq.' + partnerId + '&select=rating').catch(function(){ return []; }),
+      fetchNotifs().catch(function(){ return []; })
+    ]);
+    var stats = (r[0] && r[0][0]) || { paying:0, on_trial:0 };
+    var pend = (r[1]||[]).length, inrev = (r[2]||[]).length;
+    var next = (r[3]||[])[0], payout = (r[4]||[])[0];
+    var ratings = r[5]||[];
+    var avg = ratings.length ? (ratings.reduce(function(a,x){ return a + (x.rating||0); }, 0) / ratings.length).toFixed(1) : null;
+    var nextTxt = next ? new Date(next.starts_at).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}) + ' \u00b7 ' + new Date(next.starts_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '\u2014';
+    tiles.innerHTML =
+      '<div class="w1-tile"><div class="t-label">Referred members</div><div class="t-val">' + (stats.paying||0) + '</div><div class="t-sub">' + (stats.on_trial||0) + ' on trial</div></div>' +
+      '<div class="w1-tile' + (pend ? ' warn' : '') + '"><div class="t-label">Booking requests</div><div class="t-val">' + pend + '</div><div class="t-sub">awaiting your confirmation</div></div>' +
+      '<div class="w1-tile"><div class="t-label">Next live session</div><div class="t-val" style="font-size:16px;padding-top:4px;">' + nextTxt + '</div><div class="t-sub">' + esc(next ? (next.session_title || next.name || '') : 'none scheduled') + '</div></div>' +
+      '<div class="w1-tile"><div class="t-label">Latest payout</div><div class="t-val">' + (payout ? gbp(payout.payout_amount) : '\u2014') + '</div><div class="t-sub">' + esc(payout ? ((payout.period||'') + ' \u00b7 ' + (payout.status||'')) : 'no payouts yet') + '</div></div>' +
+      '<div class="w1-tile' + (inrev ? ' warn' : '') + '"><div class="t-label">Content in review</div><div class="t-val">' + inrev + '</div><div class="t-sub">with the VYVE team</div></div>' +
+      '<div class="w1-tile"><div class="t-label">Your rating</div><div class="t-val">' + (avg ? '\u2605 ' + avg : '\u2014') + '</div><div class="t-sub">' + (ratings.length ? 'from ' + ratings.length + ' member' + (ratings.length===1?'':'s') : 'no ratings yet') + '</div></div>';
+    feed.innerHTML = feedHtml((r[6]||[]).slice(0, 8), false);
+  }
+  window.w1Go = go;
+  // ── Boot: wait for the legacy shell to be ready, then take over ──
+  var poll = setInterval(async function(){
+    var shell = $('shell');
+    if (!shell || !shell.classList.contains('ready')) return;
+    if (inited) return;
+    inited = true;
+    clearInterval(poll);
+    try {
+      buildShell();
+      var pr = await rest('/rpc/get_my_partner_id', { method:'POST', body:{} }).catch(function(){ return null; });
+      partnerId = pr || null;
+      try { lastSeen = Number(localStorage.getItem('w1_seen_' + partnerId) || 0); } catch(e){}
+      var nm = document.querySelector('#profile-name');
+      var v = (location.hash || '').replace('#','');
+      go(VIEWS.indexOf(v) !== -1 ? v : 'dashboard');
+      if (partnerId){
+        // greet with display name once profile data lands
+        setTimeout(function(){
+          var n = nm && nm.value ? nm.value.split(' ')[0] : '';
+          if (n) $('w1-hello').textContent = 'Welcome back, ' + n;
+        }, 1500);
+      }
+    } catch(e){
+      inited = false;
+      document.body.classList.remove('w1'); // fail open to the legacy tab shell
+      try { window.reportError && window.reportError('w1_shell_boot', e); } catch(_){}
+    }
+  }, 300);
+})();
+</script>
+
 </body>
 </html>
