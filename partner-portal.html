@@ -1971,7 +1971,9 @@
     }
     el.innerHTML = payouts.map(function(p) {
       var statusCls = p.status === 'paid' ? 'payout-paid' : 'payout-pending';
-      return '<div class="payout-row"><span>'+p.period+'</span><span class="payout-amount">'+fmtGBP(p.payout_amount)+'</span><span class="payout-status '+statusCls+'">'+p.status+'</span><span style="color:var(--text-muted);font-size:12px;">'+( p.paid_at ? fmtDate(p.paid_at) : '—' )+'</span></div>';
+      /* PM-995 (W4): data-w4pay lets the W4 zone decorate rows (statement link, £25
+         rollover note) without a second fetch or order-matching. */
+      return '<div class="payout-row" data-w4pay="'+p.id+'|'+p.status+'|'+(Number(p.payout_amount)||0)+'"><span>'+p.period+'</span><span class="payout-amount">'+fmtGBP(p.payout_amount)+'</span><span class="payout-status '+statusCls+'">'+p.status+'</span><span style="color:var(--text-muted);font-size:12px;">'+( p.paid_at ? fmtDate(p.paid_at) : '—' )+'</span></div>';
     }).join('');
   }
 
@@ -3484,6 +3486,170 @@ body.w1 .pp-content { grid-row:2; grid-column:2; max-width:1280px; width:100%; }
       if (initialHash === '#calendar' || location.hash === '#calendar') w3go();
     } catch(e){
       try { window.reportError && window.reportError('w3_zone_boot', e); } catch(_){}
+    }
+  }, 350);
+})();
+</script>
+
+<style id="w4-style">
+/* ══ PM-995 WAVE 4: earnings deep-dive — funnel, human code, £25 rollover, statements ══ */
+.w4-roll{font-size:11px;color:#E09B3D;display:block;margin-top:2px;}
+.w4-stmt-btn{border:1px solid var(--border);background:none;color:var(--vyve-teal);border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;font-family:inherit;}
+.w4-summary{font-size:12.5px;color:var(--text-muted);border:1px solid var(--border);border-radius:8px;padding:9px 12px;margin-bottom:12px;background:var(--surface-2);}
+#w4-print{display:none;}
+@media print{ body > *:not(#w4-print){display:none !important;} #w4-print{display:block !important;color:#0D2B2B;font-family:Arial,Helvetica,sans-serif;} }
+.w4-stmt{max-width:640px;}
+.w4-stmt table{width:100%;border-collapse:collapse;margin:14px 0;}
+.w4-stmt td{padding:7px 4px;border-bottom:1px solid #C8E4E4;font-size:13.5px;}
+.w4-stmt td:last-child{text-align:right;font-weight:600;}
+</style>
+<script>
+/* ══ PM-995 WAVE 4 ZONE — earnings deep-dive: referral funnel (partner_referral_stats RPC,
+     aggregates only — same PII line as the employer dashboard), human promo code display
+     (human_promo_code, falls back to slug), £25 rollover mirror on payout rows, and
+     per-period self-billing statements (print-to-PDF, no server-side generation).
+     Statement wording is deliberately "statement", NOT "invoice" — the self-billing
+     agreement clause and VAT position are Lewis's open items [LEWIS COPY PASS].
+     Self-contained IIFE (§23.167), fail-open throughout. ══ */
+(function(){
+  'use strict';
+  var REST = _SUPA_URL + '/rest/v1';
+  var inited = false, partnerId = null, myRow = null;
+  function $(id){ return document.getElementById(id); }
+  function esc(x){ return String(x==null?'':x).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  async function jwt(){ var r = await _getSB().auth.getSession(); return (r.data.session && r.data.session.access_token) || ''; }
+  async function rest(path, opts){
+    opts = opts || {};
+    var t = await jwt();
+    var h = { 'apikey': _SUPA_ANON, 'Authorization': 'Bearer ' + t, 'Content-Type': 'application/json' };
+    var r = await fetch(REST + path, { method: opts.method || 'GET', headers: h, body: opts.body ? JSON.stringify(opts.body) : undefined });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    var tx = await r.text();
+    return tx ? JSON.parse(tx) : null;
+  }
+  function gbp(n){ return '\u00a3' + (Number(n)||0).toFixed(2); }
+
+  /* Referral funnel: already shipped legacy-side — loadEarnings renders
+     partner_referral_stats chips into #ref-funnel. Nothing to add here (gap-map lag). */
+
+  /* ── human promo code ─────────────────────────────────── */
+  function applyCode(){
+    if (!myRow || !myRow.human_promo_code) return;
+    var el = $('ref-code');
+    if (el && el.textContent !== myRow.human_promo_code){
+      el.textContent = myRow.human_promo_code;
+      el.title = 'Your link code ' + (myRow.slug || '') + ' also works';
+    }
+  }
+
+  /* ── £25 rollover mirror + statement buttons ──────────── */
+  var MIN = 25;
+  function decoratePayouts(){
+    var list = $('payouts-list'); if (!list) return;
+    var rows = list.querySelectorAll('.payout-row[data-w4pay]');
+    if (!rows.length){ var s0 = $('w4-pay-summary'); if (s0) s0.remove(); return; }
+    var pendingTotal = 0;
+    rows.forEach(function(r){
+      var p = r.getAttribute('data-w4pay').split('|');
+      if (p[1] !== 'paid') pendingTotal += Number(p[2]) || 0;
+    });
+    var sum = $('w4-pay-summary');
+    if (!sum){ sum = document.createElement('div'); sum.className = 'w4-summary'; sum.id = 'w4-pay-summary'; list.parentNode.insertBefore(sum, list); }
+    sum.innerHTML = pendingTotal <= 0
+      ? 'Nothing pending \u2014 new earnings appear here after each monthly run.'
+      : pendingTotal < MIN
+        ? '<b>' + gbp(pendingTotal) + ' pending.</b> Payouts are made once your balance reaches \u00a3' + MIN + ' \u2014 anything under that simply rolls into the next month, nothing is lost.'
+        : '<b>' + gbp(pendingTotal) + ' pending</b> \u2014 over the \u00a3' + MIN + ' minimum, so it\u2019s payable in the next payout run.';
+    rows.forEach(function(r){
+      var p = r.getAttribute('data-w4pay').split('|');
+      if (p[1] !== 'paid' && pendingTotal < MIN && !r.querySelector('.w4-roll')){
+        var span = document.createElement('span');
+        span.className = 'w4-roll';
+        span.textContent = 'Below the \u00a3' + MIN + ' minimum \u2014 rolls into next month';
+        r.appendChild(span);
+      }
+      if (!r.querySelector('.w4-stmt-btn')){
+        var b = document.createElement('button');
+        b.type = 'button'; b.className = 'w4-stmt-btn'; b.textContent = 'Statement';
+        b.addEventListener('click', function(){ openStatement(p[0]); });
+        r.appendChild(b);
+      }
+    });
+  }
+
+  /* ── self-billing statement ───────────────────────────── */
+  function stmtHtml(py, partner){
+    var paid = py.status === 'paid';
+    /* [LEWIS COPY PASS] — statement wording. Deliberately NOT called an invoice and the
+       VAT line stays explicit until Lewis confirms the self-billing clause + VAT position. */
+    return '<div class="w4-stmt">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;">' +
+        '<div><div style="font-family:Georgia,serif;font-size:19px;letter-spacing:5px;">VYVE</div>' +
+        '<div style="font-size:11.5px;color:#7A9A9A;margin-top:4px;line-height:1.5;">VYVE Health CIC \u00b7 ICO 00013608608<br>team@vyvehealth.co.uk</div></div>' +
+        '<div style="text-align:right;"><div style="font-size:15px;font-weight:700;">Partner earnings statement</div>' +
+        '<div style="font-size:12px;color:#7A9A9A;margin-top:2px;">Period: ' + esc(py.period) + '</div></div></div>' +
+      '<div style="margin-top:14px;font-size:13px;"><b>Partner:</b> ' + esc(partner.name || '') + (partner.contact_email ? ' \u00b7 ' + esc(partner.contact_email) : '') + '</div>' +
+      '<table>' +
+        '<tr><td>Attributed active members</td><td>' + (py.attributed_subscriptions != null ? py.attributed_subscriptions : '\u2014') + '</td></tr>' +
+        '<tr><td>Gross attributed revenue</td><td>' + gbp(py.gross) + '</td></tr>' +
+        '<tr><td>Revenue share</td><td>' + (py.share_pct != null ? Number(py.share_pct) + '%' : '\u2014') + '</td></tr>' +
+        '<tr><td style="font-weight:700;">Amount due to partner</td><td style="font-size:15px;">' + gbp(py.payout_amount) + '</td></tr>' +
+      '</table>' +
+      '<div style="font-size:13px;">' + (paid
+        ? '<b style="color:#1B7878;">Paid</b>' + (py.paid_at ? ' on ' + new Date(py.paid_at).toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' }) : '')
+        : '<b style="color:#E09B3D;">Pending</b> \u2014 payable once your total pending balance reaches \u00a3' + MIN + '; smaller amounts roll into the next month.') + '</div>' +
+      '<div style="font-size:11px;color:#7A9A9A;margin-top:16px;line-height:1.6;">Self-billing statement prepared by VYVE Health CIC. This is a statement of partner revenue share for the period shown \u2014 it is not a VAT invoice. Questions about a figure? Message us via Help &amp; Support in your portal.</div>' +
+      '</div>';
+  }
+  async function openStatement(id){
+    var m = document.createElement('div'); m.className = 'w3-modal';
+    m.innerHTML = '<div class="w3-box"><div style="font-size:12.5px;color:var(--text-muted);">Loading statement\u2026</div></div>';
+    m.addEventListener('click', function(e){ if (e.target === m) m.remove(); });
+    document.body.appendChild(m);
+    try {
+      var r = await Promise.all([
+        rest('/partner_payouts?id=eq.' + id + '&select=*'),
+        myRow ? Promise.resolve([myRow]) : rest('/partner_partners?id=eq.' + partnerId + '&select=name,contact_email,slug,human_promo_code')
+      ]);
+      var py = (r[0] || [])[0], partner = (r[1] || [])[0] || {};
+      if (!py) throw new Error('not found');
+      var inner = stmtHtml(py, partner);
+      m.querySelector('.w3-box').innerHTML = inner +
+        '<div style="display:flex;gap:10px;margin-top:16px;"><button class="btn btn-teal" id="w4-print-btn" type="button" style="font-size:12px;">Print / Save as PDF</button>' +
+        '<button class="btn btn-ghost" id="w4-close-btn" type="button" style="font-size:12px;">Close</button></div>';
+      m.querySelector('#w4-close-btn').addEventListener('click', function(){ m.remove(); });
+      m.querySelector('#w4-print-btn').addEventListener('click', function(){
+        var pr = $('w4-print');
+        if (!pr){ pr = document.createElement('div'); pr.id = 'w4-print'; document.body.appendChild(pr); }
+        pr.innerHTML = inner;
+        window.print();
+      });
+    } catch(e){
+      m.querySelector('.w3-box').innerHTML = '<div style="font-size:13px;">Couldn\u2019t load this statement \u2014 try again shortly.</div><div style="margin-top:12px;"><button class="btn btn-ghost" type="button" onclick="this.closest(\'.w3-modal\').remove()" style="font-size:12px;">Close</button></div>';
+    }
+  }
+
+  /* ── boot ─────────────────────────────────────────────── */
+  var poll = setInterval(async function(){
+    var shell = $('shell');
+    if (!shell || !shell.classList.contains('ready') || inited) return;
+    inited = true; clearInterval(poll);
+    try {
+      var list = $('payouts-list');
+      if (list){ new MutationObserver(function(){ decoratePayouts(); }).observe(list, { childList: true }); decoratePayouts(); }
+      var pr = await rest('/rpc/get_my_partner_id', { method:'POST', body:{} }).catch(function(){ return null; });
+      partnerId = pr || null;
+      if (partnerId){
+        try {
+          var row = await rest('/partner_partners?id=eq.' + partnerId + '&select=name,contact_email,slug,human_promo_code');
+          myRow = (row || [])[0] || null;
+          applyCode();
+          setTimeout(applyCode, 2500); // loadEarnings writes the slug into #ref-code async — re-apply after it lands
+          setTimeout(applyCode, 6000);
+        } catch(e){ /* demo/anon — code display stays slug */ }
+      }
+    } catch(e){
+      try { window.reportError && window.reportError('w4_zone_boot', e); } catch(_){}
     }
   }, 350);
 })();

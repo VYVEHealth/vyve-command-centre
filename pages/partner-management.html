@@ -296,8 +296,9 @@
           <div class="card kpi"><div class="v" id="rv-k1">—</div><div class="l">Pending payouts</div></div>
           <div class="card kpi"><div class="v" id="rv-k2">—</div><div class="l">Total pending £</div></div>
           <div class="card kpi"><div class="v" id="rv-k3">—</div><div class="l">Paid this period</div></div>
-          <div class="card kpi"><div class="v" id="rv-k4">30%</div><div class="l">Default rev share</div></div>
+          <div class="card kpi"><div class="v" id="rv-k4">50%</div><div class="l">Default rev share</div></div>
         </div>
+        <div id="rv-w4-rollup"></div>
         <div class="card pad0 mt">
           <div class="card-h" style="padding:18px 18px 0"><h3>Payout ledger</h3><span class="link" onclick="toast('Export — coming soon')">Export</span></div>
           <table><thead><tr><th>Partner</th><th>Period</th><th>Attributed subs</th><th>Gross</th><th>Share</th><th>Payout</th><th>Status</th><th></th></tr></thead>
@@ -1925,6 +1926,32 @@ function renderRevenue(){
   document.getElementById('rv-k1').textContent=pending.length;
   document.getElementById('rv-k2').textContent='£'+totalPending.toLocaleString('en-GB',{maximumFractionDigits:0});
   document.getElementById('rv-k3').textContent=paid.length;
+
+  /* PM-995 (W4): £25 minimum payout — payment DISCIPLINE, not ledger mutation. Rows are
+     never rewritten; a partner is payable when their cumulative pending ≥ £25 (two £12
+     pendings = £24 rolls, add £6 next month = £30, mark all three paid). This rollup is
+     the finance run's worklist; the partner portal shows the mirror of the same rule. */
+  (function(){
+    const box=document.getElementById('rv-w4-rollup'); if(!box) return;
+    const byPartner={};
+    pending.forEach(p=>{ if(p.partner_id)(byPartner[p.partner_id]=byPartner[p.partner_id]||[]).push(p); });
+    const payable=[],below=[];
+    Object.keys(byPartner).forEach(pid=>{
+      const tot=byPartner[pid].reduce((s,p)=>s+Number(p.payout_amount||0),0);
+      (tot>=25?payable:below).push({pid,tot,n:byPartner[pid].length});
+    });
+    payable.sort((a,b)=>b.tot-a.tot); below.sort((a,b)=>b.tot-a.tot);
+    const nm=pid=>esc(partnerMap[pid]?.name||'Unknown');
+    if(!payable.length&&!below.length){ box.innerHTML=''; return; }
+    box.innerHTML=`<div class="grid g2 mt">
+      <div class="card"><div class="card-h"><h3>Payable now (≥ £25)</h3></div>
+        ${payable.length?payable.map(x=>`<div style="display:flex;justify-content:space-between;gap:10px;padding:7px 2px;border-bottom:1px solid var(--line);font-size:13px"><span>${nm(x.pid)} <span style="color:var(--muted);font-size:11.5px">· ${x.n} period${x.n===1?'':'s'} pending</span></span><b>£${x.tot.toFixed(2)}</b></div>`).join(''):'<div class="empty-state" style="padding:10px">Nothing over the minimum yet</div>'}
+        ${payable.length?'<div style="font-size:11.5px;color:var(--muted);margin-top:8px">Pay the partner the full amount, then mark each pending row paid in the ledger below.</div>':''}</div>
+      <div class="card"><div class="card-h"><h3>Below £25 — rolls over</h3></div>
+        ${below.length?below.map(x=>`<div style="display:flex;justify-content:space-between;gap:10px;padding:7px 2px;border-bottom:1px solid var(--line);font-size:13px"><span>${nm(x.pid)}</span><span style="color:var(--warning)">£${x.tot.toFixed(2)}</span></div>`).join(''):'<div class="empty-state" style="padding:10px">—</div>'}
+        ${below.length?'<div style="font-size:11.5px;color:var(--muted);margin-top:8px">Leave these pending — they accumulate and pay out once the partner\u2019s balance reaches £25.</div>':''}</div>
+    </div>`;
+  })();
 
   document.getElementById('rv-table').innerHTML=allPayouts.length?allPayouts.map(py=>`
     <tr onclick="openPartner('${py.partner_id}')">
