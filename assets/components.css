@@ -1,7 +1,17 @@
 /* =====================================================================
-   VYVE Command Centre — Components
-   Page heroes, cards, stats (with size hierarchy), badges, lists,
-   kanban, forms, buttons, tabs, empty states, pillar accents.
+   VYVE Command Centre — Components v2 (PM-1006, design system v3 Wave 0)
+   One primitive, one home. Every primitive below is built on the
+   component-contract tokens in tokens.css (--btn-* / --card-* / --input-* /
+   --pill-* / --modal-* / --table-*). Pages must never redefine these
+   classes — they differ by variable, never by redefinition.
+
+   Class names and DOM structure are FROZEN (Law 4): the paired JS renderers
+   select by class/id. Values changed, selectors never.
+
+   Authoring is mobile-first, min-width only, three breakpoints: 640/900/1280.
+   Two documented exceptions at the tail of this file (.ap-* and
+   #page-settings) are page-specific rules that override inline styles
+   emitted by their page's JS — they convert in Wave 4 with their page.
    ===================================================================== */
 
 /* =====================================================================
@@ -16,7 +26,7 @@
   padding-bottom: 4px;
 }
 .page-hero .eyebrow {
-  font-size: var(--fs-xxs);
+  font-size: var(--fs-2xs);
   font-weight: var(--fw-bold);
   letter-spacing: var(--ls-mega);
   text-transform: uppercase;
@@ -25,7 +35,7 @@
 }
 .page-hero .page-title {
   font-family: var(--font-head);
-  font-size: var(--fs-3xl);
+  font-size: var(--fs-xl);
   font-weight: var(--fw-bold);
   color: var(--text);
   letter-spacing: var(--ls-tight);
@@ -33,7 +43,7 @@
   margin: 0;
 }
 .page-hero .page-sub {
-  font-size: var(--fs-md);
+  font-size: var(--fs-base);
   color: var(--text-muted);
   margin-top: 10px;
   max-width: 560px;
@@ -41,17 +51,17 @@
 }
 .page-hero .hero-actions {
   display: flex;
-  gap: 8px;
+  gap: var(--s-2);
   align-items: center;
   margin-top: 18px;
   flex-wrap: wrap;
 }
 
 /* Legacy page-header (kept for unmigrated pages) */
-.page-header { margin-bottom: 24px; }
+.page-header { margin-bottom: var(--s-6); }
 .page-header h1 {
   font-family: var(--font-head);
-  font-size: var(--fs-3xl);
+  font-size: var(--fs-xl);
   font-weight: var(--fw-bold);
   color: var(--text);
   letter-spacing: var(--ls-tight);
@@ -63,20 +73,20 @@
   color: var(--text-muted);
   margin: 0;
   max-width: 560px;
-  line-height: 1.5;
+  line-height: var(--lh-base);
 }
 .page-header .hdr-row {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 24px;
+  gap: var(--s-6);
   flex-wrap: wrap;
 }
 
 /* Standalone title classes */
 .page-title {
   font-family: var(--font-head);
-  font-size: var(--fs-3xl);
+  font-size: var(--fs-xl);
   font-weight: var(--fw-bold);
   color: var(--text);
   letter-spacing: var(--ls-tight);
@@ -85,7 +95,7 @@
 .page-sub {
   font-size: var(--fs-md);
   color: var(--text-muted);
-  margin-top: 8px;
+  margin-top: var(--s-2);
   max-width: 560px;
   line-height: 1.55;
 }
@@ -95,27 +105,27 @@
    ===================================================================== */
 .card {
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  padding: 24px;
+  border: var(--card-border);
+  border-radius: var(--card-radius);
+  padding: var(--card-pad);
   box-shadow: var(--shadow-xs);
   transition: box-shadow var(--t-fast);
 }
-.card:hover { box-shadow: var(--shadow-sm); }
-.card + .card { margin-top: 16px; }
+.card:hover { box-shadow: var(--elev-card); }
+.card + .card { margin-top: var(--s-4); }
 .card-flat {
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  padding: 24px;
+  border: var(--card-border);
+  border-radius: var(--card-radius);
+  padding: var(--card-pad);
   box-shadow: none;
 }
 .card-elevated {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  padding: 28px;
-  box-shadow: var(--shadow-md);
+  background: var(--surface-raised);
+  border: var(--card-border);
+  border-radius: var(--card-radius);
+  padding: var(--card-pad);
+  box-shadow: var(--elev-raised);
 }
 
 .card-header {
@@ -139,31 +149,31 @@
 }
 .card-body {
   padding: 0;
-  margin-top: 12px;
+  margin-top: var(--s-3);
 }
 
 /* =====================================================================
-   Grids
+   Grids — mobile-first. Phone is one column; !important parity with the
+   pre-v3 mobile clamps is preserved so page-level rules still lose on
+   small screens and still win at desktop exactly as before.
    ===================================================================== */
-.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
-.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.grid-2 { display: grid; grid-template-columns: 1fr; gap: var(--gap-grid); }
+.grid-3 { display: grid; grid-template-columns: 1fr !important; gap: var(--gap-grid); }
+.grid-4 { display: grid; grid-template-columns: 1fr !important; gap: var(--gap-grid); }
 .grid-6 { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; }
 
 /* =====================================================================
    Stats — with typographic hierarchy (hero / medium / micro)
-   The trick: not every stat is equally important. The hub previously
-   treated them all the same size (28px). Authentic enterprise design
-   uses size to signal importance.
+   Not every stat is equally important; size signals importance.
    ===================================================================== */
 
 /* Hero stat — for the single most important number on a page */
 .stat-hero {
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: var(--card-border);
   border-radius: var(--r-xl);
-  padding: 32px;
-  box-shadow: var(--shadow-sm);
+  padding: var(--s-6);
+  box-shadow: var(--elev-card);
   position: relative;
 }
 .stat-hero .stat-label {
@@ -172,11 +182,11 @@
   font-weight: var(--fw-semi);
   text-transform: uppercase;
   letter-spacing: var(--ls-wide);
-  margin-bottom: 16px;
+  margin-bottom: var(--s-4);
 }
 .stat-hero .stat-num {
   font-family: var(--font-head);
-  font-size: var(--fs-hero);
+  font-size: var(--fs-3xl);
   font-weight: var(--fw-bold);
   color: var(--text);
   line-height: 0.95;
@@ -193,13 +203,13 @@
 /* Default stat (most pages) — medium */
 .stat {
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  padding: 20px;
+  border: var(--card-border);
+  border-radius: var(--card-radius);
+  padding: var(--pad-card-m);
   box-shadow: var(--shadow-xs);
   transition: box-shadow var(--t-fast), transform var(--t-fast);
 }
-.stat:hover { box-shadow: var(--shadow-sm); }
+.stat:hover { box-shadow: var(--elev-card); }
 .stat[data-route] { cursor: pointer; }
 .stat[data-route]:hover { transform: translateY(-1px); }
 
@@ -224,7 +234,7 @@
 .stat-sub {
   font-size: var(--fs-sm);
   color: var(--text-muted);
-  margin-top: 8px;
+  margin-top: var(--s-2);
   line-height: 1.45;
 }
 .stat-sub.ok   { color: var(--success); }
@@ -252,11 +262,11 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: var(--fs-xxs);
+  font-size: var(--pill-fs);
   font-weight: var(--fw-bold);
   letter-spacing: var(--ls-wide);
   text-transform: uppercase;
-  padding: 3px 10px;
+  padding: var(--pill-pad);
   border-radius: var(--r-pill);
 }
 .pillar-tag::before {
@@ -276,8 +286,8 @@
 .pillar-heading {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin: 32px 0 16px;
+  gap: var(--s-3);
+  margin: var(--s-7) 0 var(--s-4);
 }
 .pillar-heading .pillar-dot {
   width: 10px;
@@ -290,7 +300,7 @@
 .pillar-heading.social   .pillar-dot { background: var(--pillar-social); }
 .pillar-heading h2 {
   font-family: var(--font-head);
-  font-size: var(--fs-xl);
+  font-size: var(--fs-lg);
   font-weight: var(--fw-bold);
   color: var(--text);
   letter-spacing: var(--ls-tight);
@@ -308,9 +318,9 @@
 .badge {
   display: inline-flex;
   align-items: center;
-  padding: 3px 10px;
+  padding: var(--pill-pad);
   border-radius: var(--r-pill);
-  font-size: var(--fs-xs);
+  font-size: var(--pill-fs);
   font-weight: var(--fw-semi);
   letter-spacing: var(--ls-snug);
 }
@@ -325,9 +335,9 @@
 .pill {
   display: inline-flex;
   align-items: center;
-  padding: 3px 10px;
+  padding: var(--pill-pad);
   border-radius: var(--r-pill);
-  font-size: var(--fs-xs);
+  font-size: var(--pill-fs);
   font-weight: var(--fw-semi);
   letter-spacing: var(--ls-snug);
 }
@@ -337,8 +347,8 @@
    ===================================================================== */
 .tbl-wrap {
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
+  border: var(--card-border);
+  border-radius: var(--card-radius);
   overflow: hidden;
   box-shadow: var(--shadow-xs);
 }
@@ -352,20 +362,21 @@ table.tbl th {
   text-transform: uppercase;
   letter-spacing: var(--ls-wide);
   color: var(--text-muted);
-  padding: 12px 16px;
+  padding: var(--s-3) var(--s-4);
   text-align: left;
   background: var(--surface-2);
   border-bottom: 1px solid var(--border);
 }
 table.tbl td {
-  font-size: var(--fs-base);
-  padding: 14px 16px;
+  font-size: var(--table-fs);
+  height: var(--table-row-h);
+  padding: var(--s-2) var(--s-4);
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
   color: var(--text);
 }
 table.tbl tr:last-child td { border-bottom: 0; }
-table.tbl tr:hover td { background: var(--bg-alt); }
+table.tbl tr:hover td { background: var(--hover-overlay); }
 
 .tbl-filters {
   padding: 14px 18px;
@@ -379,18 +390,19 @@ table.tbl tr:hover td { background: var(--bg-alt); }
 .tbl-filters .search { flex: 1; min-width: 220px; position: relative; }
 .tbl-filters .search input {
   width: 100%;
+  min-height: var(--input-h);
   padding: 9px 14px;
-  border-radius: var(--r-md);
+  border-radius: var(--input-radius);
   border: 1px solid var(--border);
   background: var(--surface-2);
   color: var(--text);
-  font-size: var(--fs-base);
+  font-size: var(--input-fs);
   outline: none;
   transition: border-color var(--t-fast), box-shadow var(--t-fast);
 }
 .tbl-filters .search input:focus {
   border-color: var(--accent);
-  box-shadow: var(--shadow-focus);
+  box-shadow: var(--focus-ring);
   background: var(--surface);
 }
 
@@ -404,7 +416,7 @@ table.tbl tr:hover td { background: var(--bg-alt); }
   background: var(--surface);
 }
 .pager .info { font-size: var(--fs-sm); color: var(--text-muted); }
-.pager .btns { display: flex; gap: 8px; }
+.pager .btns { display: flex; gap: var(--s-2); }
 .pager button {
   padding: 7px 14px;
   border-radius: var(--r-sm);
@@ -414,7 +426,7 @@ table.tbl tr:hover td { background: var(--bg-alt); }
   font-size: var(--fs-sm);
   font-weight: var(--fw-medium);
 }
-.pager button:hover:not(:disabled) { background: var(--surface-2); }
+.pager button:hover:not(:disabled) { background: var(--hover-overlay); }
 .pager button:disabled { opacity: .4; cursor: not-allowed; }
 
 /* =====================================================================
@@ -424,7 +436,7 @@ table.tbl tr:hover td { background: var(--bg-alt); }
   display: flex;
   gap: 14px;
   overflow-x: auto;
-  padding-bottom: 8px;
+  padding-bottom: var(--s-2);
 }
 .kanban-col {
   min-width: 280px;
@@ -435,7 +447,7 @@ table.tbl tr:hover td { background: var(--bg-alt); }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 14px;
+  padding: var(--s-3) 14px;
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: var(--r-md) var(--r-md) 0 0;
@@ -453,7 +465,7 @@ table.tbl tr:hover td { background: var(--bg-alt); }
   font-weight: var(--fw-bold);
   color: var(--text-muted);
   background: var(--border);
-  padding: 2px 8px;
+  padding: 2px var(--s-2);
   border-radius: var(--r-pill);
 }
 .kanban-body {
@@ -464,19 +476,19 @@ table.tbl tr:hover td { background: var(--bg-alt); }
   min-height: 220px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--s-2);
 }
 .kanban-card {
   background: var(--bg-alt);
   border: 1px solid var(--border);
   border-radius: var(--r-sm);
-  padding: 12px 14px;
+  padding: var(--s-3) 14px;
   cursor: pointer;
   transition: border-color var(--t-fast), box-shadow var(--t-fast), transform var(--t-fast);
 }
 .kanban-card:hover {
   border-color: var(--accent);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--elev-card);
   transform: translateY(-1px);
 }
 .kanban-card .kc-title {
@@ -497,14 +509,10 @@ table.tbl tr:hover td { background: var(--bg-alt); }
 .form-row {
   display: grid;
   gap: 14px;
-  margin-bottom: 16px;
+  margin-bottom: var(--s-4);
 }
-.form-row.cols-2 { grid-template-columns: 1fr 1fr; }
-.form-row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
-@media (max-width: 700px) {
-  .form-row.cols-2,
-  .form-row.cols-3 { grid-template-columns: 1fr; }
-}
+.form-row.cols-2 { grid-template-columns: 1fr; }
+.form-row.cols-3 { grid-template-columns: 1fr; }
 .form-group label {
   display: block;
   font-size: var(--fs-xs);
@@ -512,16 +520,17 @@ table.tbl tr:hover td { background: var(--bg-alt); }
   color: var(--text-muted);
   letter-spacing: var(--ls-wide);
   text-transform: uppercase;
-  margin-bottom: 8px;
+  margin-bottom: var(--s-2);
 }
 .form-group input,
 .form-group select,
 .form-group textarea {
   width: 100%;
+  min-height: var(--input-h);
   padding: 10px 14px;
   border: 1.5px solid var(--border);
-  border-radius: var(--r-md);
-  font-size: var(--fs-base);
+  border-radius: var(--input-radius);
+  font-size: var(--input-fs);
   background: var(--surface);
   color: var(--text);
   outline: none;
@@ -532,10 +541,25 @@ table.tbl tr:hover td { background: var(--bg-alt); }
 .form-group select:focus,
 .form-group textarea:focus {
   border-color: var(--accent);
-  box-shadow: var(--shadow-focus);
+  box-shadow: var(--focus-ring);
 }
 .form-group input::placeholder,
 .form-group textarea::placeholder { color: var(--text-dim); }
+
+/* PM-921 — checkboxes/radios inside .form-group were caught by the generic
+   input rule (width:100%, padding, surface background), turning them into
+   full-width blocks that crushed their labels to zero width. */
+.form-group input[type="checkbox"],
+.form-group input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  min-height: 0;
+  padding: 0;
+  flex: 0 0 auto;
+  border-radius: var(--r-sm);
+  accent-color: var(--accent);
+  background: transparent;
+}
 
 /* =====================================================================
    Buttons
@@ -544,10 +568,11 @@ table.tbl tr:hover td { background: var(--bg-alt); }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 9px 16px;
-  border-radius: var(--r-md);
-  font-size: var(--fs-base);
+  gap: var(--s-2);
+  min-height: var(--btn-h);
+  padding: 0 var(--btn-pad-x);
+  border-radius: var(--btn-radius);
+  font-size: var(--btn-fs);
   font-weight: var(--fw-semi);
   letter-spacing: var(--ls-snug);
   border: 1.5px solid var(--border);
@@ -559,16 +584,16 @@ table.tbl tr:hover td { background: var(--bg-alt); }
   white-space: nowrap;
 }
 .btn:hover {
-  background: var(--surface-2);
+  background: var(--hover-overlay);
   border-color: var(--border-strong);
 }
-.btn:active { transform: scale(.98); }
-.btn:focus-visible { box-shadow: var(--shadow-focus); }
+.btn:active { transform: scale(.98); background: var(--active-overlay); }
+.btn:focus-visible { box-shadow: var(--focus-ring); }
 
 .btn-primary {
-  background: var(--vyve-teal);
+  background: var(--accent);
   color: var(--on-accent);
-  border-color: var(--vyve-teal);
+  border-color: var(--accent);
 }
 .btn-primary:hover {
   background: var(--accent-hover);
@@ -588,15 +613,17 @@ table.tbl tr:hover td { background: var(--bg-alt); }
 }
 .btn-ghost:hover {
   color: var(--text);
-  background: var(--surface-2);
+  background: var(--hover-overlay);
 }
 
 .btn-sm {
-  padding: 6px 12px;
-  font-size: var(--fs-sm);
+  min-height: var(--btn-h-sm);
+  padding: 0 var(--s-3);
+  font-size: var(--fs-xs);
 }
 .btn-lg {
-  padding: 12px 22px;
+  min-height: 48px;
+  padding: 0 22px;
   font-size: var(--fs-md);
 }
 
@@ -612,17 +639,23 @@ table.tbl tr:hover td { background: var(--bg-alt); }
   padding: 3px;
   margin-bottom: 22px;
   width: fit-content;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
+.tab-bar::-webkit-scrollbar { display: none; }
 .tab-btn {
-  padding: 7px 16px;
+  padding: 7px var(--s-4);
   border-radius: var(--r-sm);
-  font-size: var(--fs-base);
+  font-size: var(--fs-sm);
   font-weight: var(--fw-medium);
   color: var(--text-muted);
   cursor: pointer;
   font-family: inherit;
   transition: background var(--t-fast), color var(--t-fast);
   white-space: nowrap;
+  flex: 0 0 auto;
 }
 .tab-btn:hover { color: var(--text); }
 .tab-btn.active {
@@ -641,26 +674,27 @@ table.tbl tr:hover td { background: var(--bg-alt); }
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 12px 0;
+  padding: var(--s-3) 0;
   border-bottom: 1px solid var(--border);
   font-size: var(--fs-base);
+  flex-wrap: wrap;
 }
 .list-row:last-child { border-bottom: 0; }
 .list-row[data-route],
 .list-row[data-id] {
   cursor: pointer;
   margin: 0 -6px;
-  padding: 12px 6px;
+  padding: var(--s-3) 6px;
   border-radius: var(--r-sm);
   transition: background var(--t-fast);
 }
 .list-row[data-route]:hover,
-.list-row[data-id]:hover { background: var(--bg-alt); }
+.list-row[data-id]:hover { background: var(--hover-overlay); }
 .list-row-main { flex: 1; min-width: 0; }
 .list-row-title {
   font-weight: var(--fw-medium);
   color: var(--text);
-  white-space: nowrap;
+  white-space: normal;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -674,13 +708,13 @@ table.tbl tr:hover td { background: var(--bg-alt); }
    Empty state
    ===================================================================== */
 .empty {
-  padding: 64px 24px;
+  padding: 64px var(--s-6);
   text-align: center;
   color: var(--text-muted);
 }
 .empty .icon {
   font-size: 36px;
-  margin-bottom: 12px;
+  margin-bottom: var(--s-3);
   opacity: .4;
   display: block;
 }
@@ -707,7 +741,7 @@ table.tbl tr:hover td { background: var(--bg-alt); }
   width: 14px;
   height: 14px;
   border: 2px solid rgba(27,120,120,.2);
-  border-top-color: var(--vyve-teal);
+  border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin .7s linear infinite;
   vertical-align: middle;
@@ -752,13 +786,13 @@ table.tbl tr:hover td { background: var(--bg-alt); }
 .drop-zone:hover,
 .drop-zone.dragover {
   border-color: var(--accent);
-  background: var(--vyve-teal-pale);
+  background: var(--accent-pale);
 }
-.drop-zone strong { color: var(--vyve-teal); }
+.drop-zone strong { color: var(--accent); }
 .drop-zone p {
   font-size: var(--fs-base);
   color: var(--text-muted);
-  margin-top: 8px;
+  margin-top: var(--s-2);
 }
 
 /* =====================================================================
@@ -775,25 +809,27 @@ table.tbl tr:hover td { background: var(--bg-alt); }
 }
 .search input {
   width: 100%;
+  min-height: var(--input-h);
   padding: 9px 14px;
-  border-radius: var(--r-md);
+  border-radius: var(--input-radius);
   border: 1px solid var(--border);
   background: var(--surface-2);
   color: var(--text);
-  font-size: var(--fs-base);
+  font-size: var(--input-fs);
   font-family: inherit;
   outline: none;
   transition: border-color var(--t-fast), box-shadow var(--t-fast), background var(--t-fast);
 }
 .search input:focus {
   border-color: var(--accent);
-  box-shadow: var(--shadow-focus);
+  box-shadow: var(--focus-ring);
   background: var(--surface);
 }
 .search input::placeholder { color: var(--text-dim); }
 
 /* =====================================================================
    Stats row (used by Brief/Dashboard for KPI strips)
+   Always paired with .grid-N, which owns the columns.
    ===================================================================== */
 .stats-row {
   display: grid;
@@ -807,7 +843,7 @@ table.tbl tr:hover td { background: var(--bg-alt); }
   display: flex;
   align-items: center;
   gap: 14px;
-  margin: 32px 0 16px;
+  margin: var(--s-7) 0 var(--s-4);
 }
 .section-divider::before,
 .section-divider::after {
@@ -825,7 +861,153 @@ table.tbl tr:hover td { background: var(--bg-alt); }
 }
 
 /* =====================================================================
+   Modal — ABSORBED from shell.css in Wave 0 (one primitive, one home).
+   shell.css keeps chrome only; the modal is a page primitive.
+   ===================================================================== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(13,43,43,.55);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  z-index: var(--z-modal);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s-4);
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--modal-radius);
+  width: 96%;
+  max-width: var(--modal-max-w);
+  max-height: 94vh;
+  overflow-y: auto;
+  padding: var(--s-5) var(--s-4);
+  box-shadow: var(--elev-overlay);
+  animation: modalIn .2s ease;
+}
+@keyframes modalIn {
+  from { transform: translateY(12px) scale(.98); opacity: 0; }
+  to   { transform: translateY(0) scale(1); opacity: 1; }
+}
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+.modal-title {
+  font-family: var(--font-head);
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-tight);
+  color: var(--text);
+}
+.modal-close {
+  font-size: var(--fs-xl);
+  color: var(--text-muted);
+  padding: var(--s-1) 10px;
+  border-radius: var(--r-sm);
+  line-height: 1;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.modal-close:hover { background: var(--hover-overlay); color: var(--text); }
+.modal-body {
+  font-size: var(--fs-sm);
+  color: var(--text);
+  line-height: 1.6;
+}
+.modal-body .form-row { margin-bottom: 14px; }
+.modal-body .form-row:last-of-type { margin-bottom: var(--s-4); }
+
+/* =====================================================================
+   Toast — ABSORBED from shell.css in Wave 0
+   ===================================================================== */
+.toast {
+  position: fixed;
+  bottom: var(--s-6);
+  right: var(--s-6);
+  background: var(--vyve-dark);
+  color: #fff;
+  padding: var(--s-3) 22px;
+  border-radius: var(--r-pill);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  z-index: var(--z-toast);
+  box-shadow: var(--shadow-lg);
+  animation: slideUp .25s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.toast.success { background: var(--success); }
+.toast.error   { background: var(--danger); }
+.toast.warning { background: var(--warning); color: var(--vyve-dark); }
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+/* =====================================================================
+   PM-764 — mobile primitives
+   .m-scroll: horizontal scroll-wrap for any data table card
+   ===================================================================== */
+.m-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.m-scroll table{min-width:560px}
+
+/* =====================================================================
+   PM-923 — tables and media clamp to the viewport on small screens.
+   Escape hatch: table.no-mscroll opts out.
+   ===================================================================== */
+.page table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+.page table.no-mscroll { display: table; }
+.page img, .page canvas, .page svg, .page video { max-width: 100%; height: auto; }
+
+/* =====================================================================
+   Responsive ladder — min-width only, three breakpoints (640/900/1280).
+   Base above is phone.
+   ===================================================================== */
+@media (min-width: 640px) {
+  .grid-3 { grid-template-columns: repeat(2, 1fr) !important; }
+  .grid-4 { grid-template-columns: repeat(2, 1fr) !important; }
+  .page-hero .page-title,
+  .page-header h1,
+  .page-title { font-size: var(--fs-2xl); }
+  .page-hero .page-sub { font-size: var(--fs-md); }
+  .stat { padding: var(--pad-card); }
+  .stat-hero .stat-num { font-size: var(--fs-4xl); }
+  .form-row.cols-2 { grid-template-columns: 1fr 1fr; }
+  .form-row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .modal { padding: var(--s-7) 30px; }
+}
+
+@media (min-width: 900px) {
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+  .page-hero .page-title,
+  .page-header h1,
+  .page-title { font-size: var(--fs-3xl); }
+  .stat-hero { padding: var(--s-7); }
+  .stat-hero .stat-num { font-size: var(--fs-hero); }
+  .list-row { flex-wrap: nowrap; }
+  .list-row-title { white-space: nowrap; }
+  .tab-bar { overflow-x: visible; max-width: none; }
+  .page table { display: table; overflow-x: visible; }
+  .page img, .page canvas, .page svg, .page video { max-width: none; height: auto; }
+}
+
+/* =====================================================================
    Action Plans page (specific component refinements)
+   NOT a primitive: these rules belong to pages/action-plans.html and their
+   !important mobile block exists to beat inline styles emitted by that
+   page's JS renderer — which min-width authoring cannot express without
+   hardcoding those inline values here. Left byte-verbatim (including its
+   720px query) until Wave 4 touches action-plans.html, where the rules
+   move to the page and convert to the 640/900/1280 ladder.
    ===================================================================== */
 .ap-member-card {
   background: var(--surface);
@@ -927,20 +1109,6 @@ table.tbl tr:hover td { background: var(--bg-alt); }
   font-weight: var(--fw-semi);
 }
 
-/* =====================================================================
-   Responsive — breakpoint stack
-   ===================================================================== */
-@media (max-width: 900px) {
-  .grid-4 { grid-template-columns: repeat(2, 1fr) !important; }
-  .grid-3 { grid-template-columns: repeat(2, 1fr) !important; }
-  .grid-2 { grid-template-columns: 1fr; }
-  .page-hero .page-title,
-  .page-header h1,
-  .page-title { font-size: var(--fs-2xl); }
-  .stat-hero { padding: 24px; }
-  .stat-hero .stat-num { font-size: var(--fs-4xl); }
-}
-
 @media (max-width: 720px) {
   .ap-member-head {
     flex-wrap: wrap !important;
@@ -964,11 +1132,10 @@ table.tbl tr:hover td { background: var(--bg-alt); }
   }
   .ap-avatar { width: 40px !important; height: 40px !important; }
   .ap-filter { padding: 7px 13px !important; }
-  .list-row { flex-wrap: wrap; gap: 10px; }
-  .list-row-title { white-space: normal; }
   .ap-edit-form .form-row { grid-template-columns: 1fr !important; }
 }
 
+/* Page-scoped, same Wave 4 note as the .ap-* block above. */
 @media (max-width: 720px) {
   #page-settings .tab-bar {
     overflow-x: auto;
@@ -978,75 +1145,4 @@ table.tbl tr:hover td { background: var(--bg-alt); }
     max-width: 100%;
   }
   #page-settings .tab-btn { white-space: nowrap; flex-shrink: 0; }
-}
-
-@media (max-width: 480px) {
-  .grid-4 { grid-template-columns: 1fr !important; }
-  .grid-3 { grid-template-columns: 1fr !important; }
-  .stats-row { grid-template-columns: 1fr !important; }
-  .stat { padding: 16px; }
-  .stat-hero .stat-num { font-size: var(--fs-3xl); }
-  .page-hero .page-title,
-  .page-title { font-size: var(--fs-xl); }
-  .page-hero .page-sub { font-size: var(--fs-base); }
-}
-
-/* =====================================================================
-   PM-764 — M1 mobile primitives (CC mobile campaign)
-   Shell already handles the drawer (≤900px) and content padding (≤480px).
-   These are the shared building blocks pages adopt in M2/M3:
-   - .m-scroll: horizontal scroll-wrap for any data table card
-   - page-scoped modals should go near-full-screen ≤640px (M2 sweep)
-   ===================================================================== */
-.m-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
-.m-scroll table{min-width:560px}
-@media (max-width:640px){
-  .content{padding:16px 12px 56px}
-  .modal{width:96%;max-height:94vh;padding:20px 16px}
-}
-
-/* =====================================================================
-   PM-921 — Checkboxes/radios inside .form-group were caught by the
-   generic input rule (width:100%, padding, surface background), turning
-   them into full-width blocks that crushed their labels to zero width —
-   the invisible assignee names in the task modal (Dean device report).
-   ===================================================================== */
-.form-group input[type="checkbox"],
-.form-group input[type="radio"] {
-  width: 16px;
-  height: 16px;
-  padding: 0;
-  flex: 0 0 auto;
-  border-radius: 4px;
-  accent-color: var(--accent);
-  background: transparent;
-}
-
-/* =====================================================================
-   PM-923 — CC mobile audit, systemic fixes (Dean device report, 3 pages;
-   full findings in VYVEBrain playbooks/cc-mobile-audit.md).
-   (1) 21 tables across 14 pages had no .m-scroll wrapper and clipped:
-       on mobile every table becomes its own horizontal scroller.
-   (2) .tab-bar (app-health, intel, sessions, settings, strategy, usage)
-       clipped its overflow: it now swipes.
-   (3) media elements clamp to the viewport.
-   Escape hatch: table.no-mscroll opts out.
-   ===================================================================== */
-@media (max-width: 900px) {
-  .page table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
-  .page table.no-mscroll { display: table; }
-  .tab-bar { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; scrollbar-width: none; }
-  .tab-bar::-webkit-scrollbar { display: none; }
-  .tab-btn { white-space: nowrap; flex: 0 0 auto; }
-  .page img, .page canvas, .page svg, .page video { max-width: 100%; height: auto; }
-}
-
-/* =====================================================================
-   PM-927 — .tab-bar swipe was dead everywhere (Dean device report):
-   base .tab-bar has width:fit-content, so the strip sizes to its buttons
-   and never overflows internally — overflow-x:auto had nothing to scroll.
-   Clamp to the viewport on mobile so the strip actually scrolls.
-   ===================================================================== */
-@media (max-width: 900px) {
-  .tab-bar { max-width: 100%; }
 }

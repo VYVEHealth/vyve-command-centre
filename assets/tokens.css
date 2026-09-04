@@ -1,249 +1,173 @@
 /* =====================================================================
-   VYVE Command Centre — Design Tokens
-   Single source of truth. Brand colours, type, spacing, radii, shadows.
-
-   Aligned to vyvehealth.co.uk marketing site brand:
-     "Build health before it breaks."
-     Proactive · Evidence-led · People first · Long-term thinking
+   VYVE Command Centre — Design Tokens v3 (PM-1006 lock, 2026-09-04)
+   Single source of truth. Do NOT redefine any of these names in a page.
    ===================================================================== */
-
 :root {
-  /* ---------- Brand colours ---------- */
-  --vyve-dark:       #0D2B2B;
-  --vyve-teal:       #1B7878;
-  --vyve-teal-light: #4DAAAA;
-  --vyve-teal-pale:  #DEEFEF;
-  --vyve-gold:       #C9A84C;
-  --vyve-gold-pale:  #F4ECD3;
-  --vyve-cream:      #EFF4F4;     /* warm hero background */
-  --vyve-charcoal:   #1A2B2B;
+  /* Brand */
+  --vyve-dark: #0D2B2B; --vyve-teal: #1B7878; --vyve-teal-light: #4DAAAA;
+  --vyve-teal-pale: #DEEFEF; --vyve-gold: #C9A84C; --vyve-gold-pale: #F4ECD3;
+  --vyve-cream: #EFF4F4; --vyve-charcoal: #1A2B2B;
 
-  /* ---------- Three pillars (used throughout the hub) ----------
-     Physical = vital, energetic gold
-     Mental   = calm, restorative teal
-     Social   = warm, connecting coral
-  */
-  --pillar-physical:        #D49B2C;
-  --pillar-physical-pale:   #F6EDD6;
-  --pillar-mental:          #4DAAAA;
-  --pillar-mental-pale:     #DEEFEF;
-  --pillar-social:          #D17F6E;
-  --pillar-social-pale:     #F7E3DE;
+  /* Pillars */
+  --pillar-physical: #D49B2C; --pillar-physical-pale: #F6EDD6;
+  --pillar-mental: #4DAAAA;   --pillar-mental-pale: #DEEFEF;
+  --pillar-social: #D17F6E;   --pillar-social-pale: #F7E3DE;
 
-  /* ---------- Neutrals — light theme (default) ----------
-     Warmer cream-white to match the marketing site feel rather than cold mint.
-  */
-  --bg:             #F3F6F6;      /* cream-white, very subtle warmth */
-  --bg-alt:         #F7FAFA;      /* slightly lighter for hero contrast */
-  --surface:        #FFFFFF;
-  --surface-2:      #ECF2F2;      /* soft sand */
-  --surface-3:      #E0EAEA;
-  --surface-sunken: #E9F0F0;
-  --border:         rgba(13,43,43,.10);
-  --border-strong:  rgba(13,43,43,.20);
-  --text:           #0D2B2B;
-  --text-muted:     #4E6E6E;
-  --text-dim:       #8CA6A6;
+  /* Neutrals — light (LOCK 1: near-white, teal-tinted) */
+  --bg: #F7F9F9; --bg-alt: #FBFCFC; --surface: #FFFFFF;
+  --surface-2: #F0F4F4; --surface-3: #E4EBEB; --surface-sunken: #EDF2F2;
+  --surface-raised: #FFFFFF;
+  --border: rgba(13,43,43,.09); --border-strong: rgba(13,43,43,.18);
+  --text: #0D2B2B; --text-muted: #4E6E6E; --text-dim: #8CA6A6;
 
-  /* ---------- Semantic colours ---------- */
-  --success:       #1F8F45;
-  --success-pale:  #D8EDDE;
-  --warning:       #E09B3D;
-  --warning-pale:  #FAEAD0;
-  --danger:        #C64545;
-  --danger-pale:   #F3D6D3;
-  --info:          #3D7FD9;
-  --info-pale:     #D7E4F5;
+  /* Semantic */
+  --success: #1F8F45; --success-pale: #D8EDDE;
+  --warning: #E09B3D; --warning-pale: #FAEAD0;
+  --danger:  #C64545; --danger-pale:  #F3D6D3;
+  --info:    #3D7FD9; --info-pale:    #D7E4F5;
 
-  /* ---------- Sidebar (dark, on-brand) ---------- */
-  --sidebar-bg:     #0D2B2B;
-  --sidebar-bg-2:   #0A2222;
-  --sidebar-text:   rgba(245,242,236,.75);
-  --sidebar-active: rgba(77,170,170,.16);
-  --sidebar-active-fg: #EAF5F5;
-  --sidebar-hover:  rgba(255,255,255,.05);
-  --sidebar-section:rgba(255,255,255,.32);
-  --sidebar-border: rgba(255,255,255,.08);
+  /* Interaction (NEW tier — no page invents hover colours any more) */
+  --hover-overlay: rgba(13,43,43,.04);
+  --active-overlay: rgba(13,43,43,.07);
+  --selected-bg: var(--accent-pale);
+  --focus-ring: 0 0 0 3px rgba(77,170,170,.28);
 
-  /* ---------- Accent (interactive elements) ---------- */
-  --accent:         var(--vyve-teal);
-  --accent-hover:   #166262;
-  --accent-light:   var(--vyve-teal-light);
-  --accent-pale:    var(--vyve-teal-pale);
-  --on-accent:      #FFFFFF;
+  /* Sidebar (unchanged — brand-dark both themes) */
+  --sidebar-bg: #0D2B2B; --sidebar-bg-2: #0A2222;
+  --sidebar-text: rgba(245,242,236,.75);
+  --sidebar-active: rgba(77,170,170,.16); --sidebar-active-fg: #EAF5F5;
+  --sidebar-hover: rgba(255,255,255,.05);
+  --sidebar-section: rgba(255,255,255,.32); --sidebar-border: rgba(255,255,255,.08);
 
-  /* ---------- Typography ---------- */
+  /* Accent */
+  --accent: var(--vyve-teal); --accent-hover: #166262;
+  --accent-light: var(--vyve-teal-light); --accent-pale: var(--vyve-teal-pale);
+  --on-accent: #FFFFFF;
+
+  /* v2 aliases, folded in (was a separate block) */
+  --teal: var(--vyve-teal); --teal-lt: var(--vyve-teal-light);
+  --gold: #A8873A; --gold-pale: rgba(201,168,76,.14);
+  --settled: rgba(13,43,43,.10); --settled-pale: rgba(13,43,43,.04);
+  --ring: rgba(27,120,120,.5);
+
+  /* Typography */
   --font-head: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-body: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body: var(--font-head);
   --font-mono: 'DM Mono', 'SF Mono', ui-monospace, 'Roboto Mono', monospace;
 
-  /* ---------- Type scale ---------- */
-  --fs-xxs:  10.5px;
-  --fs-xs:   11.5px;
-  --fs-sm:   12.5px;
-  --fs-base: 13.5px;
-  --fs-md:   15px;
-  --fs-lg:   17px;
-  --fs-xl:   20px;
-  --fs-2xl:  24px;
-  --fs-3xl:  30px;
-  --fs-4xl:  40px;
-  --fs-hero: 56px;
+  /* Type scale (LOCK: 10 steps, 11px floor, 16px inputs = no iOS zoom) */
+  --fs-2xs: 11px; --fs-xs: 12px; --fs-sm: 13px; --fs-base: 14px;
+  --fs-md: 16px; --fs-lg: 18px; --fs-xl: 22px; --fs-2xl: 28px;
+  --fs-3xl: 34px; --fs-4xl: 44px;
 
-  /* ---------- Type weights ---------- */
-  --fw-normal: 400;
-  --fw-medium: 500;
-  --fw-semi:   600;
-  --fw-bold:   700;
+  /* Compat aliases — RETIRE IN WAVE 4 with their last consumers.
+     --fs-xxs: 12 refs (components, shell, org/delivery/brief/knowledge/
+     dashboard/commercial/marketing). --fs-hero: 2 refs (components
+     .stat-hero, brief). Part A drops both; Part C's "nearest canonical by
+     inspection" applies until those pages are snapped in their own wave. */
+  --fs-xxs: var(--fs-2xs); --fs-hero: 56px;
 
-  /* ---------- Letter spacing ---------- */
-  --ls-tight: -0.02em;
-  --ls-snug:  -0.01em;
-  --ls-normal:0;
-  --ls-wide:  0.04em;
-  --ls-mega:  0.12em;
+  --fw-normal: 400; --fw-medium: 500; --fw-semi: 600; --fw-bold: 700;
+  --ls-tight: -0.02em; --ls-snug: -0.01em; --ls-normal: 0; --ls-wide: 0.04em; --ls-mega: 0.12em;
+  --lh-tight: 1.2; --lh-base: 1.5; --lh-dense: 1.35;
 
-  /* ---------- Radii ---------- */
-  --r-xs:   4px;
-  --r-sm:   6px;
-  --r-md:   10px;
-  --r-lg:   14px;
-  --r-xl:   18px;
-  --r-2xl:  24px;
-  --r-pill: 999px;
+  /* Radii (LOCK 2: five values only) */
+  --r-sm: 6px; --r-md: 10px; --r-lg: 12px; --r-xl: 20px; --r-pill: 999px;
 
-  /* ---------- Spacing scale (4px base) ---------- */
-  --s-0:  0;
-  --s-1:  4px;
-  --s-2:  8px;
-  --s-3:  12px;
-  --s-4:  16px;
-  --s-5:  20px;
-  --s-6:  24px;
-  --s-7:  32px;
-  --s-8:  40px;
-  --s-9:  56px;
-  --s-10: 80px;
+  /* Spacing (4px scale, unchanged) + semantic layout */
+  --s-0: 0; --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 20px;
+  --s-6: 24px; --s-7: 32px; --s-8: 40px; --s-9: 56px; --s-10: 80px;
+  --pad-card: var(--s-5); --pad-card-m: var(--s-4);
+  --pad-page: clamp(16px, 4vw, 32px);
+  --gap-grid: var(--s-4); --gap-stack: var(--s-3);
+  --row-h: 44px; --row-h-dense: 36px; --tap-min: 44px;
 
-  /* ---------- Layout ---------- */
-  --sidebar-w:   244px;
-  --topbar-h:    62px;
-  --content-max: 1320px;
-  --content-pad: 32px;
+  /* Layout */
+  --sidebar-w: 244px; --topbar-h: 62px; --content-max: 1320px;
+  --content-pad: var(--pad-page); /* alias kept; consumers unchanged */
 
-  /* ---------- Elevation — real shadows, not flat ---------- */
+  /* Elevation (values unchanged) + usage aliases */
   --shadow-xs: 0 1px 1px rgba(13,43,43,.04);
   --shadow-sm: 0 1px 2px rgba(13,43,43,.04), 0 2px 4px rgba(13,43,43,.04);
   --shadow-md: 0 2px 4px rgba(13,43,43,.04), 0 8px 16px rgba(13,43,43,.06);
   --shadow-lg: 0 4px 8px rgba(13,43,43,.06), 0 16px 32px rgba(13,43,43,.10);
   --shadow-xl: 0 8px 16px rgba(13,43,43,.08), 0 32px 64px rgba(13,43,43,.16);
-  --shadow-focus: 0 0 0 3px rgba(77,170,170,.22);
+  --shadow-focus: var(--focus-ring);
+  --elev-card: var(--shadow-sm); --elev-raised: var(--shadow-md); --elev-overlay: var(--shadow-xl);
 
-  /* ---------- Motion ---------- */
-  --t-instant: .08s ease;
-  --t-fast:    .15s ease;
-  --t-base:    .24s cubic-bezier(.4,0,.2,1);
-  --t-slow:    .4s  cubic-bezier(.4,0,.2,1);
+  /* Motion + z (unchanged) */
+  --t-instant: .08s ease; --t-fast: .15s ease;
+  --t-base: .24s cubic-bezier(.4,0,.2,1); --t-slow: .4s cubic-bezier(.4,0,.2,1);
+  --z-sidebar: 40; --z-overlay: 49; --z-drawer: 50; --z-topbar: 30; --z-modal: 100; --z-toast: 120;
 
-  /* ---------- Z-index scale ---------- */
-  --z-sidebar: 40;
-  --z-overlay: 49;
-  --z-drawer:  50;
-  --z-topbar:  30;
-  --z-modal:   100;
-  --z-toast:   120;
+  /* Component contract (NEW — components.css consumes these; pages NEVER redefine primitives) */
+  --btn-h: 40px; --btn-h-sm: 32px; --btn-pad-x: var(--s-4);
+  --btn-radius: var(--r-md); --btn-fs: var(--fs-sm);
+  --input-h: 44px; --input-radius: var(--r-md); --input-fs: var(--fs-md);
+  --card-radius: var(--r-lg); --card-pad: var(--pad-card); --card-border: 1px solid var(--border);
+  --pill-fs: var(--fs-2xs); --pill-pad: 3px 10px;
+  --modal-radius: var(--r-xl); --modal-max-w: 560px;
+  --table-row-h: var(--row-h); --table-fs: var(--fs-sm);
 }
 
-/* ===== Dark theme override (still light by default; dark via [data-theme="dark"] on <html>) ===== */
+/* Dark theme (LOCK 4: primary design target — review every wave dark-first) */
 html[data-theme="dark"] {
-  --bg:             #081616;
-  --bg-alt:         #0B1D1D;
-  --surface:        #0E2222;
-  --surface-2:      #132C2C;
-  --surface-3:      #1A3838;
-  --surface-sunken: #0A1C1C;
-  --border:         rgba(141,196,196,.12);
-  --border-strong:  rgba(141,196,196,.22);
-  --text:           #E9F3F3;
-  --text-muted:     #93B3B3;
-  --text-dim:       #5E7D7D;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,.32);
-  --shadow-md: 0 4px 12px rgba(0,0,0,.4);
-  --shadow-lg: 0 24px 64px rgba(0,0,0,.6);
-  --vyve-cream:  #0C2020;
+  --bg: #081616; --bg-alt: #0B1D1D; --surface: #0E2222;
+  --surface-2: #132C2C; --surface-3: #1A3838; --surface-sunken: #0A1C1C;
+  --surface-raised: #132C2C;
+  --border: rgba(141,196,196,.12); --border-strong: rgba(141,196,196,.22);
+  --text: #E9F3F3; --text-muted: #93B3B3; --text-dim: #5E7D7D;
+  --hover-overlay: rgba(233,243,243,.05); --active-overlay: rgba(233,243,243,.09);
+  --focus-ring: 0 0 0 3px rgba(111,197,197,.35);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.32); --shadow-md: 0 4px 12px rgba(0,0,0,.4);
+  --shadow-lg: 0 24px 64px rgba(0,0,0,.6); --shadow-xl: 0 24px 64px rgba(0,0,0,.6);
+  --vyve-cream: #0C2020;
   --pillar-physical-pale: rgba(212,155,44,.18);
-  --pillar-mental-pale:   rgba(77,170,170,.18);
-  --pillar-social-pale:   rgba(209,127,110,.18);
+  --pillar-mental-pale: rgba(77,170,170,.18);
+  --pillar-social-pale: rgba(209,127,110,.18);
+  --gold: #D5B65E; --gold-pale: rgba(213,182,94,.12);
+  --settled: rgba(233,243,243,.16); --settled-pale: rgba(233,243,243,.06);
+  --ring: rgba(111,197,197,.55);
+  --accent: var(--vyve-teal-light); --accent-hover: #6FC5C5;
+  --accent-pale: rgba(77,170,170,.10); --on-accent: #081616;
+  --success: #4ADE80; --success-pale: rgba(74,222,128,.12);
+  --warning: #E8A855; --warning-pale: rgba(232,168,85,.13);
+  --danger: #F87171; --danger-pale: rgba(248,113,113,.12);
+  --info: #60A5FA; --info-pale: rgba(96,165,250,.12);
+  --sidebar-bg: #061212;
 }
-
-
-/* System preference: auto dark when no explicit data-theme set */
+/* EXACT duplicate of the html[data-theme="dark"] block above — keep the two
+   byte-identical when editing. CSS has no mixins; this is the system-preference
+   path for staff who never set an explicit theme. */
 @media (prefers-color-scheme: dark) {
   html:not([data-theme="light"]):not([data-theme="dark"]) {
-    --bg:             #081616;
-    --bg-alt:         #0B1D1D;
-    --surface:        #0E2222;
-    --surface-2:      #132C2C;
-    --surface-3:      #1A3838;
-    --surface-sunken: #0A1C1C;
-    --border:         rgba(141,196,196,.12);
-    --border-strong:  rgba(141,196,196,.22);
-    --text:           #E9F3F3;
-    --text-muted:     #93B3B3;
-    --text-dim:       #5E7D7D;
-    --shadow-sm: 0 1px 2px rgba(0,0,0,.32);
-    --shadow-md: 0 4px 12px rgba(0,0,0,.4);
-    --shadow-lg: 0 24px 64px rgba(0,0,0,.6);
-    --vyve-cream:  #0C2020;
+    --bg: #081616; --bg-alt: #0B1D1D; --surface: #0E2222;
+    --surface-2: #132C2C; --surface-3: #1A3838; --surface-sunken: #0A1C1C;
+    --surface-raised: #132C2C;
+    --border: rgba(141,196,196,.12); --border-strong: rgba(141,196,196,.22);
+    --text: #E9F3F3; --text-muted: #93B3B3; --text-dim: #5E7D7D;
+    --hover-overlay: rgba(233,243,243,.05); --active-overlay: rgba(233,243,243,.09);
+    --focus-ring: 0 0 0 3px rgba(111,197,197,.35);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.32); --shadow-md: 0 4px 12px rgba(0,0,0,.4);
+    --shadow-lg: 0 24px 64px rgba(0,0,0,.6); --shadow-xl: 0 24px 64px rgba(0,0,0,.6);
+    --vyve-cream: #0C2020;
     --pillar-physical-pale: rgba(212,155,44,.18);
-    --pillar-mental-pale:   rgba(77,170,170,.18);
-    --pillar-social-pale:   rgba(209,127,110,.18);
+    --pillar-mental-pale: rgba(77,170,170,.18);
+    --pillar-social-pale: rgba(209,127,110,.18);
+    --gold: #D5B65E; --gold-pale: rgba(213,182,94,.12);
+    --settled: rgba(233,243,243,.16); --settled-pale: rgba(233,243,243,.06);
+    --ring: rgba(111,197,197,.55);
+    --accent: var(--vyve-teal-light); --accent-hover: #6FC5C5;
+    --accent-pale: rgba(77,170,170,.10); --on-accent: #081616;
+    --success: #4ADE80; --success-pale: rgba(74,222,128,.12);
+    --warning: #E8A855; --warning-pale: rgba(232,168,85,.13);
+    --danger: #F87171; --danger-pale: rgba(248,113,113,.12);
+    --info: #60A5FA; --info-pale: rgba(96,165,250,.12);
+    --sidebar-bg: #061212;
   }
 }
 
-/* ===== v2 additions (PM-753 CC overhaul Phase 2) =====
-   Aliases used by the Analytics page family + new kit tokens.
-   Theme-aware where the value differs between themes. */
-:root {
-  --teal:         var(--vyve-teal);
-  --teal-lt:      var(--vyve-teal-light);
-  --gold:         #A8873A;               /* readable gold on light surfaces */
-  --gold-pale:    rgba(201,168,76,.14);
-  --settled:      rgba(13,43,43,.10);
-  --settled-pale: rgba(13,43,43,.04);
-  --ring:         rgba(27,120,120,.5);
-}
-html[data-theme="dark"] {
-  --gold:         #D5B65E;
-  --gold-pale:    rgba(213,182,94,.12);
-  --settled:      rgba(233,243,243,.16);
-  --settled-pale: rgba(233,243,243,.06);
-  --ring:         rgba(111,197,197,.55);
-  --accent:       var(--vyve-teal-light);
-  --accent-hover: #6FC5C5;
-  --accent-pale:  rgba(77,170,170,.10);
-  --on-accent:    #081616;
-  --success:      #4ADE80; --success-pale: rgba(74,222,128,.12);
-  --warning:      #E8A855; --warning-pale: rgba(232,168,85,.13);
-  --danger:       #F87171; --danger-pale:  rgba(248,113,113,.12);
-  --info:         #60A5FA; --info-pale:    rgba(96,165,250,.12);
-  --sidebar-bg:   #061212;
-}
-@media (prefers-color-scheme: dark) {
-  html:not([data-theme="light"]):not([data-theme="dark"]) {
-    --gold:         #D5B65E;
-    --gold-pale:    rgba(213,182,94,.12);
-    --settled:      rgba(233,243,243,.16);
-    --settled-pale: rgba(233,243,243,.06);
-    --ring:         rgba(111,197,197,.55);
-    --accent:       var(--vyve-teal-light);
-    --accent-hover: #6FC5C5;
-    --accent-pale:  rgba(77,170,170,.10);
-    --on-accent:    #081616;
-    --success:      #4ADE80; --success-pale: rgba(74,222,128,.12);
-    --warning:      #E8A855; --warning-pale: rgba(232,168,85,.13);
-    --danger:       #F87171; --danger-pale:  rgba(248,113,113,.12);
-    --info:         #60A5FA; --info-pale:    rgba(96,165,250,.12);
-    --sidebar-bg:   #061212;
-  }
+/* Density (LOCK 3): compact is desktop opt-out-able; comfortable is the base */
+html[data-density="compact"] {
+  --row-h: var(--row-h-dense); --card-pad: var(--s-4); --table-fs: var(--fs-xs);
 }

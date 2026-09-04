@@ -11,9 +11,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 
-  <link rel="stylesheet" href="assets/tokens.css"/>
-  <link rel="stylesheet" href="assets/shell.css?v=PM-883"/>
-  <link rel="stylesheet" href="assets/components.css"/>
+  <link rel="stylesheet" href="assets/tokens.css?v=PM-1006"/>
+  <link rel="stylesheet" href="assets/shell.css?v=PM-1006"/>
+  <link rel="stylesheet" href="assets/components.css?v=PM-1006"/>
   <!-- Theme boot: apply before first paint to avoid flash -->
   <script>
     (function(){
@@ -24,6 +24,15 @@
       // PM-883: restore collapsed-rail preference before first paint (class on <html>)
       if (localStorage.getItem('vyve-cc-rail') === 'collapsed') {
         document.documentElement.classList.add('rail-collapsed');
+      }
+      // PM-1006 density boot (design system v3, Law 5): desktop defaults to
+      // compact rows, phones and tablets are always comfortable (44px touch
+      // targets). One attribute, same components — see tokens.css
+      // html[data-density="compact"]. Opt out with 'comfortable'.
+      var density = localStorage.getItem('vyve-cc-density'); // 'compact' | 'comfortable' | null
+      var wide = (window.innerWidth || document.documentElement.clientWidth || 0) >= 900;
+      if (wide && density !== 'comfortable') {
+        document.documentElement.setAttribute('data-density', 'compact');
       }
     })();
   </script>
