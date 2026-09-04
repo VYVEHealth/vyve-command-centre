@@ -1360,9 +1360,15 @@
           + '<div style="display:flex;gap:8px;"><button class="btn btn-teal" data-edit-save="'+item.id+'" type="button">Save changes</button><button class="btn btn-ghost" data-edit-cancel="'+item.id+'" type="button">Cancel</button></div>'
           + '</div>'
         : '';
+      /* PM-994 (W3): data-cid lets the library zone map DOM rows to items (lanes/folders)
+         without a second fetch; stats come from the v11 list select (undefined-safe pre-v11). */
+      var w3plays = Number(item.play_count) || 0, w3att = Number(item.attendance_count) || 0;
+      var w3stats = (w3plays || w3att)
+        ? ' \u00b7 ' + w3plays + ' play' + (w3plays === 1 ? '' : 's') + (w3att ? ' \u00b7 ' + w3att + ' attended' : '')
+        : '';
       return '<div style="'+(last?'':'border-bottom:1px solid var(--border);')+'">'
-        + '<div class="content-item" style="border-bottom:none;">'+thumb
-        + '<div class="content-info"><div class="content-info-title">'+escHtml(item.title)+'</div><div class="content-info-meta">'+s.meta+'</div></div>'
+        + '<div class="content-item" data-cid="'+item.id+'" style="border-bottom:none;">'+thumb
+        + '<div class="content-info"><div class="content-info-title">'+escHtml(item.title)+'</div><div class="content-info-meta">'+s.meta+w3stats+'</div></div>'
         + '<div class="content-actions">'+editBtn+pushBtn+'<span class="mod-chip '+s.cls+'">'+s.label+'</span></div></div>'
         + editor + '</div>';
     }).join('');
@@ -3040,6 +3046,444 @@ body.w1 .pp-content { grid-row:2; grid-column:2; max-width:1280px; width:100%; }
       setTimeout(renderComp, 2500);
     } catch(e){
       try { window.reportError && window.reportError('w2_account_boot', e); } catch(_){}
+    }
+  }, 350);
+})();
+</script>
+
+<style id="w3-style">
+/* ══ PM-994 WAVE 3: unified calendar + requests inbox + content library lanes ══ */
+.w3-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;}
+.w3-pill{border:1px solid var(--border);background:var(--surface-2);color:var(--text);border-radius:999px;padding:5px 12px;font-size:12px;cursor:pointer;}
+.w3-pill.on{background:var(--vyve-teal);color:#fff;border-color:transparent;}
+.w3-kchip{display:inline-flex;gap:5px;align-items:center;border:1px solid var(--border);border-radius:999px;padding:3px 9px;font-size:11px;cursor:pointer;color:var(--text-muted);}
+.w3-kchip.off{opacity:.35;}
+.w3-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.w3-dow{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);padding:4px 6px;}
+.w3-cell{min-height:86px;border:1px solid var(--border);border-radius:8px;padding:4px 5px;font-size:11px;cursor:pointer;overflow:hidden;background:var(--surface-2);}
+.w3-cell.dim{opacity:.45;}
+.w3-cell.today{outline:2px solid var(--vyve-teal);outline-offset:-2px;}
+.w3-cell .dn{font-size:10.5px;font-weight:700;color:var(--text-muted);margin-bottom:2px;}
+.w3-ev{display:flex;gap:4px;align-items:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.55;}
+.w3-dot{width:7px;height:7px;border-radius:50%;flex:none;}
+.w3-wkcol{border:1px solid var(--border);border-radius:8px;padding:6px;min-height:120px;background:var(--surface-2);}
+.w3-modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:600;padding:16px;}
+.w3-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;max-width:560px;width:100%;max-height:90vh;overflow:auto;padding:18px;}
+.w3badge{background:#E8834A;color:#fff;border-radius:999px;font-size:10px;font-weight:700;padding:1px 8px;}
+.w3-row{display:flex;gap:12px;align-items:center;padding:9px 6px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+.w3-lanes,.w3-folders{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+.w3-lane{border:1px solid var(--border);background:var(--surface-2);color:var(--text-muted);border-radius:999px;padding:5px 12px;font-size:12px;cursor:pointer;}
+.w3-lane.on{background:var(--vyve-teal);color:#fff;border-color:transparent;}
+.w3-fold-row{font-size:11.5px;color:var(--text-muted);margin-top:4px;display:flex;align-items:center;gap:6px;}
+.w3-fold-row select{background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:3px 6px;font-size:11.5px;font-family:inherit;}
+@media (max-width:720px){.w3-cell{min-height:56px;} .w3-cell .w3-ev span.t{display:none;}}
+</style>
+<script>
+/* ══ PM-994 WAVE 3 ZONE — calendar unification (calendar_occurrences + confirmed bookings)
+     with month/week/list grid + badge-counted requests inbox (booking-paid-confirm EF confirm,
+     coach_declined decline), and the content library treatment (lanes off the legacy mod-chip
+     classes, folders in partner_partners.content_folders, per-item stats from EF v11).
+     Self-contained IIFE (§23.167). Only builds when the W1 sidebar is live — fail-open. ══ */
+(function(){
+  'use strict';
+  var REST = _SUPA_URL + '/rest/v1';
+  var inited = false, partnerId = null;
+  var initialHash = location.hash;
+  function $(id){ return document.getElementById(id); }
+  function esc(x){ return String(x==null?'':x).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  async function jwt(){ var r = await _getSB().auth.getSession(); return (r.data.session && r.data.session.access_token) || ''; }
+  async function rest(path, opts){
+    opts = opts || {};
+    var t = await jwt();
+    var h = { 'apikey': _SUPA_ANON, 'Authorization': 'Bearer ' + t, 'Content-Type': 'application/json' };
+    var r = await fetch(REST + path, { method: opts.method || 'GET', headers: h, body: opts.body ? JSON.stringify(opts.body) : undefined });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    var tx = await r.text();
+    return tx ? JSON.parse(tx) : null;
+  }
+  function enc(x){ return encodeURIComponent(x); }
+
+  /* ── CALENDAR ──────────────────────────────────────────── */
+  var KIND = { session: { color:'#1B7878', label:'Live sessions' }, booking: { color:'#3DB89F', label:'Booked 1-to-1s' } };
+  var w3 = { mode: (function(){ try { return localStorage.getItem('w3cal_mode') || 'month'; } catch(e){ return 'month'; } })(),
+             cursor: new Date(), items: [], reqs: [], svc: {}, hideKinds: {}, showReqs: false };
+  function monday(d){ var x = new Date(d); var day = (x.getDay() + 6) % 7; x.setDate(x.getDate() - day); x.setHours(0,0,0,0); return x; }
+  function range(){
+    var c = w3.cursor, from, to;
+    if (w3.mode === 'month'){ var first = new Date(c.getFullYear(), c.getMonth(), 1); from = monday(first); to = new Date(from); to.setDate(to.getDate() + 42); }
+    else if (w3.mode === 'week'){ from = monday(c); to = new Date(from); to.setDate(to.getDate() + 7); }
+    else { from = new Date(); from.setHours(0,0,0,0); to = new Date(from); to.setDate(to.getDate() + 60); }
+    return { from: from, to: to };
+  }
+  function tstr(t){ return new Date(t).toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' }); }
+  async function load(){
+    var r = range(), fi = r.from.toISOString(), ti = r.to.toISOString();
+    var res = await Promise.all([
+      rest('/calendar_occurrences?partner_id=eq.' + partnerId + '&active=eq.true&cancelled_at=is.null&starts_at=gte.' + enc(fi) + '&starts_at=lt.' + enc(ti) + '&order=starts_at.asc&limit=300&select=id,name,session_title,starts_at,ends_at,visibility,live_url').catch(function(){ return []; }),
+      rest('/bookings?partner_id=eq.' + partnerId + '&status=eq.confirmed&starts_at=gte.' + enc(fi) + '&starts_at=lt.' + enc(ti) + '&order=starts_at.asc&limit=200&select=id,member_email,employer_name,starts_at,ends_at,service_id,meeting_link,delivery_mode,location_text').catch(function(){ return []; }),
+      rest('/bookings?partner_id=eq.' + partnerId + '&status=in.(pending_payment,requested)&starts_at=gte.' + enc(new Date(Date.now() - 864e5).toISOString()) + '&order=starts_at.asc&limit=100&select=id,member_email,employer_name,starts_at,service_id,status').catch(function(){ return []; }),
+      rest('/booking_services?partner_id=eq.' + partnerId + '&select=id,title').catch(function(){ return []; })
+    ]);
+    w3.svc = {}; (res[3] || []).forEach(function(s){ w3.svc[s.id] = s; });
+    var items = [];
+    (res[0] || []).forEach(function(o){
+      items.push({ src:'session', id:o.id, kind:'session', title:(o.session_title || o.name || 'Live session'), t:o.starts_at, end:o.ends_at, color:KIND.session.color, raw:o });
+    });
+    (res[1] || []).forEach(function(b){
+      var sv = w3.svc[b.service_id] || {};
+      items.push({ src:'booking', id:b.id, kind:'booking', title:(sv.title || 'Booked session'), who:(b.member_email || b.employer_name || ''), t:b.starts_at, end:b.ends_at, color:KIND.booking.color, link:b.meeting_link, raw:b });
+    });
+    items.sort(function(a,b){ return new Date(a.t) - new Date(b.t); });
+    w3.items = items;
+    w3.reqs = (res[2] || []).map(function(b){ var sv = w3.svc[b.service_id] || {}; b._service = sv.title || 'Session'; return b; });
+    badge();
+  }
+  function badge(){
+    var n = w3.reqs.length;
+    var hb = $('w3-req-badge'); if (hb){ hb.style.display = n ? '' : 'none'; hb.textContent = n + ' request' + (n === 1 ? '' : 's'); }
+    var nb = $('w3-nav-badge'); if (nb){ nb.style.display = n ? '' : 'none'; nb.textContent = n; }
+  }
+  async function badgeBoot(){
+    try {
+      var rows = await rest('/bookings?partner_id=eq.' + partnerId + '&status=in.(pending_payment,requested)&starts_at=gte.' + enc(new Date(Date.now() - 864e5).toISOString()) + '&limit=100&select=id') || [];
+      w3.reqs = w3.reqs.length ? w3.reqs : rows;
+      var nb = $('w3-nav-badge'); if (nb){ nb.style.display = rows.length ? '' : 'none'; nb.textContent = rows.length; }
+    } catch(_){}
+  }
+  function visible(){ return w3.items.filter(function(it){ return !w3.hideKinds[it.kind]; }); }
+  async function calLoad(){
+    var body = $('w3-body'); if (!body) return;
+    body.innerHTML = '<p style="font-size:12.5px;color:var(--text-muted);">Loading\u2026</p>';
+    await load();
+    document.querySelectorAll('[data-w3mode]').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-w3mode') === w3.mode); });
+    $('w3-kinds').innerHTML = Object.keys(KIND).map(function(k){
+      return '<span class="w3-kchip' + (w3.hideKinds[k] ? ' off' : '') + '" data-w3kind="' + k + '"><span class="w3-dot" style="background:' + KIND[k].color + ';"></span>' + KIND[k].label + '</span>';
+    }).join(' ');
+    document.querySelectorAll('[data-w3kind]').forEach(function(ch){
+      ch.addEventListener('click', function(){ w3.hideKinds[ch.getAttribute('data-w3kind')] = !w3.hideKinds[ch.getAttribute('data-w3kind')]; render(); });
+    });
+    renderReqs();
+    render();
+  }
+  function render(){
+    var body = $('w3-body'); $('w3-daypanel').innerHTML = '';
+    var items = visible();
+    if (w3.mode === 'month'){
+      var c = w3.cursor;
+      $('w3-label').textContent = c.toLocaleDateString('en-GB', { month:'long', year:'numeric' });
+      var start = monday(new Date(c.getFullYear(), c.getMonth(), 1));
+      var today = new Date(); today.setHours(0,0,0,0);
+      var html = '<div class="w3-grid">' + ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(function(d){ return '<div class="w3-dow">' + d + '</div>'; }).join('');
+      for (var i = 0; i < 42; i++){
+        var d = new Date(start); d.setDate(d.getDate() + i);
+        var di = items.filter(function(it){ var t = new Date(it.t); return t.getFullYear() === d.getFullYear() && t.getMonth() === d.getMonth() && t.getDate() === d.getDate(); });
+        var cls = 'w3-cell' + (d.getMonth() !== c.getMonth() ? ' dim' : '') + (d.getTime() === today.getTime() ? ' today' : '');
+        html += '<div class="' + cls + '" data-w3day="' + d.toISOString() + '"><div class="dn">' + d.getDate() + '</div>' +
+          di.slice(0, 3).map(function(it){
+            return '<div class="w3-ev"><span class="w3-dot" style="background:' + it.color + ';"></span><span class="t">' + tstr(it.t) + ' </span>' + esc(it.title) + '</div>';
+          }).join('') +
+          (di.length > 3 ? '<div style="font-size:10px;color:var(--text-muted);">+' + (di.length - 3) + ' more</div>' : '') + '</div>';
+      }
+      body.innerHTML = html + '</div>';
+      body.querySelectorAll('[data-w3day]').forEach(function(cell){ cell.addEventListener('click', function(){ dayPanel(new Date(cell.getAttribute('data-w3day'))); }); });
+    } else if (w3.mode === 'week'){
+      var mon = monday(w3.cursor), sun = new Date(mon); sun.setDate(sun.getDate() + 6);
+      $('w3-label').textContent = mon.toLocaleDateString('en-GB', { day:'numeric', month:'short' }) + ' \u2013 ' + sun.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+      var html2 = '<div class="w3-grid">';
+      for (var j = 0; j < 7; j++){
+        var dd = new Date(mon); dd.setDate(dd.getDate() + j);
+        var dj = items.filter(function(it){ return new Date(it.t).toDateString() === dd.toDateString(); });
+        html2 += '<div class="w3-wkcol"><div class="w3-dow">' + dd.toLocaleDateString('en-GB', { weekday:'short', day:'numeric' }) + '</div>' +
+          (dj.map(function(it){ return itemRow(it, true); }).join('') || '<div style="font-size:11px;color:var(--text-muted);padding:4px 2px;">\u2014</div>') + '</div>';
+      }
+      body.innerHTML = html2 + '</div>';
+      wireRows(body);
+    } else {
+      $('w3-label').textContent = 'Next 60 days';
+      if (!items.length){ body.innerHTML = '<div class="empty-state"><h3>Nothing scheduled</h3><p>Schedule a live session or take a booking and it lands here and on the grid.</p></div>'; return; }
+      var lastDay = null, html3 = '';
+      items.forEach(function(it){
+        var d = new Date(it.t), day = d.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'short' });
+        if (day !== lastDay){ html3 += '<div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin:14px 0 4px;">' + day + '</div>'; lastDay = day; }
+        html3 += itemRow(it, false);
+      });
+      body.innerHTML = html3;
+      wireRows(body);
+    }
+  }
+  function itemRow(it, compact){
+    return '<div class="w3-row" style="' + (compact ? 'padding:5px 2px;border:none;' : '') + '">' +
+      '<span class="w3-dot" style="background:' + it.color + ';"></span>' +
+      '<div style="font-weight:700;font-size:' + (compact ? '11px' : '13px') + ';min-width:' + (compact ? '0' : '46px') + ';">' + tstr(it.t) + '</div>' +
+      '<div style="flex:1;min-width:' + (compact ? '0' : '160px') + ';"><div style="font-size:' + (compact ? '11px' : '13px') + ';font-weight:600;">' + esc(it.title) + (it.who ? ' \u00b7 ' + esc(it.who) : '') + '</div>' +
+      (!compact ? '<div style="font-size:11px;color:var(--text-muted);">' + (it.src === 'session' ? 'live session \u00b7 community' : 'booked 1-to-1') + '</div>' : '') + '</div>' +
+      (!compact && it.link ? '<a class="btn btn-ghost" href="' + esc(it.link) + '" target="_blank" rel="noopener" style="font-size:11.5px;">Open link</a>' : '') +
+      (!compact ? '<button class="btn btn-ghost" data-w3open="' + it.src + ':' + it.id + '" style="font-size:11.5px;" type="button">Manage</button>' : '') +
+      '</div>';
+  }
+  function wireRows(scope){
+    scope.querySelectorAll('[data-w3open]').forEach(function(b){
+      b.addEventListener('click', function(){
+        var p = b.getAttribute('data-w3open').split(':'), it = w3.items.find(function(x){ return x.src === p[0] && String(x.id) === p.slice(1).join(':'); });
+        if (it) manageModal(it);
+      });
+    });
+  }
+  function dayPanel(d){
+    var items = visible().filter(function(it){ return new Date(it.t).toDateString() === d.toDateString(); });
+    var pane = $('w3-daypanel');
+    pane.innerHTML = '<div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px;">' +
+      '<strong style="font-size:13px;">' + d.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long' }) + '</strong>' +
+      (items.map(function(it){ return itemRow(it, false); }).join('') || '<p style="font-size:12.5px;color:var(--text-muted);margin-top:6px;">Nothing on this day.</p>') + '</div>';
+    wireRows(pane);
+  }
+  function modal(html){
+    var m = document.createElement('div'); m.className = 'w3-modal'; m.innerHTML = '<div class="w3-box">' + html + '</div>';
+    m.addEventListener('click', function(e){ if (e.target === m) m.remove(); });
+    document.body.appendChild(m); return m;
+  }
+  function manageModal(it){
+    var when = new Date(it.t).toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long' }) + ' ' + tstr(it.t);
+    if (it.src === 'session'){
+      var m = modal('<div class="card-title" style="margin-bottom:10px;">' + esc(it.title) + '</div>' +
+        '<p style="font-size:13px;">Live session \u00b7 ' + when + '</p>' +
+        '<p style="font-size:12.5px;color:var(--text-muted);">Scheduling and changes for live sessions happen on the Live Sessions page.</p>' +
+        '<div style="display:flex;gap:10px;margin-top:12px;"><button class="btn btn-teal" id="w3m-sess" type="button" style="font-size:12px;">Open Live Sessions</button><button class="btn btn-ghost" id="w3m-close" type="button" style="font-size:12px;">Close</button></div>');
+      m.querySelector('#w3m-sess').addEventListener('click', function(){ m.remove(); window.w1Go && window.w1Go('sessions'); });
+      m.querySelector('#w3m-close').addEventListener('click', function(){ m.remove(); });
+      return;
+    }
+    var b = it.raw || {};
+    var m2 = modal('<div class="card-title" style="margin-bottom:10px;">' + esc(it.title) + '</div>' +
+      '<p style="font-size:13px;">' + (it.who ? esc(it.who) + ' \u00b7 ' : '') + when + '</p>' +
+      (b.delivery_mode === 'in_person' && b.location_text ? '<p style="font-size:12.5px;">' + esc(b.location_text) + '</p>' : '') +
+      (it.link ? '<p style="font-size:12.5px;"><a href="' + esc(it.link) + '" target="_blank" rel="noopener">Open the meeting link \u2192</a></p>' : '') +
+      '<div style="display:flex;gap:10px;margin-top:12px;"><button class="btn btn-ghost" id="w3m-cancel" type="button" style="font-size:12px;">Cancel this booking</button><button class="btn btn-ghost" id="w3m-close" type="button" style="font-size:12px;">Close</button></div>');
+    m2.querySelector('#w3m-close').addEventListener('click', function(){ m2.remove(); });
+    m2.querySelector('#w3m-cancel').addEventListener('click', async function(){
+      if (!confirm('Cancel this booked session? Your client will see it disappear from their app \u2014 let them know why separately.')) return;
+      try {
+        await rest('/bookings?id=eq.' + it.id + '&partner_id=eq.' + partnerId, { method:'PATCH', body:{ status:'cancelled', cancelled_at:new Date().toISOString(), cancel_reason:'coach_cancelled' } });
+        m2.remove(); calLoad();
+      } catch(e){ alert('Cancel failed: ' + e.message); }
+    });
+  }
+  /* requests inbox — confirm rides booking-paid-confirm (partner-generic, CORS-allowed here);
+     decline writes coach_declined, which the partner-notify sweep explicitly excludes. */
+  function renderReqs(){
+    var box = $('w3-reqs');
+    if (!w3.reqs.length){ box.style.display = 'none'; box.innerHTML = ''; return; }
+    box.style.display = w3.showReqs ? '' : 'none';
+    box.innerHTML = '<div style="border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:12px;background:var(--surface-2);">' +
+      '<div style="font-size:12.5px;font-weight:700;margin-bottom:6px;">Booking requests</div>' +
+      w3.reqs.map(function(b){
+        var who = b.member_email || b.employer_name || 'A member';
+        return '<div class="w3-row"><div style="flex:1;min-width:180px;"><div style="font-size:13px;font-weight:600;">' + esc(b._service) + ' \u00b7 ' + esc(who) + '</div>' +
+          '<div style="font-size:11.5px;color:var(--text-muted);">' + new Date(b.starts_at).toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' }) + ' ' + tstr(b.starts_at) + ' \u00b7 ' + (b.status === 'pending_payment' ? 'awaiting your payment confirmation' : 'requested') + '</div></div>' +
+          (b.status === 'pending_payment' ? '<button class="btn btn-teal" data-w3conf="' + b.id + '" style="font-size:11.5px;" type="button">Confirm paid</button>' : '') +
+          '<button class="btn btn-ghost" data-w3decl="' + b.id + '" style="font-size:11.5px;" type="button">Decline</button></div>';
+      }).join('') +
+      '<p style="font-size:11px;color:var(--text-muted);margin-top:6px;">Confirm once the payment has landed in your account \u2014 your client gets a confirmation email and a reminder an hour before.</p></div>';
+    box.querySelectorAll('[data-w3conf]').forEach(function(btn){
+      btn.addEventListener('click', async function(){
+        btn.disabled = true; btn.textContent = 'Confirming\u2026';
+        try {
+          var t = await jwt();
+          var r = await fetch(_SUPA_URL + '/functions/v1/booking-paid-confirm', {
+            method:'POST', headers:{ 'Content-Type':'application/json', apikey:_SUPA_ANON, Authorization:'Bearer ' + t },
+            body: JSON.stringify({ id: btn.getAttribute('data-w3conf') })
+          });
+          var jj = await r.json();
+          if (!jj.ok) throw new Error(jj.error || r.status);
+          calLoad();
+        } catch(e){ alert('Confirm failed: ' + e.message); btn.disabled = false; btn.textContent = 'Confirm paid'; }
+      });
+    });
+    box.querySelectorAll('[data-w3decl]').forEach(function(btn){
+      btn.addEventListener('click', async function(){
+        if (!confirm('Decline this request? The slot frees up straight away.')) return;
+        btn.disabled = true;
+        try {
+          await rest('/bookings?id=eq.' + btn.getAttribute('data-w3decl') + '&partner_id=eq.' + partnerId, { method:'PATCH', body:{ status:'cancelled', cancelled_at:new Date().toISOString(), cancel_reason:'coach_declined' } });
+          calLoad();
+        } catch(e){ alert('Decline failed: ' + e.message); btn.disabled = false; }
+      });
+    });
+  }
+  function buildCal(){
+    var sessBtn = document.querySelector('.w1-item[data-w1="sessions"]');
+    if (!sessBtn || $('panel-w3cal')) return false; // W1 shell not live (fail-open) or already built
+    var btn = document.createElement('button');
+    btn.className = 'w1-item'; btn.type = 'button'; btn.setAttribute('data-w3nav', 'calendar');
+    btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="15" x2="10" y2="15"/><line x1="14" y1="15" x2="16" y2="15"/></svg><span>Calendar</span><span class="w3badge" id="w3-nav-badge" style="display:none;margin-left:auto;"></span>';
+    sessBtn.insertAdjacentElement('afterend', btn);
+    // Own handler, stopPropagation so W1's aside listener (which would route data-w1=null -> dashboard) never fires.
+    btn.addEventListener('click', function(e){ e.stopPropagation(); w3go(); });
+    var panel = document.createElement('div');
+    panel.className = 'pp-panel'; panel.id = 'panel-w3cal';
+    panel.innerHTML =
+      '<div class="card"><div class="card-title" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">Calendar' +
+      ' <span class="w3badge" id="w3-req-badge" style="display:none;cursor:pointer;"></span></div>' +
+      '<p style="font-size:12.5px;color:var(--text-muted);margin-bottom:12px;">Your live sessions and booked 1-to-1s, together in one place.</p>' +
+      '<div class="w3-bar">' +
+        '<button class="btn btn-ghost" id="w3-prev" type="button" style="font-size:12px;">\u2039</button>' +
+        '<button class="btn btn-ghost" id="w3-today" type="button" style="font-size:12px;">Today</button>' +
+        '<button class="btn btn-ghost" id="w3-next" type="button" style="font-size:12px;">\u203a</button>' +
+        '<strong id="w3-label" style="font-size:14px;margin:0 6px;"></strong>' +
+        '<span style="flex:1;"></span>' +
+        '<button class="w3-pill" data-w3mode="month" type="button">Month</button>' +
+        '<button class="w3-pill" data-w3mode="week" type="button">Week</button>' +
+        '<button class="w3-pill" data-w3mode="list" type="button">List</button>' +
+      '</div>' +
+      '<div class="w3-bar">' +
+        '<button class="btn btn-teal" id="w3-new-sess" type="button" style="font-size:12px;">+ Schedule a session</button>' +
+        '<span style="flex:1;"></span><span id="w3-kinds"></span>' +
+      '</div>' +
+      '<div id="w3-reqs" style="display:none;"></div>' +
+      '<div id="w3-body"></div><div id="w3-daypanel"></div></div>';
+    document.querySelector('.pp-content').appendChild(panel);
+    $('w3-prev').addEventListener('click', function(){ var c = w3.cursor; if (w3.mode === 'week') c.setDate(c.getDate() - 7); else c.setMonth(c.getMonth() - 1); calLoad(); });
+    $('w3-next').addEventListener('click', function(){ var c = w3.cursor; if (w3.mode === 'week') c.setDate(c.getDate() + 7); else c.setMonth(c.getMonth() + 1); calLoad(); });
+    $('w3-today').addEventListener('click', function(){ w3.cursor = new Date(); calLoad(); });
+    panel.querySelectorAll('[data-w3mode]').forEach(function(b){
+      b.addEventListener('click', function(){ w3.mode = b.getAttribute('data-w3mode'); try { localStorage.setItem('w3cal_mode', w3.mode); } catch(e){} calLoad(); });
+    });
+    $('w3-new-sess').addEventListener('click', function(){ window.w1Go && window.w1Go('sessions'); });
+    panel.querySelector('#w3-req-badge').addEventListener('click', function(){ w3.showReqs = !w3.showReqs; renderReqs(); });
+    window.addEventListener('hashchange', function(){ if ((location.hash || '') === '#calendar') w3go(); });
+    return true;
+  }
+  function w3go(){
+    document.querySelectorAll('.pp-tab').forEach(function(t){ t.classList.remove('active'); });
+    document.querySelectorAll('.pp-panel').forEach(function(p){ p.classList.remove('active'); });
+    document.querySelectorAll('.w1-item').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-w3nav') === 'calendar'); });
+    $('panel-w3cal').classList.add('active');
+    try { history.replaceState(null, '', '#calendar'); } catch(e){}
+    window.scrollTo(0, 0);
+    calLoad();
+  }
+
+  /* ── CONTENT LIBRARY: lanes + folders ──────────────────── */
+  var LANES = [
+    { k:'all', label:'All' },
+    { k:'chip-review', label:'Pending approval' },
+    { k:'chip-returned', label:'Needs changes' },
+    { k:'chip-approved', label:'In your library' },
+    { k:'chip-scheduled', label:'Scheduled' },
+    { k:'chip-live', label:'Live' }
+  ];
+  var lib = { lane:'all', folder:'all', folders:{ folders:[], items:{} }, ready:false };
+  function laneOf(wrapper){
+    var chip = wrapper.querySelector('.mod-chip');
+    if (!chip) return null;
+    for (var i = 1; i < LANES.length; i++) if (chip.classList.contains(LANES[i].k)) return LANES[i].k;
+    return null;
+  }
+  function libWrappers(){
+    var list = $('content-list'); if (!list) return [];
+    return Array.prototype.filter.call(list.children, function(w){ return w.querySelector && w.querySelector('.content-item[data-cid]'); });
+  }
+  async function saveFolders(){
+    await rest('/partner_partners?id=eq.' + partnerId, { method:'PATCH', body:{ content_folders: lib.folders } });
+  }
+  function applyLib(){
+    var wraps = libWrappers();
+    var lanesEl = $('w3-lanes'), foldEl = $('w3-folders');
+    if (!lanesEl) return;
+    if (!wraps.length){ lanesEl.innerHTML = ''; if (foldEl) foldEl.innerHTML = ''; return; }
+    // lane chips with counts
+    var counts = { all: wraps.length };
+    wraps.forEach(function(w){ var l = laneOf(w); if (l) counts[l] = (counts[l] || 0) + 1; });
+    if (counts[lib.lane] === undefined) lib.lane = 'all';
+    lanesEl.innerHTML = LANES.filter(function(l){ return l.k === 'all' || counts[l.k]; }).map(function(l){
+      return '<button class="w3-lane' + (lib.lane === l.k ? ' on' : '') + '" data-w3lane="' + l.k + '" type="button">' + l.label + ' (' + (counts[l.k] || 0) + ')</button>';
+    }).join('');
+    lanesEl.querySelectorAll('[data-w3lane]').forEach(function(b){
+      b.addEventListener('click', function(){ lib.lane = b.getAttribute('data-w3lane'); applyLib(); });
+    });
+    // folder chips + per-item selects (real-partner only — demo/anon can't read/write own row)
+    if (lib.ready){
+      var names = lib.folders.folders || [];
+      foldEl.style.display = '';
+      foldEl.innerHTML = '<button class="w3-lane' + (lib.folder === 'all' ? ' on' : '') + '" data-w3fold="all" type="button">All folders</button>' +
+        names.map(function(n){ return '<button class="w3-lane' + (lib.folder === n ? ' on' : '') + '" data-w3fold="' + esc(n) + '" type="button">' + esc(n) + '</button>'; }).join('') +
+        '<button class="w3-lane' + (lib.folder === '__none' ? ' on' : '') + '" data-w3fold="__none" type="button">Unfiled</button>';
+      foldEl.querySelectorAll('[data-w3fold]').forEach(function(b){
+        b.addEventListener('click', function(){ lib.folder = b.getAttribute('data-w3fold'); applyLib(); });
+      });
+      wraps.forEach(function(w){
+        var info = w.querySelector('.content-info');
+        var cid = w.querySelector('.content-item[data-cid]').getAttribute('data-cid');
+        if (info && !info.querySelector('.w3-fold-row')){
+          var cur = (lib.folders.items || {})[cid] || '';
+          var sel = document.createElement('div');
+          sel.className = 'w3-fold-row';
+          sel.innerHTML = 'Folder: <select data-w3fsel="' + cid + '"><option value="">\u2014</option>' +
+            names.map(function(n){ return '<option value="' + esc(n) + '"' + (cur === n ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') +
+            '<option value="__new">+ New folder\u2026</option></select>';
+          info.appendChild(sel);
+          sel.querySelector('select').addEventListener('change', async function(){
+            var v = this.value;
+            if (v === '__new'){
+              var nn = (prompt('Folder name:') || '').trim().slice(0, 40);
+              if (!nn){ this.value = cur; return; }
+              if ((lib.folders.folders || []).indexOf(nn) === -1){ lib.folders.folders = (lib.folders.folders || []).concat([nn]); }
+              v = nn;
+            }
+            lib.folders.items = lib.folders.items || {};
+            if (v) lib.folders.items[cid] = v; else delete lib.folders.items[cid];
+            try { await saveFolders(); } catch(e){ alert('Couldn\u2019t save the folder \u2014 try again.'); }
+            applyLib0(); // rebuild selects (new folder appears everywhere) + re-filter
+          });
+        }
+      });
+    }
+    // filter
+    wraps.forEach(function(w){
+      var laneOK = lib.lane === 'all' || laneOf(w) === lib.lane;
+      var cid = w.querySelector('.content-item[data-cid]').getAttribute('data-cid');
+      var f = (lib.folders.items || {})[cid] || '';
+      var foldOK = !lib.ready || lib.folder === 'all' || (lib.folder === '__none' ? !f : f === lib.folder);
+      w.style.display = (laneOK && foldOK) ? '' : 'none';
+    });
+  }
+  function applyLib0(){
+    // full rebuild: drop stale fold-rows then re-apply
+    libWrappers().forEach(function(w){ var r = w.querySelector('.w3-fold-row'); if (r) r.remove(); });
+    applyLib();
+  }
+  function buildLib(){
+    var list = $('content-list');
+    if (!list || $('w3-lanes')) return false;
+    var bar = document.createElement('div'); bar.className = 'w3-lanes'; bar.id = 'w3-lanes';
+    var fb = document.createElement('div'); fb.className = 'w3-folders'; fb.id = 'w3-folders'; fb.style.display = 'none';
+    list.parentNode.insertBefore(bar, list);
+    list.parentNode.insertBefore(fb, list);
+    new MutationObserver(function(){ applyLib0(); }).observe(list, { childList: true });
+    applyLib();
+    return true;
+  }
+
+  /* ── boot ─────────────────────────────────────────────── */
+  var poll = setInterval(async function(){
+    var shell = $('shell');
+    if (!shell || !shell.classList.contains('ready') || inited) return;
+    inited = true; clearInterval(poll);
+    try {
+      buildLib();
+      if (!buildCal()) return; // legacy shell (W1 failed open) — calendar has no home, library lanes still work
+      var pr = await rest('/rpc/get_my_partner_id', { method:'POST', body:{} }).catch(function(){ return null; });
+      partnerId = pr || null;
+      if (partnerId){
+        badgeBoot();
+        try {
+          var row = await rest('/partner_partners?id=eq.' + partnerId + '&select=content_folders');
+          if (row && row[0]){ lib.folders = (row[0].content_folders && typeof row[0].content_folders === 'object') ? row[0].content_folders : { folders:[], items:{} }; lib.ready = true; applyLib0(); }
+        } catch(e){ /* demo/anon — folders stay hidden */ }
+      }
+      if (initialHash === '#calendar' || location.hash === '#calendar') w3go();
+    } catch(e){
+      try { window.reportError && window.reportError('w3_zone_boot', e); } catch(_){}
     }
   }, 350);
 })();
