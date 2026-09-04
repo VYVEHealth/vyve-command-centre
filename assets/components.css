@@ -278,11 +278,11 @@
   height: 6px;
   border-radius: 50%;
 }
-.pillar-tag.physical { background: var(--pillar-physical-pale); color: #8a6512; }
+.pillar-tag.physical { background: var(--pillar-physical-pale); color: var(--pillar-physical); }
 .pillar-tag.physical::before { background: var(--pillar-physical); }
-.pillar-tag.mental   { background: var(--pillar-mental-pale);   color: #246464; }
+.pillar-tag.mental   { background: var(--pillar-mental-pale);   color: var(--pillar-mental); }
 .pillar-tag.mental::before { background: var(--pillar-mental); }
-.pillar-tag.social   { background: var(--pillar-social-pale);   color: #8c4a3a; }
+.pillar-tag.social   { background: var(--pillar-social-pale);   color: var(--pillar-social); }
 .pillar-tag.social::before { background: var(--pillar-social); }
 
 /* Pillar section heading — used as section dividers on Dashboard etc */
@@ -327,12 +327,12 @@
   font-weight: var(--fw-semi);
   letter-spacing: var(--ls-snug);
 }
-.badge-green { background: var(--success-pale); color: #246B33; }
-.badge-amber { background: var(--warning-pale); color: #8A5E1F; }
-.badge-red   { background: var(--danger-pale);  color: #843830; }
-.badge-blue  { background: var(--info-pale);    color: #2A5DA0; }
-.badge-teal  { background: var(--vyve-teal-pale); color: #195454; }
-.badge-gold  { background: var(--vyve-gold-pale); color: #75591A; }
+.badge-green { background: var(--success-pale); color: var(--success); }
+.badge-amber { background: var(--warning-pale); color: var(--warning); }
+.badge-red   { background: var(--danger-pale);  color: var(--danger); }
+.badge-blue  { background: var(--info-pale);    color: var(--info); }
+.badge-teal  { background: var(--vyve-teal-pale); color: var(--accent); }
+.badge-gold  { background: var(--vyve-gold-pale); color: var(--gold); }
 .badge-grey  { background: var(--surface-2);    color: var(--text-muted); }
 
 .pill {
@@ -592,6 +592,7 @@ table.tbl tr:hover td { background: var(--hover-overlay); }
 }
 .btn:active { transform: scale(.98); background: var(--active-overlay); }
 .btn:focus-visible { box-shadow: var(--focus-ring); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
 
 .btn-primary {
   background: var(--accent);
@@ -768,7 +769,7 @@ table.tbl tr:hover td { background: var(--hover-overlay); }
 .error-banner {
   background: var(--danger-pale);
   border: 1px solid rgba(201,83,74,.3);
-  color: #843830;
+  color: var(--danger);
   padding: 14px 18px;
   border-radius: var(--r-md);
   font-size: var(--fs-base);
