@@ -12,8 +12,18 @@
    allowed to edit this page's JS.
    NOTE: --amber was referenced but never defined anywhere in the repo
    (4 JS refs, all warning copy) — now resolves to --warning.
+   PM-1020: selector widened to include `body`. Three of this renderer's four
+   overlays (invite-overlay, request-info, curriculum) are appendChild'd to
+   document.body, which puts them OUTSIDE this page's scope, so their var()
+   refs resolved against nothing and they have rendered as transparent panels
+   with no borders since the PM-924 port (§23.203(c)). Defining the aliases on
+   body as well reaches them with ZERO changes to the 124KB renderer. Safe:
+   none of these twelve names is defined in tokens/components/shell, no other
+   page references any of them, and the one shared-file consumer of --muted
+   (index.html's topbar email) was fixed in PM-1020 2/5. The block dies with
+   the fragment on navigation. cm-player needs nothing — it uses only literals.
    ===================================================================== */
-#page-partner-management{
+#page-partner-management, body{
   --mint:var(--accent);
   --card:var(--surface);
   --line:var(--border);
