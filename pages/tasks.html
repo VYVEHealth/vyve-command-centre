@@ -115,17 +115,19 @@
 
   .tk-board { display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;gap:12px;padding-bottom:10px; }
   /* PM-923: on mobile the board becomes swipeable columns instead of 4 crushed grid tracks */
-  @media (min-width: 900px) {
-    .tk-board { display:grid;grid-template-columns:repeat(4, 1fr);gap:14px;align-items:start;overflow-x:visible;scroll-snap-type:none;padding-bottom:0; }
-    .tk-col { min-width:0;max-width:none;flex:initial;scroll-snap-align:none; }
-  }
-  .tk-col { background:var(--surface-2);border-radius:var(--r-lg);padding:12px;min-height:200px;min-width:80vw;max-width:80vw;flex:0 0 auto;scroll-snap-align:start; }
+    .tk-col { background:var(--surface-2);border-radius:var(--r-lg);padding:12px;min-height:200px;min-width:80vw;max-width:80vw;flex:0 0 auto;scroll-snap-align:start; }
   .tk-col-header { display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding:0 4px; }
   .tk-col-title { font-size:var(--fs-2xs);font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted); }
   .tk-col-count { background:var(--surface);color:var(--text-muted);font-size:var(--fs-2xs);font-weight:700;padding:1px 7px;border-radius:var(--r-pill); }
   .tk-col[data-stage="doing"] .tk-col-title { color:var(--vyve-teal,#4DAAAA); }
   .tk-col[data-stage="blocked"] .tk-col-title { color:var(--pillar-social); }
   .tk-col[data-stage="done"] .tk-col-title { color:var(--success,#3a9c3a); }
+
+  @media (min-width: 900px) {
+    .tk-board { display:grid;grid-template-columns:repeat(4, 1fr);gap:14px;align-items:start;overflow-x:visible;scroll-snap-type:none;padding-bottom:0; }
+    .tk-col { min-width:0;max-width:none;flex:initial;scroll-snap-align:none; }
+  }
+
 
   .tk-card {
     background:var(--surface);border-radius:var(--r-md);padding:10px 12px;margin-bottom:8px;
