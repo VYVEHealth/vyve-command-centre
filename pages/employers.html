@@ -72,6 +72,29 @@
 <div class="em-error" id="em-error"></div>
 <div class="em-notice" id="em-notice"></div>
 
+<!-- PM-998 (B2B S3): organisations registry — seat billing, invite links and status live here.
+     The employers table is the billing source of truth: b2b-billing-run invoices status='active'
+     orgs on the 1st (arrears); trial orgs are never billed. -->
+<div class="em-sec">
+  <div>
+    <h2>Organisations</h2>
+    <div class="em-sub">The employer registry. Seat billing runs from <b>Active</b> orgs only — Trial orgs are never invoiced. Invite links let staff join the org directly from signup.</div>
+  </div>
+  <button class="em-btn primary" id="em-org-add">New employer</button>
+</div>
+<div class="em-card">
+  <table class="em-table">
+    <thead><tr><th>Organisation</th><th>Status</th><th>Enrolled</th><th>£/seat</th><th>Cycle</th><th>Invite</th><th></th></tr></thead>
+    <tbody id="em-org-rows"><tr><td colspan="7" class="em-empty">Loading…</td></tr></tbody>
+  </table>
+</div>
+
+<div class="em-sec">
+  <div>
+    <h2>Portal logins</h2>
+    <div class="em-sub">Dashboard access for employer contacts (aggregate insight only — never individuals).</div>
+  </div>
+</div>
 <div class="em-card">
   <table class="em-table">
     <thead><tr><th>Employer</th><th>Contact</th><th>Seats</th><th>Provisioned</th><th>By</th><th></th></tr></thead>
@@ -186,6 +209,7 @@
     accounts = (r.body && r.body.admins) || [];
     seats = (r.body && r.body.seats) || {};
     renderAccounts();
+    if (orgsLoaded) renderOrgs(); // PM-998: enrolled counts ride the same roster map
   }
 
   // ── Provision modal ─────────────────────────────────────────────
@@ -323,8 +347,154 @@
     });
   }
 
+  // ── PM-998 (B2B S3): ORGANISATIONS — the employers registry ──────────────
+  // Direct reads/updates via employers_admin_all RLS; creation goes through the
+  // employer-provision EF create_employer action (token minting + audit live there).
+  var orgs = [], orgsLoaded = false;
+
+  function inviteLink(tok){ return 'https://www.vyvehealth.co.uk/signup.html?c=' + tok; }
+
+  function renderOrgs(){
+    var rows = el('em-org-rows');
+    if (!orgs.length){
+      rows.innerHTML = '<tr><td colspan="7" class="em-empty">No organisations yet. Create the first with New employer.</td></tr>';
+      return;
+    }
+    rows.innerHTML = orgs.map(function(o){
+      var pill = o.status==='active'
+        ? '<span style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;border-radius:99px;padding:3px 10px;background:var(--success-pale);color:var(--success)">Active — billed</span>'
+        : '<span style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;border-radius:99px;padding:3px 10px;background:var(--warning-pale);color:var(--warning)">Trial — not billed</span>';
+      var enrolled = seats[o.name]!=null ? seats[o.name] : '—';
+      var cap = o.seat_cap!=null ? ' / '+o.seat_cap : '';
+      var invite = o.invite_token
+        ? '<button class="em-btn secondary small" data-inv="'+esc(o.invite_token)+'">Copy link</button>'
+        : '<span style="color:var(--text-dim)">—</span>';
+      var flip = o.status==='active'
+        ? '<button class="em-btn secondary small" data-flip="trial" data-org="'+esc(o.name)+'">Pause billing</button>'
+        : '<button class="em-btn secondary small" data-flip="active" data-org="'+esc(o.name)+'">Activate billing</button>';
+      return '<tr>'+
+        '<td><b>'+esc(o.name)+'</b></td>'+
+        '<td>'+pill+'</td>'+
+        '<td class="num">'+enrolled+cap+'</td>'+
+        '<td class="num">£'+((o.price_per_seat_pence||0)/100).toFixed(2)+'</td>'+
+        '<td>'+esc(o.billing_cycle||'monthly')+'</td>'+
+        '<td>'+invite+'</td>'+
+        '<td>'+flip+'</td></tr>';
+    }).join('');
+    rows.querySelectorAll('[data-inv]').forEach(function(b){
+      b.addEventListener('click', function(){
+        var link = inviteLink(b.getAttribute('data-inv'));
+        (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(link) : Promise.reject())
+          .then(function(){ notice('Invite link copied.'); })
+          .catch(function(){ prompt('Copy the invite link:', link); });
+      });
+    });
+    rows.querySelectorAll('[data-flip]').forEach(function(b){
+      b.addEventListener('click', async function(){
+        var name = b.getAttribute('data-org'), to = b.getAttribute('data-flip');
+        var msg = to==='active'
+          ? 'Activate billing for ' + name + '?\n\nFrom the next monthly run (00:30 on the 1st, arrears), every b2b_active seat is invoiced at the per-seat rate. Do this only when the agreement is signed.'
+          : 'Pause billing for ' + name + '?\n\nThe org drops back to Trial — no invoices are raised while paused. Staff invite links keep working.';
+        if (!confirm(msg)) return;
+        b.disabled = true; b.textContent = '…';
+        var res = await sb().from('employers').update({ status: to, updated_at: new Date().toISOString() }).eq('name', name);
+        if (res.error){ err('Status change failed: '+res.error.message); b.disabled=false; return; }
+        notice(name + (to==='active' ? ' is now billed from the next monthly run.' : ' billing paused.'));
+        loadOrgs();
+      });
+    });
+  }
+
+  async function loadOrgs(){
+    var client = sb();
+    if (!client) return;
+    var res = await client.from('employers').select('*').order('name');
+    if (res.error){ el('em-org-rows').innerHTML = '<tr><td colspan="7" class="em-empty">Organisations failed to load: '+esc(res.error.message)+'</td></tr>'; return; }
+    orgs = res.data || []; orgsLoaded = true;
+    renderOrgs();
+  }
+
+  function openNewOrg(){
+    closeModal();
+    overlay = document.createElement('div');
+    overlay.className = 'em-overlay';
+    overlay.innerHTML =
+      '<div class="em-modal"><div class="em-mh"><h3>New employer</h3>'+
+      '<div class="em-mnote">Creates the org, mints its staff invite link, and (optionally) provisions the dashboard login in one go. Billing only ever starts when you activate the org.</div></div>'+
+      '<div class="em-mb">'+
+        '<div class="em-field"><label>Organisation name</label><input class="em-in" id="o-name" placeholder="e.g. Sage"></div>'+
+        '<div class="em-two">'+
+          '<div class="em-field"><label>Status</label><select class="em-in" id="o-status"><option value="trial" selected>Trial (not billed)</option><option value="active">Active (billed)</option></select></div>'+
+          '<div class="em-field"><label>Seat cap</label><input class="em-in" id="o-cap" type="number" min="1" value="50"></div>'+
+        '</div>'+
+        '<div class="em-two">'+
+          '<div class="em-field"><label>£ per seat / month</label><input class="em-in" id="o-price" type="number" min="0" step="0.01" value="10.00"></div>'+
+          '<div class="em-field"><label>Billing cycle</label><select class="em-in" id="o-cycle"><option value="monthly" selected>Monthly</option><option value="annual">Annual</option></select></div>'+
+        '</div>'+
+        '<div class="em-field"><label>Billing contact name (optional)</label><input class="em-in" id="o-cname"></div>'+
+        '<div class="em-field"><label>Billing contact email (optional)</label><input class="em-in" id="o-cemail" type="email" placeholder="name@company.com"></div>'+
+        '<label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:12px;cursor:pointer"><input type="checkbox" id="o-prov"> Also provision their dashboard login now</label>'+
+      '</div>'+
+      '<div class="em-mf"><span></span>'+
+      '<div class="em-mf-right"><button class="em-btn secondary" id="o-cancel">Cancel</button><button class="em-btn primary" id="o-save">Create</button></div>'+
+      '</div></div>';
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', function(e){ if(e.target===overlay) closeModal(); });
+    overlay.querySelector('#o-cancel').addEventListener('click', closeModal);
+    overlay.querySelector('#o-save').addEventListener('click', async function(){
+      var name = overlay.querySelector('#o-name').value.trim();
+      if (!name){ overlay.querySelector('#o-name').focus(); return; }
+      var cemail = overlay.querySelector('#o-cemail').value.trim().toLowerCase();
+      var cname = overlay.querySelector('#o-cname').value.trim();
+      var wantProv = overlay.querySelector('#o-prov').checked;
+      if (wantProv && (!cemail || cemail.indexOf('@')<0)){ err('A contact email is needed to provision the dashboard login.'); overlay.querySelector('#o-cemail').focus(); return; }
+      var pricePounds = Number(overlay.querySelector('#o-price').value);
+      var btn = this; btn.disabled = true; btn.textContent = 'Creating…';
+      var r = await efPost({
+        action: 'create_employer',
+        name: name,
+        status: overlay.querySelector('#o-status').value,
+        seat_cap: Number(overlay.querySelector('#o-cap').value) || 50,
+        price_per_seat_pence: isFinite(pricePounds) && pricePounds > 0 ? Math.round(pricePounds * 100) : 1000,
+        billing_cycle: overlay.querySelector('#o-cycle').value,
+        contact_name: cname || undefined,
+        contact_email: cemail || undefined
+      });
+      if (!r.ok){
+        btn.disabled=false; btn.textContent='Create';
+        if (r.status===409 && r.body && r.body.error==='employer_exists'){ err('"'+r.body.name+'" already exists (status: '+r.body.status+').'); return; }
+        err('Create failed ('+r.status+'): '+((r.body&&(r.body.detail||r.body.error))||'unknown')); return;
+      }
+      var link = (r.body && r.body.invite_link) || '';
+      var provLine = '';
+      if (wantProv){
+        var pr = await efPost({ action:'provision', employer_name: name, contact_email: cemail, contact_name: cname });
+        provLine = pr.ok
+          ? '<p style="font-size:13px;color:var(--success);margin-top:10px">Dashboard login provisioned — credentials emailed to '+esc(cemail)+'.</p>'
+          : '<p style="font-size:13px;color:var(--danger);margin-top:10px">Org created, but login provisioning failed ('+pr.status+': '+esc((pr.body&&pr.body.error)||'unknown')+') — retry with Provision employer login above.</p>';
+      }
+      overlay.querySelector('.em-modal').innerHTML =
+        '<div class="em-mh"><h3>'+esc(name)+' created</h3></div>'+
+        '<div class="em-mb">'+
+          '<p style="font-size:13.5px;line-height:1.6">Staff join through this invite link — it drops them into signup with the org attached (enterprise seat, no trial clock, no payment):</p>'+
+          '<input class="em-in" id="o-link" readonly value="'+esc(link)+'" style="margin:10px 0;font-size:12px">'+
+          provLine+
+        '</div>'+
+        '<div class="em-mf"><button class="em-btn secondary" id="o-copy">Copy link</button>'+
+        '<div class="em-mf-right"><button class="em-btn primary" id="o-done">Done</button></div></div>';
+      overlay.querySelector('#o-done').addEventListener('click', function(){ closeModal(); loadOrgs(); loadAccounts(); });
+      overlay.querySelector('#o-copy').addEventListener('click', function(){
+        var inp = overlay.querySelector('#o-link'); inp.select();
+        (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(link) : Promise.reject())
+          .then(function(){ notice('Invite link copied.'); }).catch(function(){ try{document.execCommand('copy');}catch(_){} });
+      });
+    });
+  }
+
+  el('em-org-add').addEventListener('click', openNewOrg);
   el('em-add').addEventListener('click', openProvision);
   el('em-bench-add').addEventListener('click', function(){ openBenchmark(null); });
+  loadOrgs();
   loadAccounts();
   loadBenchmarks();
 })();

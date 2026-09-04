@@ -30,6 +30,8 @@
 .iv-pill.cancelled{background:var(--surface-2);color:var(--text-dim)}
 .iv-empty{padding:26px;text-align:center;color:var(--text-muted);font-size:13px}
 .iv-error{background:var(--danger-pale);border-radius:12px;padding:12px 16px;color:var(--danger);font-size:13.5px;margin-bottom:14px;display:none}
+.iv-notice{background:var(--success-pale);border-radius:12px;padding:12px 16px;color:var(--success);font-size:13.5px;margin-bottom:14px;display:none}
+.iv-b2b{display:inline-block;font-family:var(--font-mono);font-size:10.5px;letter-spacing:.06em;background:var(--accent-pale);color:var(--accent);border-radius:6px;padding:2px 7px;margin-right:6px;white-space:nowrap}
 .iv-overlay{position:fixed;inset:0;background:rgba(4,12,12,.6);backdrop-filter:blur(3px);z-index:80;display:flex;align-items:center;justify-content:center;padding:18px}
 .iv-modal{background:var(--surface);border:1px solid var(--border-strong);border-radius:16px;max-width:440px;width:100%;box-shadow:var(--shadow-lg)}
 .iv-mh{padding:18px 20px 0}.iv-mh h3{font-size:16px;font-weight:700}
@@ -50,9 +52,13 @@
     <div class="iv-h1">Invoicing</div>
     <div class="iv-meta" id="iv-meta">Loading…</div>
   </div>
-  <button class="iv-btn primary" id="iv-add">Raise invoice</button>
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <button class="iv-btn secondary" id="iv-run">Run B2B billing</button>
+    <button class="iv-btn primary" id="iv-add">Raise invoice</button>
+  </div>
 </div>
 <div class="iv-error" id="iv-error"></div>
+<div class="iv-notice" id="iv-notice"></div>
 <div class="iv-card">
   <table class="iv-table">
     <thead><tr><th>Client</th><th>Amount</th><th>Due</th><th>Status</th><th>Notes</th><th></th></tr></thead>
@@ -64,11 +70,39 @@
 (function(){
   var STATUSES = ['outstanding','paid','overdue','cancelled']; // DB CHECK vocabulary
   var invoices = [];
+  var EFB = 'https://ixjfklpckgxrwjlfsaaz.supabase.co/functions/v1/b2b-billing-run'; // PM-998
+  var token = null;
   function el(id){ return document.getElementById(id); }
   function esc(s){ var d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
-  function err(m){ var e=el('iv-error'); e.style.display='block'; e.textContent=m; }
+  function err(m){ var e=el('iv-error'); e.style.display='block'; e.textContent=m; el('iv-notice').style.display='none'; }
+  function notice(m){ var e=el('iv-notice'); e.style.display='block'; e.textContent=m; el('iv-error').style.display='none'; }
   function sb(){ return window.VYVE_SUPABASE && window.VYVE_SUPABASE.client && window.VYVE_SUPABASE.client; }
   function gbp(v){ return v==null?'—':'£'+Number(v).toLocaleString('en-GB'); }
+
+  // PM-998 (B2B S3): admin-JWT calls to b2b-billing-run (run / send_invoice).
+  async function getToken(){
+    if (token) return token;
+    try {
+      var client = sb(); if (!client) return null;
+      var s = await client.auth.getSession();
+      token = s && s.data && s.data.session && s.data.session.access_token;
+    } catch(_){}
+    return token;
+  }
+  async function bPost(payload){
+    var t = await getToken();
+    if (!t) return { ok:false, status:0, body:{error:'no_session'} };
+    var res;
+    try {
+      res = await fetch(EFB, { method:'POST', headers:{ 'Authorization':'Bearer '+t, 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+    } catch(e){ return { ok:false, status:0, body:{error:'network'} }; }
+    var body = null; try { body = await res.json(); } catch(_){}
+    return { ok: res.ok, status: res.status, body: body || {} };
+  }
+  function monthLabel(period){
+    try { var p = period.split('-'); return new Date(Date.UTC(+p[0], +p[1]-1, 1)).toLocaleDateString('en-GB',{month:'long',year:'numeric',timeZone:'UTC'}); }
+    catch(_){ return period; }
+  }
 
   function render(){
     var out = invoices.filter(function(i){return i.status==='outstanding'||i.status==='overdue'});
@@ -84,14 +118,35 @@
     rows.innerHTML = invoices.map(function(i){
       var quick = (i.status==='outstanding'||i.status==='overdue')
         ? '<button class="iv-btn secondary small" data-paid="'+i.id+'">Mark paid</button>' : '';
+      // PM-998: B2B seat-billing rows carry period/seat_count/unit_price_pence + a send action.
+      var b2b = '';
+      if (i.period){
+        b2b = '<span class="iv-b2b">B2B · '+esc(monthLabel(i.period))+' · '+esc(i.seat_count!=null?i.seat_count:'?')+' × £'+((i.unit_price_pence||0)/100).toFixed(2)+'</span>';
+        quick = (i.sent_at
+          ? '<span style="font-size:11.5px;color:var(--text-dim);margin-right:8px;white-space:nowrap">Sent '+esc(new Date(i.sent_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'}))+'</span><button class="iv-btn secondary small" data-send="'+i.id+'">Resend</button>'
+          : '<button class="iv-btn secondary small" data-send="'+i.id+'">Send</button>') + (quick ? ' ' + quick : '');
+      }
       return '<tr class="iv-row-click" data-id="'+i.id+'">'+
         '<td><b>'+esc(i.client)+'</b></td>'+
         '<td class="num">'+gbp(i.amount)+'</td>'+
         '<td>'+esc(i.due_date||'—')+'</td>'+
         '<td><span class="iv-pill '+esc(i.status)+'"><i></i>'+esc(i.status)+'</span></td>'+
-        '<td>'+esc(i.notes||'')+'</td>'+
-        '<td>'+quick+'</td></tr>';
+        '<td>'+b2b+esc(i.notes||'')+'</td>'+
+        '<td style="white-space:nowrap">'+quick+'</td></tr>';
     }).join('');
+    rows.querySelectorAll('[data-send]').forEach(function(b){
+      b.addEventListener('click', async function(e){
+        e.stopPropagation();
+        var inv = invoices.find(function(i){return i.id===b.getAttribute('data-send')});
+        if (!inv) return;
+        if (!confirm('Email this invoice to the '+inv.client+' billing contact?\n\n'+gbp(inv.amount)+' for '+monthLabel(inv.period)+'. Sends from team@vyvehealth.co.uk via Brevo.')) return;
+        b.disabled = true; b.textContent = '…';
+        var r = await bPost({ action:'send_invoice', invoice_id: inv.id });
+        if (!r.ok){ err('Send failed ('+r.status+'): '+((r.body&&r.body.error)||'unknown')); b.disabled=false; b.textContent='Send'; return; }
+        notice('Invoice emailed to '+((r.body&&r.body.sent_to)||'the billing contact')+'.');
+        load();
+      });
+    });
     rows.querySelectorAll('tr').forEach(function(tr){
       tr.addEventListener('click', function(e){
         if (e.target.getAttribute && e.target.getAttribute('data-paid')) return;
@@ -179,6 +234,59 @@
     });
   }
 
+  // ── PM-998 (B2B S3): manual billing run — dry-run preview, then the real thing.
+  // Same engine as cron 68 (00:30 on the 1st, arrears). Idempotent per (employer, month),
+  // so a manual run and the cron can never double-invoice.
+  function openBillingPreview(){
+    closeModal();
+    overlay = document.createElement('div');
+    overlay.className = 'iv-overlay';
+    overlay.innerHTML =
+      '<div class="iv-modal"><div class="iv-mh"><h3>Run B2B billing</h3></div>'+
+      '<div class="iv-mb" id="bb-body"><p style="font-size:13.5px;color:var(--text-muted)">Checking active employers and seat counts…</p></div>'+
+      '<div class="iv-mf"><span></span><div class="iv-mf-right"><button class="iv-btn secondary" id="bb-cancel">Close</button></div></div></div>';
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', function(e){ if(e.target===overlay) closeModal(); });
+    overlay.querySelector('#bb-cancel').addEventListener('click', closeModal);
+
+    bPost({ action:'run', dry_run:true }).then(function(r){
+      var bodyEl = overlay && overlay.querySelector('#bb-body');
+      if (!bodyEl) return;
+      if (!r.ok){ bodyEl.innerHTML = '<p style="font-size:13.5px;color:var(--danger)">Preview failed ('+r.status+'): '+esc((r.body&&r.body.error)||'unknown')+'</p>'; return; }
+      var period = r.body.period, results = r.body.results || [];
+      var billable = results.filter(function(x){return x.amount && !x.error});
+      var skipped = results.filter(function(x){return x.skipped});
+      if (!r.body.active_employers){
+        bodyEl.innerHTML = '<p style="font-size:13.5px;line-height:1.6">No <b>Active</b> employers to bill for '+esc(monthLabel(period))+' — every org is on Trial. Activate billing on an org (Employers page) once its agreement is signed.</p>';
+        return;
+      }
+      var lines = billable.map(function(x){
+        return '<tr><td style="padding:6px 12px 6px 0"><b>'+esc(x.employer)+'</b></td><td style="padding:6px 12px" class="num">'+esc(x.seats)+' seats</td><td style="padding:6px 0" class="num">£'+esc(x.amount)+'</td></tr>';
+      }).join('');
+      var skipLines = skipped.map(function(x){ return '<p style="font-size:12px;color:var(--text-dim);margin:4px 0">'+esc(x.employer)+' — skipped ('+esc(x.skipped)+')</p>'; }).join('');
+      bodyEl.innerHTML =
+        '<p style="font-size:13.5px;line-height:1.6">Billing <b>'+esc(monthLabel(period))+'</b> in arrears. Already-invoiced orgs are skipped automatically.</p>'+
+        (lines ? '<table style="margin:10px 0;font-size:13.5px">'+lines+'</table>' : '<p style="font-size:13px;color:var(--text-muted);margin:10px 0">Nothing to invoice — active orgs have no b2b_active seats.</p>')+
+        skipLines;
+      if (billable.length){
+        var mf = overlay.querySelector('.iv-mf-right');
+        var go = document.createElement('button');
+        go.className = 'iv-btn primary'; go.id = 'bb-go'; go.textContent = 'Raise '+billable.length+' invoice'+(billable.length===1?'':'s');
+        mf.appendChild(go);
+        go.addEventListener('click', async function(){
+          go.disabled = true; go.textContent = 'Raising…';
+          var rr = await bPost({ action:'run' });
+          if (!rr.ok){ err('Billing run failed ('+rr.status+'): '+esc((rr.body&&rr.body.error)||'unknown')); closeModal(); return; }
+          var done = (rr.body.results||[]).filter(function(x){return x.invoiced}).length;
+          var dup = (rr.body.results||[]).filter(function(x){return x.already_invoiced}).length;
+          notice(done+' invoice'+(done===1?'':'s')+' raised for '+monthLabel(rr.body.period)+(dup?' ('+dup+' already existed — skipped)':'')+'.');
+          closeModal(); load();
+        });
+      }
+    });
+  }
+
+  el('iv-run').addEventListener('click', openBillingPreview);
   el('iv-add').addEventListener('click', function(){ openModal(null); });
   load();
 })();
