@@ -20,6 +20,11 @@
 #page-perks .pk-btn{font:inherit;font-size:var(--fs-xs);font-weight:600;padding:6px 12px;border-radius:var(--btn-radius);border:1px solid var(--border-strong);background:var(--surface);color:var(--text);cursor:pointer}
 #page-perks .pk-btn:hover{border-color:var(--accent)}
 #page-perks .pk-btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+#page-perks .pk-btn.danger{background:transparent;border-color:var(--danger);color:var(--danger)}
+#page-perks .pk-btn.danger:hover{background:var(--danger);border-color:var(--danger);color:var(--on-accent)}
+#page-perks .pk-btn.danger-solid{background:var(--danger);border-color:var(--danger);color:var(--on-accent)}
+#page-perks .pk-confirm{margin-top:18px;padding:14px 16px;border:1px solid var(--danger);border-radius:var(--card-radius);background:var(--danger-pale)}
+#page-perks .pk-confirm p{margin:0 0 12px;font-size:var(--fs-sm);color:var(--text);line-height:var(--lh-base)}
 #page-perks .pk-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:3000;align-items:center;justify-content:center;padding:18px}
 #page-perks .pk-modal .card{max-width:540px;width:100%;padding:22px 24px;max-height:88vh;overflow:auto}
 #page-perks .pk-modal label{display:block;font-size:var(--fs-xs);font-weight:600;margin:12px 0 4px}
@@ -82,9 +87,20 @@
       <label>Logo — square PNG works best</label>
       <div class="pk-drop" id="pk-m-drop">Tap to choose a logo<input id="pk-m-file" type="file" accept="image/png,image/jpeg,image/webp" style="display:none"></div>
       <div id="pk-m-err" style="display:none;color:var(--danger);font-size:12.5px;margin-top:10px"></div>
-      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:18px">
+      <div id="pk-m-foot" style="display:flex;align-items:center;gap:8px;margin-top:18px">
+        <button class="pk-btn danger" id="pk-m-delete" style="display:none">Delete</button>
+        <div style="flex:1"></div>
         <button class="pk-btn" id="pk-m-cancel">Cancel</button>
         <button class="pk-btn primary" id="pk-m-save">Save — live in app</button>
+      </div>
+      <div class="pk-confirm" id="pk-m-confirm" style="display:none">
+        <p id="pk-m-confirm-copy"></p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="pk-btn" id="pk-m-confirm-cancel">Keep it</button>
+          <button class="pk-btn" id="pk-m-confirm-hide">Hide from app instead</button>
+          <div style="flex:1"></div>
+          <button class="pk-btn danger-solid" id="pk-m-confirm-go">Yes, delete permanently</button>
+        </div>
       </div>
     </div>
   </div>
@@ -192,6 +208,9 @@
       : 'Tap to choose a logo';
     drop.appendChild(fileInput);
     $('pk-m-err').style.display = 'none';
+    // Delete lives inside Edit, never on the card — a destructive action one level in.
+    $('pk-m-delete').style.display = pk ? '' : 'none';
+    closeConfirm();
     $('pk-modal').style.display = 'flex';
   }
   function err(m){ var e = $('pk-m-err'); e.textContent = m; e.style.display = ''; }
@@ -256,6 +275,64 @@
     await load();
   }
 
+  // ---- delete (PM-1022) ----
+  // member_perks.id is referenced by perk_events.perk_id ON DELETE CASCADE, so a delete
+  // destroys that business's usage history too — the exact numbers this page exists to
+  // hand back to them. The confirm therefore states the real total (not the 30-day figure
+  // the cards show) and offers Hide as the non-destructive way out.
+  function closeConfirm(){
+    $('pk-m-confirm').style.display = 'none';
+    $('pk-m-foot').style.display = 'flex';
+    var go = $('pk-m-confirm-go');
+    go.disabled = false; go.textContent = 'Yes, delete permanently';
+  }
+  async function openConfirm(){
+    if (!editing) return;
+    var copy = $('pk-m-confirm-copy');
+    copy.textContent = 'Delete ' + editing.business_name + '? Checking usage history\u2026';
+    $('pk-m-foot').style.display = 'none';
+    $('pk-m-confirm').style.display = '';
+    $('pk-m-confirm-hide').style.display = editing.active ? '' : 'none';
+    var n = null;
+    try {
+      var r = await S.getClient().from('perk_events')
+        .select('id', { count: 'exact', head: true }).eq('perk_id', editing.id);
+      if (!r.error) n = r.count;
+    } catch (e){ /* count is advisory — never block the action on it */ }
+    copy.textContent = 'Delete ' + editing.business_name + '? '
+      + (n === null
+          ? 'Any usage history for this business is deleted with it. This cannot be undone.'
+          : (n > 0
+              ? 'This also permanently deletes ' + n + ' usage record' + (n === 1 ? '' : 's')
+                + ' \u2014 the numbers you would share with them. This cannot be undone.'
+              : 'It has no usage history yet. This cannot be undone.'));
+  }
+  async function doDelete(){
+    if (!editing) return;
+    var go = $('pk-m-confirm-go'); go.disabled = true; go.textContent = 'Deleting\u2026';
+    try {
+      var res = await S.getClient().from('member_perks').delete().eq('id', editing.id).select();
+      if (res.error) throw new Error(res.error.message);
+      // .select() row-count guard: RLS can swallow a delete and still return no error
+      if (!res.data || !res.data.length) throw new Error('nothing was deleted \u2014 check access');
+      var name = editing.business_name;
+      $('pk-modal').style.display = 'none';
+      toast(name + ' deleted');
+      await load();
+    } catch (e){
+      closeConfirm();
+      err('Delete failed: ' + e.message);
+    }
+  }
+  async function hideInstead(){
+    if (!editing) return;
+    var res = await S.getClient().from('member_perks').update({ active: false }).eq('id', editing.id).select();
+    if (res.error || !res.data || !res.data.length){ closeConfirm(); return err('Could not hide it \u2014 check access'); }
+    $('pk-modal').style.display = 'none';
+    toast('Hidden from the app');
+    await load();
+  }
+
   // ---- events (delegated, re-entry safe) ----
   var page = document.getElementById('page-perks');
   page.addEventListener('click', function(e){
@@ -272,6 +349,10 @@
   $('pk-add-btn').onclick = function(){ openModal(null); };
   $('pk-m-cancel').onclick = function(){ $('pk-modal').style.display = 'none'; };
   $('pk-m-save').onclick = saveModal;
+  $('pk-m-delete').onclick = openConfirm;
+  $('pk-m-confirm-cancel').onclick = closeConfirm;
+  $('pk-m-confirm-hide').onclick = hideInstead;
+  $('pk-m-confirm-go').onclick = doDelete;
   $('pk-m-file').addEventListener('change', function(){
     logoFile = this.files && this.files[0] ? this.files[0] : null;
     if (!logoFile) return;
@@ -285,7 +366,7 @@
     };
     reader.readAsDataURL(logoFile);
   });
-  $('pk-modal').addEventListener('click', function(e){ if (e.target === this) this.style.display = 'none'; });
+  $('pk-modal').addEventListener('click', function(e){ if (e.target === this){ this.style.display = 'none'; closeConfirm(); } });
 
   async function boot(){
     if (!S.isReady()){ show('pk-gate-notready'); S.onReady(boot); return; }
