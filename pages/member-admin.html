@@ -329,6 +329,10 @@
       st.role = (r && r.data === true) ? 'admin' : 'team';
     } catch(_){ st.role = 'team'; }
   }
+  // W5 plan-change notification. The EF-side PLAN_CHANGE_NOTIFY flag is the default for API callers; this page always sends an explicit
+  // `notify` boolean from the checkbox, so flip NOTIFY_DEFAULT to true (and the EF flags) in the same change once Lewis approves the copy.
+  var NOTIFY_DEFAULT = false;
+  var NOTIFY_HINT = 'Copy is placeholder until Lewis signs it off — leave unticked for real members outside a test.';
   async function ef(name, body){
     var t = await token();
     if (!t) throw new Error('Not signed in');
@@ -359,12 +363,14 @@
     return new Promise(function(resolve){
       var m = modal('<h3>' + esc(opts.title) + '</h3>' + (opts.body || '') +
         '<label>Reason' + (opts.requireReason ? ' (required)' : ' (optional)') + '</label><textarea rows="3" placeholder="Why this change is being made"></textarea>' +
+        (opts.check ? '<label style="display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer;font-size:var(--fs-xs);color:var(--text)"><input type="checkbox" data-x="check"' + (opts.check.checked ? ' checked' : '') + '> ' + esc(opts.check.label) + '</label>' + (opts.check.hint ? '<div class="muted" style="font-size:var(--fs-2xs);margin-top:4px">' + esc(opts.check.hint) + '</div>' : '') : '') +
         '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px"><button class="mbtn" type="button" data-x="cancel">Cancel</button><button class="mbtn pri" type="button" data-x="ok">' + esc(opts.okLabel || 'Save change') + '</button></div>');
-      var ta = m.querySelector('textarea');
+      var ta = m.querySelector('textarea'), cb = m.querySelector('[data-x="check"]');
       m.querySelector('[data-x="cancel"]').addEventListener('click', function(){ m.remove(); resolve(null); });
       m.querySelector('[data-x="ok"]').addEventListener('click', function(){
         var r = ta.value.trim();
         if (opts.requireReason && !r){ ta.style.borderColor = 'var(--pillar-social)'; ta.focus(); return; }
+        if (opts.check) opts.check.value = !!(cb && cb.checked); // W5: caller reads opts.check.value after resolve
         m.remove(); resolve(r || '');
       });
     });
@@ -713,9 +719,10 @@
     $('wp-assign').addEventListener('click', async function(){
       var sel = $('wp-pick'), tid = sel.value; if (!tid){ toast('Choose a programme first', true); return; }
       var t = tpls.find(function(x){ return x.id === tid; }), cur = active.find(function(r){ return r.surface === (t.surface || 'workouts'); });
-      var reason = await confirmReason({ title: 'Assign programme', requireReason: false, okLabel: 'Assign', body: '<div class="muted" style="font-size:var(--fs-xs)">' + (cur ? esc(cur.programme_name || 'current') + ' &rarr; ' : '') + '<b style="color:var(--text)">' + esc(t.name) + '</b> on the <b>' + esc(t.surface || 'workouts') + '</b> surface for ' + esc(nameOf(st.detail.member) || em) + '.</div>' + (cur ? '<div class="note-box" style="margin-top:8px">The current row is deactivated and kept in history.</div>' : '') });
+      var notifyChk = { label: 'Notify the member — push + a bell entry linking to Workouts', hint: NOTIFY_HINT, checked: NOTIFY_DEFAULT, value: false };
+      var reason = await confirmReason({ title: 'Assign programme', requireReason: false, okLabel: 'Assign', check: notifyChk, body: '<div class="muted" style="font-size:var(--fs-xs)">' + (cur ? esc(cur.programme_name || 'current') + ' &rarr; ' : '') + '<b style="color:var(--text)">' + esc(t.name) + '</b> on the <b>' + esc(t.surface || 'workouts') + '</b> surface for ' + esc(nameOf(st.detail.member) || em) + '.</div>' + (cur ? '<div class="note-box" style="margin-top:8px">The current row is deactivated and kept in history.</div>' : '') });
       if (reason === null) return;
-      try { var r = await ef('admin-member-programme', { action: 'assign_template', member_email: em, template_id: tid, reason: reason || undefined }); toast('Assigned ' + (r.programme_name || t.name) + ' · audit row written'); tabWorkouts(); renderHeadRefresh(); } catch(e){ toast(e.message, true); }
+      try { var r = await ef('admin-member-programme', { action: 'assign_template', member_email: em, template_id: tid, reason: reason || undefined, notify: !!notifyChk.value }); toast('Assigned ' + (r.programme_name || t.name) + ' · audit row written' + (r.notified ? ' · member notified' : (r.notify_requested ? ' · notification failed' : ''))); tabWorkouts(); renderHeadRefresh(); } catch(e){ toast(e.message, true); }
     });
   }
   async function renderHeadRefresh(){ try { st.detail = await dash('member_detail', { email: st.m.email }); renderHead(); } catch(_){} }
@@ -1005,13 +1012,14 @@
   $('ba-apply').addEventListener('click', async function(){
     if (!ba.dry || !ba.tpl) return;
     var emails = (ba.dry.members || []).map(function(r){ return r.email; }), n = emails.length;
-    var reason = await confirmReason({ title: 'Apply to ' + n + ' member' + (n === 1 ? '' : 's') + '?', requireReason: false, okLabel: 'Apply to ' + n + ' member' + (n === 1 ? '' : 's'),
+    var notifyChk = { label: 'Notify each member — push + a bell entry linking to ' + (ba.tpl.kind === 'habits' ? 'Habits' : 'Workouts'), hint: NOTIFY_HINT, checked: NOTIFY_DEFAULT, value: false };
+    var reason = await confirmReason({ title: 'Apply to ' + n + ' member' + (n === 1 ? '' : 's') + '?', requireReason: false, okLabel: 'Apply to ' + n + ' member' + (n === 1 ? '' : 's'), check: notifyChk,
       body: '<p class="muted" style="font-size:var(--fs-xs)">' + (ba.tpl.kind === 'habits' ? 'Their admin-assigned habits become <b>' + esc(ba.tpl.name) + '</b>.' : 'Every one of them opens the app on <b>' + esc(ba.tpl.name) + '</b>, week 1. Their current programme is kept in history.') + ' This is reversible in one click from the batch report, and the reason goes in the audit log.</p>' });
     if (reason === null) return;
     $('ba-apply').disabled = true; $('ba-apply').textContent = 'Applying…';
     try {
-      var j = await batchEf({ action: 'apply', template_id: ba.tpl.id, emails: emails, reason: reason || undefined });
-      ba.batch = j; renderBatchResult(j, false); baStep(4); toast(j.applied + ' applied' + (j.failed ? ', ' + j.failed + ' failed' : ''), !!j.failed);
+      var j = await batchEf({ action: 'apply', template_id: ba.tpl.id, emails: emails, reason: reason || undefined, notify: !!notifyChk.value });
+      ba.batch = j; renderBatchResult(j, false); baStep(4); toast(j.applied + ' applied' + (j.failed ? ', ' + j.failed + ' failed' : '') + (j.notify_requested ? ', ' + (j.notified || 0) + ' notified' : ''), !!j.failed);
     } catch(e){ toast(e.message, true); $('ba-apply').disabled = false; $('ba-apply').textContent = 'Apply to ' + n + ' member' + (n === 1 ? '' : 's'); }
   });
   function renderBatchResult(j, fromHistory){
@@ -1019,7 +1027,7 @@
     $('ba-res-head').innerHTML = '<div class="w5-sec">' + (fromHistory ? 'Batch' : 'Batch applied') + '</div><div style="font-size:var(--fs-sm)"><b>' + j.applied + ' applied</b>' + (j.failed ? ' · <span class="res-err">' + j.failed + ' failed</span>' : '') + (j.missing_emails && j.missing_emails.length ? ' · ' + j.missing_emails.length + ' skipped' : '') + (j.reverted ? ' · ' + j.reverted + ' reverted' : '') + ' <span class="muted">· ' + esc(t.name || '') + (j.created_at ? ' · ' + when(j.created_at) : '') + (j.admin_email ? ' · by ' + esc(j.admin_email) : '') + '</span></div><div class="mono muted" style="margin-top:4px">batch ' + esc(j.batch_id) + '</div>';
     $('ba-revert').style.display = revertable ? '' : 'none';
     var rows = j.results || [];
-    $('ba-res-rows').innerHTML = rows.length ? rows.map(function(r){ var cls = r.ok ? 'res-ok' : (r.skipped ? 'res-skip' : 'res-err'); return '<tr data-em="' + esc(r.email) + '"><td>' + esc(r.name || r.email) + '<div class="e muted" style="font-size:var(--fs-2xs)">' + esc(r.email) + '</div></td><td class="' + cls + '">' + (r.ok ? '&#10003; ' + (r.assigned != null ? 'assigned ' + r.assigned + ', deactivated ' + r.deactivated : 'assigned') : (r.skipped ? 'skipped · ' + esc(r.reason) : '&#10007; ' + esc(r.error || 'failed'))) + '</td><td>' + (r.ok ? esc(r.programme_name || t.name || '') + (r.assigned != null ? '' : ' · wk 1') : '—') + '</td><td class="muted">' + esc(r.ok ? (r.prior_programme_name || (r.assigned != null ? 'previous habit set' : 'no programme')) : '—') + '</td></tr>'; }).join('') : '<tr><td colspan="4" class="empty">Per-member results are only available right after apply. Revert still works from the batch id.</td></tr>';
+    $('ba-res-rows').innerHTML = rows.length ? rows.map(function(r){ var cls = r.ok ? 'res-ok' : (r.skipped ? 'res-skip' : 'res-err'); return '<tr data-em="' + esc(r.email) + '"><td>' + esc(r.name || r.email) + '<div class="e muted" style="font-size:var(--fs-2xs)">' + esc(r.email) + '</div></td><td class="' + cls + '">' + (r.ok ? '&#10003; ' + (r.assigned != null ? 'assigned ' + r.assigned + ', deactivated ' + r.deactivated : 'assigned') + (r.notified === true ? ' · notified' : (r.notify_error ? ' · <span class="res-err">notify failed</span>' : '')) : (r.skipped ? 'skipped · ' + esc(r.reason) : '&#10007; ' + esc(r.error || 'failed'))) + '</td><td>' + (r.ok ? esc(r.programme_name || t.name || '') + (r.assigned != null ? '' : ' · wk 1') : '—') + '</td><td class="muted">' + esc(r.ok ? (r.prior_programme_name || (r.assigned != null ? 'previous habit set' : 'no programme')) : '—') + '</td></tr>'; }).join('') : '<tr><td colspan="4" class="empty">Per-member results are only available right after apply. Revert still works from the batch id.</td></tr>';
   }
   $('ba-revert').addEventListener('click', async function(){
     if (!ba.batch) return; var j = ba.batch, n = j.applied - (j.reverted || 0);
