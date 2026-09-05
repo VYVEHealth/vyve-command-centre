@@ -12,7 +12,7 @@
 // landings can never drift. Item `desc` (below) supplies tile copy.
 window.VYVE_DOMAINS = {
   "rtb":       { section: "Run the Business", label: "Run the Business", desc: "Pipeline, finance, investors, content, tasks and the operating calendar." },
-  "members":   { section: "Members",          label: "Members",          desc: "Broadcast push and who's active right now." },
+  "members":   { section: "Members",          label: "Members",          desc: "Member admin, broadcast push and who's active right now." },
   "partners":  { section: "Partners",         label: "Partners",         desc: "Pipeline, go-live gates, content moderation, payouts and the partner portal." },
   "employers": { section: "Employers",        label: "Employers",        desc: "Employer accounts, benchmarks, the live portal and the sales demo." },
   "analytics": { section: "Analytics",        label: "Analytics",        desc: "App health, usage, retention, wellbeing, platform, revenue and AI." }
@@ -52,9 +52,10 @@ window.VYVE_NAV = [
   {
     section: "Members",
     items: [
-      /* W1 (PM-1027): Member Admin RESTORED as the interim surface until member-admin.html (W3) ships.
-         PM-1012 soft-killed it; re-retire by commenting this line out again. */
-      { href: "/admin-console.html", area: "members", label: "Member Admin", icon: "users", external: false, desc: "Member list, detail and edit \u2014 interim until member-admin.html." },
+      /* W3 (PM-1030): Member Admin is now pages/member-admin.html on the coach-portal chrome.
+         admin-console.html RE-SOFT-KILLED (PM-1012 → restored PM-1027 → retired again here); file preserved,
+         restore = swap the line below back to { href: "/admin-console.html", ... }. */
+      { slug: "member-admin", area: "members", label: "Member Admin", icon: "users", status: "live", desc: "Member list, workspace and edit \u2014 habits, programmes, goals, check-ins, audit." },
       { slug: "broadcast", area: "members",    label: "Broadcast",    icon: "share", status: "live", desc: "Push notifications to member devices." },
       { slug: "active-users", area: "members", label: "Active Users", icon: "users", status: "live", desc: "Who\u2019s in the app right now." },
       { slug: "complaints", area: "complaints",   label: "Complaints",   icon: "shield", status: "live", desc: "Member reports from Help & Support \u2014 triage and resolve." }
@@ -149,7 +150,7 @@ window.VYVE_NAV_TOP = [
     description: 'Pipeline, finance, content, tasks, documents, calendar.' },
   { slug: 'usage', label: 'Analytics', icon: 'bar-chart', sectionName: 'Analytics',
     description: 'App health, usage, retention, wellbeing, platform, revenue, AI.' },
-  { slug: 'active-users', label: 'Members', icon: 'users', sectionName: 'Members',
+  { slug: 'member-admin', label: 'Members', icon: 'users', sectionName: 'Members',
     description: 'Member admin, broadcast, active users.' },
   { href: '/partners.html', label: 'Partners', icon: 'link', sectionName: 'Partners',
     description: 'Partner management, moderation, payouts, portal.' }
@@ -167,7 +168,7 @@ window.VYVE_ROUTE_TO_TOP = (function(){
       'Knowledge':  'domain-rtb',
       'Org':        'domain-rtb',
       'Analytics':  'usage',
-      'Members':    'active-users',
+      'Members':    'member-admin',
       'Partners':   'domain-rtb'
     })[section.section] || 'domain-rtb';
     section.items.forEach(function(item){

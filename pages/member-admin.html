@@ -1,0 +1,725 @@
+<div class="page active" id="page-member-admin">
+<!-- ============================================================================
+     Member Admin (W3, PM-1030) — the VYVE staff surface for administering members.
+     Replaces admin-console.html (re-soft-killed in the same commit series).
+     Chrome = coach-portal.html (rail, client head, tiles, tab bar), rendered as a
+     CC fragment inside the shell. Data = admin-dashboard / admin-member-edit /
+     admin-member-habits / admin-member-programme / admin-member-weekly-goals.
+     Role: 'team' never renders the Admin tab; persona / consent read-only for team.
+     ============================================================================ -->
+<style>
+  #page-member-admin .ma { display: grid; grid-template-columns: 1fr; gap: 0; min-height: 70vh; border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden; background: var(--bg); }
+  #page-member-admin .ma-side { display: none; }
+  #page-member-admin .ma-main { padding: var(--s-5) var(--s-5) var(--s-8); width: 100%; min-width: 0; }
+  #page-member-admin .ma-mobile { display: flex; gap: var(--s-2); overflow-x: auto; padding: 0 0 var(--s-3); scrollbar-width: none; }
+  #page-member-admin .ma-mobile::-webkit-scrollbar { display: none; }
+  @media (min-width: 900px) {
+    #page-member-admin .ma { grid-template-columns: 228px 1fr; }
+    #page-member-admin .ma-side { display: flex; }
+    #page-member-admin .ma-mobile { display: none; }
+  }
+  /* rail — coach-portal .cp-side, in-flow and sticky under the CC topnav */
+  #page-member-admin .ma-side { background: var(--surface); border-right: 1px solid var(--border); padding: var(--s-4) var(--s-3); flex-direction: column; gap: 2px; position: sticky; top: var(--ma-top, 110px); max-height: calc(100vh - var(--ma-top, 110px) - var(--s-4)); overflow-y: auto; align-self: start; }
+  #page-member-admin .side-brand { font-family: Georgia, serif; font-size: var(--fs-lg); letter-spacing: 5px; color: var(--teal-lt); padding: 6px 12px 2px; }
+  #page-member-admin .side-sub { font-size: var(--fs-2xs); color: var(--text-muted); padding: 0 12px 14px; letter-spacing: var(--ls-wide); text-transform: uppercase; }
+  #page-member-admin .cp-item { display: flex; align-items: center; gap: 11px; padding: 9px 12px; border-radius: var(--r-sm); font-size: var(--fs-sm); color: var(--text-muted); cursor: pointer; border: none; background: none; width: 100%; text-align: left; font-family: inherit; text-decoration: none; line-height: var(--lh-base); }
+  #page-member-admin .cp-item svg { width: 16px; height: 16px; flex: none; }
+  #page-member-admin .cp-item:hover { background: var(--surface-2); color: var(--text); }
+  #page-member-admin .cp-item.active { background: rgba(27,120,120,.14); color: var(--teal-lt); font-weight: var(--fw-semi); box-shadow: inset 3px 0 0 var(--teal); }
+  #page-member-admin .cp-item .soon { margin-left: auto; font-size: var(--fs-2xs); font-weight: var(--fw-bold); letter-spacing: .8px; color: var(--text-muted); border: 1px solid var(--border); border-radius: var(--r-pill); padding: 1px 6px; }
+  #page-member-admin .cp-item .ext { margin-left: auto; font-size: var(--fs-2xs); color: var(--text-dim); }
+  #page-member-admin .cp-ghead { display: flex; align-items: center; gap: 11px; padding: 9px 12px; font-size: var(--fs-sm); color: var(--text-muted); margin-top: var(--s-2); }
+  #page-member-admin .cp-ghead svg { width: 16px; height: 16px; }
+  #page-member-admin .cp-subitem { padding: 7px 12px 7px 39px; font-size: var(--fs-xs); }
+  #page-member-admin .cp-foot { margin-top: auto; padding: var(--s-4) 12px 6px; font-size: var(--fs-2xs); color: var(--text-muted); line-height: var(--lh-dense); }
+  /* primitives, coach-portal flavour, prefixed to stay clear of components.css */
+  #page-member-admin .mcard { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: var(--s-6); margin-bottom: var(--s-4); }
+  #page-member-admin .mcard-title { font-size: var(--fs-md); font-weight: var(--fw-semi); margin-bottom: var(--s-4); display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; }
+  #page-member-admin .mbtn { padding: 9px 18px; border-radius: var(--r-sm); font-size: var(--fs-sm); font-weight: var(--fw-semi); cursor: pointer; border: 1px solid var(--border); background: none; color: var(--text-muted); font-family: inherit; line-height: 1.2; }
+  #page-member-admin .mbtn:hover { background: var(--surface-2); color: var(--text); }
+  #page-member-admin .mbtn:disabled { opacity: .5; cursor: not-allowed; }
+  #page-member-admin .mbtn.pri { background: var(--vyve-teal); color: #fff; border-color: transparent; }
+  #page-member-admin .mbtn.pri:hover { background: var(--accent-hover); color: #fff; }
+  #page-member-admin .mbtn.sm { padding: 5px 11px; font-size: var(--fs-xs); }
+  #page-member-admin .mbtn.danger { color: var(--pillar-social); border-color: rgba(209,127,110,.45); }
+  #page-member-admin .mfield label { display: block; font-size: var(--fs-xs); font-weight: var(--fw-semi); color: var(--text-muted); margin-bottom: 5px; }
+  #page-member-admin .mfield input, #page-member-admin .mfield select, #page-member-admin .mfield textarea { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--surface-2); color: var(--text); font-size: var(--fs-sm); font-family: inherit; outline: none; }
+  #page-member-admin .mfield input:focus, #page-member-admin .mfield select:focus, #page-member-admin .mfield textarea:focus { border-color: var(--vyve-teal); }
+  #page-member-admin .muted { color: var(--text-muted); } #page-member-admin .dim { color: var(--text-dim); }
+  #page-member-admin .mono { font-family: var(--font-mono); font-size: var(--fs-xs); }
+  #page-member-admin .lnk { font-size: var(--fs-2xs); color: var(--teal-lt); cursor: pointer; text-decoration: underline; background: none; border: none; padding: 0; font-family: inherit; }
+  #page-member-admin .pill { display: inline-block; font-size: var(--fs-2xs); font-weight: var(--fw-bold); letter-spacing: var(--ls-wide); text-transform: uppercase; border-radius: var(--r-pill); padding: 1px 8px; border: 1px solid var(--border); color: var(--text-muted); line-height: 1.6; }
+  #page-member-admin .pill.ok { background: rgba(61,184,159,.14); color: #3DB89F; border-color: rgba(61,184,159,.4); }
+  #page-member-admin .pill.warn { background: rgba(232,131,74,.13); color: #E8834A; border-color: rgba(232,131,74,.4); }
+  #page-member-admin .pill.gold { background: rgba(201,168,76,.13); color: var(--vyve-gold); border-color: rgba(201,168,76,.45); }
+  #page-member-admin .pill.teal { background: rgba(77,170,170,.15); color: var(--teal-lt); border-color: rgba(77,170,170,.4); }
+  #page-member-admin .lock { font-size: var(--fs-2xs); color: var(--vyve-gold); border: 1px solid rgba(201,168,76,.45); border-radius: var(--r-pill); padding: 0 6px; font-weight: var(--fw-bold); line-height: 1.6; }
+  /* members list */
+  #page-member-admin .ml-top { display: flex; gap: var(--s-3); align-items: center; flex-wrap: wrap; margin-bottom: var(--s-3); }
+  #page-member-admin .ml-search { flex: 1; min-width: 220px; display: flex; align-items: center; gap: var(--s-2); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 8px 12px; color: var(--text-muted); font-size: var(--fs-sm); }
+  #page-member-admin .ml-search input { background: none; border: none; color: var(--text); font-family: inherit; font-size: var(--fs-md); outline: none; flex: 1; min-width: 0; }
+  #page-member-admin .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: var(--s-4); }
+  #page-member-admin .chip { font-size: var(--fs-2xs); font-weight: var(--fw-semi); padding: 4px 10px; border-radius: var(--r-pill); border: 1px solid var(--border); color: var(--text-muted); cursor: pointer; background: none; font-family: inherit; }
+  #page-member-admin .chip.on { background: rgba(27,120,120,.2); color: var(--teal-lt); border-color: var(--vyve-teal); }
+  #page-member-admin .chip b { font-weight: var(--fw-medium); color: var(--text-dim); margin-left: 4px; }
+  #page-member-admin .chip-sep { width: 1px; background: var(--border); margin: 2px 4px; }
+  #page-member-admin .tblwrap { overflow-x: auto; }
+  #page-member-admin .cl-tbl { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
+  #page-member-admin .cl-tbl th { text-align: left; font-size: var(--fs-2xs); font-weight: var(--fw-bold); letter-spacing: .07em; text-transform: uppercase; color: var(--text-muted); padding: 7px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  #page-member-admin .cl-tbl td { padding: 9px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  #page-member-admin .cl-tbl tr.row { cursor: pointer; }
+  #page-member-admin .cl-tbl tr.row:hover td { background: var(--hover-overlay); }
+  #page-member-admin .cl-av { width: 32px; height: 32px; border-radius: 50%; background: rgba(27,120,120,.16); border: 1px solid var(--border); display: inline-flex; align-items: center; justify-content: center; font-size: var(--fs-2xs); font-weight: 800; color: var(--teal-lt); flex: none; }
+  #page-member-admin .nm { display: flex; gap: 10px; align-items: center; min-width: 200px; }
+  #page-member-admin .nm .e { font-size: var(--fs-2xs); color: var(--text-muted); }
+  /* workspace — coach-portal w5 */
+  #page-member-admin .w5-head { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-bottom: var(--s-3); }
+  #page-member-admin .w5-av { width: 52px; height: 52px; border-radius: 50%; background: var(--vyve-teal); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: var(--fs-lg); letter-spacing: .03em; flex: none; }
+  #page-member-admin .w5-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+  #page-member-admin .w5-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: var(--s-2); margin: 10px 0 14px; }
+  #page-member-admin .w5-tile { border: 1px solid var(--border); border-radius: var(--r-md); padding: 8px 10px; }
+  #page-member-admin .w5-tile b { display: block; font-size: var(--fs-md); }
+  #page-member-admin .w5-tile span { font-size: var(--fs-2xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; font-weight: var(--fw-bold); }
+  #page-member-admin .w5-tabs { display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 1px solid var(--border); margin-bottom: 14px; }
+  #page-member-admin .w5-tab { padding: 8px 12px; font-size: var(--fs-xs); font-weight: var(--fw-semi); color: var(--text-muted); cursor: pointer; border: none; background: none; border-bottom: 2px solid transparent; font-family: inherit; margin-bottom: -1px; }
+  #page-member-admin .w5-tab.on { color: var(--text); border-bottom-color: var(--vyve-teal); }
+  #page-member-admin .w5-tab.admin { margin-left: auto; color: var(--vyve-gold); }
+  #page-member-admin .w5-sec { font-size: var(--fs-xs); font-weight: var(--fw-bold); letter-spacing: .05em; text-transform: uppercase; color: var(--text-muted); margin: 4px 0 8px; }
+  #page-member-admin .w5-box { border: 1px solid var(--border); border-radius: var(--r-md); padding: 12px 14px; margin-bottom: 14px; }
+  #page-member-admin .kv { display: grid; grid-template-columns: 1fr; gap: 0 var(--s-6); }
+  @media (min-width: 900px) { #page-member-admin .kv.two { grid-template-columns: 1fr 1fr; } }
+  #page-member-admin .kv .r { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 9px 2px; border-bottom: 1px solid var(--border); font-size: var(--fs-sm); min-height: 40px; }
+  #page-member-admin .kv .k { color: var(--text-muted); flex: none; }
+  #page-member-admin .kv .v { display: flex; align-items: center; gap: 8px; text-align: right; flex-wrap: wrap; justify-content: flex-end; }
+  #page-member-admin .inline-edit { display: flex; gap: 6px; align-items: center; }
+  #page-member-admin .inline-edit input, #page-member-admin .inline-edit select { padding: 5px 8px; font-size: var(--fs-md); width: 170px; border: 1px solid var(--vyve-teal); border-radius: var(--r-sm); background: var(--surface-2); color: var(--text); font-family: inherit; }
+  #page-member-admin .hrow { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 2px; border-bottom: 1px solid var(--border); font-size: var(--fs-sm); }
+  #page-member-admin .hrow:last-child { border-bottom: none; }
+  #page-member-admin .hrow .t b { display: block; } #page-member-admin .hrow .t small { color: var(--text-muted); font-size: var(--fs-2xs); }
+  #page-member-admin .hrow.off { opacity: .6; }
+  #page-member-admin .wp { border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface-2); padding: 12px 14px; margin-bottom: 10px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+  #page-member-admin .wp .t { flex: 1; min-width: 200px; } #page-member-admin .wp .t b { display: block; } #page-member-admin .wp .t small { color: var(--text-muted); font-size: var(--fs-2xs); }
+  #page-member-admin .wp.hist { opacity: .65; background: transparent; }
+  #page-member-admin .bar { height: 6px; background: var(--surface-3); border-radius: var(--r-pill); overflow: hidden; width: 140px; } #page-member-admin .bar i { display: block; height: 100%; background: var(--vyve-teal); }
+  #page-member-admin .tl { list-style: none; margin: 0; padding: 0; } #page-member-admin .tl li { display: grid; grid-template-columns: 120px 1fr; gap: 12px; padding: 8px 2px; border-bottom: 1px solid var(--border); font-size: var(--fs-xs); }
+  #page-member-admin .tl .d { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--fs-2xs); }
+  #page-member-admin .tl li.audit { background: rgba(201,168,76,.06); }
+  #page-member-admin .grid2 { display: grid; grid-template-columns: 1fr; gap: var(--s-4); } @media (min-width: 900px) { #page-member-admin .grid2 { grid-template-columns: 1fr 1fr; } }
+  #page-member-admin .tbl { width: 100%; border-collapse: collapse; font-size: var(--fs-xs); } #page-member-admin .tbl th { text-align: left; color: var(--text-muted); font-weight: var(--fw-semi); padding: 6px; font-size: var(--fs-2xs); text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; } #page-member-admin .tbl td { padding: 7px 6px; border-top: 1px solid var(--border); }
+  #page-member-admin .warn-box { background: rgba(232,131,74,.1); border: 1px solid rgba(232,131,74,.35); border-radius: var(--r-sm); padding: 10px 12px; font-size: var(--fs-xs); margin: 10px 0; }
+  #page-member-admin .note-box { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 10px 12px; font-size: var(--fs-xs); color: var(--text-muted); margin-bottom: 12px; }
+  #page-member-admin .dash-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: var(--s-3); margin-bottom: var(--s-4); }
+  #page-member-admin .dash-tile { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: 14px 16px; cursor: pointer; }
+  #page-member-admin .dash-tile .n { font-size: var(--fs-2xl); font-weight: var(--fw-bold); color: var(--teal-lt); line-height: 1.1; }
+  #page-member-admin .dash-tile .l { font-size: var(--fs-2xs); letter-spacing: .6px; text-transform: uppercase; color: var(--text-muted); margin-top: 4px; }
+  #page-member-admin .mood-strip { display: flex; gap: 3px; flex-wrap: wrap; } #page-member-admin .mood-strip i { width: 14px; height: 14px; border-radius: var(--r-sm); background: var(--surface-3); display: inline-block; }
+  #page-member-admin .empty { text-align: center; padding: 32px 20px; color: var(--text-muted); font-size: var(--fs-sm); }
+  /* modal + toast (page-owned, body-mounted) */
+  .ma-modal { position: fixed; inset: 0; z-index: var(--z-modal); background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; padding: 18px; }
+  .ma-modal-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); max-width: 560px; width: 100%; max-height: 86vh; overflow-y: auto; padding: 18px; color: var(--text); font-size: var(--fs-sm); }
+  .ma-modal-card h3 { font-size: var(--fs-md); font-weight: var(--fw-bold); margin: 0 0 6px; }
+  .ma-modal-card textarea, .ma-modal-card input, .ma-modal-card select { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--surface-2); color: var(--text); font-family: inherit; font-size: var(--fs-md); }
+  .ma-modal-card label { display: block; font-size: var(--fs-xs); font-weight: var(--fw-semi); color: var(--text-muted); margin: 10px 0 5px; }
+  .ma-toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: 26px; background: var(--surface-2); color: var(--text); border: 1px solid var(--border); border-radius: var(--r-md); padding: 10px 16px; font-size: var(--fs-xs); z-index: var(--z-toast); box-shadow: var(--shadow-md); max-width: 90vw; }
+  .ma-toast.err { border-color: rgba(232,131,74,.5); }
+</style>
+
+<div class="ma">
+  <aside class="ma-side" id="ma-side">
+    <div class="side-brand">VYVE</div><div class="side-sub">Member admin</div>
+    <button class="cp-item" data-view="dashboard" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg><span>Dashboard</span></button>
+    <button class="cp-item active" data-view="members" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Members</span></button>
+    <button class="cp-item" type="button" disabled title="W4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M21 16v5h-5"/><path d="M3 16v5h5"/></svg><span>Batch assign</span><span class="soon">W4</span></button>
+    <div class="cp-ghead"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11"/><path d="M17.5 6.5v11"/><path d="M3 9v6"/><path d="M21 9v6"/><path d="M6.5 12h11"/></svg><span>VYVE library</span></div>
+    <a class="cp-item cp-subitem" href="/coach-portal.html#kindsel:program"><span>Programmes</span><span class="ext">&#8599;</span></a>
+    <a class="cp-item cp-subitem" href="/coach-portal.html#kindsel:workout_day"><span>Day templates</span><span class="ext">&#8599;</span></a>
+    <a class="cp-item cp-subitem" href="/coach-portal.html#exercises"><span>Exercise library</span><span class="ext">&#8599;</span></a>
+    <a class="cp-item cp-subitem" href="/coach-portal.html#kindsel:habits"><span>Habits</span><span class="ext">&#8599;</span></a>
+    <button class="cp-item" type="button" disabled title="W4" style="margin-top:var(--s-2)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span><span class="soon">W4</span></button>
+    <div class="cp-foot">Library items open the coach portal at VYVE scope. Signed in as <span id="ma-who">&mdash;</span>.</div>
+  </aside>
+
+  <main class="ma-main">
+    <div class="ma-mobile">
+      <button class="chip on" data-view="members" type="button">Members</button>
+      <button class="chip" data-view="dashboard" type="button">Dashboard</button>
+      <a class="chip" href="/coach-portal.html#kindsel:program">Programmes &#8599;</a>
+      <a class="chip" href="/coach-portal.html#exercises">Exercises &#8599;</a>
+      <a class="chip" href="/coach-portal.html#kindsel:habits">Habits &#8599;</a>
+    </div>
+
+    <section id="ma-v-dashboard" style="display:none">
+      <div class="dash-tiles" id="ma-dash-tiles"></div>
+      <div class="grid2">
+        <div class="mcard"><div class="mcard-title">Needs support</div><div id="ma-dash-support" class="muted" style="font-size:var(--fs-sm)">Loading&hellip;</div></div>
+        <div class="mcard"><div class="mcard-title">Recently active</div><div id="ma-dash-recent" class="muted" style="font-size:var(--fs-sm)">Loading&hellip;</div></div>
+      </div>
+    </section>
+
+    <section id="ma-v-members">
+      <div class="mcard">
+        <div class="mcard-title">Members <span class="muted" style="font-weight:var(--fw-normal);font-size:var(--fs-sm)" id="ma-count">&mdash;</span>
+          <button class="mbtn sm" id="ma-refresh" type="button" style="margin-left:auto">Refresh</button></div>
+        <div class="ml-top">
+          <div class="ml-search">&#9906; <input id="ma-search" placeholder="Search name, email or company" autocomplete="off"/></div>
+          <select class="mbtn sm" id="ma-sort" style="padding-right:26px">
+            <option value="last">Sort: last active</option>
+            <option value="name">Sort: name</option>
+            <option value="joined">Sort: joined</option>
+            <option value="score">Sort: engagement</option>
+          </select>
+        </div>
+        <div class="chips" id="ma-chips"></div>
+        <div class="tblwrap"><table class="cl-tbl">
+          <thead><tr><th>Member</th><th>Company</th><th>Account</th><th>Stream</th><th>Programme</th><th>Score</th><th>Last active</th></tr></thead>
+          <tbody id="ma-rows"><tr><td colspan="7" class="empty">Loading members&hellip;</td></tr></tbody>
+        </table></div>
+        <div class="muted" style="font-size:var(--fs-xs);margin-top:12px" id="ma-foot"></div>
+      </div>
+    </section>
+
+    <section id="ma-v-member" style="display:none">
+      <div class="mcard">
+        <div class="mcard-title"><button class="lnk" id="ma-back" type="button" style="font-size:var(--fs-xs)">&larr; Members</button><span id="ma-m-title">&mdash;</span>
+          <button class="mbtn sm" id="ma-copy" type="button" style="margin-left:auto">Copy email</button></div>
+        <div id="ma-m-head"></div>
+        <div class="w5-tabs" id="ma-tabs"></div>
+        <div id="ma-pane"><p class="muted" style="font-size:var(--fs-xs)">Loading&hellip;</p></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  if (!window.VYVE_SUPABASE) return;
+  var S = window.VYVE_SUPABASE;
+  var EF = S.URL + '/functions/v1/';
+  var root = document.getElementById('page-member-admin');
+  if (!root) return;
+  var $ = function(id){ return document.getElementById(id); };
+  var esc = function(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); };
+
+  var st = {
+    role: null, email: null,
+    members: [], filter: { acct: 'all', sub: 'all', company: 'all', flag: 'all' }, search: '', sort: 'last',
+    schema: null, m: null, detail: null, tab: 'overview', cache: {}, goalsWeek: null
+  };
+
+  // ---------- auth + transport ----------
+  async function token(){
+    var s = await S.getSession();
+    return s && s.access_token ? s.access_token : null;
+  }
+  async function resolveRole(){
+    if (window.VYVE_USER && window.VYVE_USER.role && window.VYVE_USER.email){ st.role = window.VYVE_USER.role; st.email = window.VYVE_USER.email; return; }
+    try {
+      var s = await S.getSession();
+      st.email = s && s.user ? s.user.email : null;
+      var r = await S.client.rpc('is_admin');
+      st.role = (r && r.data === true) ? 'admin' : 'team';
+    } catch(_){ st.role = 'team'; }
+  }
+  async function ef(name, body){
+    var t = await token();
+    if (!t) throw new Error('Not signed in');
+    var res = await fetch(EF + name, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + t, 'apikey': S.ANON || '' }, body: JSON.stringify(body || {}) });
+    var j = null; try { j = await res.json(); } catch(_){}
+    if (!res.ok){ var msg = (j && (j.error || j.message)) || ('HTTP ' + res.status); if (j && j.details) msg += ' — ' + j.details; throw new Error(msg); }
+    if (j && j.success === false) throw new Error(j.error || 'Request failed');
+    return j;
+  }
+  var dash = function(action, params){ return ef('admin-dashboard', { action: action, params: params || {} }).then(function(j){ if (j.data && j.data.error) throw new Error(j.data.error); return j.data; }); };
+  var isAdmin = function(){ return st.role === 'admin'; };
+
+  // ---------- ui utils ----------
+  function toast(msg, err){
+    var t = document.createElement('div'); t.className = 'ma-toast' + (err ? ' err' : ''); t.textContent = msg;
+    document.body.appendChild(t); setTimeout(function(){ t.remove(); }, err ? 4200 : 2400);
+  }
+  function modal(html){
+    var m = document.createElement('div'); m.className = 'ma-modal';
+    m.innerHTML = '<div class="ma-modal-card">' + html + '</div>';
+    m.addEventListener('click', function(e){ if (e.target === m) m.remove(); });
+    document.body.appendChild(m);
+    var first = m.querySelector('textarea, input, select'); if (first) first.focus();
+    return m;
+  }
+  function confirmReason(opts){
+    // opts: title, body(html), requireReason, okLabel -> Promise<reason|null>
+    return new Promise(function(resolve){
+      var m = modal('<h3>' + esc(opts.title) + '</h3>' + (opts.body || '') +
+        '<label>Reason' + (opts.requireReason ? ' (required)' : ' (optional)') + '</label><textarea rows="3" placeholder="Why this change is being made"></textarea>' +
+        '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px"><button class="mbtn" type="button" data-x="cancel">Cancel</button><button class="mbtn pri" type="button" data-x="ok">' + esc(opts.okLabel || 'Save change') + '</button></div>');
+      var ta = m.querySelector('textarea');
+      m.querySelector('[data-x="cancel"]').addEventListener('click', function(){ m.remove(); resolve(null); });
+      m.querySelector('[data-x="ok"]').addEventListener('click', function(){
+        var r = ta.value.trim();
+        if (opts.requireReason && !r){ ta.style.borderColor = 'var(--pillar-social)'; ta.focus(); return; }
+        m.remove(); resolve(r || '');
+      });
+    });
+  }
+  function day(iso){ if (!iso) return '—'; var d = new Date(iso); if (isNaN(d)) return '—'; return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: d.getFullYear() === new Date().getFullYear() ? undefined : 'numeric' }); }
+  function when(iso){ if (!iso) return '—'; var d = new Date(iso); if (isNaN(d)) return '—'; return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }); }
+  function rel(iso){
+    if (!iso) return 'Never'; var d = new Date(iso); if (isNaN(d)) return '—';
+    var diff = (Date.now() - d.getTime()) / 1000;
+    if (diff < 0) return day(iso);
+    if (diff < 3600) return Math.max(1, Math.round(diff / 60)) + 'm ago';
+    if (diff < 86400) return Math.round(diff / 3600) + 'h ago';
+    if (diff < 7 * 86400) return Math.round(diff / 86400) + 'd ago';
+    return day(iso);
+  }
+  function nameOf(m){ var n = ((m.first_name || '') + ' ' + (m.last_name || '')).trim(); return n || null; }
+  function initials(m){ var f = (m.first_name || '')[0] || '', l = (m.last_name || '')[0] || ''; var s = (f + l).toUpperCase(); return s || (m.email || '?')[0].toUpperCase(); }
+  function subPill(s){ s = s || 'none'; var c = s === 'active' || s === 'trialing' ? 'ok' : (s === 'expired' || s === 'canceled' || s === 'past_due') ? 'warn' : ''; return '<span class="pill ' + c + '">' + esc(s) + '</span>'; }
+  function acctPill(a){ a = a || '—'; var c = a === 'paid' ? 'ok' : a === 'comp' ? 'gold' : a === 'enterprise' ? 'teal' : ''; return '<span class="pill ' + c + '">' + esc(a) + '</span>'; }
+
+  // ---------- views ----------
+  function showView(v){
+    ['dashboard', 'members', 'member'].forEach(function(x){ var el = $('ma-v-' + x); if (el) el.style.display = x === v ? '' : 'none'; });
+    root.querySelectorAll('[data-view]').forEach(function(b){ b.classList.toggle('active', b.dataset.view === v); b.classList.toggle('on', b.dataset.view === v && b.classList.contains('chip')); });
+    if (v !== 'member'){ try { history.replaceState(null, '', '#/member-admin'); } catch(_){} }
+    if (v === 'dashboard') loadDashboard();
+  }
+  root.querySelectorAll('[data-view]').forEach(function(b){ b.addEventListener('click', function(){ showView(b.dataset.view); }); });
+
+  // ---------- members list ----------
+  async function loadMembers(){
+    try {
+      var d = await dash('members', { pageSize: 200, sortBy: 'last_activity_at', sortDir: 'desc' });
+      st.members = (d.rows || []).map(function(r){ var m = r.members || {}; return {
+        email: r.member_email, first_name: m.first_name, last_name: m.last_name, company: m.company, persona: m.persona,
+        account_type: m.account_type, subscription_status: m.subscription_status, exercise_stream: m.exercise_stream, is_test: !!m.is_test,
+        member_state: m.member_state, created_at: m.created_at, onboarding_complete: m.onboarding_complete,
+        last_activity_at: r.last_activity_at, engagement_score: r.engagement_score, at_risk: !!r.at_risk, needs_support: !!r.needs_support,
+        current_programme: r.current_programme, programme_week: r.programme_week, programme_active: r.programme_active, activities_7d: r.activities_7d, cert_count: r.cert_count
+      }; });
+      $('ma-count').textContent = d.total != null ? d.total : st.members.length;
+      renderChips(); renderRows();
+    } catch(e){ $('ma-rows').innerHTML = '<tr><td colspan="7" class="empty">Could not load members — ' + esc(e.message) + '</td></tr>'; }
+  }
+  function counts(key){ var c = {}; st.members.forEach(function(m){ var v = m[key] || '—'; c[v] = (c[v] || 0) + 1; }); return c; }
+  function renderChips(){
+    var acct = counts('account_type'), sub = counts('subscription_status'), comp = counts('company');
+    var html = chip('acct', 'all', 'All', st.members.length);
+    ['trial', 'comp', 'paid', 'enterprise'].forEach(function(a){ if (acct[a]) html += chip('acct', a, a, acct[a]); });
+    html += '<span class="chip-sep"></span>';
+    Object.keys(comp).filter(function(k){ return k !== '—' && k !== 'Individual'; }).sort(function(a, b){ return comp[b] - comp[a]; }).slice(0, 6).forEach(function(k){ html += chip('company', k, k, comp[k]); });
+    html += '<span class="chip-sep"></span>';
+    ['expired', 'canceled', 'past_due'].forEach(function(s){ if (sub[s]) html += chip('sub', s, s, sub[s]); });
+    var risk = st.members.filter(function(m){ return m.at_risk; }).length, sup = st.members.filter(function(m){ return m.needs_support; }).length, test = st.members.filter(function(m){ return m.is_test; }).length;
+    if (sup) html += chip('flag', 'support', 'Needs support', sup);
+    if (risk) html += chip('flag', 'risk', 'At risk', risk);
+    if (test) html += chip('flag', 'test', 'Test accounts', test);
+    $('ma-chips').innerHTML = html;
+    $('ma-chips').querySelectorAll('.chip').forEach(function(b){ b.addEventListener('click', function(){
+      var g = b.dataset.g, v = b.dataset.v;
+      st.filter[g] = (st.filter[g] === v) ? 'all' : v;
+      if (g === 'acct' && v === 'all') st.filter = { acct: 'all', sub: 'all', company: 'all', flag: 'all' };
+      renderChips(); renderRows();
+    }); });
+  }
+  function chip(g, v, label, n){ var on = st.filter[g] === v || (g === 'acct' && v === 'all' && Object.keys(st.filter).every(function(k){ return st.filter[k] === 'all'; })); return '<button type="button" class="chip' + (on ? ' on' : '') + '" data-g="' + g + '" data-v="' + esc(v) + '">' + esc(label) + '<b>' + n + '</b></button>'; }
+  function filtered(){
+    var q = st.search.toLowerCase().trim(), f = st.filter;
+    var rows = st.members.filter(function(m){
+      if (f.acct !== 'all' && m.account_type !== f.acct) return false;
+      if (f.sub !== 'all' && m.subscription_status !== f.sub) return false;
+      if (f.company !== 'all' && m.company !== f.company) return false;
+      if (f.flag === 'support' && !m.needs_support) return false;
+      if (f.flag === 'risk' && !m.at_risk) return false;
+      if (f.flag === 'test' && !m.is_test) return false;
+      if (q){ var hay = ((nameOf(m) || '') + ' ' + m.email + ' ' + (m.company || '')).toLowerCase(); if (hay.indexOf(q) < 0) return false; }
+      return true;
+    });
+    var s = st.sort;
+    rows.sort(function(a, b){
+      if (s === 'name') return ((nameOf(a) || a.email).toLowerCase() < (nameOf(b) || b.email).toLowerCase()) ? -1 : 1;
+      if (s === 'joined') return (b.created_at || '') < (a.created_at || '') ? -1 : 1;
+      if (s === 'score') return (b.engagement_score || 0) - (a.engagement_score || 0);
+      return (b.last_activity_at || '') < (a.last_activity_at || '') ? -1 : 1;
+    });
+    return rows;
+  }
+  function renderRows(){
+    var rows = filtered();
+    if (!rows.length){ $('ma-rows').innerHTML = '<tr><td colspan="7" class="empty">No members match. Clear a filter or change the search.</td></tr>'; $('ma-foot').textContent = ''; return; }
+    $('ma-rows').innerHTML = rows.map(function(m){
+      var prog = m.current_programme ? esc(m.current_programme) + (m.programme_week ? ' <span class="dim">· wk ' + m.programme_week + '</span>' : '') + (m.programme_active === false ? ' <span class="dim">· paused</span>' : '') : '<span class="dim">None</span>';
+      return '<tr class="row" data-em="' + esc(m.email) + '"><td><div class="nm"><span class="cl-av">' + esc(initials(m)) + '</span><div><div>' + (nameOf(m) ? esc(nameOf(m)) : '<span class="dim">No name yet</span>') + (m.is_test ? ' <span class="pill" style="opacity:.7">test</span>' : '') + (m.needs_support ? ' <span class="pill warn">support</span>' : '') + '</div><div class="e">' + esc(m.email) + '</div></div></div></td>' +
+        '<td>' + esc(m.company || '—') + '</td><td>' + acctPill(m.account_type) + ' ' + subPill(m.subscription_status) + '</td><td>' + esc(m.exercise_stream || '—') + '</td><td>' + prog + '</td><td>' + (m.engagement_score != null ? m.engagement_score : '—') + '</td><td class="muted">' + rel(m.last_activity_at) + '</td></tr>';
+    }).join('');
+    $('ma-rows').querySelectorAll('tr.row').forEach(function(tr){ tr.addEventListener('click', function(){ openMember(tr.dataset.em); }); });
+    $('ma-foot').textContent = 'Showing ' + rows.length + ' of ' + st.members.length;
+  }
+  $('ma-search').addEventListener('input', function(){ st.search = this.value; renderRows(); });
+  $('ma-sort').addEventListener('change', function(){ st.sort = this.value; renderRows(); });
+  $('ma-refresh').addEventListener('click', function(){ $('ma-rows').innerHTML = '<tr><td colspan="7" class="empty">Refreshing&hellip;</td></tr>'; loadMembers(); });
+
+  // ---------- dashboard ----------
+  async function loadDashboard(){
+    try {
+      var o = await dash('overview');
+      var acct = counts('account_type');
+      var active7 = st.members.filter(function(m){ return (m.activities_7d || 0) > 0; }).length;
+      var tiles = [['Members', o.total_members, 'acct:all'], ['Active 7d', active7, ''], ['Trial', acct.trial || 0, 'acct:trial'], ['Comp', acct.comp || 0, 'acct:comp'], ['Paid', acct.paid || 0, 'acct:paid'], ['Enterprise', acct.enterprise || 0, 'acct:enterprise'], ['At risk', o.at_risk_count, 'flag:risk'], ['Needs support', o.needs_support_count, 'flag:support']];
+      $('ma-dash-tiles').innerHTML = tiles.map(function(t){ return '<div class="dash-tile" data-f="' + t[2] + '"><div class="n">' + (t[1] != null ? t[1] : '—') + '</div><div class="l">' + t[0] + '</div></div>'; }).join('');
+      $('ma-dash-tiles').querySelectorAll('.dash-tile').forEach(function(d){ d.addEventListener('click', function(){ var f = d.dataset.f.split(':'); st.filter = { acct: 'all', sub: 'all', company: 'all', flag: 'all' }; if (f[0] && f[1]) st.filter[f[0]] = f[1]; renderChips(); renderRows(); showView('members'); }); });
+      var sup = st.members.filter(function(m){ return m.needs_support || m.at_risk; }).slice(0, 8);
+      $('ma-dash-support').innerHTML = sup.length ? sup.map(function(m){ return '<div class="hrow"><div class="t"><b>' + esc(nameOf(m) || m.email) + '</b><small>' + esc(m.email) + ' · ' + (m.needs_support ? 'needs support' : 'at risk') + ' · last active ' + rel(m.last_activity_at) + '</small></div><button class="mbtn sm" type="button" data-em="' + esc(m.email) + '">Open</button></div>'; }).join('') : '<div class="empty">Nobody flagged right now.</div>';
+      var rec = st.members.slice().sort(function(a, b){ return (b.last_activity_at || '') < (a.last_activity_at || '') ? -1 : 1; }).filter(function(m){ return m.last_activity_at; }).slice(0, 8);
+      $('ma-dash-recent').innerHTML = rec.length ? rec.map(function(m){ return '<div class="hrow"><div class="t"><b>' + esc(nameOf(m) || m.email) + '</b><small>' + rel(m.last_activity_at) + (m.current_programme ? ' · ' + esc(m.current_programme) : '') + '</small></div><button class="mbtn sm" type="button" data-em="' + esc(m.email) + '">Open</button></div>'; }).join('') : '<div class="empty">No activity yet.</div>';
+      ['ma-dash-support', 'ma-dash-recent'].forEach(function(id){ $(id).querySelectorAll('[data-em]').forEach(function(b){ b.addEventListener('click', function(){ openMember(b.dataset.em); }); }); });
+    } catch(e){ $('ma-dash-tiles').innerHTML = '<div class="empty">Could not load — ' + esc(e.message) + '</div>'; }
+  }
+
+  // ---------- member workspace ----------
+  async function openMember(email){
+    st.m = st.members.find(function(x){ return x.email === email; }) || { email: email };
+    st.detail = null; st.cache = {}; st.tab = 'overview'; st.goalsWeek = null;
+    showView('member');
+    try { history.replaceState(null, '', '#/member-admin/' + encodeURIComponent(email)); } catch(_){}
+    $('ma-m-title').textContent = nameOf(st.m) || email;
+    $('ma-m-head').innerHTML = '<p class="muted" style="font-size:var(--fs-xs)">Loading&hellip;</p>';
+    $('ma-tabs').innerHTML = ''; $('ma-pane').innerHTML = '';
+    try {
+      var jobs = [dash('member_detail', { email: email })];
+      if (!st.schema) jobs.push(ef('admin-member-edit', { action: 'field_schema' }));
+      var res = await Promise.all(jobs);
+      st.detail = res[0]; if (res[1]) st.schema = res[1];
+      if (!st.detail.member) throw new Error('Member not found');
+      renderHead(); renderTabs(); showTab('overview');
+    } catch(e){ $('ma-m-head').innerHTML = '<div class="warn-box">Could not load this member — ' + esc(e.message) + '</div>'; }
+  }
+  $('ma-back').addEventListener('click', function(){ showView('members'); });
+  $('ma-copy').addEventListener('click', function(){ if (!st.m) return; try { navigator.clipboard.writeText(st.m.email); toast('Email copied'); } catch(_){ toast(st.m.email); } });
+
+  function renderHead(){
+    var m = st.detail.member, s = st.detail.stats || {}, prog = (st.detail.programmes || [])[0];
+    var status = m.subscription_status || 'none';
+    var badge = (status === 'active' || status === 'trialing') ? '#3DB89F' : (status === 'expired' || status === 'canceled' || status === 'past_due') ? '#E8834A' : 'var(--text-muted)';
+    $('ma-m-title').textContent = nameOf(m) || m.email;
+    var lastCi = s.latest_wellbeing_score != null ? s.latest_wellbeing_score + ' / 10' : '—';
+    var w = s.latest_weight_kg != null ? s.latest_weight_kg : m.weight_kg;
+    $('ma-m-head').innerHTML =
+      '<div class="w5-head"><div class="w5-av">' + esc(initials(m)) + '</div><div style="flex:1;min-width:180px">' +
+        '<div style="font-size:var(--fs-md);font-weight:var(--fw-bold)">' + esc(nameOf(m) || 'No name yet') + ' <span class="w5-dot" style="background:' + badge + ';margin-left:4px"></span> <span class="muted" style="font-size:var(--fs-2xs);font-weight:var(--fw-semi)">' + esc(status) + '</span> ' + acctPill(m.account_type) + (m.is_test ? ' <span class="pill" style="opacity:.7">test account</span>' : '') + (s.needs_support ? ' <span class="pill warn">needs support</span>' : '') + (s.at_risk ? ' <span class="pill warn">at risk</span>' : '') + '</div>' +
+        '<div class="muted" style="font-size:var(--fs-xs)">' + esc(m.email) + ' · ' + esc(m.company || 'Individual') + (m.persona ? ' · ' + esc(m.persona) : '') + '</div>' +
+        '<div class="muted" style="font-size:var(--fs-2xs)">Last active ' + rel(s.last_activity_at) + ' · joined ' + day(m.created_at) + ' · onboarding ' + (m.onboarding_complete ? 'complete' : 'incomplete') + '</div>' +
+      '</div></div>' +
+      '<div class="w5-tiles">' +
+        tile('Stream', m.exercise_stream || '—') +
+        tile('Programme', prog ? (prog.programme_name || '—') + (prog.is_active ? (prog.current_week ? ' · wk ' + prog.current_week + (prog.plan_duration_weeks ? '/' + prog.plan_duration_weeks : '') : '') : ' · paused') : 'None') +
+        tile('Activities 30d', s.activities_30d != null ? s.activities_30d : '—') +
+        tile('Weight', w != null ? w + ' kg' : '—') +
+        tile('Last check-in', lastCi) +
+        tile('Engagement', s.engagement_score != null ? s.engagement_score : '—') +
+      '</div>';
+  }
+  function tile(l, v){ return '<div class="w5-tile"><span>' + esc(l) + '</span><b>' + esc(v) + '</b></div>'; }
+  function renderTabs(){
+    var TABS = [['overview', 'Overview'], ['habits', 'Habits'], ['workouts', 'Workouts'], ['goals', 'Goals'], ['nutrition', 'Nutrition'], ['checkins', 'Check-ins'], ['logs', 'Logs']];
+    var html = TABS.map(function(t){ return '<button type="button" class="w5-tab" data-t="' + t[0] + '">' + t[1] + '</button>'; }).join('');
+    if (isAdmin()) html += '<button type="button" class="w5-tab admin" data-t="admin">Admin</button>';
+    $('ma-tabs').innerHTML = html;
+    $('ma-tabs').querySelectorAll('.w5-tab').forEach(function(b){ b.addEventListener('click', function(){ showTab(b.dataset.t); }); });
+  }
+  function showTab(t){
+    if (t === 'admin' && !isAdmin()) t = 'overview';
+    st.tab = t;
+    $('ma-tabs').querySelectorAll('.w5-tab').forEach(function(b){ b.classList.toggle('on', b.dataset.t === t); });
+    $('ma-pane').innerHTML = '<p class="muted" style="font-size:var(--fs-xs)">Loading&hellip;</p>';
+    var fn = { overview: tabOverview, habits: tabHabits, workouts: tabWorkouts, goals: tabGoals, nutrition: tabNutrition, checkins: tabCheckins, logs: tabLogs, admin: tabAdmin }[t];
+    var em = st.m.email;
+    Promise.resolve().then(fn).catch(function(e){ if (st.m && st.m.email === em && st.tab === t) $('ma-pane').innerHTML = '<div class="warn-box">' + esc(e.message) + '</div>'; });
+  }
+  function pane(html){ $('ma-pane').innerHTML = html; }
+
+  // ---------- field editing (schema-driven) ----------
+  var LABELS = { first_name: 'First name', last_name: 'Last name', company: 'Company', goal_focus: 'Goal focus', tone_preference: 'Coaching tone', reminder_frequency: 'Reminders', contact_preference: 'Contact preference', theme_preference: 'Theme', exercise_stream: 'Exercise stream', display_name_preference: 'Display name', notifications_milestones: 'Milestone notifications', notifications_weekly_summary: 'Weekly summary email', privacy_employer_reporting: 'Employer reporting', re_engagement_stream: 'Re-engagement stream', persona: 'Persona', sensitive_context: 'Sensitive context flag', health_data_consent: 'Health data consent', subscription_status: 'Subscription status', training_days_per_week: 'Training days / week', tdee_target: 'Calorie target', deficit_percentage: 'Deficit %' };
+  var BOOLS = ['notifications_milestones', 'notifications_weekly_summary', 'privacy_employer_reporting', 'sensitive_context', 'health_data_consent'];
+  var INTS = { training_days_per_week: [0, 7], tdee_target: [1000, 6000], deficit_percentage: [0, 30] };
+  function fieldType(f){ var sch = st.schema || {}; if (sch.enums && sch.enums[f]) return 'enum'; if (BOOLS.indexOf(f) >= 0) return 'bool'; if (INTS[f]) return 'int'; return 'text'; }
+  function isScary(f){ return !!(st.schema && st.schema.scary_fields && st.schema.scary_fields.indexOf(f) >= 0); }
+  function isEditable(f){ var sch = st.schema; if (!sch) return false; var known = (sch.safe_fields || []).indexOf(f) >= 0 || (sch.scary_fields || []).indexOf(f) >= 0; if (!known) return false; return (sch.blocked_for_role || []).indexOf(f) < 0; }
+  function fmtVal(f, v){ if (v == null || v === '') return '<span class="dim">—</span>'; if (fieldType(f) === 'bool') return v ? 'Yes' : 'No'; if (f === 'tdee_target') return esc(v) + ' kcal'; if (f === 'deficit_percentage') return esc(v) + '%'; return esc(v); }
+  function fieldRow(f, m, opts){
+    opts = opts || {};
+    var v = m[f];
+    var html = '<div class="r" data-f="' + f + '"><span class="k">' + esc(opts.label || LABELS[f] || f) + '</span><span class="v">' + fmtVal(f, v);
+    if (isEditable(f)) html += (isScary(f) ? ' <span class="lock" title="Needs a reason; written to the audit log">reason</span>' : '') + ' <button class="lnk" type="button" data-edit="' + f + '">' + (isScary(f) ? 'change' : 'edit') + '</button>';
+    else if (opts.blockedNote) html += ' <span class="dim" style="font-size:var(--fs-2xs)">admin only</span>';
+    return html + '</span></div>';
+  }
+  function roRow(label, v){ return '<div class="r"><span class="k">' + esc(label) + '</span><span class="v">' + (v == null || v === '' ? '<span class="dim">—</span>' : esc(v)) + '</span></div>'; }
+  function wireEdits(container){
+    container.querySelectorAll('[data-edit]').forEach(function(b){ b.addEventListener('click', function(){ beginEdit(b.dataset.edit, b.closest('.r')); }); });
+  }
+  function control(f, cur){
+    var t = fieldType(f), sch = st.schema;
+    if (t === 'enum') return '<select>' + ['<option value="">—</option>'].concat(sch.enums[f].map(function(o){ return '<option value="' + esc(o) + '"' + (o === cur ? ' selected' : '') + '>' + esc(o) + '</option>'; })).join('') + '</select>';
+    if (t === 'bool') return '<select><option value="true"' + (cur === true ? ' selected' : '') + '>Yes</option><option value="false"' + (cur === false ? ' selected' : '') + '>No</option></select>';
+    if (t === 'int') return '<input type="number" min="' + INTS[f][0] + '" max="' + INTS[f][1] + '" value="' + (cur == null ? '' : esc(cur)) + '"/>';
+    return '<input type="text" value="' + (cur == null ? '' : esc(cur)) + '"/>';
+  }
+  function beginEdit(f, row){
+    var m = st.detail.member, cur = m[f];
+    var vEl = row.querySelector('.v');
+    var old = vEl.innerHTML;
+    vEl.innerHTML = '<span class="inline-edit">' + control(f, cur) + '<button class="mbtn sm pri" type="button" data-x="save">Save</button><button class="mbtn sm" type="button" data-x="cancel">Cancel</button></span>';
+    var inp = vEl.querySelector('input, select'); inp.focus();
+    vEl.querySelector('[data-x="cancel"]').addEventListener('click', function(){ vEl.innerHTML = old; wireEdits(row); });
+    inp.addEventListener('keydown', function(e){ if (e.key === 'Enter') vEl.querySelector('[data-x="save"]').click(); if (e.key === 'Escape') vEl.querySelector('[data-x="cancel"]').click(); });
+    vEl.querySelector('[data-x="save"]').addEventListener('click', async function(){
+      var raw = inp.value, val = raw;
+      if (fieldType(f) === 'bool') val = raw === 'true'; else if (fieldType(f) === 'int') val = raw === '' ? null : Number(raw); else if (raw === '') val = null;
+      if (JSON.stringify(val == null ? null : val) === JSON.stringify(cur == null ? null : cur)){ vEl.innerHTML = old; wireEdits(row); return; }
+      var reason = null;
+      if (isScary(f)){
+        reason = await confirmReason({ title: 'Change ' + (LABELS[f] || f), requireReason: true, body: '<div class="muted" style="font-size:var(--fs-xs)">' + esc(fmtPlain(f, cur)) + ' &rarr; <b style="color:var(--text)">' + esc(fmtPlain(f, val)) + '</b> for ' + esc(nameOf(m) || m.email) + '</div><div class="warn-box">This is a protected field. The change and your reason are written to the audit log.</div>' });
+        if (reason === null){ vEl.innerHTML = old; wireEdits(row); return; }
+      }
+      try {
+        var r = await ef('admin-member-edit', { action: 'member_edit', member_email: m.email, field_name: f, new_value: val, reason: reason || undefined });
+        m[f] = r.no_op ? m[f] : r.new_value;
+        if (st.m) st.m[f] = m[f];
+        toast(r.no_op ? 'No change' : (LABELS[f] || f) + ' saved' + (r.audit_logged ? ' · audit row written' : ''));
+        renderHead();
+        row.outerHTML = fieldRow(f, m); var nr = $('ma-pane').querySelector('.r[data-f="' + f + '"]'); if (nr) wireEdits(nr);
+      } catch(e){ toast(e.message, true); vEl.innerHTML = old; wireEdits(row); }
+    });
+  }
+  function fmtPlain(f, v){ if (v == null || v === '') return '—'; if (fieldType(f) === 'bool') return v ? 'Yes' : 'No'; return String(v); }
+
+  // ---------- tab: overview ----------
+  async function tabOverview(){
+    var m = st.detail.member;
+    var left = ['first_name', 'last_name', 'company', 'goal_focus', 'exercise_stream', 'training_days_per_week', 'tone_preference', 'reminder_frequency', 'contact_preference'];
+    var right = ['theme_preference', 'display_name_preference', 'notifications_milestones', 'notifications_weekly_summary', 'privacy_employer_reporting', 'persona', 'health_data_consent'];
+    if (isAdmin()) right.push('sensitive_context');
+    var html = '<div class="note-box">Plain fields save inline. Fields marked <span class="lock">reason</span> open a reason prompt and write an audit row.' + (isAdmin() ? '' : ' Persona, consent and subscription are admin-only.') + '</div>' +
+      '<div class="kv two">' + left.map(function(f){ return fieldRow(f, m, { blockedNote: true }); }).join('') + right.map(function(f){ return fieldRow(f, m, { blockedNote: true }); }).join('') + '</div>' +
+      '<div class="w5-sec" style="margin-top:16px">From onboarding</div><div class="kv two">' +
+      roRow('Primary goal', m.primary_goal) + roRow('Goal summary', m.goal_summary) + roRow('Experience', m.experience_level) + roRow('Location · equipment', [m.training_location, m.equipment].filter(Boolean).join(' · ')) +
+      roRow('Timezone', m.timezone) + roRow('Member state', m.member_state) + roRow('Onboarding completed', day(m.onboarding_completed_at)) + roRow('Joined', day(m.created_at)) + '</div>';
+    pane(html); wireEdits($('ma-pane'));
+  }
+
+  // ---------- tab: habits ----------
+  async function tabHabits(){
+    var em = st.m.email;
+    var res = await Promise.all([ef('admin-member-habits', { action: 'list_habits', member_email: em, include_inactive: true }), st.cache.lib || ef('admin-member-habits', { action: 'list_library' })]);
+    st.cache.lib = res[1];
+    var habits = res[0].habits || [], lib = res[1].library || [];
+    var active = habits.filter(function(h){ return h.active; }), off = habits.filter(function(h){ return !h.active; });
+    var assignedIds = {}; habits.forEach(function(h){ assignedIds[h.habit_id] = h.active; });
+    var row = function(h){ var l = h.habit_library || {}; return '<div class="hrow' + (h.active ? '' : ' off') + '" data-hid="' + h.habit_id + '"><div class="t"><b>' + esc(l.habit_title || 'Unknown habit') + '</b><small>' + esc(l.habit_pot || '') + (l.difficulty ? ' · ' + esc(l.difficulty) : '') + ' · assigned by ' + esc(h.assigned_by || '—') + ' ' + day(h.assigned_at) + (l.active === false ? ' · <span style="color:#E8834A">library habit retired</span>' : '') + '</small></div><div><button class="mbtn sm" type="button" data-hact="' + (h.active ? 'deactivate' : 'reactivate') + '"' + (!h.active && l.active === false ? ' disabled' : '') + '>' + (h.active ? 'Deactivate' : 'Reactivate') + '</button></div></div>'; };
+    var pots = {}; lib.forEach(function(l){ (pots[l.habit_pot] = pots[l.habit_pot] || []).push(l); });
+    var opts = Object.keys(pots).sort().map(function(p){ return '<optgroup label="' + esc(p) + '">' + pots[p].map(function(l){ var a = assignedIds[l.id]; return '<option value="' + l.id + '"' + (a === true ? ' disabled' : '') + '>' + esc(l.habit_title) + ' (' + esc(l.difficulty) + ')' + (a === true ? ' — assigned' : a === false ? ' — inactive, reactivate' : '') + '</option>'; }).join('') + '</optgroup>'; }).join('');
+    pane('<div class="w5-sec">Active · ' + active.length + '</div><div class="w5-box">' + (active.length ? active.map(row).join('') : '<div class="empty">No active habits. Assign one below.</div>') + '</div>' +
+      (off.length ? '<div class="w5-sec">Inactive · ' + off.length + '</div><div class="w5-box">' + off.map(row).join('') + '</div>' : '') +
+      '<div class="w5-sec">Assign from the VYVE library</div><div class="w5-box" style="display:flex;gap:10px;flex-wrap:wrap;align-items:end">' +
+        '<div class="mfield" style="flex:1;min-width:240px"><label>Habit · ' + lib.length + ' in the library</label><select id="hb-pick"><option value="">Choose a habit</option>' + opts + '</select></div>' +
+        '<button class="mbtn pri" type="button" id="hb-assign">Assign</button><button class="lnk" type="button" id="hb-new" style="margin-left:auto">+ New library habit</button></div>' +
+      '<div class="w5-box" id="hb-newbox" style="display:none"><div class="w5-sec">New library habit</div><div class="grid2">' +
+        '<div class="mfield"><label>Title</label><input id="hb-title" maxlength="120" placeholder="e.g. Walk 20 minutes"/></div>' +
+        '<div class="mfield"><label>Pot</label><select id="hb-pot"><option>movement</option><option>nutrition</option><option>sleep</option><option>mindfulness</option><option>social</option></select></div>' +
+        '<div class="mfield"><label>Description (optional)</label><input id="hb-desc" maxlength="400"/></div>' +
+        '<div class="mfield"><label>Difficulty</label><select id="hb-diff"><option>easy</option><option>medium</option><option>hard</option></select></div></div>' +
+        '<div style="display:flex;gap:8px;margin-top:10px"><button class="mbtn pri" type="button" id="hb-create">Create habit</button><button class="mbtn" type="button" id="hb-newcancel">Cancel</button></div><div class="muted" style="font-size:var(--fs-2xs);margin-top:8px">Goes live in the library for every member immediately (active, created_by admin). Audit row written.</div></div>');
+    var p = $('ma-pane');
+    p.querySelectorAll('[data-hact]').forEach(function(b){ b.addEventListener('click', async function(){
+      var hid = b.closest('[data-hid]').dataset.hid, act = b.dataset.hact;
+      var reason = await confirmReason({ title: (act === 'deactivate' ? 'Deactivate' : 'Reactivate') + ' habit', requireReason: false, okLabel: act === 'deactivate' ? 'Deactivate' : 'Reactivate' });
+      if (reason === null) return;
+      b.disabled = true;
+      try { await ef('admin-member-habits', { action: act + '_habit', member_email: em, habit_id: hid, reason: reason || undefined }); toast('Habit ' + act + 'd · audit row written'); tabHabits(); } catch(e){ toast(e.message, true); b.disabled = false; }
+    }); });
+    $('hb-assign').addEventListener('click', async function(){
+      var hid = $('hb-pick').value; if (!hid){ toast('Choose a habit first', true); return; }
+      var reason = await confirmReason({ title: 'Assign habit', requireReason: false, okLabel: 'Assign', body: '<div class="muted" style="font-size:var(--fs-xs)">' + esc($('hb-pick').selectedOptions[0].textContent) + ' &rarr; ' + esc(nameOf(st.detail.member) || em) + '</div>' });
+      if (reason === null) return;
+      try { var r = await ef('admin-member-habits', { action: 'assign_habit', member_email: em, habit_id: hid, reason: reason || undefined }); toast(r.no_op ? 'Already assigned' : (r.reactivated ? 'Habit reactivated' : 'Habit assigned') + ' · audit row written'); tabHabits(); } catch(e){ toast(e.message, true); }
+    });
+    $('hb-new').addEventListener('click', function(){ $('hb-newbox').style.display = ''; $('hb-title').focus(); });
+    $('hb-newcancel').addEventListener('click', function(){ $('hb-newbox').style.display = 'none'; });
+    $('hb-create').addEventListener('click', async function(){
+      var body = { action: 'create_library_habit', habit_pot: $('hb-pot').value, habit_title: $('hb-title').value.trim(), habit_description: $('hb-desc').value.trim() || undefined, difficulty: $('hb-diff').value };
+      if (body.habit_title.length < 3){ toast('Title needs at least 3 characters', true); return; }
+      try { await ef('admin-member-habits', body); toast('Library habit created'); st.cache.lib = null; tabHabits(); } catch(e){ toast(e.message, true); }
+    });
+  }
+
+  // ---------- tab: workouts ----------
+  async function tabWorkouts(){
+    var em = st.m.email;
+    var res = await Promise.all([ef('admin-member-programme', { action: 'get_programme', member_email: em }), st.cache.tpl || ef('admin-member-programme', { action: 'list_templates', kind: 'program' })]);
+    st.cache.tpl = res[1];
+    var rows = res[0].rows || [], tpls = res[1].templates || [];
+    var active = rows.filter(function(r){ return r.is_active; }), hist = rows.filter(function(r){ return !r.is_active; });
+    var card = function(r){
+      var weeks = r.weeks_count || r.plan_duration_weeks, pct = (weeks && r.current_week) ? Math.min(100, Math.round((r.current_week - 1) / weeks * 100)) : 0;
+      return '<div class="wp' + (r.is_active ? '' : ' hist') + '" data-id="' + r.id + '"><div class="t"><b>' + esc(r.programme_name || 'Custom programme') + '</b><small>' + esc(r.surface || 'no surface') + ' · source ' + esc(r.source || '—') + ' · generated ' + day(r.generated_at) + (r.paused_at ? ' · paused ' + day(r.paused_at) : '') + ' · <span class="mono">' + r.id.slice(0, 8) + '</span></small></div>' +
+        (r.is_active ? '<div class="bar"><i style="width:' + pct + '%"></i></div><span class="muted" style="font-size:var(--fs-xs)">' + (r.current_week ? 'Week ' + r.current_week + (weeks ? ' of ' + weeks : '') : 'Ongoing') + '</span>' +
+          '<button class="mbtn sm" type="button" data-pact="pause">Pause</button>' + (weeks ? '<button class="mbtn sm" type="button" data-pact="advance">Set week</button>' : '') : '<span class="muted" style="font-size:var(--fs-xs)">retained</span><button class="mbtn sm" type="button" data-pact="resume">Resume</button>') +
+        '<button class="mbtn sm" type="button" data-pact="preview">Preview</button></div>';
+    };
+    pane((active.length ? active.map(function(r){ return '<div class="w5-sec">Active · ' + esc(r.surface || 'no surface') + '</div>' + card(r); }).join('') : '<div class="w5-sec">Active</div><div class="empty">No active programme on any surface.</div>') +
+      (hist.length ? '<div class="w5-sec">History · ' + hist.length + '</div>' + hist.map(card).join('') : '') +
+      '<div class="w5-sec">Assign a VYVE programme</div><div class="w5-box" style="display:flex;gap:10px;flex-wrap:wrap;align-items:end">' +
+        '<div class="mfield" style="flex:1;min-width:240px"><label>Template · ' + tpls.length + ' in the VYVE library</label><select id="wp-pick"><option value="">Choose a programme</option>' + tpls.map(function(t){ return '<option value="' + t.id + '" data-s="' + esc(t.surface || 'workouts') + '">' + esc(t.name) + (t.duration_weeks ? ' · ' + t.duration_weeks + ' wk' : '') + (t.days_per_week ? ' · ' + t.days_per_week + '/wk' : '') + (t.prebuilt ? '' : ' · authored') + '</option>'; }).join('') + '</select></div>' +
+        '<button class="mbtn pri" type="button" id="wp-assign">Assign to ' + esc((st.detail.member.first_name || 'member')) + '</button>' +
+        '<div class="muted" style="width:100%;font-size:var(--fs-2xs)">Deactivates the active row on the template&rsquo;s surface and inserts a new one at week 1. History is kept. Audit row written.</div></div>');
+    var p = $('ma-pane');
+    p.querySelectorAll('[data-pact]').forEach(function(b){ b.addEventListener('click', async function(){
+      var id = b.closest('[data-id]').dataset.id, act = b.dataset.pact, r = rows.find(function(x){ return x.id === id; });
+      if (act === 'preview'){ return previewProgramme(id, r); }
+      var body = { member_email: em, id: id };
+      if (act === 'advance'){
+        var weeks = r.weeks_count || r.plan_duration_weeks;
+        var m2 = modal('<h3>Set week</h3><div class="muted" style="font-size:var(--fs-xs)">' + esc(r.programme_name || '') + ' · currently week ' + (r.current_week || 1) + '</div><label>Move to week (1–' + weeks + ')</label><input type="number" min="1" max="' + weeks + '" value="' + Math.min(weeks, (r.current_week || 1) + 1) + '" id="wk-n"/><label>Reason (optional)</label><textarea rows="2" id="wk-r"></textarea><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px"><button class="mbtn" type="button" data-x="cancel">Cancel</button><button class="mbtn pri" type="button" data-x="ok">Set week</button></div>');
+        m2.querySelector('[data-x="cancel"]').addEventListener('click', function(){ m2.remove(); });
+        m2.querySelector('[data-x="ok"]').addEventListener('click', async function(){
+          var n = parseInt(m2.querySelector('#wk-n').value, 10); if (!(n >= 1 && n <= weeks)) return;
+          var reason = m2.querySelector('#wk-r').value.trim(); m2.remove();
+          try { await ef('admin-member-programme', { action: 'advance_week', id: id, to_week: n, reason: reason || undefined }); toast('Week set to ' + n + ' · audit row written'); tabWorkouts(); } catch(e){ toast(e.message, true); }
+        });
+        return;
+      }
+      var reason = await confirmReason({ title: (act === 'pause' ? 'Pause' : 'Resume') + ' programme', requireReason: false, okLabel: act === 'pause' ? 'Pause' : 'Resume', body: '<div class="muted" style="font-size:var(--fs-xs)">' + esc(r.programme_name || '') + (act === 'resume' ? ' — any active row on the same surface is deactivated first.' : ' — the member keeps their history; the app shows no active programme on this surface.') + '</div>' });
+      if (reason === null) return;
+      b.disabled = true;
+      try { await ef('admin-member-programme', { action: act + '_programme', id: id, reason: reason || undefined }); toast('Programme ' + act + 'd · audit row written'); tabWorkouts(); renderHeadRefresh(); } catch(e){ toast(e.message, true); b.disabled = false; }
+    }); });
+    $('wp-assign').addEventListener('click', async function(){
+      var sel = $('wp-pick'), tid = sel.value; if (!tid){ toast('Choose a programme first', true); return; }
+      var t = tpls.find(function(x){ return x.id === tid; }), cur = active.find(function(r){ return r.surface === (t.surface || 'workouts'); });
+      var reason = await confirmReason({ title: 'Assign programme', requireReason: false, okLabel: 'Assign', body: '<div class="muted" style="font-size:var(--fs-xs)">' + (cur ? esc(cur.programme_name || 'current') + ' &rarr; ' : '') + '<b style="color:var(--text)">' + esc(t.name) + '</b> on the <b>' + esc(t.surface || 'workouts') + '</b> surface for ' + esc(nameOf(st.detail.member) || em) + '.</div>' + (cur ? '<div class="note-box" style="margin-top:8px">The current row is deactivated and kept in history.</div>' : '') });
+      if (reason === null) return;
+      try { var r = await ef('admin-member-programme', { action: 'assign_template', member_email: em, template_id: tid, reason: reason || undefined }); toast('Assigned ' + (r.programme_name || t.name) + ' · audit row written'); tabWorkouts(); renderHeadRefresh(); } catch(e){ toast(e.message, true); }
+    });
+  }
+  async function renderHeadRefresh(){ try { st.detail = await dash('member_detail', { email: st.m.email }); renderHead(); } catch(_){} }
+  async function previewProgramme(id, r){
+    var m2 = modal('<h3>' + esc((r && r.programme_name) || 'Programme') + '</h3><p class="muted" style="font-size:var(--fs-xs)">Loading&hellip;</p>');
+    try {
+      var d = await dash('member_programme', { id: id }); var pj = (d.programme && d.programme.programme_json) || {};
+      var weeks = Array.isArray(pj.weeks) ? pj.weeks : [];
+      var html = '<h3>' + esc(pj.programme_name || (r && r.programme_name) || 'Programme') + '</h3><div class="muted" style="font-size:var(--fs-xs);margin-bottom:8px">' + esc(pj.description || '') + (pj.sessions_per_week ? ' · ' + pj.sessions_per_week + ' sessions/week' : '') + ' · ' + weeks.length + ' weeks</div>';
+      html += weeks.slice(0, 12).map(function(w, i){ var ss = Array.isArray(w.sessions) ? w.sessions : []; return '<div style="border-top:1px solid var(--border);padding:8px 0"><b style="font-size:var(--fs-xs)">Week ' + (w.week || i + 1) + '</b><div class="muted" style="font-size:var(--fs-2xs)">' + (ss.length ? ss.map(function(s){ return esc(s.name || s.title || s.session_name || 'Session') + (Array.isArray(s.exercises) ? ' (' + s.exercises.length + ' exercises)' : ''); }).join(' · ') : 'No sessions') + '</div></div>'; }).join('');
+      html += '<div style="display:flex;justify-content:flex-end;margin-top:12px"><button class="mbtn" type="button" data-x="close">Close</button></div>';
+      m2.firstChild.innerHTML = html; m2.querySelector('[data-x="close"]').addEventListener('click', function(){ m2.remove(); });
+    } catch(e){ m2.firstChild.innerHTML = '<div class="warn-box">' + esc(e.message) + '</div>'; }
+  }
+
+  // ---------- tab: goals ----------
+  function mondayOf(d){ var x = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); var dow = x.getUTCDay(); x.setUTCDate(x.getUTCDate() - (dow === 0 ? 6 : dow - 1)); return x.toISOString().slice(0, 10); }
+  function shiftWeek(ws, n){ var x = new Date(ws + 'T00:00:00Z'); x.setUTCDate(x.getUTCDate() + 7 * n); return x.toISOString().slice(0, 10); }
+  async function tabGoals(){
+    var em = st.m.email, cur = mondayOf(new Date());
+    if (!st.goalsWeek) st.goalsWeek = cur;
+    var ws = st.goalsWeek;
+    var r = await ef('admin-member-weekly-goals', { action: 'get_weekly_goals', member_email: em, week_start: ws });
+    var g = r.goals, past = ws < cur;
+    var F = [['habits_target', 'Daily habits'], ['workouts_target', 'Workouts'], ['cardio_target', 'Cardio sessions'], ['sessions_target', 'Live sessions'], ['checkin_target', 'Weekly check-in']];
+    pane('<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px"><button class="mbtn sm" type="button" id="gl-prev">&larr; Previous</button><b>Week of ' + day(ws) + '</b>' + (ws === cur ? ' <span class="pill teal">this week</span>' : past ? ' <span class="pill">past · read only</span>' : ' <span class="pill">upcoming</span>') + '<button class="mbtn sm" type="button" id="gl-next">Next &rarr;</button>' + (ws !== cur ? '<button class="lnk" type="button" id="gl-today">Back to this week</button>' : '') + '</div>' +
+      '<div class="w5-box">' + (g ? '' : '<div class="note-box">No goals row for this week yet' + (past ? '.' : ' — saving creates one.') + '</div>') +
+      '<div class="grid2">' + F.map(function(f){ return '<div class="mfield"><label>' + f[1] + '</label><input type="number" min="0" max="14" id="gl-' + f[0] + '" value="' + (g && g[f[0]] != null ? g[f[0]] : (f[0] === 'checkin_target' ? 1 : 0)) + '"' + (past ? ' disabled' : '') + '/></div>'; }).join('') + '</div>' +
+      (past ? '' : '<div style="display:flex;gap:8px;margin-top:12px;align-items:center"><button class="mbtn pri" type="button" id="gl-save">Save targets</button><span class="muted" style="font-size:var(--fs-2xs)">Targets 0–14. Audit row written.</span></div>') + '</div>');
+    $('gl-prev').addEventListener('click', function(){ st.goalsWeek = shiftWeek(ws, -1); tabGoals(); });
+    $('gl-next').addEventListener('click', function(){ st.goalsWeek = shiftWeek(ws, 1); tabGoals(); });
+    if ($('gl-today')) $('gl-today').addEventListener('click', function(){ st.goalsWeek = cur; tabGoals(); });
+    if (!past) $('gl-save').addEventListener('click', async function(){
+      var body = { action: 'upsert_weekly_goals', member_email: em, week_start: ws };
+      F.forEach(function(f){ body[f[0]] = parseInt($('gl-' + f[0]).value, 10); });
+      if (F.some(function(f){ return !(body[f[0]] >= 0 && body[f[0]] <= 14); })){ toast('Each target must be 0–14', true); return; }
+      try { var r2 = await ef('admin-member-weekly-goals', body); toast(r2.no_op ? 'No change' : 'Targets saved · audit row written'); tabGoals(); } catch(e){ toast(e.message, true); }
+    });
+  }
+
+  // ---------- tab: nutrition ----------
+  async function tabNutrition(){
+    var m = st.detail.member;
+    var h = st.cache.health || (st.cache.health = await dash('member_health', { email: m.email }));
+    var wl = h.weight || [];
+    pane('<div class="grid2"><div class="w5-box"><div class="w5-sec">Targets on the member row</div><div class="kv">' +
+        roRow('Maintenance TDEE', m.tdee_maintenance != null ? m.tdee_maintenance + ' kcal' : null) + fieldRow('tdee_target', m) + fieldRow('deficit_percentage', m) + roRow('Weight (profile)', m.weight_kg != null ? m.weight_kg + ' kg' : null) + roRow('Height', m.height_cm != null ? m.height_cm + ' cm' : null) + '</div>' +
+        '<div class="muted" style="font-size:var(--fs-2xs);margin-top:8px">Calorie target and deficit are protected fields. Macros are derived in the app from these.</div></div>' +
+      '<div class="w5-box"><div class="w5-sec">Weight log · last ' + wl.length + '</div>' + (wl.length ? '<table class="tbl"><tr><th>Date</th><th>kg</th><th>Change</th></tr>' + wl.map(function(w, i){ var prev = wl[i + 1]; var d = prev ? Math.round((w.weight_kg - prev.weight_kg) * 10) / 10 : null; return '<tr><td>' + day(w.logged_date || w.logged_at) + '</td><td>' + esc(w.weight_kg) + '</td><td class="muted">' + (d == null ? '—' : (d > 0 ? '+' : '') + d) + '</td></tr>'; }).join('') + '</table>' : '<div class="empty">No weight entries.</div>') + '</div></div>');
+    wireEdits($('ma-pane'));
+  }
+
+  // ---------- tab: check-ins ----------
+  async function tabCheckins(){
+    var m = st.detail.member;
+    var h = st.cache.health || (st.cache.health = await dash('member_health', { email: m.email }));
+    var wk = h.weekly || [], mo = h.monthly || [], mood = h.mood || [];
+    var v = function(x){ return x == null ? '<span class="dim">—</span>' : esc(x); };
+    var wkRows = wk.map(function(c){ var nw = c.dimension_energy != null || c.dimension_sleep != null; return '<tr><td>' + day(c.activity_date || c.logged_at) + '</td><td>' + esc(c.check_in_type || 'weekly') + (c.branch ? ' · ' + esc(c.branch) : '') + '</td><td>' + v(c.score_wellbeing) + '</td><td>' + v(nw ? c.dimension_energy : c.score_energy) + '</td><td>' + v(nw ? c.dimension_sleep : c.score_sleep) + '</td><td>' + v(nw ? c.dimension_stress : c.score_stress) + '</td><td>' + v(nw ? c.dimension_body : c.score_physical) + '</td><td>' + v(c.composite_score) + '</td></tr>'; }).join('');
+    var last30 = mood.filter(function(x){ return (Date.now() - new Date(x.mood_date).getTime()) < 30 * 86400000; });
+    var avg = last30.length ? Math.round(last30.reduce(function(a, x){ return a + (x.mood_value || 0); }, 0) / last30.length * 10) / 10 : null;
+    var colour = function(val){ return val == null ? 'var(--surface-3)' : val >= 4 ? '#3DB89F' : val >= 3 ? 'var(--vyve-gold)' : '#E8834A'; };
+    pane('<div class="note-box">Read only. Scores only — check-in free text and AI recommendations are not shown here' + (isAdmin() ? ' (admin: they remain in the raw export).' : '.') + '</div>' +
+      '<div class="w5-sec">Weekly check-ins · ' + wk.length + '</div>' + (wk.length ? '<div class="tblwrap"><table class="tbl"><tr><th>Date</th><th>Type</th><th>Wellbeing</th><th>Energy</th><th>Sleep</th><th>Stress</th><th>Body</th><th>Composite</th></tr>' + wkRows + '</table></div>' : '<div class="empty">No weekly check-ins yet.</div>') +
+      '<div class="w5-sec" style="margin-top:16px">Monthly check-ins · ' + mo.length + '</div>' + (mo.length ? '<div class="tblwrap"><table class="tbl"><tr><th>Month</th><th>Avg</th><th>Wellbeing</th><th>Energy</th><th>Stress</th><th>Sleep</th><th>Diet</th><th>Social</th><th>Motivation</th><th>Goal progress</th></tr>' + mo.map(function(c){ return '<tr><td>' + esc(c.iso_month) + '</td><td><b>' + v(c.avg_score) + '</b></td><td>' + v(c.score_wellbeing) + '</td><td>' + v(c.score_energy) + '</td><td>' + v(c.score_stress) + '</td><td>' + v(c.score_sleep) + '</td><td>' + v(c.score_diet) + '</td><td>' + v(c.score_social) + '</td><td>' + v(c.score_motivation) + '</td><td>' + v(c.goal_progress_score) + '</td></tr>'; }).join('') + '</table></div>' : '<div class="empty">No monthly check-ins yet.</div>') +
+      '<div class="w5-sec" style="margin-top:16px">Daily mood · last 30 days</div><div class="w5-box"><div class="muted" style="font-size:var(--fs-xs);margin-bottom:8px">' + (last30.length ? last30.length + ' of the last 30 days logged · average ' + avg + ' / 5' : 'Nothing logged in the last 30 days.') + '</div><div class="mood-strip">' + mood.slice(0, 60).reverse().map(function(x){ return '<i title="' + esc(x.mood_date) + ' · ' + esc(x.mood_label || x.mood_value) + '" style="background:' + colour(x.mood_value) + '"></i>'; }).join('') + '</div></div>');
+  }
+
+  // ---------- tab: logs ----------
+  async function tabLogs(days){
+    days = days || 30; var em = st.m.email;
+    var jobs = [dash('member_timeline', { email: em, days: days })];
+    if (isAdmin()) jobs.push(ef('admin-member-edit', { action: 'member_audit_log', member_email: em, limit: 100 }).catch(function(){ return { audit_log: [] }; }));
+    var res = await Promise.all(jobs);
+    var items = [];
+    (res[0].rows || []).forEach(function(r){ if (res[0].mode === 'raw') items.push({ t: r.logged_at, html: '<b>' + esc(r.activity_label || r.activity_type || 'Activity') + '</b>' + (r.activity_type && r.activity_label && r.activity_type !== r.activity_label ? ' <span class="muted">' + esc(r.activity_type) + '</span>' : '') }); else items.push({ t: r.activity_date, html: '<b>' + esc(r.activity_date) + '</b> <span class="muted">' + esc(JSON.stringify(r).slice(0, 160)) + '</span>' }); });
+    if (res[1]) (res[1].audit_log || []).forEach(function(a){ items.push({ t: a.created_at, audit: true, html: '<b>' + esc(a.action) + '</b> by ' + esc(a.admin_email) + (a.column_name && a.column_name !== '__row__' ? ' · ' + esc(a.column_name) : '') + (a.new_value != null ? ' · ' + esc(short(a.new_value)) : '') + (a.reason ? ' · <i>' + esc(a.reason) + '</i>' : '') }); });
+    items.sort(function(a, b){ return (b.t || '') < (a.t || '') ? -1 : 1; });
+    pane('<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap"><span class="muted" style="font-size:var(--fs-xs)">Activity from the last ' + days + ' days' + (isAdmin() ? ', with admin actions highlighted' : '') + '.</span>' + (days <= 30 ? '<button class="lnk" type="button" id="lg-90">Show 90 days (daily totals)</button>' : '<button class="lnk" type="button" id="lg-30">Back to 30 days</button>') + '</div>' +
+      (items.length ? '<ul class="tl">' + items.slice(0, 300).map(function(i){ return '<li' + (i.audit ? ' class="audit"' : '') + '><span class="d">' + when(i.t) + '</span><span>' + i.html + '</span></li>'; }).join('') + '</ul>' : '<div class="empty">Nothing logged in this window.</div>'));
+    if ($('lg-90')) $('lg-90').addEventListener('click', function(){ tabLogs(90); });
+    if ($('lg-30')) $('lg-30').addEventListener('click', function(){ tabLogs(30); });
+  }
+  function short(v){ if (v == null) return ''; if (typeof v === 'object'){ if (v.programme_name) return v.programme_name; if (v.habit_title) return v.habit_title; return JSON.stringify(v).slice(0, 80); } return String(v).slice(0, 80); }
+
+  // ---------- tab: admin (admin role only) ----------
+  async function tabAdmin(){
+    if (!isAdmin()) throw new Error('Admin role required');
+    var m = st.detail.member, d = st.detail;
+    var res = await Promise.all([ef('admin-member-edit', { action: 'get_attribution', member_email: m.email }).catch(function(e){ return { error: e.message }; }), ef('admin-member-edit', { action: 'member_audit_log', member_email: m.email, limit: 50 }).catch(function(e){ return { audit_log: [], error: e.message }; }), st.cache.health || dash('member_health', { email: m.email })]);
+    st.cache.health = res[2];
+    var att = res[0], audit = res[1].audit_log || [], gd = res[2].gdpr_requests || [];
+    var subRows = ['trial_ends_at', 'trial_started_at', 'stripe_customer_id', 'stripe_subscription_id', 'subscription_ends_at', 'cancel_at', 'converted_at'].filter(function(k){ return k in m; });
+    pane('<div class="warn-box">Admin only. A team login never renders this tab.</div><div class="grid2">' +
+      '<div class="w5-box"><div class="w5-sec">Subscription</div><div class="kv">' + fieldRow('subscription_status', m) + roRow('Account type', m.account_type) + subRows.map(function(k){ return roRow(k.replace(/_/g, ' '), /_at$/.test(k) ? day(m[k]) : m[k]); }).join('') + fieldRow('re_engagement_stream', m) + '</div></div>' +
+      '<div class="w5-box"><div class="w5-sec">Attribution</div>' + (att.error ? '<div class="muted" style="font-size:var(--fs-xs)">' + esc(att.error) + '</div>' : '<div class="kv">' + roRow('Partner code', att.attribution && att.attribution.signup_campaign_code) + roRow('Source', att.attribution && att.attribution.attribution_source) + roRow('Granted by', att.attribution && att.attribution.attribution_admin) + '</div>' + (att.converted || att.enterprise ? '<div class="muted" style="font-size:var(--fs-2xs);margin-top:8px">' + (att.converted ? 'Locked — member has converted.' : 'Enterprise members carry no partner attribution.') + '</div>' : '<div style="display:flex;gap:8px;align-items:end;margin-top:10px;flex-wrap:wrap"><div class="mfield" style="flex:1;min-width:180px"><label>Set partner</label><select id="at-pick"><option value="">— clear —</option>' + (att.partners || []).map(function(p){ return '<option value="' + esc(p.slug) + '"' + (att.attribution && att.attribution.signup_campaign_code === p.slug ? ' selected' : '') + '>' + esc(p.name) + ' (' + esc(p.status) + ')</option>'; }).join('') + '</select></div><button class="mbtn sm pri" type="button" id="at-save">Save</button></div>')) + '</div>' +
+      '<div class="w5-box"><div class="w5-sec">Devices &amp; certificates</div><div class="muted" style="font-size:var(--fs-xs)">Push subscriptions: ' + (d.push_subs || []).length + (d.push_subs && d.push_subs.length ? ' (latest ' + day(d.push_subs[d.push_subs.length - 1].created_at) + ')' : '') + '<br/>Certificates: ' + ((d.certificates || []).length ? d.certificates.map(function(c){ return esc(c.activity_type) + ' ' + esc(c.milestone_count) + (c.global_cert_number ? ' · No. ' + String(c.global_cert_number).padStart(4, '0') : '') + ' · ' + day(c.earned_at); }).join('<br/>') : 'none') + '</div></div>' +
+      '<div class="w5-box"><div class="w5-sec">GDPR</div><div class="muted" style="font-size:var(--fs-xs)">' + (gd.length ? gd.map(function(g){ return esc(g.request_kind || 'erasure') + ' requested ' + day(g.requested_at) + ' by ' + esc(g.requested_by || '—') + ' · ' + (g.executed_at ? 'executed ' + day(g.executed_at) : g.cancelled_at ? 'cancelled ' + day(g.cancelled_at) : g.failed_at ? 'FAILED ' + day(g.failed_at) : 'scheduled ' + day(g.scheduled_for)); }).join('<br/>') : 'No erasure requests.') + '<br/><span class="dim">Export and erasure are member-initiated in the app (Article 15/17 pipeline); a staff-initiated path is not wired here.</span></div></div>' +
+      '</div>' +
+      (d.emails && d.emails.length ? '<div class="w5-sec">Re-engagement emails · last ' + d.emails.length + '</div><div class="tblwrap"><table class="tbl"><tr><th>Sent</th><th>Stream</th><th>Email</th><th>Opens</th><th>Clicks</th></tr>' + d.emails.slice(0, 10).map(function(e){ return '<tr><td>' + day(e.sent_at) + '</td><td>' + esc(e.stream) + '</td><td>' + esc(e.email_key) + '</td><td>' + esc(e.open_count) + '</td><td>' + esc(e.click_count) + '</td></tr>'; }).join('') + '</table></div>' : '') +
+      (d.notifications && d.notifications.length ? '<div class="w5-sec" style="margin-top:14px">In-app notifications · last ' + d.notifications.length + '</div><div class="tblwrap"><table class="tbl"><tr><th>When</th><th>Type</th><th>Title</th><th>Read</th></tr>' + d.notifications.slice(0, 10).map(function(n){ return '<tr><td>' + when(n.created_at) + '</td><td>' + esc(n.type) + '</td><td>' + esc(n.title) + '</td><td>' + (n.read ? 'yes' : 'no') + '</td></tr>'; }).join('') + '</table></div>' : '') +
+      '<div class="w5-sec" style="margin-top:14px">Audit log · ' + audit.length + '</div>' + (audit.length ? '<div class="tblwrap"><table class="tbl"><tr><th>When</th><th>Who</th><th>Action</th><th>Field</th><th>Change</th><th>Reason</th></tr>' + audit.map(function(a){ return '<tr><td>' + when(a.created_at) + '</td><td>' + esc(a.admin_email) + '</td><td>' + esc(a.action) + '</td><td>' + esc(a.column_name === '__row__' ? a.table_name : a.column_name) + '</td><td>' + esc(short(a.old_value)) + (a.old_value != null ? ' → ' : '') + esc(short(a.new_value)) + '</td><td class="muted">' + esc(a.reason || '') + '</td></tr>'; }).join('') + '</table></div>' : '<div class="empty">No admin actions recorded for this member.</div>'));
+    wireEdits($('ma-pane'));
+    if ($('at-save')) $('at-save').addEventListener('click', async function(){
+      var slug = $('at-pick').value || null;
+      var reason = await confirmReason({ title: slug ? 'Grant partner attribution' : 'Clear partner attribution', requireReason: true, okLabel: 'Save' });
+      if (reason === null) return;
+      try { await ef('admin-member-edit', { action: 'set_attribution', member_email: m.email, slug: slug, reason: reason }); toast('Attribution saved · audit row written'); tabAdmin(); } catch(e){ toast(e.message, true); }
+    });
+  }
+
+  // ---------- boot ----------
+  (async function boot(){
+    try { var tn = document.getElementById('topnav'); root.style.setProperty('--ma-top', ((tn ? tn.offsetHeight : 94) + 16) + 'px'); } catch(_){}
+    await resolveRole();
+    $('ma-who').textContent = (st.email || '—') + ' · ' + (st.role || '—');
+    await loadMembers();
+    var h = decodeURIComponent((location.hash || '').replace(/^#\/?member-admin\/?/, ''));
+    if (h && h.indexOf('@') > 0) openMember(h);
+  })();
+})();
+</script>
+</div>
