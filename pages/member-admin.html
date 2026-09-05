@@ -6,6 +6,8 @@
      CC fragment inside the shell. Data = admin-dashboard / admin-member-edit /
      admin-member-habits / admin-member-programme / admin-member-weekly-goals.
      Role: 'team' never renders the Admin tab; persona / consent read-only for team.
+     W4 (PM-1033/1034): tags (member_tags, admin-batch-assign EF) on Overview, list
+     and Settings; Batch assign view (cohort → template → dry run → apply → revert).
      ============================================================================ -->
 <style>
   #page-member-admin .ma { display: grid; grid-template-columns: 1fr; gap: 0; min-height: 70vh; border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden; background: var(--bg); }
@@ -122,6 +124,13 @@
   .ma-modal-card label { display: block; font-size: var(--fs-xs); font-weight: var(--fw-semi); color: var(--text-muted); margin: 10px 0 5px; }
   .ma-toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: 26px; background: var(--surface-2); color: var(--text); border: 1px solid var(--border); border-radius: var(--r-md); padding: 10px 16px; font-size: var(--fs-xs); z-index: var(--z-toast); box-shadow: var(--shadow-md); max-width: 90vw; }
   .ma-toast.err { border-color: rgba(232,131,74,.5); }
+  /* W4 — tags */
+  #page-member-admin .tagchip { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-2xs); font-weight: var(--fw-semi); padding: 3px 9px; border-radius: var(--r-pill); background: rgba(201,168,76,.12); color: var(--vyve-gold); border: 1px solid rgba(201,168,76,.4); }
+  #page-member-admin .tagchip .x { cursor: pointer; opacity: .7; background: none; border: none; color: inherit; font: inherit; padding: 0; line-height: 1; } #page-member-admin .tagchip .x:hover { opacity: 1; }
+  #page-member-admin .tag-edit { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  #page-member-admin .tag-edit input { width: 160px; padding: 4px 8px; font-size: var(--fs-xs); border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--surface-2); color: var(--text); font-family: inherit; outline: none; }
+  #page-member-admin .tag-edit input:focus { border-color: var(--vyve-teal); }
+  #page-member-admin .nm .tagchip { padding: 1px 7px; margin-left: 4px; }
 </style>
 
 <div class="ma">
@@ -135,7 +144,7 @@
     <a class="cp-item cp-subitem" href="/coach-portal.html#kindsel:workout_day"><span>Day templates</span><span class="ext">&#8599;</span></a>
     <a class="cp-item cp-subitem" href="/coach-portal.html#exercises"><span>Exercise library</span><span class="ext">&#8599;</span></a>
     <a class="cp-item cp-subitem" href="/coach-portal.html#kindsel:habits"><span>Habits</span><span class="ext">&#8599;</span></a>
-    <button class="cp-item" type="button" disabled title="W4" style="margin-top:var(--s-2)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span><span class="soon">W4</span></button>
+    <button class="cp-item" type="button" data-view="settings" style="margin-top:var(--s-2)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></button>
     <div class="cp-foot">Library items open the coach portal at VYVE scope. Signed in as <span id="ma-who">&mdash;</span>.</div>
   </aside>
 
@@ -146,6 +155,7 @@
       <a class="chip" href="/coach-portal.html#kindsel:program">Programmes &#8599;</a>
       <a class="chip" href="/coach-portal.html#exercises">Exercises &#8599;</a>
       <a class="chip" href="/coach-portal.html#kindsel:habits">Habits &#8599;</a>
+      <button class="chip" data-view="settings" type="button">Settings</button>
     </div>
 
     <section id="ma-v-dashboard" style="display:none">
@@ -187,6 +197,16 @@
         <div id="ma-pane"><p class="muted" style="font-size:var(--fs-xs)">Loading&hellip;</p></div>
       </div>
     </section>
+
+    <!-- ===== settings (W4, PM-1033) ===== -->
+    <section id="ma-v-settings" style="display:none">
+      <div class="mcard">
+        <div class="mcard-title">Settings <button class="mbtn sm" id="ma-tags-refresh" type="button" style="margin-left:auto">Refresh</button></div>
+        <div class="w5-sec">Tags</div>
+        <div class="note-box">Tags are staff-only labels for building cohorts. Members never see them. Add a tag from a member&rsquo;s Overview; renaming into an existing name merges the two; deleting removes the tag from every member.</div>
+        <div id="ma-tags-body" class="muted" style="font-size:var(--fs-sm)">Loading&hellip;</div>
+      </div>
+    </section>
   </main>
 </div>
 
@@ -203,8 +223,9 @@
 
   var st = {
     role: null, email: null,
-    members: [], filter: { acct: 'all', sub: 'all', company: 'all', flag: 'all' }, search: '', sort: 'last',
-    schema: null, m: null, detail: null, tab: 'overview', cache: {}, goalsWeek: null
+    members: [], filter: { acct: 'all', sub: 'all', company: 'all', flag: 'all', tag: 'all' }, search: '', sort: 'last',
+    schema: null, m: null, detail: null, tab: 'overview', cache: {}, goalsWeek: null,
+    tagMap: {}, tagList: []
   };
 
   // ---------- auth + transport ----------
@@ -279,10 +300,11 @@
 
   // ---------- views ----------
   function showView(v){
-    ['dashboard', 'members', 'member'].forEach(function(x){ var el = $('ma-v-' + x); if (el) el.style.display = x === v ? '' : 'none'; });
+    ['dashboard', 'members', 'member', 'settings'].forEach(function(x){ var el = $('ma-v-' + x); if (el) el.style.display = x === v ? '' : 'none'; });
     root.querySelectorAll('[data-view]').forEach(function(b){ b.classList.toggle('active', b.dataset.view === v); b.classList.toggle('on', b.dataset.view === v && b.classList.contains('chip')); });
     if (v !== 'member'){ try { history.replaceState(null, '', '#/member-admin'); } catch(_){} }
     if (v === 'dashboard') loadDashboard();
+    if (v === 'settings') loadSettings();
   }
   root.querySelectorAll('[data-view]').forEach(function(b){ b.addEventListener('click', function(){ showView(b.dataset.view); }); });
 
@@ -298,6 +320,7 @@
         current_programme: r.current_programme, programme_week: r.programme_week, programme_active: r.programme_active, activities_7d: r.activities_7d, cert_count: r.cert_count
       }; });
       $('ma-count').textContent = d.total != null ? d.total : st.members.length;
+      await loadTagMap();
       renderChips(); renderRows();
     } catch(e){ $('ma-rows').innerHTML = '<tr><td colspan="7" class="empty">Could not load members — ' + esc(e.message) + '</td></tr>'; }
   }
@@ -314,11 +337,12 @@
     if (sup) html += chip('flag', 'support', 'Needs support', sup);
     if (risk) html += chip('flag', 'risk', 'At risk', risk);
     if (test) html += chip('flag', 'test', 'Test accounts', test);
+    if (st.tagList.length){ html += '<span class="chip-sep"></span>'; st.tagList.forEach(function(t){ html += chip('tag', t.tag, '# ' + t.tag, t.count); }); }
     $('ma-chips').innerHTML = html;
     $('ma-chips').querySelectorAll('.chip').forEach(function(b){ b.addEventListener('click', function(){
       var g = b.dataset.g, v = b.dataset.v;
       st.filter[g] = (st.filter[g] === v) ? 'all' : v;
-      if (g === 'acct' && v === 'all') st.filter = { acct: 'all', sub: 'all', company: 'all', flag: 'all' };
+      if (g === 'acct' && v === 'all') st.filter = { acct: 'all', sub: 'all', company: 'all', flag: 'all', tag: 'all' };
       renderChips(); renderRows();
     }); });
   }
@@ -332,6 +356,7 @@
       if (f.flag === 'support' && !m.needs_support) return false;
       if (f.flag === 'risk' && !m.at_risk) return false;
       if (f.flag === 'test' && !m.is_test) return false;
+      if (f.tag !== 'all' && !hasTag(m.email, f.tag)) return false;
       if (q){ var hay = ((nameOf(m) || '') + ' ' + m.email + ' ' + (m.company || '')).toLowerCase(); if (hay.indexOf(q) < 0) return false; }
       return true;
     });
@@ -349,7 +374,7 @@
     if (!rows.length){ $('ma-rows').innerHTML = '<tr><td colspan="7" class="empty">No members match. Clear a filter or change the search.</td></tr>'; $('ma-foot').textContent = ''; return; }
     $('ma-rows').innerHTML = rows.map(function(m){
       var prog = m.current_programme ? esc(m.current_programme) + (m.programme_week ? ' <span class="dim">· wk ' + m.programme_week + '</span>' : '') + (m.programme_active === false ? ' <span class="dim">· paused</span>' : '') : '<span class="dim">None</span>';
-      return '<tr class="row" data-em="' + esc(m.email) + '"><td><div class="nm"><span class="cl-av">' + esc(initials(m)) + '</span><div><div>' + (nameOf(m) ? esc(nameOf(m)) : '<span class="dim">No name yet</span>') + (m.is_test ? ' <span class="pill" style="opacity:.7">test</span>' : '') + (m.needs_support ? ' <span class="pill warn">support</span>' : '') + '</div><div class="e">' + esc(m.email) + '</div></div></div></td>' +
+      return '<tr class="row" data-em="' + esc(m.email) + '"><td><div class="nm"><span class="cl-av">' + esc(initials(m)) + '</span><div><div>' + (nameOf(m) ? esc(nameOf(m)) : '<span class="dim">No name yet</span>') + (m.is_test ? ' <span class="pill" style="opacity:.7">test</span>' : '') + (m.needs_support ? ' <span class="pill warn">support</span>' : '') + (st.tagMap[m.email] || []).map(function(t){ return ' <span class="tagchip">' + esc(t) + '</span>'; }).join('') + '</div><div class="e">' + esc(m.email) + '</div></div></div></td>' +
         '<td>' + esc(m.company || '—') + '</td><td>' + acctPill(m.account_type) + ' ' + subPill(m.subscription_status) + '</td><td>' + esc(m.exercise_stream || '—') + '</td><td>' + prog + '</td><td>' + (m.engagement_score != null ? m.engagement_score : '—') + '</td><td class="muted">' + rel(m.last_activity_at) + '</td></tr>';
     }).join('');
     $('ma-rows').querySelectorAll('tr.row').forEach(function(tr){ tr.addEventListener('click', function(){ openMember(tr.dataset.em); }); });
@@ -500,12 +525,15 @@
     var left = ['first_name', 'last_name', 'company', 'goal_focus', 'exercise_stream', 'training_days_per_week', 'tone_preference', 'reminder_frequency', 'contact_preference'];
     var right = ['theme_preference', 'display_name_preference', 'notifications_milestones', 'notifications_weekly_summary', 'privacy_employer_reporting', 'persona', 'health_data_consent'];
     if (isAdmin()) right.push('sensitive_context');
-    var html = '<div class="note-box">Plain fields save inline. Fields marked <span class="lock">reason</span> open a reason prompt and write an audit row.' + (isAdmin() ? '' : ' Persona, consent and subscription are admin-only.') + '</div>' +
+    var html = '<div class="w5-box"><div class="w5-sec" style="display:flex;align-items:center;gap:8px">Tags <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:var(--fw-normal)">staff-only, for cohorts</span></div><div id="ma-tagbox" class="muted" style="font-size:var(--fs-xs)">Loading&hellip;</div></div>' +
+      '<div class="note-box">Plain fields save inline. Fields marked <span class="lock">reason</span> open a reason prompt and write an audit row.' + (isAdmin() ? '' : ' Persona, consent and subscription are admin-only.') + '</div>' +
       '<div class="kv two">' + left.map(function(f){ return fieldRow(f, m, { blockedNote: true }); }).join('') + right.map(function(f){ return fieldRow(f, m, { blockedNote: true }); }).join('') + '</div>' +
       '<div class="w5-sec" style="margin-top:16px">From onboarding</div><div class="kv two">' +
       roRow('Primary goal', m.primary_goal) + roRow('Goal summary', m.goal_summary) + roRow('Experience', m.experience_level) + roRow('Location · equipment', [m.training_location, m.equipment].filter(Boolean).join(' · ')) +
       roRow('Timezone', m.timezone) + roRow('Member state', m.member_state) + roRow('Onboarding completed', day(m.onboarding_completed_at)) + roRow('Joined', day(m.created_at)) + '</div>';
     pane(html); wireEdits($('ma-pane'));
+    try { var tj = await batchEf({ action: 'get_member_tags', member_email: m.email }); st.tagMap[m.email] = tj.tags || []; renderTagBox(m.email, tj.tags || []); }
+    catch(e){ var tb = $('ma-tagbox'); if (tb) tb.innerHTML = '<span class="dim">Tags unavailable — ' + esc(e.message) + '</span>'; }
   }
 
   // ---------- tab: habits ----------
@@ -710,6 +738,80 @@
       try { await ef('admin-member-edit', { action: 'set_attribution', member_email: m.email, slug: slug, reason: reason }); toast('Attribution saved · audit row written'); tabAdmin(); } catch(e){ toast(e.message, true); }
     });
   }
+
+  // ---------- tags (W4) ----------
+  var batchEf = function(body){ return ef('admin-batch-assign', body); };
+  function hasTag(email, tag){ var l = st.tagMap[email]; if (!l) return false; tag = String(tag).toLowerCase(); return l.some(function(t){ return String(t).toLowerCase() === tag; }); }
+  async function loadTagMap(){
+    // member_tags carries a staff-only RLS policy (mtag_staff_all), so a direct PostgREST read is the cheap path here.
+    try {
+      var r = await S.client.from('member_tags').select('member_email, tag').order('tag');
+      if (r.error) throw r.error;
+      var map = {}, counts = {};
+      (r.data || []).forEach(function(x){ (map[x.member_email] = map[x.member_email] || []).push(x.tag); var k = String(x.tag).toLowerCase(); counts[k] = counts[k] || { tag: x.tag, count: 0 }; counts[k].count++; });
+      st.tagMap = map;
+      st.tagList = Object.keys(counts).sort().map(function(k){ return counts[k]; });
+    } catch(e){ st.tagMap = {}; st.tagList = []; console.warn('member_tags read failed', e && e.message); }
+  }
+  function tagDatalist(id){ return '<datalist id="' + id + '">' + st.tagList.map(function(t){ return '<option value="' + esc(t.tag) + '"></option>'; }).join('') + '</datalist>'; }
+  function renderTagBox(email, tags){
+    var box = $('ma-tagbox'); if (!box) return;
+    box.innerHTML = '<div class="tag-edit">' + tags.map(function(t){ return '<span class="tagchip">' + esc(t) + ' <button class="x" type="button" data-tag="' + esc(t) + '" title="Remove tag">&times;</button></span>'; }).join('') +
+      '<input list="ma-tag-dl" placeholder="' + (tags.length ? 'Add tag' : 'Add a tag') + ' — Enter to save" maxlength="40" autocomplete="off"/>' + tagDatalist('ma-tag-dl') + '</div>';
+    var save = async function(next){
+      try {
+        var j = await batchEf({ action: 'set_member_tags', member_email: email, tags: next });
+        st.tagMap[email] = j.tags || [];
+        await loadTagMap(); renderTagBox(email, st.tagMap[email] || []);
+        toast(j.added && j.added.length ? 'Tag added' : 'Tag removed');
+      } catch(e){ toast(e.message, true); renderTagBox(email, tags); }
+    };
+    box.querySelectorAll('.x').forEach(function(b){ b.addEventListener('click', function(){ save(tags.filter(function(t){ return t !== b.dataset.tag; })); }); });
+    var inp = box.querySelector('input');
+    inp.addEventListener('keydown', function(e){
+      if (e.key !== 'Enter') return; e.preventDefault();
+      var v = inp.value.trim().replace(/\s+/g, ' '); if (!v) return;
+      if (tags.some(function(t){ return t.toLowerCase() === v.toLowerCase(); })){ inp.value = ''; return; }
+      if (tags.length >= 20){ toast('20 tags per member is the limit', true); return; }
+      save(tags.concat([v]));
+    });
+  }
+  async function loadSettings(){
+    var el = $('ma-tags-body'); el.innerHTML = 'Loading&hellip;';
+    try {
+      var j = await batchEf({ action: 'list_tags' });
+      var tags = j.tags || [];
+      st.tagList = tags;
+      if (!tags.length){ el.innerHTML = '<div class="empty">No tags yet. Open a member and add one from their Overview.</div>'; return; }
+      el.innerHTML = '<div class="tblwrap"><table class="cl-tbl"><thead><tr><th>Tag</th><th>Members</th><th></th></tr></thead><tbody>' + tags.map(function(t){
+        return '<tr><td><span class="tagchip">' + esc(t.tag) + '</span></td><td>' + t.count + '</td><td style="text-align:right;white-space:nowrap"><button class="mbtn sm" type="button" data-ren="' + esc(t.tag) + '">Rename</button> <button class="mbtn sm danger" type="button" data-del="' + esc(t.tag) + '" data-n="' + t.count + '">Delete</button></td></tr>';
+      }).join('') + '</tbody></table></div>';
+      el.querySelectorAll('[data-ren]').forEach(function(b){ b.addEventListener('click', function(){ renameTag(b.dataset.ren); }); });
+      el.querySelectorAll('[data-del]').forEach(function(b){ b.addEventListener('click', function(){ deleteTag(b.dataset.del, parseInt(b.dataset.n, 10) || 0); }); });
+    } catch(e){ el.innerHTML = '<div class="warn-box">Could not load tags — ' + esc(e.message) + '</div>'; }
+  }
+  function renameTag(from){
+    var m = modal('<h3>Rename tag</h3><label>From</label><input value="' + esc(from) + '" disabled><label>To</label><input id="rt-to" value="' + esc(from) + '" maxlength="40">' +
+      '<p class="muted" style="font-size:var(--fs-2xs);margin-top:8px">If the new name already exists the two merge; nobody ends up tagged twice.</p>' +
+      '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px"><button class="mbtn" type="button" data-x="cancel">Cancel</button><button class="mbtn pri" type="button" data-x="ok">Rename</button></div>');
+    var inp = m.querySelector('#rt-to'); inp.focus(); inp.select();
+    m.querySelector('[data-x="cancel"]').addEventListener('click', function(){ m.remove(); });
+    m.querySelector('[data-x="ok"]').addEventListener('click', async function(){
+      var to = inp.value.trim().replace(/\s+/g, ' '); if (!to || to === from){ m.remove(); return; }
+      try { var j = await batchEf({ action: 'rename_tag', from: from, to: to }); m.remove(); toast('Renamed on ' + j.renamed + (j.merged ? ', merged ' + j.merged : '') + ' member' + (j.renamed + j.merged === 1 ? '' : 's')); await loadTagMap(); loadSettings(); if (st.members.length) renderChips(); }
+      catch(e){ toast(e.message, true); }
+    });
+  }
+  function deleteTag(tag, n){
+    var m = modal('<h3>Delete tag &ldquo;' + esc(tag) + '&rdquo;?</h3><p class="muted" style="font-size:var(--fs-xs)">Removes it from ' + n + ' member' + (n === 1 ? '' : 's') + '. Nothing else changes &mdash; no programmes, no habits.</p>' +
+      '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px"><button class="mbtn" type="button" data-x="cancel">Cancel</button><button class="mbtn danger" type="button" data-x="ok">Delete from ' + n + ' member' + (n === 1 ? '' : 's') + '</button></div>');
+    m.querySelector('[data-x="cancel"]').addEventListener('click', function(){ m.remove(); });
+    m.querySelector('[data-x="ok"]').addEventListener('click', async function(){
+      try { var j = await batchEf({ action: 'delete_tag', tag: tag }); m.remove(); toast('Deleted from ' + j.removed + ' member' + (j.removed === 1 ? '' : 's')); await loadTagMap(); loadSettings(); if (st.members.length) renderChips(); }
+      catch(e){ toast(e.message, true); }
+    });
+  }
+  $('ma-tags-refresh').addEventListener('click', loadSettings);
 
   // ---------- boot ----------
   (async function boot(){
