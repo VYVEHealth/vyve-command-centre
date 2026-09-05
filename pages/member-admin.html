@@ -6,6 +6,7 @@
      CC fragment inside the shell. Data = admin-dashboard / admin-member-edit /
      admin-member-habits / admin-member-programme / admin-member-weekly-goals.
      Role: 'team' never renders the Admin tab; persona / consent read-only for team.
+     W6 (PM-1040): Messages tab = the member's VYVE thread (coach_messages, partner_id IS NULL); unread-reply pill + facet on the list.
      W4 (PM-1033/1034): tags (member_tags, admin-batch-assign EF) on Overview, list
      and Settings; Batch assign view (cohort → template → dry run → apply → revert).
      ============================================================================ -->
@@ -159,6 +160,27 @@
   #page-member-admin .batch-row:last-child { border-bottom: none; }
   #page-member-admin .batch-row small { display: block; color: var(--text-muted); font-size: var(--fs-2xs); }
   #page-member-admin .ml-search.sm { min-width: 0; padding: 5px 10px; } #page-member-admin .ml-search.sm input { font-size: var(--fs-sm); }
+  /* W6 (PM-1040): Messages tab + unread-reply pill */
+  #page-member-admin .w5-tab .tdot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #E8834A; margin-left: 6px; vertical-align: middle; }
+  #page-member-admin .msg-wrap { display: grid; grid-template-columns: 1fr; gap: 14px; }
+  #page-member-admin .msg-thread { border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface); display: flex; flex-direction: column; min-height: 420px; max-height: 560px; }
+  #page-member-admin .msg-scroll { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+  #page-member-admin .msg-day { align-self: center; font-size: var(--fs-2xs); color: var(--text-muted); border: 1px solid var(--border); border-radius: var(--r-pill); padding: 2px 10px; margin: 4px 0; }
+  #page-member-admin .msg-b { max-width: 78%; padding: 9px 13px; border-radius: 14px; font-size: var(--fs-sm); line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+  #page-member-admin .msg-b.member { align-self: flex-start; background: var(--surface-2); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+  #page-member-admin .msg-b.vyve { align-self: flex-end; background: var(--vyve-teal); color: #fff; border-bottom-right-radius: 4px; }
+  #page-member-admin .msg-t { font-size: var(--fs-2xs); color: var(--text-muted); margin-top: -4px; }
+  #page-member-admin .msg-t.r { align-self: flex-end; margin-right: 4px; }
+  #page-member-admin .msg-t.l { align-self: flex-start; margin-left: 4px; }
+  #page-member-admin .msg-t .who { color: var(--teal-lt); font-weight: var(--fw-semi); }
+  #page-member-admin .msg-compose { display: flex; gap: 8px; align-items: flex-end; padding: 10px 12px; border-top: 1px solid var(--border); }
+  #page-member-admin .msg-compose textarea { flex: 1; resize: none; min-height: 40px; max-height: 120px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 9px 12px; color: var(--text); font: inherit; font-size: var(--fs-sm); outline: none; }
+  #page-member-admin .msg-side .w5-box { margin-bottom: 10px; }
+  #page-member-admin .msg-side dl { margin: 0; font-size: var(--fs-xs); }
+  #page-member-admin .msg-side dt { color: var(--text-muted); font-size: var(--fs-2xs); text-transform: uppercase; letter-spacing: .05em; margin-top: 8px; }
+  #page-member-admin .msg-side dd { margin: 2px 0 0; }
+  #page-member-admin .msgpill { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-2xs); font-weight: var(--fw-bold); border-radius: var(--r-pill); padding: 1px 8px; background: rgba(232,131,74,.13); color: #E8834A; border: 1px solid rgba(232,131,74,.4); line-height: 1.6; }
+  @media (min-width: 900px) { #page-member-admin .msg-wrap { grid-template-columns: 1fr 260px; } }
 </style>
 
 <div class="ma">
@@ -312,7 +334,8 @@
     role: null, email: null,
     members: [], filter: { acct: 'all', sub: 'all', company: 'all', flag: 'all', tag: 'all' }, search: '', sort: 'last',
     schema: null, m: null, detail: null, tab: 'overview', cache: {}, goalsWeek: null,
-    tagMap: {}, tagList: []
+    tagMap: {}, tagList: [],
+    msgUnread: {}, msgPoll: null
   };
 
   // ---------- auth + transport ----------
@@ -393,6 +416,7 @@
 
   // ---------- views ----------
   function showView(v){
+    stopMsgPoll();
     ['dashboard', 'members', 'member', 'settings', 'batch'].forEach(function(x){ var el = $('ma-v-' + x); if (el) el.style.display = x === v ? '' : 'none'; });
     root.querySelectorAll('[data-view]').forEach(function(b){ b.classList.toggle('active', b.dataset.view === v); b.classList.toggle('on', b.dataset.view === v && b.classList.contains('chip')); });
     if (v !== 'member'){ try { history.replaceState(null, '', '#/member-admin'); } catch(_){} }
@@ -414,7 +438,7 @@
         current_programme: r.current_programme, programme_week: r.programme_week, programme_active: r.programme_active, activities_7d: r.activities_7d, cert_count: r.cert_count
       }; });
       $('ma-count').textContent = d.total != null ? d.total : st.members.length;
-      await loadTagMap();
+      await Promise.all([loadTagMap(), loadMsgUnread()]);
       renderChips(); renderRows();
     } catch(e){ $('ma-rows').innerHTML = '<tr><td colspan="7" class="empty">Could not load members — ' + esc(e.message) + '</td></tr>'; }
   }
@@ -431,12 +455,15 @@
     if (sup) html += chip('flag', 'support', 'Needs support', sup);
     if (risk) html += chip('flag', 'risk', 'At risk', risk);
     if (test) html += chip('flag', 'test', 'Test accounts', test);
+    var replies = Object.keys(st.msgUnread).filter(function(e){ return st.msgUnread[e] > 0; }).length;
+    if (replies) html += chip('flag', 'replies', '\u2709 Unread replies', replies);
     if (st.tagList.length){ html += '<span class="chip-sep"></span>'; st.tagList.forEach(function(t){ html += chip('tag', t.tag, '# ' + t.tag, t.count); }); }
     $('ma-chips').innerHTML = html;
     $('ma-chips').querySelectorAll('.chip').forEach(function(b){ b.addEventListener('click', function(){
       var g = b.dataset.g, v = b.dataset.v;
       st.filter[g] = (st.filter[g] === v) ? 'all' : v;
       if (g === 'acct' && v === 'all') st.filter = { acct: 'all', sub: 'all', company: 'all', flag: 'all', tag: 'all' };
+      if (g === 'flag' && v === 'replies') loadMsgUnread().then(renderRows);
       renderChips(); renderRows();
     }); });
   }
@@ -450,6 +477,7 @@
       if (f.flag === 'support' && !m.needs_support) return false;
       if (f.flag === 'risk' && !m.at_risk) return false;
       if (f.flag === 'test' && !m.is_test) return false;
+      if (f.flag === 'replies' && !(st.msgUnread[m.email] > 0)) return false;
       if (f.tag !== 'all' && !hasTag(m.email, f.tag)) return false;
       if (q){ var hay = ((nameOf(m) || '') + ' ' + m.email + ' ' + (m.company || '')).toLowerCase(); if (hay.indexOf(q) < 0) return false; }
       return true;
@@ -468,7 +496,7 @@
     if (!rows.length){ $('ma-rows').innerHTML = '<tr><td colspan="7" class="empty">No members match. Clear a filter or change the search.</td></tr>'; $('ma-foot').textContent = ''; return; }
     $('ma-rows').innerHTML = rows.map(function(m){
       var prog = m.current_programme ? esc(m.current_programme) + (m.programme_week ? ' <span class="dim">· wk ' + m.programme_week + '</span>' : '') + (m.programme_active === false ? ' <span class="dim">· paused</span>' : '') : '<span class="dim">None</span>';
-      return '<tr class="row" data-em="' + esc(m.email) + '"><td><div class="nm"><span class="cl-av">' + esc(initials(m)) + '</span><div><div>' + (nameOf(m) ? esc(nameOf(m)) : '<span class="dim">No name yet</span>') + (m.is_test ? ' <span class="pill" style="opacity:.7">test</span>' : '') + (m.needs_support ? ' <span class="pill warn">support</span>' : '') + (st.tagMap[m.email] || []).map(function(t){ return ' <span class="tagchip">' + esc(t) + '</span>'; }).join('') + '</div><div class="e">' + esc(m.email) + '</div></div></div></td>' +
+      return '<tr class="row" data-em="' + esc(m.email) + '"><td><div class="nm"><span class="cl-av">' + esc(initials(m)) + '</span><div><div>' + (nameOf(m) ? esc(nameOf(m)) : '<span class="dim">No name yet</span>') + (m.is_test ? ' <span class="pill" style="opacity:.7">test</span>' : '') + (m.needs_support ? ' <span class="pill warn">support</span>' : '') + (st.msgUnread[m.email] > 0 ? ' <span class="msgpill">\u2709 ' + st.msgUnread[m.email] + (st.msgUnread[m.email] === 1 ? ' reply' : ' replies') + '</span>' : '') + (st.tagMap[m.email] || []).map(function(t){ return ' <span class="tagchip">' + esc(t) + '</span>'; }).join('') + '</div><div class="e">' + esc(m.email) + '</div></div></div></td>' +
         '<td>' + esc(m.company || '—') + '</td><td>' + acctPill(m.account_type) + ' ' + subPill(m.subscription_status) + '</td><td>' + esc(m.exercise_stream || '—') + '</td><td>' + prog + '</td><td>' + (m.engagement_score != null ? m.engagement_score : '—') + '</td><td class="muted">' + rel(m.last_activity_at) + '</td></tr>';
     }).join('');
     $('ma-rows').querySelectorAll('tr.row').forEach(function(tr){ tr.addEventListener('click', function(){ openMember(tr.dataset.em); }); });
@@ -540,18 +568,18 @@
   }
   function tile(l, v){ return '<div class="w5-tile"><span>' + esc(l) + '</span><b>' + esc(v) + '</b></div>'; }
   function renderTabs(){
-    var TABS = [['overview', 'Overview'], ['habits', 'Habits'], ['workouts', 'Workouts'], ['goals', 'Goals'], ['nutrition', 'Nutrition'], ['checkins', 'Check-ins'], ['logs', 'Logs']];
-    var html = TABS.map(function(t){ return '<button type="button" class="w5-tab" data-t="' + t[0] + '">' + t[1] + '</button>'; }).join('');
+    var TABS = [['overview', 'Overview'], ['habits', 'Habits'], ['workouts', 'Workouts'], ['goals', 'Goals'], ['nutrition', 'Nutrition'], ['checkins', 'Check-ins'], ['messages', 'Messages'], ['logs', 'Logs']];
+    var html = TABS.map(function(t){ return '<button type="button" class="w5-tab" data-t="' + t[0] + '">' + t[1] + (t[0] === 'messages' && st.msgUnread[st.m.email] > 0 ? '<span class="tdot"></span>' : '') + '</button>'; }).join('');
     if (isAdmin()) html += '<button type="button" class="w5-tab admin" data-t="admin">Admin</button>';
     $('ma-tabs').innerHTML = html;
     $('ma-tabs').querySelectorAll('.w5-tab').forEach(function(b){ b.addEventListener('click', function(){ showTab(b.dataset.t); }); });
   }
   function showTab(t){
     if (t === 'admin' && !isAdmin()) t = 'overview';
-    st.tab = t;
+    st.tab = t; stopMsgPoll();
     $('ma-tabs').querySelectorAll('.w5-tab').forEach(function(b){ b.classList.toggle('on', b.dataset.t === t); });
     $('ma-pane').innerHTML = '<p class="muted" style="font-size:var(--fs-xs)">Loading&hellip;</p>';
-    var fn = { overview: tabOverview, habits: tabHabits, workouts: tabWorkouts, goals: tabGoals, nutrition: tabNutrition, checkins: tabCheckins, logs: tabLogs, admin: tabAdmin }[t];
+    var fn = { overview: tabOverview, habits: tabHabits, workouts: tabWorkouts, goals: tabGoals, nutrition: tabNutrition, checkins: tabCheckins, messages: tabMessages, logs: tabLogs, admin: tabAdmin }[t];
     var em = st.m.email;
     Promise.resolve().then(fn).catch(function(e){ if (st.m && st.m.email === em && st.tab === t) $('ma-pane').innerHTML = '<div class="warn-box">' + esc(e.message) + '</div>'; });
   }
@@ -789,6 +817,88 @@
       '<div class="w5-sec">Weekly check-ins · ' + wk.length + '</div>' + (wk.length ? '<div class="tblwrap"><table class="tbl"><tr><th>Date</th><th>Type</th><th>Wellbeing</th><th>Energy</th><th>Sleep</th><th>Stress</th><th>Body</th><th>Composite</th></tr>' + wkRows + '</table></div>' : '<div class="empty">No weekly check-ins yet.</div>') +
       '<div class="w5-sec" style="margin-top:16px">Monthly check-ins · ' + mo.length + '</div>' + (mo.length ? '<div class="tblwrap"><table class="tbl"><tr><th>Month</th><th>Avg</th><th>Wellbeing</th><th>Energy</th><th>Stress</th><th>Sleep</th><th>Diet</th><th>Social</th><th>Motivation</th><th>Goal progress</th></tr>' + mo.map(function(c){ return '<tr><td>' + esc(c.iso_month) + '</td><td><b>' + v(c.avg_score) + '</b></td><td>' + v(c.score_wellbeing) + '</td><td>' + v(c.score_energy) + '</td><td>' + v(c.score_stress) + '</td><td>' + v(c.score_sleep) + '</td><td>' + v(c.score_diet) + '</td><td>' + v(c.score_social) + '</td><td>' + v(c.score_motivation) + '</td><td>' + v(c.goal_progress_score) + '</td></tr>'; }).join('') + '</table></div>' : '<div class="empty">No monthly check-ins yet.</div>') +
       '<div class="w5-sec" style="margin-top:16px">Daily mood · last 30 days</div><div class="w5-box"><div class="muted" style="font-size:var(--fs-xs);margin-bottom:8px">' + (last30.length ? last30.length + ' of the last 30 days logged · average ' + avg + ' / 5' : 'Nothing logged in the last 30 days.') + '</div><div class="mood-strip">' + mood.slice(0, 60).reverse().map(function(x){ return '<i title="' + esc(x.mood_date) + ' · ' + esc(x.mood_label || x.mood_value) + '" style="background:' + colour(x.mood_value) + '"></i>'; }).join('') + '</div></div>');
+  }
+
+  // ---------- tab: messages (W6, PM-1040) ----------
+  // The VYVE thread = coach_messages rows with partner_id IS NULL (sender_scope 'vyve'). Read/write direct to PostgREST under
+  // cmsg_admin_all (team may write only here; admin anywhere). The member sees every VYVE-side row as "VYVE team"; the staff
+  // sender is kept in sender_email for this page only. Coach threads are deliberately NOT shown — coach <-> client stays private.
+  var MSG_SELECT = 'id, sender, sender_email, body, created_at, read_at';
+  function stopMsgPoll(){ if (st.msgPoll){ clearInterval(st.msgPoll); st.msgPoll = null; } }
+  async function loadMsgUnread(){
+    try {
+      var r = await S.client.from('coach_messages').select('member_email').is('partner_id', null).eq('sender', 'member').is('read_at', null);
+      if (r.error) throw r.error;
+      var map = {}; (r.data || []).forEach(function(x){ var e = (x.member_email || '').toLowerCase(); map[e] = (map[e] || 0) + 1; });
+      st.msgUnread = map;
+    } catch(_){ /* pill is advisory; the list still renders */ }
+  }
+  function msgDay(iso){ var d = new Date(iso), now = new Date(); if (d.toDateString() === now.toDateString()) return 'Today'; if (d.toDateString() === new Date(now.getTime() - 864e5).toDateString()) return 'Yesterday'; return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }); }
+  function msgWho(e){ if (!e) return 'VYVE team'; var n = (st.members.find(function(m){ return m.email === e; }) || {}); if (n.first_name) return n.first_name; var lp = (e.split('@')[0].match(/^[a-z]+/i) || [e.split('@')[0]])[0]; return lp.charAt(0).toUpperCase() + lp.slice(1); }
+  function renderMsgRows(rows){
+    var el = $('msg-scroll'); if (!el) return;
+    if (!rows.length){ el.innerHTML = '<div class="empty" style="margin:auto">No messages yet. Whatever you send here lands in the member\u2019s app as the VYVE team, with a push and a bell entry.</div>'; return; }
+    var html = '', lastDay = '';
+    rows.forEach(function(m){
+      var dl = msgDay(m.created_at); if (dl !== lastDay){ html += '<div class="msg-day">' + esc(dl) + '</div>'; lastDay = dl; }
+      var t = new Date(m.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+      if (m.sender === 'member') html += '<div class="msg-b member">' + esc(m.body) + '</div><div class="msg-t l">' + t + (m.read_at ? '' : ' \u00b7 new') + '</div>';
+      else html += '<div class="msg-b vyve">' + esc(m.body) + '</div><div class="msg-t r"><span class="who" title="' + esc(m.sender_email || '') + '">' + esc(msgWho(m.sender_email)) + '</span> \u00b7 ' + t + (m.read_at ? ' \u00b7 read' : '') + '</div>';
+    });
+    el.innerHTML = html; el.scrollTop = el.scrollHeight;
+  }
+  async function tabMessages(){
+    var em = st.m.email;
+    var q = await S.client.from('coach_messages').select(MSG_SELECT).eq('member_email', em).is('partner_id', null).order('created_at', { ascending: true }).limit(300);
+    if (q.error) throw new Error(q.error.message);
+    var rows = q.data || [], lastAt = rows.length ? rows[rows.length - 1].created_at : null;
+    var unreadTeam = rows.filter(function(m){ return m.sender === 'member' && !m.read_at; }).length;
+    var unreadMember = rows.filter(function(m){ return m.sender === 'coach' && !m.read_at; }).length;
+    var hasCoach = false;
+    try { var cq = await S.client.from('coach_clients').select('partner_id').eq('member_email', em).eq('status', 'active').limit(1); hasCoach = !!(cq.data && cq.data.length); } catch(_){}
+    pane('<div class="msg-wrap"><div class="msg-thread"><div class="msg-scroll" id="msg-scroll"></div>' +
+      '<div class="msg-compose"><textarea id="msg-inp" rows="1" placeholder="Message ' + esc(st.m.first_name || nameOf(st.m) || 'this member') + ' as the VYVE team\u2026"></textarea><button class="mbtn pri" type="button" id="msg-send">Send</button></div></div>' +
+      '<div class="msg-side"><div class="w5-box"><div class="w5-sec">This thread</div><dl><dt>Appears to the member as</dt><dd>VYVE team <span class="muted">(never your name)</span></dd><dt>Delivery</dt><dd>In-app thread + push + bell entry, immediately</dd><dt>Unread by member</dt><dd id="msg-um">' + unreadMember + '</dd><dt>Unread by team</dt><dd id="msg-ut">' + unreadTeam + (unreadTeam ? ' \u00b7 marked read on open' : '') + '</dd></dl></div>' +
+      '<div class="w5-box"><div class="w5-sec">Coach thread</div><div class="muted" style="font-size:var(--fs-xs)">' + (hasCoach ? 'This member also has a coach. That thread is not shown here \u2014 coach messages stay between the coach and their client.' : 'This member has no coach. If they did, that thread would not be shown here \u2014 coach messages stay between the coach and their client.') + '</div></div>' +
+      '<div class="note-box" style="margin:0">Messages are not audited as admin actions \u2014 the thread is its own record. Team and admin can both write here.</div></div></div>');
+    renderMsgRows(rows);
+    if (unreadTeam){
+      try {
+        var u = await S.client.from('coach_messages').update({ read_at: new Date().toISOString() }).eq('member_email', em).is('partner_id', null).eq('sender', 'member').is('read_at', null);
+        if (!u.error){ st.msgUnread[em] = 0; var tb = $('ma-tabs').querySelector('.w5-tab[data-t="messages"] .tdot'); if (tb) tb.remove(); }
+      } catch(_){}
+    }
+    var inp = $('msg-inp'), btn = $('msg-send'), sending = false;
+    inp.addEventListener('input', function(){ this.style.height = ''; this.style.height = Math.min(this.scrollHeight, 120) + 'px'; });
+    inp.addEventListener('keydown', function(e){ if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); send(); } });
+    btn.addEventListener('click', send);
+    async function send(){
+      var body = inp.value.trim(); if (!body || sending) return;
+      if (body.length > 4000){ toast('Message is over 4000 characters', true); return; }
+      sending = true; btn.disabled = true;
+      try {
+        var ins = await S.client.from('coach_messages').insert({ partner_id: null, sender_scope: 'vyve', member_email: em, sender: 'coach', sender_email: st.email || null, body: body }).select(MSG_SELECT).single();
+        if (ins.error) throw ins.error;
+        rows.push(ins.data); lastAt = ins.data.created_at; inp.value = ''; inp.style.height = ''; renderMsgRows(rows);
+        var um = $('msg-um'); if (um) um.textContent = String(rows.filter(function(m){ return m.sender === 'coach' && !m.read_at; }).length);
+        toast('Sent as VYVE team \u00b7 push queued');
+      } catch(e){ toast('Couldn\u2019t send \u2014 ' + (e.message || 'try again'), true); }
+      sending = false; btn.disabled = false; inp.focus();
+    }
+    stopMsgPoll();
+    st.msgPoll = setInterval(async function(){
+      if (st.tab !== 'messages' || !st.m || st.m.email !== em || document.visibilityState !== 'visible') return;
+      try {
+        var f = await S.client.from('coach_messages').select(MSG_SELECT).eq('member_email', em).is('partner_id', null).gt('created_at', lastAt || '1970-01-01').order('created_at', { ascending: true }).limit(50);
+        if (f.error || !f.data || !f.data.length) return;
+        var seen = {}; rows.forEach(function(m){ seen[m.id] = 1; });
+        var fresh = f.data.filter(function(m){ return !seen[m.id]; }); if (!fresh.length) return;
+        fresh.forEach(function(m){ rows.push(m); }); lastAt = rows[rows.length - 1].created_at; renderMsgRows(rows);
+        if (fresh.some(function(m){ return m.sender === 'member'; })){
+          await S.client.from('coach_messages').update({ read_at: new Date().toISOString() }).eq('member_email', em).is('partner_id', null).eq('sender', 'member').is('read_at', null);
+        }
+      } catch(_){}
+    }, 12000);
   }
 
   // ---------- tab: logs ----------
