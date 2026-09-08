@@ -4530,7 +4530,12 @@
       box.querySelectorAll('.w4-mpick').forEach(function(btn){
         btn.addEventListener('click', function(){
           var t = tpls[parseInt(btn.dataset.i)];
-          w4Plan.days[w4DayIdx].meals.push(deepCopy({ name: t.name, note: (t.payload || {}).note || '', items: (t.payload || {}).items || [] }));
+          /* PM-1100 W7: a recipe must arrive in the day WITH its presentation,
+             or the member sees a bare ingredient list and the recipe is pointless. */
+          w4Plan.days[w4DayIdx].meals.push(deepCopy(
+            (typeof w7PlanMealFrom === 'function')
+              ? w7PlanMealFrom(t)
+              : { name: t.name, note: (t.payload || {}).note || '', items: (t.payload || {}).items || [] }));
           box.style.display = 'none';
           w4RenderDay();
         });
@@ -5198,6 +5203,7 @@
         return { name: String(d.name || '').trim() || 'Day', meals: (d.meals || []).map(function(m){
           var cm = { name: String(m.name || '').trim(), items: w4CleanItems(m.items) };
           if (m.note && String(m.note).trim()) cm.note = String(m.note).trim();
+          if (typeof w7PlanMealKeep === 'function') w7PlanMealKeep(m, cm);   /* PM-1100 W7 */
           return cm;
         }).filter(function(m){ return m.name || m.items.length; }) };
       });
@@ -11114,6 +11120,37 @@
     $c('w7-photo').addEventListener('click', function(){ $c('w7-photo-input').click(); });
     $c('w7-photo-input').addEventListener('change', function(){ var f = this.files && this.files[0]; this.value = ''; w7UploadPhoto(f); });
     $c('w7-shared').addEventListener('click', function(){ w7Meal.shared = !w7Meal.shared; w7RenderShared(); });
+  }
+
+
+  /* PM-1100 W7: presentation must survive the assignment boundary.
+     A plan day copies meals BY VALUE (that is the design — editing the library
+     never rewrites an assigned plan), so the copy has to carry the recipe keys
+     or the member gets a bare ingredient list. `recipe_ref` is provenance only;
+     nothing reads back through it, so a deleted template cannot break a plan. */
+  function w7PlanMealFrom(t){
+    var p = t.payload || {};
+    var m = { name: t.name, note: p.note || '', items: p.items || [] };
+    if (w7IsRecipe(p)){
+      m.recipe_ref = t.id;
+      if (p.image_path) m.image_path = p.image_path;
+      if (Array.isArray(p.method) && p.method.length) m.method = p.method.slice();
+      if (Array.isArray(p.tags) && p.tags.length) m.tags = p.tags.slice();
+      if (p.servings != null) m.servings = p.servings;
+      if (p.prep_mins != null) m.prep_mins = p.prep_mins;
+      if (p.cook_mins != null) m.cook_mins = p.cook_mins;
+    }
+    return m;
+  }
+  function w7PlanMealKeep(src, out){
+    if (!src || !out) return out;
+    ['recipe_ref','image_path','servings','prep_mins','cook_mins'].forEach(function(k){
+      if (src[k] != null && src[k] !== '') out[k] = src[k];
+    });
+    ['method','tags'].forEach(function(k){
+      if (Array.isArray(src[k]) && src[k].length) out[k] = src[k].slice();
+    });
+    return out;
   }
 
   /* ============================ end PM-1098 W7 ============================ */
