@@ -780,6 +780,8 @@
             <div><label class="bk-lbl">Duration (minutes)</label><input type="number" id="bsf-duration" min="15" max="480" step="5" value="60"/></div>
             <div><label class="bk-lbl">Price (£)</label><input type="number" id="bsf-price" min="0" step="0.5" value="40"/></div>
             <div><label class="bk-lbl">Cancellation notice (hours)</label><input type="number" id="bsf-cancel" min="0" max="168" step="1" value="24"/></div>
+            <div><label class="bk-lbl">Places per slot</label><input type="number" id="bsf-cap" min="1" max="500" step="1" value="1"/></div>
+            <div style="grid-column:1/-1;display:flex;gap:18px;flex-wrap:wrap;font-size:13px;"><label style="display:flex;gap:7px;align-items:center;"><input type="checkbox" id="bsf-self" checked/> Clients can book themselves</label><label style="display:flex;gap:7px;align-items:center;"><input type="checkbox" id="bsf-public"/> Show on my public lead page</label></div>
             <div style="grid-column:1/-1;" id="bsf-link-wrap"><label class="bk-lbl">Meeting link (online sessions — Zoom/Meet/Teams)</label><input type="text" id="bsf-meeting" placeholder="https://…"/></div>
             <div id="bsf-venue-wrap" style="display:none;"><label class="bk-lbl">Venue</label><input type="text" id="bsf-venue"/></div>
             <div id="bsf-city-wrap" style="display:none;"><label class="bk-lbl">City</label><input type="text" id="bsf-city"/></div>
@@ -789,7 +791,7 @@
           <div id="bsf-therapy-note" style="display:none;margin-top:10px;padding:10px 12px;border-radius:8px;background:var(--accent-pale);font-size:12.5px;color:var(--text-muted);">Therapy services are reviewed by VYVE's clinical lead before they become visible to members. You can set everything up now.</div>
           <div style="display:flex;gap:8px;margin-top:14px;">
             <button class="btn btn-primary" id="bsf-save" type="button">Save service</button>
-            <button class="btn btn-ghost" id="bsf-cancel" type="button">Cancel</button>
+            <button class="btn btn-ghost" id="bsf-close" type="button">Cancel</button>
           </div>
           <div id="bsf-msg" style="margin-top:8px;font-size:12.5px;color:var(--text-muted);"></div>
         </div>
@@ -2311,6 +2313,9 @@
     $b('bsf-address').value = sv ? (sv.address || '') : '';
     $b('bsf-paylink').value = sv ? (sv.payment_link_url || '') : '';
     $b('bsf-cancel').value = sv ? (sv.cancel_notice_hours != null ? sv.cancel_notice_hours : 24) : 24;
+    $b('bsf-cap').value = sv ? Math.max(1, Number(sv.capacity || 1)) : 1;
+    $b('bsf-self').checked = sv ? sv.self_booking !== false : true;
+    $b('bsf-public').checked = !!(sv && sv.is_public);
     $b('bsf-msg').textContent = '';
     syncModeFields();
     $b('bsf-therapy-note').style.display = $b('bsf-category').value === 'therapy' ? '' : 'none';
@@ -2332,7 +2337,10 @@
       city: $b('bsf-city').value.trim() || null,
       address: $b('bsf-address').value.trim() || null,
       payment_link_url: $b('bsf-paylink').value.trim() || null,
-      cancel_notice_hours: Math.max(0, parseInt($b('bsf-cancel').value, 10) || 24)
+      cancel_notice_hours: Math.max(0, parseInt($b('bsf-cancel').value, 10) || 24),
+      capacity: Math.max(1, Math.min(500, parseInt($b('bsf-cap').value, 10) || 1)),
+      self_booking: $b('bsf-self').checked,
+      is_public: $b('bsf-public').checked && $b('bsf-self').checked
     };
     $b('bsf-msg').textContent = 'Saving\u2026';
     try {
@@ -2512,7 +2520,7 @@
     if (t.dataset.tab === 'bookings') t.addEventListener('click', init);
   });
   $b('bs-new-btn').addEventListener('click', function(){ openEditor(null); });
-  $b('bsf-cancel').addEventListener('click', function(){ $b('bs-editor').style.display = 'none'; });
+  $b('bsf-close').addEventListener('click', function(){ $b('bs-editor').style.display = 'none'; });
   $b('bsf-save').addEventListener('click', saveService);
   $b('bsf-mode').addEventListener('change', syncModeFields);
   $b('bsf-category').addEventListener('change', function(){ $b('bsf-therapy-note').style.display = this.value === 'therapy' ? '' : 'none'; });

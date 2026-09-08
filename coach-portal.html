@@ -11486,6 +11486,534 @@
   /* ========================== end PM-1103 W6 part 2 ========================== */
 
 
+  /* ============================ PM-XXXX Trainerize W8 ============================
+     Scheduling. #92 places-per-slot + self-booking + public services, #93 partner
+     default hours + time off across every service, #94 a read-only ICS feed, #96
+     prospect bookings (the W6 requests inbox already queries status 'requested',
+     so a booking from the public lead page lands there with NO change to it).
+     The sidebar entry does NOT use data-go: go() is shadowed five times already
+     and replicating it a sixth to add one route is how that function rots. The
+     button carries its own capture-phase handler instead (the PM-994 pattern),
+     and any other sidebar click hides this view. Shadows w6load (a class's
+     bookings collapse into ONE calendar tile) and w6manageModal (roster). Nothing
+     W6 built is edited in place. Hidden entirely at VYVE null scope: every
+     booking_services row is partner-scoped, so staff have nothing to author. */
+
+  var w8 = { services: [], avail: {}, blocked: {}, editing: null, sid: null, prefs: null, ics: '' };
+  var W8_DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var W8_MAX_TIMEOFF_DAYS = 90;
+
+  function w8money(p){ return !p ? 'Free' : '\u00a3' + (p / 100).toFixed(2).replace(/\.00$/, ''); }
+  function w8mode(m){ return m === 'online' ? 'Online' : m === 'in_person' ? 'In person' : 'Online or in person'; }
+  function w8msg(id, t, bad){ var e = $c(id); if (e){ e.textContent = t || ''; e.style.color = bad ? '#E8834A' : 'var(--text-muted)'; } }
+
+  (function w8Build(){
+    if (!partnerId) return;
+    var css = document.createElement('style');
+    css.textContent = [
+      '.w8-row{display:flex;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;}',
+      '.w8-chip{display:inline-block;font-size:11px;padding:2px 9px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border);color:var(--text-muted);white-space:nowrap;}',
+      '.w8-chip.on{background:#1B7878;border-color:transparent;color:#fff;}',
+      '.w8-chip.warn{background:#E8834A;border-color:transparent;color:#fff;}',
+      '.w8-box{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-top:16px;}',
+      '.w8-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;}',
+      '.w8-opt{display:flex;gap:9px;align-items:flex-start;font-size:13px;margin-bottom:9px;}',
+      '.w8-opt .h{font-size:11.5px;color:var(--text-muted);display:block;margin-top:2px;}',
+      '.w8-code{font-size:11.5px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;flex:1;min-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}'
+    ].join('');
+    document.head.appendChild(css);
+
+    var host = document.querySelector('.cp-content');
+    host.insertAdjacentHTML('beforeend',
+      '<div id="view-sched" style="display:none;">' +
+      '<div class="card"><div class="card-title" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">Services' +
+        '<span class="w8-chip" id="w8-count"></span><span style="flex:1;"></span>' +
+        '<button class="btn btn-primary" id="w8-new" type="button" style="font-size:12px;">New service</button></div>' +
+        '<p style="font-size:12.5px;color:var(--text-muted);margin-bottom:10px;">A service with more than one place is a class. Clients book from their app; anything you mark public also shows on your lead page.</p>' +
+        '<div id="w8-list"><p style="font-size:12.5px;color:var(--text-muted);">Loading\u2026</p></div>' +
+        '<div id="w8-editor" style="display:none;"></div></div>' +
+      '<div class="card"><div class="card-title">Availability</div>' +
+        '<p style="font-size:12.5px;color:var(--text-muted);margin-bottom:10px;">Your usual hours are the starting point for every new service. A service can then have its own.</p>' +
+        '<div id="w8-defaults"></div>' +
+        '<div style="margin-top:16px;border-top:1px solid var(--border);padding-top:12px;">' +
+        '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">' +
+        '<strong style="font-size:13px;">Hours for</strong><select id="w8-svcsel" style="font-size:12px;"></select></div>' +
+        '<div id="w8-avail"></div>' +
+        '<div class="w8-grid" style="margin-top:10px;align-items:end;">' +
+        '<div><label style="font-size:11.5px;color:var(--text-muted);display:block;margin-bottom:4px;">Day</label><select id="w8-wd">' +
+          W8_DAYS.map(function(d, i){ return '<option value="' + i + '"' + (i === 1 ? ' selected' : '') + '>' + d + '</option>'; }).join('') + '</select></div>' +
+        '<div><label style="font-size:11.5px;color:var(--text-muted);display:block;margin-bottom:4px;">From</label><input id="w8-from" type="time" value="09:00"/></div>' +
+        '<div><label style="font-size:11.5px;color:var(--text-muted);display:block;margin-bottom:4px;">To</label><input id="w8-to" type="time" value="17:00"/></div>' +
+        '<button class="btn" id="w8-add-win" type="button" style="font-size:12px;">Add hours</button></div>' +
+        '<span id="w8-avail-msg" style="font-size:12px;color:var(--text-muted);"></span></div></div>' +
+      '<div class="card"><div class="card-title">Time off</div>' +
+        '<p style="font-size:12.5px;color:var(--text-muted);margin-bottom:10px;">Blocks every one of your services across these dates. Anything already booked stays in your diary \u2014 cancel those yourself.</p>' +
+        '<div class="w8-grid" style="align-items:end;">' +
+        '<div><label style="font-size:11.5px;color:var(--text-muted);display:block;margin-bottom:4px;">From</label><input id="w8-off-from" type="date"/></div>' +
+        '<div><label style="font-size:11.5px;color:var(--text-muted);display:block;margin-bottom:4px;">To</label><input id="w8-off-to" type="date"/></div>' +
+        '<button class="btn" id="w8-off-add" type="button" style="font-size:12px;">Block these dates</button></div>' +
+        '<div id="w8-off-list" style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;"></div>' +
+        '<span id="w8-off-msg" style="font-size:12px;color:var(--text-muted);"></span></div>' +
+      '<div class="card"><div class="card-title">Your calendar feed</div>' +
+        '<p style="font-size:12.5px;color:var(--text-muted);margin-bottom:10px;">Subscribe in Apple Calendar or Google Calendar and your VYVE events, confirmed bookings and hosted sessions appear there. Read-only, and it never carries a client\u2019s email address. Anyone with the link can see your schedule \u2014 reset it if you have shared it by mistake.</p>' +
+        '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">' +
+        '<code class="w8-code" id="w8-ics">Not set up yet</code>' +
+        '<button class="btn" id="w8-ics-make" type="button" style="font-size:12px;">Get my link</button>' +
+        '<button class="btn" id="w8-ics-copy" type="button" style="font-size:12px;display:none;">Copy</button>' +
+        '<button class="btn" id="w8-ics-reset" type="button" style="font-size:12px;display:none;">Reset link</button></div>' +
+        '<span id="w8-ics-msg" style="font-size:12px;color:var(--text-muted);"></span></div>' +
+      '</div>');
+
+    var calBtn = document.querySelector('.cp-item[data-go="calendar"]');
+    var btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'cp-item'; btn.id = 'w8-nav';
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Scheduling</span>';
+    if (calBtn) calBtn.insertAdjacentElement('afterend', btn); else document.querySelector('.cp-side').appendChild(btn);
+    btn.addEventListener('click', function(e){ e.stopPropagation(); w8Show(); }, true);
+
+    document.querySelector('.cp-side').addEventListener('click', function(e){
+      if (e.target.closest('.cp-item[data-go]')) w8Hide();
+    });
+
+    $c('w8-new').addEventListener('click', function(){ w8Editor(null); });
+    $c('w8-svcsel').addEventListener('change', function(){ w8.sid = this.value; w8RenderAvail(); });
+    $c('w8-add-win').addEventListener('click', w8AddWindow);
+    $c('w8-off-add').addEventListener('click', w8AddTimeOff);
+    $c('w8-ics-make').addEventListener('click', function(){ w8Ics(false); });
+    $c('w8-ics-reset').addEventListener('click', function(){
+      if (!confirm('Reset your calendar link? Anyone still subscribed to the old one stops receiving updates, and you will need to re-add it yourself.')) return;
+      w8Ics(true);
+    });
+    $c('w8-ics-copy').addEventListener('click', function(){
+      try { navigator.clipboard.writeText(w8.ics); w8msg('w8-ics-msg', 'Copied.'); } catch(_){ w8msg('w8-ics-msg', 'Select the link and copy it.', true); }
+    });
+  })();
+
+  function w8Hide(){ var v = $c('view-sched'); if (v) v.style.display = 'none'; var b = $c('w8-nav'); if (b) b.classList.remove('active'); }
+  function w8Show(){
+    document.querySelectorAll('.cp-content > div[id^="view-"]').forEach(function(e){ e.style.display = 'none'; });
+    document.querySelectorAll('.cp-item').forEach(function(x){ x.classList.remove('active'); });
+    var v = $c('view-sched'); if (v) v.style.display = '';
+    var b = $c('w8-nav'); if (b) b.classList.add('active');
+    try { history.replaceState(null, '', '#scheduling'); } catch(_){}
+    w8Load();
+  }
+
+  async function w8Load(){
+    try {
+      w8.services = await rest('/booking_services?' + pscope() + '&order=created_at.asc') || [];
+    } catch(e){
+      $c('w8-list').innerHTML = '<p style="font-size:12.5px;color:#E8834A;">Could not load your services: ' + esc(e.message) + '</p>';
+      return;
+    }
+    w8.avail = {}; w8.blocked = {};
+    if (w8.services.length){
+      var ids = w8.services.map(function(s){ return s.id; }).join(',');
+      var res = await Promise.all([
+        rest('/booking_availability?service_id=in.(' + ids + ')&order=weekday.asc,start_time.asc').catch(function(){ return []; }),
+        rest('/booking_exceptions?service_id=in.(' + ids + ')&kind=eq.blocked&order=date.asc').catch(function(){ return []; })
+      ]);
+      (res[0] || []).forEach(function(w){ (w8.avail[w.service_id] = w8.avail[w.service_id] || []).push(w); });
+      (res[1] || []).forEach(function(x){ (w8.blocked[x.service_id] = w8.blocked[x.service_id] || []).push(x); });
+    }
+    try {
+      var pr = await rest('/partner_partners?id=eq.' + partnerId + '&select=coach_ui_prefs,coach_profile') || [];
+      w8.prefs = (pr[0] && pr[0].coach_ui_prefs) || {};
+      var tok = pr[0] && pr[0].coach_profile && pr[0].coach_profile.ics_token;
+      if (tok) w8SetIcs(SUPA_URL + '/functions/v1/coach-calendar-ics?t=' + tok);
+    } catch(_){ w8.prefs = w8.prefs || {}; }
+    w8RenderServices();
+    w8RenderDefaults();
+    w8RenderTimeOff();
+  }
+
+  function w8RenderServices(){
+    var el = $c('w8-list');
+    $c('w8-count').textContent = w8.services.filter(function(s){ return s.active; }).length + ' active';
+    if (!w8.services.length){
+      el.innerHTML = '<p style="font-size:12.5px;color:var(--text-muted);">No services yet. Add one and give it hours \u2014 that is what puts you on a client\u2019s Book tab.</p>';
+      $c('w8-svcsel').innerHTML = '';
+      return;
+    }
+    el.innerHTML = w8.services.map(function(s){
+      var cap = Math.max(1, Number(s.capacity || 1));
+      var wins = (w8.avail[s.id] || []).length;
+      return '<div class="w8-row">' +
+        '<div style="flex:1;min-width:200px;"><div style="font-size:13.5px;font-weight:600;' + (s.active ? '' : 'opacity:.55;') + '">' + esc(s.title) + '</div>' +
+        '<div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;">' + w8mode(s.delivery_mode) + ' \u00b7 ' + s.duration_min + ' min \u00b7 ' + w8money(s.price_pence) + '</div></div>' +
+        '<span class="w8-chip' + (cap > 1 ? ' on' : '') + '">' + (cap > 1 ? 'Class \u00b7 ' + cap + ' places' : '1:1') + '</span>' +
+        (s.is_public ? '<span class="w8-chip on">On your lead page</span>' : '') +
+        (s.self_booking === false ? '<span class="w8-chip">You add people</span>' : '') +
+        (!wins ? '<span class="w8-chip warn">No hours set</span>' : '') +
+        (s.active ? '' : '<span class="w8-chip">Hidden</span>') +
+        '<button class="btn" data-w8ed="' + s.id + '" type="button" style="font-size:11.5px;">Edit</button>' +
+        '<button class="btn" data-w8tog="' + s.id + '" type="button" style="font-size:11.5px;">' + (s.active ? 'Hide' : 'Show') + '</button>' +
+        '</div>';
+    }).join('');
+    el.querySelectorAll('[data-w8ed]').forEach(function(b){ b.addEventListener('click', function(){ w8Editor(b.dataset.w8ed); }); });
+    el.querySelectorAll('[data-w8tog]').forEach(function(b){ b.addEventListener('click', async function(){
+      var s = w8.services.find(function(x){ return x.id === b.dataset.w8tog; }); if (!s) return;
+      b.disabled = true;
+      try { await rest('/booking_services?id=eq.' + s.id + '&' + pscope(), { method: 'PATCH', body: { active: !s.active } }); await w8Load(); }
+      catch(e){ alert('Could not change that: ' + e.message); b.disabled = false; }
+    }); });
+    var sel = $c('w8-svcsel');
+    sel.innerHTML = w8.services.map(function(s){ return '<option value="' + s.id + '">' + esc(s.title) + '</option>'; }).join('');
+    if (!w8.sid || !w8.services.some(function(s){ return s.id === w8.sid; })) w8.sid = w8.services[0].id;
+    sel.value = w8.sid;
+    w8RenderAvail();
+  }
+
+  function w8Editor(id){
+    var s = id ? w8.services.find(function(x){ return x.id === id; }) : null;
+    w8.editing = id || null;
+    var box = $c('w8-editor');
+    box.className = 'w8-box';
+    box.style.display = '';
+    box.innerHTML =
+      '<div style="font-size:13.5px;font-weight:600;margin-bottom:12px;">' + (s ? 'Edit service \u2014 ' + esc(s.title) : 'New service') + '</div>' +
+      '<div class="w8-grid" style="margin-bottom:12px;">' +
+        '<div style="grid-column:1/-1;"><label style="font-size:11.5px;color:var(--text-muted);display:block;margin-bottom:4px;">Name</label><input id="w8f-title" type="text" maxlength="120" value="' + esc(s ? s.title : '') + '" style="width:100%;"/></div>' +
+        '<div><label style="font-size:11.5px;color:var(--text-muted);display:block;margin-bottom:4px;">Places per slot</label><input id="w8f-cap" type="number" min="1" max="500" value="' + (s ? Math.max(1, Number(s.capacity || 1)) : 1) + '"/></div>' +
+        '<div><label style="font-size:11.5px;color:var(--text-muted);display:block;margin-bottom:4px;">Minutes</label><input id="w8f-dur" type="number" min="15" max="480" value="' + (s ? s.duration_min : 60) + '"/></div>' +
+        '<div><label style="font-size:11.5px;color:var(--text-muted);display:block;margin-bottom:4px;">Price (\u00a3)</label><input id="w8f-price" type="number" min="0" step="0.5" value="' + (s ? (s.price_pence / 100) : 40) + '"/></div>' +
+        '<div><label style="font-size:11.5px;color:var(--text-muted);display:block;margin-bottom:4px;">Where</label><select id="w8f-mode">' +
+          ['online','in_person','both'].map(function(m){ return '<option value="' + m + '"' + ((s ? s.delivery_mode : 'online') === m ? ' selected' : '') + '>' + w8mode(m) + '</option>'; }).join('') + '</select></div>' +
+        '<div><label style="font-size:11.5px;color:var(--text-muted);display:block;margin-bottom:4px;">Cancellation notice (hours)</label><input id="w8f-cancel" type="number" min="0" max="336" value="' + (s && s.cancel_notice_hours != null ? s.cancel_notice_hours : 24) + '"/></div>' +
+      '</div>' +
+      '<label class="w8-opt"><input type="checkbox" id="w8f-self"' + (!s || s.self_booking !== false ? ' checked' : '') + '/><span>Clients can book themselves<span class="h">Turn this off for a class you fill yourself \u2014 the Book button disappears from their app.</span></span></label>' +
+      '<label class="w8-opt"><input type="checkbox" id="w8f-public"' + (s && s.is_public ? ' checked' : '') + '/><span>Show on my public lead page<span class="h">Anyone with your link can request a slot without an account. Meant for free consultations.</span></span></label>' +
+      '<div style="display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap;">' +
+        '<button class="btn btn-primary" id="w8f-save" type="button" style="font-size:12px;">Save</button>' +
+        '<button class="btn" id="w8f-close" type="button" style="font-size:12px;">Close</button>' +
+        '<span id="w8f-msg" style="font-size:12px;color:var(--text-muted);"></span></div>';
+    $c('w8f-close').addEventListener('click', function(){ box.style.display = 'none'; });
+    $c('w8f-save').addEventListener('click', w8SaveService);
+  }
+
+  async function w8SaveService(){
+    var title = $c('w8f-title').value.trim();
+    if (!title){ w8msg('w8f-msg', 'Give it a name.', true); return; }
+    var cap = Math.max(1, Math.min(500, parseInt($c('w8f-cap').value, 10) || 1));
+    var isPublic = $c('w8f-public').checked;
+    var self = $c('w8f-self').checked;
+    if (isPublic && !self){ w8msg('w8f-msg', 'A public service has to be self-bookable \u2014 a prospect has no other way in.', true); return; }
+
+    // Places can never drop below what is already booked on a single slot.
+    if (w8.editing && cap < Math.max(1, Number((w8.services.find(function(x){ return x.id === w8.editing; }) || {}).capacity || 1))){
+      try {
+        var live = await rest('/bookings?service_id=eq.' + w8.editing + '&status=in.(pending_payment,confirmed,requested)&starts_at=gte.' + encodeURIComponent(new Date().toISOString()) + '&select=starts_at') || [];
+        var per = {}; var worst = 0;
+        live.forEach(function(b){ var k = b.starts_at; per[k] = (per[k] || 0) + 1; if (per[k] > worst) worst = per[k]; });
+        if (worst > cap){ w8msg('w8f-msg', 'One of your upcoming slots already has ' + worst + ' booked \u2014 places cannot go below that.', true); return; }
+      } catch(_){ /* advisory only; the DB guard is the authority */ }
+    }
+
+    var body = {
+      partner_id: partnerId,
+      title: title,
+      capacity: cap,
+      duration_min: Math.max(15, Math.min(480, parseInt($c('w8f-dur').value, 10) || 60)),
+      price_pence: Math.max(0, Math.round(parseFloat($c('w8f-price').value || '0') * 100)),
+      delivery_mode: $c('w8f-mode').value,
+      cancel_notice_hours: Math.max(0, parseInt($c('w8f-cancel').value, 10) || 0),
+      is_public: isPublic,
+      self_booking: self
+    };
+    if (!w8.editing) body.category = 'coaching';
+    w8msg('w8f-msg', 'Saving\u2026');
+    try {
+      if (w8.editing) await rest('/booking_services?id=eq.' + w8.editing + '&' + pscope(), { method: 'PATCH', body: body });
+      else await rest('/booking_services', { method: 'POST', body: body });
+      $c('w8-editor').style.display = 'none';
+      await w8Load();
+    } catch(e){ w8msg('w8f-msg', 'Could not save: ' + e.message, true); }
+  }
+
+  /* ── availability (#93) ── */
+  function w8winRow(w, delAttr){
+    return '<div style="display:flex;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:12.5px;">' +
+      '<span style="min-width:88px;font-weight:600;">' + W8_DAYS[w.weekday] + '</span>' +
+      '<span style="color:var(--text-muted);">' + String(w.start_time).slice(0,5) + ' \u2013 ' + String(w.end_time).slice(0,5) + '</span>' +
+      '<span style="flex:1;"></span><button class="btn" ' + delAttr + ' type="button" style="font-size:11px;">Remove</button></div>';
+  }
+  function w8RenderAvail(){
+    var el = $c('w8-avail');
+    var rows = w8.avail[w8.sid] || [];
+    el.innerHTML = rows.length ? rows.map(function(w){ return w8winRow(w, 'data-w8dw="' + w.id + '"'); }).join('')
+      : '<p style="font-size:12.5px;color:var(--text-muted);">No hours on this service yet, so nobody can book it.' +
+        ((w8.prefs && (w8.prefs.default_availability || []).length) ? ' <button class="btn" id="w8-use-def" type="button" style="font-size:11px;">Use my usual hours</button>' : '') + '</p>';
+    el.querySelectorAll('[data-w8dw]').forEach(function(b){ b.addEventListener('click', async function(){
+      b.disabled = true;
+      try { await rest('/booking_availability?id=eq.' + b.dataset.w8dw, { method: 'DELETE' }); await w8Load(); }
+      catch(e){ w8msg('w8-avail-msg', 'Could not remove that: ' + e.message, true); b.disabled = false; }
+    }); });
+    var use = $c('w8-use-def');
+    if (use) use.addEventListener('click', function(){ w8ApplyDefaults([w8.sid]); });
+  }
+  async function w8AddWindow(){
+    var wd = parseInt($c('w8-wd').value, 10);
+    var from = $c('w8-from').value, to = $c('w8-to').value;
+    if (!from || !to || to <= from){ w8msg('w8-avail-msg', 'The end time has to be after the start.', true); return; }
+    if (!w8.sid){ w8msg('w8-avail-msg', 'Add a service first.', true); return; }
+    w8msg('w8-avail-msg', 'Adding\u2026');
+    try {
+      await rest('/booking_availability', { method: 'POST', body: { service_id: w8.sid, weekday: wd, start_time: from, end_time: to } });
+      w8msg('w8-avail-msg', '');
+      await w8Load();
+    } catch(e){ w8msg('w8-avail-msg', 'Could not add that: ' + e.message, true); }
+  }
+
+  function w8RenderDefaults(){
+    var el = $c('w8-defaults');
+    var def = (w8.prefs && w8.prefs.default_availability) || [];
+    el.innerHTML =
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">' +
+      (def.length ? def.map(function(w, i){
+        return '<span class="w8-chip">' + W8_DAYS[w.weekday].slice(0,3) + ' ' + w.start_time + '\u2013' + w.end_time +
+          ' <button class="btn" data-w8dd="' + i + '" type="button" style="font-size:10px;padding:0 5px;">\u00d7</button></span>';
+      }).join('') : '<span style="font-size:12.5px;color:var(--text-muted);">No usual hours set yet.</span>') +
+      '</div>' +
+      '<div style="display:flex;gap:10px;flex-wrap:wrap;">' +
+      '<button class="btn" id="w8-def-add" type="button" style="font-size:12px;">Add to my usual hours</button>' +
+      (def.length ? '<button class="btn" id="w8-def-apply" type="button" style="font-size:12px;">Apply to all services</button>' : '') +
+      '<span id="w8-def-msg" style="font-size:12px;color:var(--text-muted);"></span></div>';
+
+    el.querySelectorAll('[data-w8dd]').forEach(function(b){ b.addEventListener('click', function(){
+      var next = def.slice(); next.splice(parseInt(b.dataset.w8dd, 10), 1); w8SaveDefaults(next);
+    }); });
+    $c('w8-def-add').addEventListener('click', function(){
+      var wd = parseInt($c('w8-wd').value, 10), from = $c('w8-from').value, to = $c('w8-to').value;
+      if (!from || !to || to <= from){ w8msg('w8-def-msg', 'The end time has to be after the start.', true); return; }
+      w8SaveDefaults(def.concat([{ weekday: wd, start_time: from, end_time: to }]));
+    });
+    var ap = $c('w8-def-apply');
+    if (ap) ap.addEventListener('click', function(){
+      if (!w8.services.length){ w8msg('w8-def-msg', 'No services to apply them to.', true); return; }
+      if (!confirm('Add your usual hours to all ' + w8.services.length + ' services? Hours they already have stay as they are.')) return;
+      w8ApplyDefaults(w8.services.map(function(s){ return s.id; }));
+    });
+  }
+  async function w8SaveDefaults(list){
+    w8msg('w8-def-msg', 'Saving\u2026');
+    try {
+      var prefs = Object.assign({}, w8.prefs || {}, { default_availability: list });
+      await rest('/partner_partners?id=eq.' + partnerId, { method: 'PATCH', body: { coach_ui_prefs: prefs } });
+      w8.prefs = prefs;
+      w8msg('w8-def-msg', '');
+      w8RenderDefaults(); w8RenderAvail();
+    } catch(e){ w8msg('w8-def-msg', 'Could not save: ' + e.message, true); }
+  }
+  // Additive by design: a window a service already has is skipped, never replaced.
+  async function w8ApplyDefaults(serviceIds){
+    var def = (w8.prefs && w8.prefs.default_availability) || [];
+    if (!def.length) return;
+    w8msg('w8-def-msg', 'Applying\u2026');
+    var added = 0;
+    for (var i = 0; i < serviceIds.length; i++){
+      var sid = serviceIds[i];
+      var have = (w8.avail[sid] || []).map(function(w){ return w.weekday + '|' + String(w.start_time).slice(0,5) + '|' + String(w.end_time).slice(0,5); });
+      for (var k = 0; k < def.length; k++){
+        var d = def[k];
+        if (have.indexOf(d.weekday + '|' + d.start_time + '|' + d.end_time) >= 0) continue;
+        try { await rest('/booking_availability', { method: 'POST', body: { service_id: sid, weekday: d.weekday, start_time: d.start_time, end_time: d.end_time } }); added++; }
+        catch(_){ /* one bad row must not abandon the rest */ }
+      }
+    }
+    w8msg('w8-def-msg', added ? ('Added ' + added + ' ' + (added === 1 ? 'window' : 'windows') + '.') : 'Nothing to add \u2014 they already had these.');
+    await w8Load();
+  }
+
+  /* ── time off (#93): a fan-out, because booking_exceptions is service-scoped ── */
+  function w8RenderTimeOff(){
+    var byDate = {};
+    Object.keys(w8.blocked).forEach(function(sid){
+      (w8.blocked[sid] || []).forEach(function(x){ (byDate[x.date] = byDate[x.date] || []).push(x); });
+    });
+    var today = new Date().toISOString().slice(0, 10);
+    var dates = Object.keys(byDate).filter(function(d){ return d >= today; }).sort();
+    var el = $c('w8-off-list');
+    el.innerHTML = dates.length ? dates.map(function(d){
+      var n = byDate[d].length;
+      return '<span class="w8-chip warn">' + new Date(d + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) +
+        ' \u00b7 ' + n + ' service' + (n === 1 ? '' : 's') +
+        ' <button class="btn" data-w8un="' + d + '" type="button" style="font-size:10px;padding:0 5px;">\u00d7</button></span>';
+    }).join('') : '<span style="font-size:12.5px;color:var(--text-muted);">Nothing blocked ahead.</span>';
+    el.querySelectorAll('[data-w8un]').forEach(function(b){ b.addEventListener('click', async function(){
+      var d = b.dataset.w8un;
+      var ids = (byDate[d] || []).map(function(x){ return x.id; });
+      b.disabled = true;
+      w8msg('w8-off-msg', 'Removing\u2026');
+      try {
+        await rest('/booking_exceptions?id=in.(' + ids.join(',') + ')', { method: 'DELETE' });
+        w8msg('w8-off-msg', '');
+        await w8Load();
+      } catch(e){ w8msg('w8-off-msg', 'Could not remove that: ' + e.message, true); b.disabled = false; }
+    }); });
+  }
+  async function w8AddTimeOff(){
+    var from = $c('w8-off-from').value, to = $c('w8-off-to').value || $c('w8-off-from').value;
+    if (!from){ w8msg('w8-off-msg', 'Pick a start date.', true); return; }
+    if (to < from){ w8msg('w8-off-msg', 'The end date is before the start.', true); return; }
+    var days = Math.round((new Date(to + 'T12:00:00Z') - new Date(from + 'T12:00:00Z')) / 864e5) + 1;
+    if (days > W8_MAX_TIMEOFF_DAYS){ w8msg('w8-off-msg', 'That is more than ' + W8_MAX_TIMEOFF_DAYS + ' days \u2014 block it in shorter runs.', true); return; }
+    var svcs = w8.services.filter(function(s){ return s.active; });
+    if (!svcs.length){ w8msg('w8-off-msg', 'No active services to block.', true); return; }
+
+    var clashes = 0;
+    try {
+      var live = await rest('/bookings?' + pscope() + '&status=in.(pending_payment,confirmed,requested)&starts_at=gte.' + encodeURIComponent(from + 'T00:00:00Z') + '&starts_at=lt.' + encodeURIComponent(to + 'T23:59:59Z') + '&select=id') || [];
+      clashes = live.length;
+    } catch(_){}
+    if (clashes && !confirm('You already have ' + clashes + ' booking' + (clashes === 1 ? '' : 's') + ' in those dates. Blocking stops NEW bookings but leaves those in your diary \u2014 cancel them yourself. Carry on?')) return;
+
+    w8msg('w8-off-msg', 'Blocking\u2026');
+    var made = 0;
+    for (var i = 0; i < days; i++){
+      var d = new Date(new Date(from + 'T12:00:00Z').getTime() + i * 864e5).toISOString().slice(0, 10);
+      for (var k = 0; k < svcs.length; k++){
+        try { await rest('/booking_exceptions', { method: 'POST', body: { service_id: svcs[k].id, date: d, kind: 'blocked' } }); made++; }
+        catch(_){ /* bx_unique_day: already blocked, fine */ }
+      }
+    }
+    w8msg('w8-off-msg', made ? ('Blocked ' + days + ' day' + (days === 1 ? '' : 's') + ' across ' + svcs.length + ' service' + (svcs.length === 1 ? '' : 's') + '.') : 'Those dates were already blocked.');
+    $c('w8-off-from').value = ''; $c('w8-off-to').value = '';
+    await w8Load();
+  }
+
+  /* ── ICS (#94) ── */
+  function w8SetIcs(url){
+    w8.ics = url;
+    $c('w8-ics').textContent = url;
+    $c('w8-ics-copy').style.display = '';
+    $c('w8-ics-reset').style.display = '';
+    $c('w8-ics-make').style.display = 'none';
+  }
+  async function w8Ics(rotate){
+    w8msg('w8-ics-msg', rotate ? 'Resetting\u2026' : 'Setting up\u2026');
+    try {
+      var t = await jwt();
+      var r = await fetch(SUPA_URL + '/functions/v1/coach-calendar-ics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: SUPA_ANON, Authorization: 'Bearer ' + t },
+        body: JSON.stringify({ action: 'token', rotate: !!rotate })
+      });
+      var d = await r.json();
+      if (!d.ok) throw new Error(d.error || r.status);
+      w8SetIcs(d.url);
+      w8msg('w8-ics-msg', rotate ? 'Done \u2014 re-add the new link in your calendar app.' : 'Ready. Add it in your calendar app under "subscribe to calendar".');
+    } catch(e){ w8msg('w8-ics-msg', 'Could not do that: ' + e.message, true); }
+  }
+
+  /* ── w6load SHADOW: a class is one tile, not N ────────────────────────────────
+     W6 mapped every confirmed booking to its own calendar item, which was right
+     when every service held one person. A ten-place class would paint ten rows on
+     the same day. Bookings now group on (service_id, starts_at) and carry a roster;
+     everything else about the shape is byte-identical to the W6 version. */
+  async function w6load(){
+    var r = w6range(), fi = r.from.toISOString(), ti = r.to.toISOString();
+    var res = await Promise.all([
+      rest('/coach_events?' + pscope() + '&status=neq.cancelled&starts_at=gte.' + w6enc(fi) + '&starts_at=lt.' + w6enc(ti) + '&order=starts_at.asc&limit=400').catch(function(){ return []; }),
+      rest('/coach_sessions?' + pscope() + '&status=eq.scheduled&starts_at=gte.' + w6enc(fi) + '&starts_at=lt.' + w6enc(ti) + '&order=starts_at.asc&limit=200&select=id,member_email,title,starts_at,duration_minutes,link_url,notes').catch(function(){ return []; }),
+      rest('/bookings?' + pscope() + '&status=eq.confirmed&starts_at=gte.' + w6enc(fi) + '&starts_at=lt.' + w6enc(ti) + '&order=starts_at.asc&limit=400&select=id,member_email,guest_name,employer_name,starts_at,ends_at,service_id,meeting_link,delivery_mode,status').catch(function(){ return []; }),
+      rest('/bookings?' + pscope() + '&status=in.(pending_payment,requested)&starts_at=gte.' + w6enc(new Date(Date.now() - 864e5).toISOString()) + '&order=starts_at.asc&limit=100&select=id,member_email,guest_name,guest_email,lead_id,employer_name,starts_at,ends_at,service_id,status,created_at').catch(function(){ return []; }),
+      rest('/booking_services?' + pscope() + '&select=id,title,duration_min,capacity').catch(function(){ return []; })
+    ]);
+    var svc = {}; (res[4] || []).forEach(function(s){ svc[s.id] = s; });
+    var items = [];
+    (res[0] || []).forEach(function(e){
+      items.push({ src: 'event', id: e.id, kind: e.kind, title: e.title, who: e.member_email, t: e.starts_at, end: e.ends_at,
+        allDay: e.all_day, color: e.color || W6_KIND_COLORS[e.kind] || W6_KIND_COLORS.other, raw: e, done: e.status === 'done' });
+    });
+    (res[1] || []).forEach(function(s){
+      items.push({ src: 'call', id: s.id, kind: 'call', title: s.title, who: s.member_email, t: s.starts_at,
+        end: new Date(new Date(s.starts_at).getTime() + (s.duration_minutes || 30) * 60000).toISOString(),
+        allDay: false, color: W6_KIND_COLORS.call, link: s.link_url, raw: s });
+    });
+    var groups = {};
+    (res[2] || []).forEach(function(b){
+      var key = (b.service_id || 'x') + '|' + b.starts_at;
+      (groups[key] = groups[key] || []).push(b);
+    });
+    Object.keys(groups).forEach(function(key){
+      var rows = groups[key];
+      var b = rows[0];
+      var sv = svc[b.service_id] || {};
+      var cap = Math.max(1, Number(sv.capacity || 1));
+      var isClass = cap > 1 || rows.length > 1;
+      items.push({
+        src: 'booking', id: b.id, kind: 'appointment',
+        title: (sv.title || 'Booked session') + (isClass ? ' \u00b7 ' + rows.length + ' of ' + cap : ''),
+        who: isClass ? '' : (b.guest_name || b.member_email || b.employer_name),
+        t: b.starts_at, end: b.ends_at, allDay: false, color: W6_KIND_COLORS.appointment,
+        link: b.meeting_link, raw: b, roster: rows, capacity: cap, isClass: isClass, svcTitle: sv.title || 'Booked session'
+      });
+    });
+    items.sort(function(a, b){ return new Date(a.t) - new Date(b.t); });
+    w6.items = items;
+    w6.reqs = (res[3] || []).map(function(b){ var sv = svc[b.service_id] || {}; b._service = sv.title || 'Session'; return b; });
+    w6badge();
+  }
+
+  /* ── w6manageModal SHADOW: rosters for a class, unchanged behaviour for a 1:1 ── */
+  function w6manageModal(it){
+    if (!it.isClass){
+      var who = w6who(it.who);
+      var m1 = w6modal(
+        '<div class="card-title" style="margin-bottom:10px;">' + esc(it.title) + '</div>' +
+        '<p style="font-size:13px;">' + (who ? esc(who) + ' \u00b7 ' : '') + new Date(it.t).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }) + ' ' + w6time(it.t) + '</p>' +
+        (it.link ? '<p style="font-size:12.5px;"><a href="' + esc(it.link) + '" target="_blank" rel="noopener">Open the call link \u2192</a></p>' : '') +
+        '<div style="display:flex;gap:10px;margin-top:12px;"><button class="btn" id="w6m-cancel" type="button" style="font-size:12px;">Cancel this ' + (it.src === 'call' ? 'call' : 'booking') + '</button><button class="btn" id="w6m-close" type="button" style="font-size:12px;">Close</button></div>'
+      );
+      m1.querySelector('#w6m-close').addEventListener('click', function(){ m1.remove(); });
+      m1.querySelector('#w6m-cancel').addEventListener('click', async function(){
+        if (!confirm(it.src === 'call' ? 'Cancel this call? Your client will stop seeing it in their app.' : 'Cancel this booked session?')) return;
+        try {
+          if (it.src === 'call') await rest('/coach_sessions?id=eq.' + it.id, { method: 'PATCH', body: { status: 'cancelled' } });
+          else await rest('/bookings?id=eq.' + it.id + '&' + pscope(), { method: 'PATCH', body: { status: 'cancelled', cancelled_at: new Date().toISOString(), cancel_reason: 'coach_cancelled' } });
+          m1.remove(); calLoad();
+        } catch(e){ alert('Cancel failed: ' + e.message); }
+      });
+      return;
+    }
+    var rows = it.roster || [];
+    var m = w6modal(
+      '<div class="card-title" style="margin-bottom:6px;">' + esc(it.svcTitle) + '</div>' +
+      '<p style="font-size:13px;margin-bottom:10px;">' + new Date(it.t).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }) + ' ' + w6time(it.t) +
+        ' \u00b7 <strong>' + rows.length + ' of ' + it.capacity + ' booked</strong></p>' +
+      '<div style="border-top:1px solid var(--border);padding-top:8px;">' +
+      rows.map(function(b){
+        var nm = b.guest_name || (b.member_email ? w6who(b.member_email) : (b.employer_name || 'Guest'));
+        return '<div style="display:flex;gap:10px;align-items:center;padding:6px 0;font-size:12.5px;border-bottom:1px solid var(--border);">' +
+          '<span style="flex:1;">' + esc(nm) + (b.member_email ? '' : ' <span class="w8-chip">not a member</span>') + '</span>' +
+          '<button class="btn" data-w8rm="' + b.id + '" type="button" style="font-size:11px;">Remove</button></div>';
+      }).join('') + '</div>' +
+      '<div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">' +
+      '<button class="btn" id="w6m-cancel-all" type="button" style="font-size:12px;">Cancel the whole session</button>' +
+      '<button class="btn" id="w6m-close" type="button" style="font-size:12px;">Close</button>' +
+      '<span id="w8-rm-msg" style="font-size:12px;color:var(--text-muted);"></span></div>'
+    );
+    m.querySelector('#w6m-close').addEventListener('click', function(){ m.remove(); });
+    m.querySelectorAll('[data-w8rm]').forEach(function(b){ b.addEventListener('click', async function(){
+      if (!confirm('Take this person off the session? Their place frees up straight away.')) return;
+      b.disabled = true;
+      try {
+        await rest('/bookings?id=eq.' + b.dataset.w8rm + '&' + pscope(), { method: 'PATCH', body: { status: 'cancelled', cancelled_at: new Date().toISOString(), cancel_reason: 'coach_cancelled' } });
+        m.remove(); calLoad();
+      } catch(e){ var mm = m.querySelector('#w8-rm-msg'); if (mm) mm.textContent = 'Could not remove them: ' + e.message; b.disabled = false; }
+    }); });
+    m.querySelector('#w6m-cancel-all').addEventListener('click', async function(){
+      if (!confirm('Cancel this session for all ' + rows.length + ' people?')) return;
+      try {
+        await rest('/bookings?id=in.(' + rows.map(function(x){ return x.id; }).join(',') + ')&' + pscope(), { method: 'PATCH', body: { status: 'cancelled', cancelled_at: new Date().toISOString(), cancel_reason: 'coach_cancelled' } });
+        m.remove(); calLoad();
+      } catch(e){ alert('Cancel failed: ' + e.message); }
+    });
+  }
+
+  /* ========================== end PM-XXXX Trainerize W8 ========================== */
+
+
   boot();
 })();
 </script>
