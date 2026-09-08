@@ -1144,17 +1144,6 @@
     try {
       if (IS_FORM(plKind)) plItems = await rest('/coach_forms?' + pscope() + '&kind=eq.' + plKind + '&active=eq.true&order=created_at.desc&select=*') || [];
       else plItems = await rest('/coach_templates?' + pscope() + '&kind=eq.' + plKind + '&active=eq.true&order=created_at.desc&select=*') || [];
-      /* PM-1116 W7: a partner coach's own scope never includes the VYVE stock
-         recipe library (pscope() is partner_id=eq.<id>), so it was invisible to
-         every coach — which is the whole point of stock content. Fetch it too
-         and mark it read-only; Duplicate forks it into their own library. */
-      if (plKind === 'meal' && partnerId){
-        try {
-          var stock = await rest('/coach_templates?partner_id=is.null&kind=eq.meal&active=eq.true&order=name.asc&select=*') || [];
-          stock.forEach(function(x){ x._stock = true; });
-          plItems = plItems.concat(stock);
-        } catch(e){ /* own library still renders */ }
-      }
     } catch(e){ plItems = []; }
     if (!plItems.length){ el.innerHTML = '<div class="empty-state"><h3>Nothing here yet</h3><p>Create your first ' + KIND_LABEL[plKind] + ' and it becomes assignable to clients.</p></div>'; return; }
     el.innerHTML = plItems.map(function(it){
@@ -5130,6 +5119,17 @@
       if (IS_FORM(plKind)) plItems = await rest('/coach_forms?' + pscope() + '&kind=eq.' + plKind + '&active=eq.true&order=created_at.desc&select=*') || [];
       else plItems = await rest('/coach_templates?' + pscope() + '&kind=eq.' + plKind + '&active=eq.true&order=created_at.desc&select=*') || [];
     } catch(e){ plItems = []; }
+    /* PM-1117 W7: the VYVE stock recipe library lives at partner_id IS NULL, and
+       pscope() is partner_id=eq.<id> for a partner coach, so it was never even
+       requested. NOTE: this file declares plLoad four times and hoisting means
+       the LAST one wins — patching an earlier copy is dead code (§23.252). */
+    if (plKind === 'meal'){
+      try {
+        var stock = await rest('/coach_templates?partner_id=is.null&kind=eq.meal&active=eq.true&order=name.asc&select=*') || [];
+        var own = {}; plItems.forEach(function(x){ own[x.id] = 1; });
+        stock.forEach(function(x){ if (!own[x.id]){ x._stock = true; plItems.push(x); } });
+      } catch(e){ /* the coach's own library still renders */ }
+    }
     if (!plItems.length){
       var hint = plKind === 'meal' ? 'Create your first meal \u2014 reuse it across every nutrition plan you build.' : 'Create your first ' + KIND_LABEL[plKind] + ' and it becomes assignable to clients.';
       el.innerHTML = '<div class="empty-state"><h3>Nothing here yet</h3><p>' + hint + '</p></div>';
