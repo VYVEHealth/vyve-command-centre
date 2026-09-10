@@ -5495,6 +5495,9 @@
     $c('cl-detail-name').textContent = nameOf(c);
     var body = $c('cl-detail-body');
     body.innerHTML = '<p style="color:var(--text-muted);font-size:12.5px;">Loading\u2026</p>';
+    /* PM-1156: the workspace card sits BELOW the roster + bulk-upload cards — with a page of clients it opened off-screen and looked like nothing happened. */
+    try { $c('cl-detail-card').scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch(_){}
+    try {
     if (!lib.tpls.length && !lib.forms.length){ try { await loadLibraries(); } catch(_){} }
     var enc = encodeURIComponent(em);
     var res = await Promise.all([
@@ -5521,6 +5524,12 @@
       var diff = (asg.checkin_day - today + 7) % 7;
       var when = diff === 0 ? 'today' : diff === 1 ? 'tomorrow' : W5_DAYS[asg.checkin_day] + ' (in ' + diff + ' days)';
       w5toast((c.invited_first_name || 'Their') + (c.invited_first_name ? '\u2019s' : '') + ' check-in day is ' + when + '.');
+    }
+    } catch(e){
+      /* PM-1156: a render fault used to leave "Loading…" or nothing — surface it. */
+      console.error('viewClient', e);
+      body.innerHTML = '<p style="color:#E8834A;font-size:12.5px;">Couldn\u2019t open this client: ' + esc(e && e.message || e) + '</p>';
+      w5toast('Couldn\u2019t open this client \u2014 ' + (e && e.message || e));
     }
   }
 
