@@ -2664,6 +2664,15 @@
     }
     var more = $c('cl-more');
     if (more) more.addEventListener('click', function(){ clShown += CL_PAGE; renderRoster(); });
+    /* PM-1156: the whole card / row opens the client. Profiles were reachable only via the three-dot menu, so tapping a name did nothing. Controls inside the row keep their own handlers. */
+    el.querySelectorAll('.cl-gcard, .cl-tbl tr').forEach(function(host){
+      var dd = host.querySelector('.cl-dd-btn[data-em]'); if (!dd) return;
+      host.style.cursor = 'pointer';
+      host.addEventListener('click', function(ev){
+        if (ev.target.closest('button, input, a, label, .cl-dd, .cl-ddm')) return;
+        viewClient(dd.dataset.em);
+      });
+    });
     el.querySelectorAll('.cl-dd-btn').forEach(function(b){
       b.addEventListener('click', function(ev){
         ev.stopPropagation();
