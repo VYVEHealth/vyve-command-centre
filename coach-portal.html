@@ -2057,7 +2057,21 @@
     }); });
   }
   function exVideoPreview(){
-    var id = ytId($c('exf-video').value);
+    var raw = $c('exf-video').value.trim();
+    /* PM-1157: VYVE Storage mp4s (and any direct file link) preview as a playable <video>, not a "not a YouTube link" warning. */
+    var direct = /\.(mp4|webm|mov|m4v)(\?|#|$)/i.test(raw) ? raw : '';
+    var vp = $c('exf-vprev');
+    if (direct){
+      var prev = $c('exf-prev');
+      if (!vp){ vp = document.createElement('video'); vp.id = 'exf-vprev'; vp.controls = true; vp.playsInline = true; vp.preload = 'metadata'; vp.style.cssText = 'width:220px;max-width:45%;border-radius:8px;background:#000;flex:none;'; prev.insertBefore(vp, prev.firstChild); }
+      if (vp.getAttribute('src') !== direct){ vp.src = direct; var row = cexEditing || cexDupFrom; var po = row ? w3ThumbSrc(row) : ''; if (po) vp.poster = po; else vp.removeAttribute('poster'); }
+      vp.style.display = ''; $c('exf-thumb').style.display = 'none';
+      prev.style.display = 'flex'; $c('exf-vmsg').style.display = 'none';
+      return;
+    }
+    if (vp){ try { vp.pause(); } catch(_){} vp.style.display = 'none'; }
+    $c('exf-thumb').style.display = '';
+    var id = ytId(raw);
     if (id){ $c('exf-thumb').src = 'https://img.youtube.com/vi/' + id + '/hqdefault.jpg'; $c('exf-prev').style.display = 'flex'; $c('exf-vmsg').style.display = 'none'; }
     else {
       $c('exf-prev').style.display = 'none'; $c('exf-vmsg').style.display = '';
@@ -3662,6 +3676,13 @@
       '.w3-card{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--surface-2);display:flex;flex-direction:column;}' +
       '.w3-card .im{height:120px;background:var(--surface);display:flex;align-items:center;justify-content:center;overflow:hidden;}' +
       '.w3-card .im img{width:100%;height:100%;object-fit:cover;}' +
+      /* PM-1157: VYVE-filmed exercises play in the card — thumbnail is the play surface. */
+      '.w3-card .im{position:relative;}' +
+      '.w3-card .im[data-ex-play]{cursor:pointer;}' +
+      '.w3-card .im .w3-play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:38px;height:38px;border-radius:50%;background:rgba(13,43,43,.72);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;padding-left:3px;box-shadow:0 2px 8px rgba(0,0,0,.35);pointer-events:none;}' +
+      '.w3-card .im[data-ex-play]:hover .w3-play{background:var(--teal);}' +
+      '.w3-card .im.playing{height:auto;aspect-ratio:16/9;cursor:default;background:#000;}' +
+      '.w3-card .im video{width:100%;height:100%;object-fit:contain;background:#000;display:block;}' +
       '.w3-card .bd{padding:9px 11px 11px;display:flex;flex-direction:column;gap:6px;flex:1;}' +
       '.w3-card .nm{font-weight:600;font-size:13px;line-height:1.25;}' +
       '.w3-chip{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.03em;border:1px solid var(--border);border-radius:6px;padding:2px 6px;color:var(--text-muted);margin:0 4px 4px 0;}' +
@@ -3699,6 +3720,11 @@
     var y = ytId(r.video_url);
     if (y) return 'https://img.youtube.com/vi/' + y + '/mqdefault.jpg';
     return '';
+  }
+  /* PM-1157: a direct video file (VYVE Storage mp4, or a coach's own hosted file) can play inline; YouTube can't. */
+  function w3DirectVideo(r){
+    var u = r && (r.video_url || r.media_url) || '';
+    return /\.(mp4|webm|mov|m4v)(\?|#|$)/i.test(u) ? u : '';
   }
   function w3ThumbImg(r, cls){
     var s = w3ThumbSrc(r);
@@ -3786,7 +3812,8 @@
       var acts = mine
         ? '<button class="btn" data-ex-edit="' + r.id + '" style="font-size:11px;">Edit</button> <button class="btn" data-ex-del="' + r.id + '" style="font-size:11px;">Remove</button>'
         : '<button class="btn" data-ex-edit="' + r.id + '" style="font-size:11px;">View</button> <button class="btn" data-ex-dup="' + r.id + '" style="font-size:11px;">Duplicate</button>';
-      return '<div class="w3-card"><div class="im">' + w3ThumbImg(r, '') + '</div><div class="bd">' +
+      var dv = w3DirectVideo(r);
+      return '<div class="w3-card"><div class="im"' + (dv ? ' data-ex-play="' + r.id + '" title="Play video"' : '') + '>' + w3ThumbImg(r, '') + (dv ? '<span class="w3-play">\u25b6</span>' : '') + '</div><div class="bd">' +
         '<div class="nm">' + esc(r.name) + ' <span class="src-tag ' + (mine ? 'src-mine' : 'src-vyve') + '">' + (mine ? 'Yours' : 'VYVE') + '</span></div>' +
         '<div>' + w3MvChips(r.muscle_volumes, 3) + dur + '</div>' +
         '<div style="font-size:11px;color:var(--text-muted);">' + esc(r.category || '') + (r.equipment ? ' \u00b7 ' + esc(r.equipment) : '') + '</div>' +
@@ -3795,6 +3822,18 @@
         '</div></div>';
     }).join('');
     list.querySelectorAll('[data-ex-edit]').forEach(function(b){ b.addEventListener('click', function(){ exOpen(w3ById(b.dataset.exEdit), null); }); });
+    /* PM-1157: tap the thumbnail → the video is in the card and playing. One card plays at a time. */
+    list.querySelectorAll('.im[data-ex-play]').forEach(function(im){
+      im.addEventListener('click', function(){
+        if (im.classList.contains('playing')) return;
+        var r = w3ById(im.dataset.exPlay), url = w3DirectVideo(r); if (!url) return;
+        list.querySelectorAll('.im.playing video').forEach(function(v){ try { v.pause(); } catch(_){} });
+        var poster = w3ThumbSrc(r);
+        im.classList.add('playing');
+        im.innerHTML = '<video controls autoplay playsinline preload="metadata"' + (poster ? ' poster="' + esc(poster) + '"' : '') + ' src="' + esc(url) + '"></video>';
+        var v = im.querySelector('video'); if (v) v.play().catch(function(){});
+      });
+    });
     list.querySelectorAll('[data-ex-dup]').forEach(function(b){ b.addEventListener('click', function(){ exOpen(null, w3ById(b.dataset.exDup)); }); });
     list.querySelectorAll('[data-ex-del]').forEach(function(b){ b.addEventListener('click', async function(){
       if (!confirm('Remove this exercise from your library? Programmes it\u2019s already in are unaffected.')) return;
@@ -3875,7 +3914,7 @@
     $c('exf-name').value = seed.name || '';
     $c('exf-cat').value = seed.category || '';
     $c('exf-eq').value = seed.equipment || '';
-    $c('exf-video').value = (row && row.video_url) || '';
+    $c('exf-video').value = (row && (row.video_url || (!row.partner_id ? row.media_url : ''))) || ''; /* PM-1157: stock rows show what a member actually plays (video_url ∥ media_url) */
     $c('exf-cues').value = seed.cues || '';
     $c('w3f-type').value = seed.exercise_type === 'duration' ? 'duration' : 'reps';
     $c('w3f-dur').value = seed.default_duration_seconds || '';
