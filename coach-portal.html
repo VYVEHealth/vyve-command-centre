@@ -661,7 +661,8 @@
   var vyveScope = false;
   function pscope(){ return partnerId ? ('partner_id=eq.' + partnerId) : 'partner_id=is.null'; }
   function pprefix(){ return partnerId ? ('p-' + partnerId) : 'vyve'; }
-  var VYVE_HIDE_GO = ['profile','messages','notifications','dashboard','clients','clients_checkins','clients_daily','clients_batch','leads','calendar','content','automations','kindsel:onboarding','kindsel:checkin','kindsel:lead','terms'];
+  /* PM-1155: questionnaires / check-in forms / lead forms are VYVE-library kinds too (coach_forms.partner_id IS NULL) — no longer hidden at null scope. */
+  var VYVE_HIDE_GO = ['profile','messages','notifications','dashboard','clients','clients_checkins','clients_daily','clients_batch','leads','calendar','content','automations','terms'];
   var VYVE_HIDE_GRP = ['clients'];
   function applyVyveScopeChrome(){
     if (!vyveScope) return;
@@ -670,7 +671,6 @@
       var h = document.querySelector('.cp-ghead[data-grp="' + g + '"]'); if (h) h.style.display = 'none';
       var s = document.querySelector('.cp-sub[data-sub="' + g + '"]'); if (s) s.style.display = 'none';
     });
-    var fh = document.querySelector('.cp-ghead[data-grp="forms"] span'); if (fh) fh.textContent = 'Habits';
     var lab = document.querySelector('.cp-label'); if (lab) lab.textContent = 'VYVE Library';
     var em = $c('cp-user-email'); if (em && em.textContent.indexOf('VYVE library') < 0) em.innerHTML = '<span style="display:inline-block;padding:2px 8px;border-radius:99px;background:var(--gold);color:#0D2B2B;font-weight:800;font-size:10.5px;margin-right:8px;">VYVE library</span>' + esc(em.textContent);
     var bell = $c('cp-bell'); if (bell && bell.parentNode) bell.parentNode.style.display = 'none';
