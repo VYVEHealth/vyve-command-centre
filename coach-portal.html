@@ -155,12 +155,23 @@
     <div class="login-logo">VYVE</div>
     <div class="login-sub">Coach Portal</div>
     <h2>Welcome back</h2>
-    <p>Sign in with your VYVE coach login.</p>
+    <p id="cp-login-lead">Sign in with your VYVE coach login.</p>
+    <div id="cp-login-fields">
     <label for="cp-email">Email</label>
     <input id="cp-email" type="email" placeholder="you@example.com" autocomplete="username"/>
     <label for="cp-password">Password</label>
     <input id="cp-password" type="password" placeholder="Password" autocomplete="current-password"/>
     <button class="btn btn-primary" id="cp-login-btn" type="button" style="width:100%;">Sign in</button>
+    <div style="text-align:center;margin-top:12px;"><a id="cp-forgot" href="#" style="font-size:12.5px;color:var(--text-muted);text-decoration:underline;">Forgot your password?</a></div>
+    </div>
+    <!-- PM-1158: password recovery lands back on this page (#type=recovery) and completes here -->
+    <div id="cp-reset" style="display:none;">
+    <label for="cp-new-pw">New password</label>
+    <input id="cp-new-pw" type="password" placeholder="At least 8 characters" autocomplete="new-password"/>
+    <label for="cp-new-pw2">Confirm new password</label>
+    <input id="cp-new-pw2" type="password" placeholder="Type it again" autocomplete="new-password"/>
+    <button class="btn btn-primary" id="cp-reset-btn" type="button" style="width:100%;">Set password &amp; sign in</button>
+    </div>
     <div id="login-msg"></div>
   </div>
 </div>
@@ -2512,7 +2523,49 @@
   $c('pl-cancel').addEventListener('click', function(){ $c('pl-editor').style.display = 'none'; });
   $c('pl-save').addEventListener('click', plSave);
 
+  /* PM-1158: forgot-password + in-page recovery. The recovery link (redirectTo = this page) arrives as
+     #access_token=…&type=recovery; the SDK fires SIGNED_IN with a session BEFORE PASSWORD_RECOVERY, so
+     showApp() must not open the portal while a recovery is pending — the new password gets set first. */
+  var cpRecovery = /type=recovery/.test(window.location.hash);
+  function showReset(){
+    $g('shell').classList.remove('show');
+    $g('login-overlay').classList.add('show');
+    $g('cp-login-fields').style.display = 'none';
+    $g('cp-reset').style.display = '';
+    $g('cp-login-lead').textContent = 'Choose a new password for your VYVE login — it works for the coach portal and the app.';
+    $g('login-msg').textContent = '';
+  }
+  $g('cp-forgot').addEventListener('click', async function(ev){
+    ev.preventDefault();
+    var email = $g('cp-email').value.trim(), msg = $g('login-msg');
+    msg.style.color = '';
+    if (!email){ msg.textContent = 'Type your email above first, then tap Forgot your password.'; $g('cp-email').focus(); return; }
+    this.textContent = 'Sending\u2026';
+    var r = await sb().auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + window.location.pathname });
+    this.textContent = 'Forgot your password?';
+    if (r.error){ msg.textContent = r.error.message; return; }
+    msg.style.color = 'var(--success, #3DB89F)';
+    msg.textContent = 'Check your inbox \u2014 the reset link brings you straight back here.';
+  });
+  $g('cp-reset-btn').addEventListener('click', async function(){
+    var pw = $g('cp-new-pw').value, pw2 = $g('cp-new-pw2').value, msg = $g('login-msg');
+    msg.style.color = '';
+    if (pw.length < 8){ msg.textContent = 'Use at least 8 characters.'; return; }
+    if (pw !== pw2){ msg.textContent = 'Those don\u2019t match.'; return; }
+    this.disabled = true;
+    var r = await sb().auth.updateUser({ password: pw });
+    this.disabled = false;
+    if (r.error){ msg.textContent = r.error.message; return; }
+    cpRecovery = false;
+    try { history.replaceState(null, '', window.location.pathname + window.location.search); } catch(_){}
+    $g('cp-reset').style.display = 'none'; $g('cp-login-fields').style.display = '';
+    $g('cp-login-lead').textContent = 'Sign in with your VYVE coach login.';
+    var s = await sb().auth.getSession();
+    if (s.data.session) showApp(s.data.session); else showLogin();
+  });
+  $g('cp-new-pw2').addEventListener('keydown', function(e){ if (e.key === 'Enter') $g('cp-reset-btn').click(); });
   function showApp(sess){
+    if (cpRecovery){ showReset(); return; }
     $g('login-overlay').classList.remove('show');
     $g('shell').classList.add('show');
     $g('cp-user-email').textContent = (sess.user && sess.user.email) || '';
@@ -2527,7 +2580,10 @@
     var client = sb();
     if (!client){ setTimeout(boot, 200); return; }
     var r = await client.auth.getSession();
-    client.auth.onAuthStateChange(function(ev, sess){ if (sess) showApp(sess); else showLogin(); });
+    client.auth.onAuthStateChange(function(ev, sess){
+      if (ev === 'PASSWORD_RECOVERY'){ cpRecovery = true; showReset(); return; }
+      if (sess) showApp(sess); else showLogin();
+    });
     if (r.data.session) showApp(r.data.session); else showLogin();
   }
   $g('cp-login-btn').addEventListener('click', async function(){
