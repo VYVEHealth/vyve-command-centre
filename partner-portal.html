@@ -4180,5 +4180,178 @@ body.w1 .pp-content { grid-row:2; grid-column:2; max-width:1280px; width:100%; }
   }, 350);
 })();
 </script>
+<style id="mb-style">
+/* ══ PM-1161 MOBILE SHELL (≤900px): bottom tab bar + More sheet + avatar menu — Dean picked option A ══ */
+#mb-tabs, #mb-sheet, #mb-ov, #mb-menu, #mb-avatar { display:none; }
+@media (max-width:900px){
+  body.w1.mb #w1-side { display:none; }
+  body.w1.mb .pp-content { padding-bottom:calc(84px + env(safe-area-inset-bottom)); }
+  body.w1.mb .pp-topbar { padding:0 14px; }
+  body.mb #pp-user-email, body.mb #pp-signout { display:none; }
+  body.mb #pp-theme-toggle { display:none; }
+  body.mb #pp-help { width:30px; height:30px; }
+  #mb-avatar { display:none; width:30px; height:30px; border-radius:50%; border:0; background:var(--vyve-teal); color:#fff; font-size:11.5px; font-weight:700; font-family:inherit; cursor:pointer; padding:0; letter-spacing:.02em; }
+  body.mb #mb-avatar { display:inline-flex; align-items:center; justify-content:center; }
+  #mb-tabs { display:none; position:fixed; left:0; right:0; bottom:0; z-index:120; background:var(--surface); border-top:1px solid var(--border); padding:4px 4px calc(6px + env(safe-area-inset-bottom)); }
+  body.mb #mb-tabs { display:flex; }
+  .mb-tab { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:7px 0 4px; border:0; background:none; color:var(--text-muted); font-size:10.5px; font-family:inherit; font-weight:500; position:relative; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  .mb-tab svg { width:22px; height:22px; }
+  .mb-tab.active { color:var(--vyve-teal); font-weight:700; }
+  .mb-tab .mb-badge { position:absolute; top:3px; left:calc(50% + 6px); min-width:16px; height:16px; border-radius:999px; background:#e8834a; color:#fff; font-size:10px; line-height:16px; text-align:center; padding:0 4px; display:none; }
+  .mb-tab .mb-badge.show { display:block; }
+  #mb-ov { position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:130; }
+  #mb-ov.show { display:block; }
+  #mb-sheet, #mb-menu { display:block; }
+  #mb-sheet { position:fixed; left:0; right:0; bottom:0; z-index:131; background:var(--surface); border-radius:18px 18px 0 0; padding:10px 14px calc(16px + env(safe-area-inset-bottom)); transform:translateY(105%); transition:transform .22s ease; }
+  #mb-sheet.open { transform:none; }
+  #mb-menu { position:fixed; right:0; left:0; bottom:0; z-index:131; background:var(--surface); border-radius:18px 18px 0 0; padding:10px 14px calc(16px + env(safe-area-inset-bottom)); transform:translateY(105%); transition:transform .22s ease; }
+  #mb-menu.open { transform:none; }
+  .mb-grab { width:36px; height:4px; border-radius:2px; background:var(--border-strong, var(--border)); margin:0 auto 8px; }
+  .mb-row { display:flex; align-items:center; gap:12px; width:100%; padding:13px 4px; border:0; border-bottom:1px solid var(--border); background:none; color:var(--text); font-size:14.5px; font-family:inherit; text-align:left; cursor:pointer; }
+  .mb-row:last-child { border-bottom:0; }
+  .mb-row svg { width:20px; height:20px; color:var(--vyve-teal); flex:0 0 20px; }
+  .mb-row.active { color:var(--vyve-teal); font-weight:700; }
+  .mb-row .mb-rbadge { margin-left:auto; background:#e8834a; color:#fff; font-size:11px; border-radius:999px; padding:1px 7px; display:none; }
+  .mb-row .mb-rbadge.show { display:inline-block; }
+  .mb-who { font-size:12.5px; color:var(--text-muted); padding:4px 4px 10px; border-bottom:1px solid var(--border); word-break:break-all; }
+}
+</style>
+<script>
+/* ══ PM-1161 MOBILE SHELL ZONE — ≤900px only. Bottom tab bar (creator: Home · My Space · Content ·
+     Earnings · More; ambassador: Home · Earnings · Leads · Help), a More sheet carrying the rest of the
+     W1 IA with the notification badge rolled up, and an avatar menu (email · theme · sign out) replacing
+     the top-bar pill/toggle/sign-out. Navigation is delegated to the W1 shell (window.w1Go) and the W5
+     leads view (#leads); active state is mirrored from .w1-item.active via MutationObserver so this zone
+     never owns routing. Self-contained IIFE (§23.167), fail-open: desktop untouched, no partner → nothing. ══ */
+(function(){
+  'use strict';
+  var REST = _SUPA_URL + '/rest/v1';
+  var inited = false, partnerId = null, ptype = 'creator', mq = window.matchMedia('(max-width:900px)');
+  function $(id){ return document.getElementById(id); }
+  function esc(x){ return String(x==null?'':x).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  async function jwt(){ var r = await _getSB().auth.getSession(); return (r.data.session && r.data.session.access_token) || ''; }
+  var I = {
+    home:'<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+    user:'<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+    film:'<rect x="2" y="2" width="20" height="20" rx="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/>',
+    pound:'<path d="M18 7c0-2.2-1.8-4-4-4s-4 1.8-4 4v10H6"/><line x1="6" y1="12" x2="14" y2="12"/><path d="M6 17c1.5 0 2.5 1 4.5 1s3.5-1 5.5-1"/>',
+    dots:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
+    bell:'<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
+    chat:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+    cal:'<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+    book:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/><path d="M9 16l2 2 4-4"/>',
+    leads:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>',
+    help:'<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+    sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>',
+    out:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>'
+  };
+  function ico(n){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + (I[n] || I.home) + '</svg>'; }
+  var TABS = {
+    creator:    [ {v:'dashboard',l:'Home',i:'home'}, {v:'profile',l:'My Space',i:'user'}, {v:'content',l:'Content',i:'film'}, {v:'earnings',l:'Earnings',i:'pound'}, {v:'more',l:'More',i:'dots',badge:true} ],
+    ambassador: [ {v:'dashboard',l:'Home',i:'home'}, {v:'earnings',l:'Earnings',i:'pound'}, {v:'leads',l:'Leads',i:'leads'}, {v:'help',l:'Help',i:'help'}, {v:'more',l:'More',i:'dots',badge:true} ]
+  };
+  var MORE = {
+    creator:    [ {v:'notifs',l:'Notifications',i:'bell',badge:true}, {v:'community',l:'Community',i:'chat'}, {v:'sessions',l:'Live Sessions',i:'cal'}, {v:'bookings',l:'Bookings',i:'book'}, {v:'leads',l:'Leads',i:'leads'}, {v:'help',l:'Help & Support',i:'help'} ],
+    ambassador: [ {v:'notifs',l:'Notifications',i:'bell',badge:true}, {v:'profile',l:'My Space',i:'user'} ]
+  };
+  function tabs(){ return TABS[ptype] || TABS.creator; }
+  function more(){ return MORE[ptype] || MORE.creator; }
+  function nav(v){
+    closeAll();
+    if (v === 'leads'){ location.hash = '#leads'; try { window.dispatchEvent(new HashChangeEvent('hashchange')); } catch(_){ } return; }
+    if (typeof window.w1Go === 'function') window.w1Go(v); else location.hash = '#' + v;
+  }
+  function mount(){
+    if ($('mb-tabs')) return;
+    var bar = document.createElement('nav'); bar.id = 'mb-tabs'; bar.setAttribute('aria-label', 'Main');
+    bar.innerHTML = tabs().map(function(t){
+      return '<button type="button" class="mb-tab" data-mb="' + t.v + '">' + ico(t.i) + '<span>' + esc(t.l) + '</span>' + (t.badge ? '<span class="mb-badge" id="mb-more-badge">0</span>' : '') + '</button>';
+    }).join('');
+    document.body.appendChild(bar);
+    bar.addEventListener('click', function(e){
+      var b = e.target.closest('.mb-tab'); if (!b) return;
+      var v = b.getAttribute('data-mb');
+      if (v === 'more') { openSheet(!$('mb-sheet').classList.contains('open')); return; }
+      nav(v);
+    });
+    var ov = document.createElement('div'); ov.id = 'mb-ov'; document.body.appendChild(ov);
+    ov.addEventListener('click', closeAll);
+    var sh = document.createElement('div'); sh.id = 'mb-sheet'; sh.setAttribute('role','dialog'); sh.setAttribute('aria-label','More');
+    sh.innerHTML = '<div class="mb-grab"></div>' + more().map(function(m){
+      return '<button type="button" class="mb-row" data-mb="' + m.v + '">' + ico(m.i) + '<span>' + esc(m.l) + '</span>' + (m.badge ? '<span class="mb-rbadge" id="mb-notif-badge">0</span>' : '') + '</button>';
+    }).join('');
+    document.body.appendChild(sh);
+    sh.addEventListener('click', function(e){ var b = e.target.closest('.mb-row'); if (b) nav(b.getAttribute('data-mb')); });
+    // avatar + menu
+    var right = document.querySelector('.pp-topbar-right');
+    var email = (($('pp-user-email') || {}).textContent || '').trim();
+    var initials = email ? email.split('@')[0].split(/[._-]+/).map(function(p){ return p.charAt(0); }).join('').slice(0,2).toUpperCase() : 'ME';
+    var av = document.createElement('button'); av.id = 'mb-avatar'; av.type = 'button'; av.title = 'Account'; av.setAttribute('aria-label','Account'); av.textContent = initials || 'ME';
+    if (right) right.appendChild(av);
+    var mn = document.createElement('div'); mn.id = 'mb-menu'; mn.setAttribute('role','dialog'); mn.setAttribute('aria-label','Account');
+    mn.innerHTML = '<div class="mb-grab"></div><div class="mb-who">' + esc(email) + '</div>' +
+      '<button type="button" class="mb-row" data-act="theme">' + ico('sun') + '<span>Switch light / dark</span></button>' +
+      '<button type="button" class="mb-row" data-act="out">' + ico('out') + '<span>Sign out</span></button>';
+    document.body.appendChild(mn);
+    av.addEventListener('click', function(){ openMenu(!mn.classList.contains('open')); });
+    mn.addEventListener('click', function(e){
+      var b = e.target.closest('.mb-row'); if (!b) return;
+      var a = b.getAttribute('data-act'); closeAll();
+      if (a === 'theme'){ var t = $('pp-theme-toggle'); if (t) t.click(); }
+      if (a === 'out'){ var o = $('pp-signout'); if (o) o.click(); }
+    });
+    document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeAll(); });
+    // mirror active + badge from the W1 sidebar
+    var side = $('w1-side');
+    if (side && window.MutationObserver){
+      new MutationObserver(sync).observe(side, { attributes:true, subtree:true, childList:true, characterData:true, attributeFilter:['class'] });
+    }
+    sync();
+    apply();
+    mq.addEventListener ? mq.addEventListener('change', apply) : mq.addListener(apply);
+  }
+  function apply(){ document.body.classList.toggle('mb', !!mq.matches); if (!mq.matches) closeAll(); }
+  function openSheet(on){ var s = $('mb-sheet'), o = $('mb-ov'), m = $('mb-menu'); if (!s) return; if (m) m.classList.remove('open'); s.classList.toggle('open', !!on); o.classList.toggle('show', !!on); }
+  function openMenu(on){ var s = $('mb-sheet'), o = $('mb-ov'), m = $('mb-menu'); if (!m) return; if (s) s.classList.remove('open'); m.classList.toggle('open', !!on); o.classList.toggle('show', !!on); }
+  function closeAll(){ openSheet(false); openMenu(false); }
+  function sync(){
+    var act = document.querySelector('.w1-item.active');
+    var v = act ? (act.getAttribute('data-w1') || act.getAttribute('data-w5nav') || '') : '';
+    var inBar = tabs().some(function(t){ return t.v === v; });
+    document.querySelectorAll('.mb-tab').forEach(function(b){
+      var tv = b.getAttribute('data-mb');
+      b.classList.toggle('active', tv === v || (tv === 'more' && !inBar && !!v));
+    });
+    document.querySelectorAll('.mb-row[data-mb]').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-mb') === v); });
+    var src = $('w1-nbadge'), n = src ? src.textContent : '0', show = !!(src && src.classList.contains('show'));
+    var mb = $('mb-more-badge'), nb = $('mb-notif-badge');
+    if (mb){ mb.textContent = n; mb.classList.toggle('show', show); }
+    if (nb){ nb.textContent = n; nb.classList.toggle('show', show); }
+  }
+  /* ── boot ── */
+  var poll = setInterval(async function(){
+    var shell = $('shell');
+    if (!shell || !shell.classList.contains('ready') || inited) return;
+    if (!$('w1-side')) return; // W1 shell not built yet
+    inited = true; clearInterval(poll);
+    try {
+      var tk = await jwt();
+      if (tk){
+        var r = await fetch(REST + '/rpc/get_my_partner_id', { method:'POST', headers:{ 'apikey':_SUPA_ANON, 'Authorization':'Bearer ' + tk, 'Content-Type':'application/json' }, body:'{}' });
+        var pid = r.ok ? await r.json().catch(function(){ return null; }) : null;
+        partnerId = (typeof pid === 'string' && pid) ? pid : null;
+        if (partnerId){
+          try {
+            var pr = await fetch(REST + '/partner_partners?id=eq.' + partnerId + '&select=partner_type', { headers:{ 'apikey':_SUPA_ANON, 'Authorization':'Bearer ' + tk } });
+            var row = pr.ok ? (await pr.json())[0] : null;
+            if (row && row.partner_type === 'ambassador') ptype = 'ambassador';
+          } catch(_){}
+        }
+      }
+      mount(); // demo/admin logins get the creator bar — same content the sidebar shows them
+    } catch(e){ try { window.reportError && window.reportError('mb_zone_boot', e); } catch(_){} }
+  }, 350);
+})();
+</script>
 </body>
 </html>
