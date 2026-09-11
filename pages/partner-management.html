@@ -279,11 +279,13 @@
         <div class="subtabs">
           <button class="subtab active" onclick="cmTab(this,'cm-queue')">Moderation queue <span class="pill p-review" style="margin-left:4px" id="cm-q-count">0</span></button>
           <button class="subtab" onclick="cmTab(this,'cm-flagged')">Flagged <span class="pill p-suspended" style="margin-left:4px" id="cm-f-count">0</span></button>
+          <button class="subtab" onclick="cmTab(this,'cm-removals')">Removal requests <span class="pill p-review" style="margin-left:4px" id="cm-r-count">0</span></button>
           <button class="subtab" onclick="cmTab(this,'cm-library')">All library</button>
           <button class="subtab" onclick="cmTab(this,'cm-programs')">Programs</button>
         </div>
         <div class="subpane active" id="cm-queue"></div>
         <div class="subpane" id="cm-flagged"></div>
+        <div class="subpane" id="cm-removals"></div>
         <div class="subpane" id="cm-library"></div>
         <div class="subpane" id="cm-programs"></div>
       </section>
@@ -1343,7 +1345,8 @@ async function loadPartnerContent(p){
           ${c.type==='video'?ICONS.film:c.type==='live_session'?ICONS.cal||ICONS.phone:c.type==='program'?ICONS.cap:ICONS.doc}
         </div>
         <div style="flex:1"><div class="ct">${esc(c.title)}</div><div class="cs">${c.type}${c.duration_sec?' · '+Math.floor(c.duration_sec/60)+'m':''} · ${c.play_count} plays</div></div>
-        <span class="pill ${modColors[c.moderation_status]||'p-draft'}">${c.moderation_status}</span>
+        ${c.removed_at?`<span class="pill p-draft" title="${c.removed_by==='partner:safeguarding'?'Hidden by the partner (safeguarding) — awaiting your review':'Removed '+(c.removed_by||'')}">${c.removed_by==='partner:safeguarding'?'hidden · safeguarding':'removed'}</span>`:`<span class="pill ${modColors[c.moderation_status]||'p-draft'}">${c.moderation_status}</span>`}
+        ${c.removal_requested_at&&(!c.removed_at||c.removed_by==='partner:safeguarding')?`<span class="pill p-suspended" title="${esc(c.removal_note||'')}">removal requested · ${esc((c.removal_reason||'').replace(/_/g,' '))}</span><div class="row-actions"><button class="tb-btn" onclick="actionRemoval('${c.id}','remove')">${c.removed_at?'Confirm removal':'Remove'}</button><button class="tb-btn" onclick="actionRemoval('${c.id}','keep')">${c.removed_at?'Reinstate':'Keep live'}</button></div>`:''}
         ${c.moderation_status==='in_review'?`<div class="row-actions"><button class="icon-btn btn-approve" onclick="moderateContent('${c.id}','approved')">${ICONS.check}</button><button class="icon-btn btn-reject" onclick="moderateContent('${c.id}','returned')">${ICONS.x}</button></div>`:''}
       </div>`).join('')}</div>`:'<div class="empty-state">No content yet</div>';
 }
@@ -1689,7 +1692,7 @@ function renderPartnerSettings(p){
           <button class="tb-btn" onclick="downloadPartnerQr('${(p.slug||'partner')}')">Download QR (PNG)</button>
         </div>
         <div style="margin-top:8px;font-size:12px;color:var(--muted)">Spoken/typed code: <b style="color:var(--mint)">${p.slug||'—'}</b></div>
-        ${p.status!=='live'?`<div style="margin-top:10px;font-size:12px;color:var(--amber);background:rgba(224,155,61,.08);border:1px solid rgba(224,155,61,.3);border-radius:8px;padding:8px 10px;line-height:1.5">&#9888; Partner is <b>${p.status}</b> — this link answers &ldquo;invite not active&rdquo; until you set them live. It switches on automatically at go-live.</div>`:''}
+        ${p.status==='onboarding'?`<div style="margin-top:10px;font-size:12px;color:var(--mint);background:rgba(94,196,176,.08);border:1px solid rgba(94,196,176,.3);border-radius:8px;padding:8px 10px;line-height:1.5">&#10003; Link and code are <b>active</b> (PM-1156: earning starts at Gate A). Partner is <b>onboarding</b> — members can't see the community until you set them live.</div>`:(p.status!=='live'?`<div style="margin-top:10px;font-size:12px;color:var(--amber);background:rgba(224,155,61,.08);border:1px solid rgba(224,155,61,.3);border-radius:8px;padding:8px 10px;line-height:1.5">&#9888; Partner is <b>${p.status}</b> — this link answers &ldquo;invite not active&rdquo;. Only onboarding and live partners can recruit.</div>`:'')}
       </div>
 
       <div style="margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--line)">
@@ -1774,8 +1777,12 @@ function renderContent(){
   const library=allContent.filter(c=>c.moderation_status==='approved');
   const programs=allContent.filter(c=>c.type==='program');
 
+  // PM-1169: open removal requests — a partner asked; urgent (safeguarding) ones are already hidden and await review
+  const removals=allContent.filter(c=>c.removal_requested_at && (!c.removed_at || c.removed_by==='partner:safeguarding'))
+    .sort((a,b)=>(b.removal_urgent?1:0)-(a.removal_urgent?1:0) || (a.removal_requested_at<b.removal_requested_at?-1:1));
   document.getElementById('cm-q-count').textContent=queue.length;
   document.getElementById('cm-f-count').textContent=flagged.length;
+  const rc=document.getElementById('cm-r-count'); if(rc){rc.textContent=removals.length; rc.className='pill '+(removals.some(r=>r.removal_urgent)?'p-suspended':'p-review');}
 
   const typeColors={video:'var(--mental)',live_session:'var(--mint)',program:'var(--warning)',post:'var(--muted)'};
 
@@ -1801,6 +1808,27 @@ function renderContent(){
   };
   render('cm-queue',queue,true);
   render('cm-flagged',flagged,true);
+  {
+    const RL={mistake:'Mistake in it',out_of_date:'Out of date',replacing:'Replacing with a new version',copyright:'Copyright / permission',safeguarding:'SAFEGUARDING / WELLBEING',other:'Other'};
+    const el=document.getElementById('cm-removals');
+    if(el){
+      el.innerHTML=removals.length?removals.map(c=>{
+        const pName=partnerMap[c.partner_id]?.name||'Unknown';
+        const when=new Date(c.removal_requested_at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+        const urgent=!!c.removal_urgent;
+        return `<div class="ctile" style="${urgent?'border-color:var(--danger);':''}">
+          <div class="th" style="${c.thumbnail_url?`background-image:url('${c.thumbnail_url}');background-size:cover;background-position:center`:'background:rgba(77,170,170,.08)'}"></div>
+          <div style="flex:1"><div class="ct">${esc(c.title)} ${urgent?'<span class="pill p-suspended">hidden from members</span>':'<span class="pill p-live">still live</span>'}</div>
+            <div class="cs">${esc(pName)} · asked ${when} · <b>${RL[c.removal_reason]||esc(c.removal_reason||'')}</b>${c.removal_note?` — “${esc(c.removal_note)}”`:''}</div></div>
+          <div class="row-actions">
+            ${c.media_url?`<button class="icon-btn" onclick="watchPartnerFile('${c.id}')" title="Watch here"><span data-i="play"></span></button>`:''}
+            <button class="tb-btn" onclick="actionRemoval('${c.id}','remove')" title="Remove from the partner's space">${urgent?'Confirm removal':'Remove'}</button>
+            <button class="tb-btn" onclick="actionRemoval('${c.id}','keep')" title="${urgent?'Put it back live and close the request':'Decline and keep it live'}">${urgent?'Reinstate':'Keep live'}</button>
+          </div></div>`;
+      }).join(''):'<div class="empty-state">No open removal requests</div>';
+      setIcons(el);
+    }
+  }
   render('cm-library',library,false);
   render('cm-programs',programs,false);
 }
@@ -1858,6 +1886,23 @@ async function moderateContent(id,newStatus){
   renderContent();
   if(currentDetailId) loadPartnerContent(partnerMap[currentDetailId]);
   toast(newStatus==='approved'?'Approved':'Returned to partner');
+}
+
+/* PM-1169: action a partner's removal request. 'remove' hides it (removed_at/removed_by = admin);
+   'keep' clears the request and, for an urgent one, puts it back live. */
+async function actionRemoval(id,what){
+  const c=allContent.find(x=>x.id===id); if(!c) return;
+  const {data:{session}}=await sb.auth.getSession();
+  const me=(session&&session.user&&session.user.email)||'admin';
+  const patch=what==='remove'
+    ? {removed_at:new Date().toISOString(),removed_by:me}
+    : {removed_at:null,removed_by:null,removal_requested_at:null,removal_reason:null,removal_note:null,removal_urgent:false};
+  const {error}=await sb.from('partner_content_items').update(patch).eq('id',id);
+  if(error){toast(error.message,'error');return;}
+  allContent=allContent.map(x=>x.id===id?{...x,...patch}:x);
+  renderContent();
+  if(currentDetailId) loadPartnerContent(partnerMap[currentDetailId]);
+  toast(what==='remove'?'Removed from the partner\'s space':'Kept live — request closed');
 }
 
 async function bulkApprove(){
@@ -2383,6 +2428,7 @@ window.loadPartnerAccessLine = loadPartnerAccessLine;
 window.loadPartnerApplication = loadPartnerApplication;
 window.loadPartnerBankLine = loadPartnerBankLine;
 window.loadPartnerContent = loadPartnerContent;
+window.actionRemoval = actionRemoval;
 window.loadPartnerDocs = loadPartnerDocs;
 window.loadPartnerMembers = loadPartnerMembers;
 window.loadPartnerRevenue = loadPartnerRevenue;
