@@ -949,7 +949,8 @@
     // PM-1159: an RPC that FAILS (offline, expired token, 5xx) is not "not provisioned" —
     // April hit this in airplane mode and read it as VYVE not having set her up. Errors get a
     // retry screen; only a definite false gets the provisioning message. A 401 = dead session.
-    var rp = await client.rpc('is_partner').catch(function(e){ return { data: null, error: e }; });
+    var rp;
+    try { rp = await client.rpc('is_partner'); } catch(e){ rp = { data: null, error: e }; } // PostgrestBuilder is thenable, not a Promise — no .catch (PM-1162)
     var isPartner = rp && rp.data;
     if (rp && rp.error) {
       var st = (rp.error.status || (rp.error.code === 'PGRST301' ? 401 : 0));
