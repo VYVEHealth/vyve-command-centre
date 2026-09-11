@@ -1504,6 +1504,25 @@
   var MAX_UPLOAD_BYTES = 2 * 1024 * 1024 * 1024; // 2GB (matches partner-content bucket)
   // Best-effort poster frame from the selected video, drawn to a small JPEG.
   // Returns a Blob, or null if the codec won't decode in-browser (falls back to the film icon).
+  // ── PM-1178: upload telemetry + wake lock ───────────────────────────────
+  // A silent upload failure used to reach us only when the partner messaged (April, 11 Sep).
+  // beacon() reports progress to partner-content-upload; the 10-min sweep alerts on anything
+  // that starts and never commits. keepAwake() holds a screen wake lock where supported so a
+  // long upload isn't killed by the display sleeping.
+  function beacon(path, status, pct, err) {
+    try {
+      fetch(_SUPA_URL + '/functions/v1/partner-content-upload', {
+        method: 'POST', headers: efHeaders(), keepalive: true,
+        body: JSON.stringify({ action: 'attempt', partner_id: state.partnerId, path: path, status: status, progress_pct: pct, error: err || null })
+      }).catch(function(){});
+    } catch(_){}
+  }
+  async function keepAwake() {
+    try { if (navigator.wakeLock && navigator.wakeLock.request) return await navigator.wakeLock.request('screen'); } catch(_){}
+    return null;
+  }
+  function releaseAwake(l) { try { if (l && l.release) l.release(); } catch(_){} }
+
   function captureThumb(file) {
     return new Promise(function(resolve) {
       try {
@@ -1560,6 +1579,11 @@
      in_review and dateless, so it appears in the Library as Ready to push once
      approved. Failed rows get Retry; the single-file path above is untouched. */
   var uq = { items: [], running: false };
+  // PM-1178: a backgrounded tab kills the transfer — say so rather than failing silently.
+  window.addEventListener('beforeunload', function(e){
+    var busy = uq.running || (state.uploadFile && $('upload-progress') && $('upload-progress').style.display !== 'none');
+    if (busy) { e.preventDefault(); e.returnValue = ''; return ''; }
+  });
   function uqRender() {
     var list = $('uq-list'); if (!list) return;
     list.innerHTML = uq.items.map(function(it, i) {
@@ -1595,17 +1619,23 @@
   }
   function uqClear() { uq.items = []; uq.running = false; $('upload-queue').style.display = 'none'; $('upload-file').value = ''; }
   async function uploadOne(it) {
-    var sign = await fetch(_SUPA_URL + '/functions/v1/partner-content-upload', { method: 'POST', headers: efHeaders(), body: JSON.stringify({ action: 'sign', partner_id: state.partnerId, file_name: it.file.name }) });
+    var sign = await fetch(_SUPA_URL + '/functions/v1/partner-content-upload', { method: 'POST', headers: efHeaders(), body: JSON.stringify({ action: 'sign', partner_id: state.partnerId, file_name: it.file.name, file_bytes: it.file.size, file_type: it.file.type || null, batch: true }) });
     var sd = await sign.json().catch(function(){ return {}; });
     if (!sd.signed_url) throw new Error(sd.error || 'Could not get upload URL');
     it.status = 'uploading'; it.pct = 0; uqRender();
-    await new Promise(function(resolve, reject) {
-      var xhr = new XMLHttpRequest();
-      xhr.upload.onprogress = function(e){ if (e.lengthComputable) { it.pct = Math.round(e.loaded / e.total * 100); var f = document.activeElement; if (f && f.hasAttribute && f.hasAttribute('data-uq-title')) return; uqRender(); } }; // don't re-render while a title is being typed
-      xhr.onload = function(){ if (xhr.status >= 200 && xhr.status < 300) resolve(); else reject(new Error('Upload failed: ' + xhr.status)); };
-      xhr.onerror = function(){ reject(new Error('Network error during upload')); };
-      xhr.open('PUT', sd.signed_url); xhr.setRequestHeader('Content-Type', it.file.type || 'video/mp4'); xhr.send(it.file);
-    });
+    var wake = await keepAwake(), lastB = 0;
+    try {
+      await new Promise(function(resolve, reject) {
+        var xhr = new XMLHttpRequest();
+        xhr.upload.onprogress = function(e){ if (e.lengthComputable) { it.pct = Math.round(e.loaded / e.total * 100);
+          if (Date.now() - lastB > 15000) { lastB = Date.now(); beacon(sd.storage_path, 'uploading', it.pct); }
+          var f = document.activeElement; if (f && f.hasAttribute && f.hasAttribute('data-uq-title')) return; uqRender(); } }; // don't re-render while a title is being typed
+        xhr.onload = function(){ if (xhr.status >= 200 && xhr.status < 300) resolve(); else reject(new Error('Upload failed: ' + xhr.status)); };
+        xhr.onerror = function(){ reject(new Error('Network error during upload')); };
+        xhr.open('PUT', sd.signed_url); xhr.setRequestHeader('Content-Type', it.file.type || 'video/mp4'); xhr.send(it.file);
+      });
+    } catch (e) { beacon(sd.storage_path, 'failed', it.pct || 0, e.message); releaseAwake(wake); throw e; }
+    releaseAwake(wake); beacon(sd.storage_path, 'uploaded', 100);
     it.status = 'finishing'; uqRender();
     var thumbUrl = null;
     try {
@@ -1662,27 +1692,40 @@
           action: 'sign',
           partner_id: state.partnerId,
           file_name: state.uploadFile.name,
+          file_bytes: state.uploadFile.size,      // PM-1178: opens an attempt row we can alert on
+          file_type: state.uploadFile.type || null,
+          batch: false,
         }),
       });
       var urlData = await urlRes.json();
       if (!urlData.signed_url) throw new Error(urlData.error || 'Could not get upload URL');
 
       // 2. Upload file via signed URL
+      var wake = await keepAwake();               // PM-1178: stop the screen sleeping mid-upload
+      var lastBeacon = 0;
       var xhr = new XMLHttpRequest();
       xhr.upload.onprogress = function(e) {
         if (e.lengthComputable) {
           var pct = Math.round(e.loaded / e.total * 100);
           $('upload-bar').style.width = pct + '%';
-          $('upload-progress-label').textContent = pct + '% uploaded';
+          $('upload-progress-label').textContent = pct + '% uploaded' + (pct < 100 ? ' \u2014 keep this page open' : '');
+          if (Date.now() - lastBeacon > 15000) { lastBeacon = Date.now(); beacon(urlData.storage_path, 'uploading', pct); }
         }
       };
-      await new Promise(function(resolve, reject) {
-        xhr.onload = function() { if (xhr.status >= 200 && xhr.status < 300) resolve(); else reject(new Error('Upload failed: ' + xhr.status)); };
-        xhr.onerror = function() { reject(new Error('Network error during upload')); };
-        xhr.open('PUT', urlData.signed_url);
-        xhr.setRequestHeader('Content-Type', state.uploadFile.type || 'video/mp4');
-        xhr.send(state.uploadFile);
-      });
+      try {
+        await new Promise(function(resolve, reject) {
+          xhr.onload = function() { if (xhr.status >= 200 && xhr.status < 300) resolve(); else reject(new Error('Upload failed: ' + xhr.status)); };
+          xhr.onerror = function() { reject(new Error('Network error during upload')); };
+          xhr.open('PUT', urlData.signed_url);
+          xhr.setRequestHeader('Content-Type', state.uploadFile.type || 'video/mp4');
+          xhr.send(state.uploadFile);
+        });
+      } catch (upErr) {
+        beacon(urlData.storage_path, 'failed', parseInt(($('upload-bar').style.width || '0'), 10) || 0, upErr.message);
+        releaseAwake(wake); throw upErr;
+      }
+      releaseAwake(wake);
+      beacon(urlData.storage_path, 'uploaded', 100);
 
       // 2b. Best-effort poster frame -> public thumbnails bucket (ignore failures).
       var thumbUrl = null;

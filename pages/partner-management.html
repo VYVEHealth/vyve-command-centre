@@ -1376,8 +1376,20 @@ async function loadPartnerContent(p){
         ${l==='removed'?`<button class="tb-btn" onclick="actionRemoval('${c.id}','keep')" title="Put it back on the partner space">Reinstate</button>`:''}
       </div></div>`;
   };
+  // PM-1178: surface uploads that started and never arrived
+  let failedHtml='';
+  try{
+    const {data:att}=await sb.from('partner_upload_attempts').select('*').eq('partner_id',p.id)
+      .not('status','in','("committed")').order('started_at',{ascending:false}).limit(10);
+    if(att&&att.length){
+      failedHtml=`<div class="ctile" style="border-color:var(--warning);display:block">
+        <div class="ct" style="margin-bottom:6px">Uploads that didn't arrive (${att.length})</div>
+        ${att.map(a=>`<div class="cs" style="padding:3px 0">${esc(a.file_name||'?')} · ${(Number(a.file_bytes||0)/1048576).toFixed(0)} MB · reached ${a.progress_pct}% · <b>${esc(a.status)}</b>${a.error?' · '+esc(a.error):''} · ${new Date(a.started_at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>`).join('')}
+      </div>`;
+    }
+  }catch(_){}
   const el=document.getElementById('pd-content');
-  el.innerHTML=`
+  el.innerHTML=failedHtml+`
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
       <input type="text" id="pcl-q" placeholder="Search titles…" value="${esc(st.q)}" style="flex:1;min-width:180px;padding:8px 12px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface);color:var(--text)"/>
       <select id="pcl-sort" style="padding:8px 10px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface);color:var(--text)">
