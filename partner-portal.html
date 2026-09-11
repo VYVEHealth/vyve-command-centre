@@ -721,7 +721,7 @@
         </div>
         <div class="faq-list">
           <details class="faq"><summary>How does my referral link work?</summary><div class="faq-a">Your link (shown on the Earnings tab, with a QR code) takes people to a simple account-creation page — email and password, no payment details. Their signup is attributed to you the moment the account is created, before they even install the app. Anyone who joins through it, or types your code at signup in the app, counts as yours.</div></details>
-          <details class="faq"><summary>When does my link start working?</summary><div class="faq-a">The moment your space goes live. Before that, the link shows an "invite not active" message — you can still prepare posters and posts, and it switches on automatically at go-live.</div></details>
+          <details class="faq"><summary>When does my link start working?</summary><div class="faq-a">Straight away — as soon as you can log in here, your link and code work and every signup through them is yours. Going live is separate: that's when your community becomes visible to members inside the app, once your welcome video and profile are in place.</div></details>
           <details class="faq"><summary>What do members get when they join through me?</summary><div class="faq-a">A free first week with everything unlocked — no payment details up front. After the week, they can continue at your partner rate of &pound;10 a month, applied automatically. They never need to remember a code.</div></details>
           <details class="faq"><summary>How do I earn?</summary><div class="faq-a">You earn your agreed share (standard 50%) of what each of your referred members actually pays, every month they stay subscribed. The Earnings tab shows your funnel — on free trial, paying, and trial-ended — and your estimated monthly earnings.</div></details>
           <details class="faq"><summary>How and when do I get paid?</summary><div class="faq-a">Monthly, by bank transfer from VYVE. Add your bank details in the Payout details card on the Earnings tab — only VYVE's finance team can see them. Your payout history appears on the same tab.</div></details>
@@ -1739,20 +1739,31 @@
     var block = $('promo-code-block');
     if (block) block.style.display = 'block';
 
-    /* PM-879: validate_code only answers for LIVE partners, so before go-live the link
-       and QR resolve to "invite not active" — say so instead of presenting a dead link
-       (Dean hit exactly this on his onboarding-status test partner). Link + QR stay
-       visible for poster prep; the banner is the honesty. */
+    /* PM-1156: the link, code and earnings are active from Gate A (status 'onboarding')
+       — Dean decision 11 Sep 2026, reversing PM-879's live-only rule. Gate B ('live')
+       only controls whether members can SEE the community. The banner now says that
+       for onboarding partners, and only goes amber for suspended/other states. */
     var notLiveEl = $('ref-notlive');
     if (!notLiveEl) {
       notLiveEl = document.createElement('div');
       notLiveEl.id = 'ref-notlive';
       notLiveEl.style.cssText = 'display:none;margin-top:12px;background:rgba(224,155,61,0.10);border:1px solid rgba(224,155,61,0.35);border-radius:8px;padding:10px 12px;font-size:12.5px;line-height:1.5;';
-      notLiveEl.innerHTML = '&#9888; <b>Your link activates at go-live.</b> Until your space is live, anyone opening it will see &ldquo;invite not active&rdquo;. Feel free to prepare posters and posts now &mdash; it switches on automatically the moment you\u2019re live.';
+      notLiveEl.innerHTML = '';
       var codeRow = $('promo-code-display');
       if (codeRow && codeRow.parentElement && codeRow.parentElement.parentElement) codeRow.parentElement.parentElement.insertBefore(notLiveEl, codeRow.parentElement.nextSibling);
     }
-    notLiveEl.style.display = (state.partnerRow && state.partnerRow.status !== 'live') ? 'block' : 'none';
+    var pStatus = state.partnerRow ? state.partnerRow.status : null;
+    if (pStatus === 'onboarding') {
+      notLiveEl.style.background = 'rgba(94,196,176,0.08)'; notLiveEl.style.borderColor = 'rgba(94,196,176,0.35)';
+      notLiveEl.innerHTML = '&#10003; <b>Your link and code are live now</b> &mdash; share them and start earning straight away. Your community becomes visible to members when your space goes live (welcome video + profile, then the VYVE team flips it).';
+      notLiveEl.style.display = 'block';
+    } else if (pStatus && pStatus !== 'live') {
+      notLiveEl.style.background = 'rgba(224,155,61,0.10)'; notLiveEl.style.borderColor = 'rgba(224,155,61,0.35)';
+      notLiveEl.innerHTML = '&#9888; <b>Your link is paused.</b> Your partner status is <b>' + pStatus + '</b>, so anyone opening it will see &ldquo;invite not active&rdquo;. Contact team@vyvehealth.co.uk.';
+      notLiveEl.style.display = 'block';
+    } else {
+      notLiveEl.style.display = 'none';
+    }
 
     // QR — rendered client-side from the link; nothing stored, can never go stale.
     if (shareVal && window.qrcode) {
