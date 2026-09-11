@@ -1397,7 +1397,7 @@
     }
     if (st === 'approved') {
       if (!pub) return { cls:'chip-approved', label:'Ready to push', meta:'Approved \u2014 push it to your space whenever you\u2019re ready', editable:false, pushable:true };
-      if (future) return { cls:'chip-scheduled', label:'Scheduled · '+fmtDateTime(item.publish_at), meta:'Approved · goes live '+fmtDateTime(item.publish_at), editable:false };
+      if (future) return { cls:'chip-scheduled', label:'Scheduled · '+fmtDateTime(item.publish_at), meta:'Approved · goes live '+fmtDateTime(item.publish_at), editable:false, scheduled:true };
       if (item.removal_requested_at) return { cls:'chip-live', label:'Live · removal requested', live:true, removalOpen:true, editable:false,
         meta:'Still visible to members until the VYVE team actions your request (' + (RM[item.removal_reason] || 'reason given') + ')' };
       return { cls:'chip-live', label:'Live', live:true, meta:'Live since '+fmtDateTime(item.publish_at)+' · visible to your community', editable:false };
@@ -1458,8 +1458,23 @@
       var editBtn = s.editable ? '<button class="content-edit-btn" title="Edit details" data-edit="'+item.id+'" type="button">'+pencil+'</button>' : '';
       /* PM-901: approved library items get an explicit push — going live in the
          partner's space is THEIR act, approval is only VYVE's gate. */
-      var pushBtn = s.pushable ? '<button class="btn btn-teal" data-push="'+item.id+'" type="button" style="font-size:12px;padding:7px 14px;flex:none;">Push to my space</button>' : '';
+      var pushBtn = s.pushable ? '<button class="btn btn-teal" data-push="'+item.id+'" type="button" style="font-size:12px;padding:7px 14px;flex:none;">Push to my space</button>'
+        + '<button class="btn btn-ghost" data-sched="'+item.id+'" type="button" style="font-size:12px;padding:7px 12px;flex:none;">Schedule</button>' : '';
+      // PM-1190: approved library items can be given a go-live date instead of going live now
+      var schedPanel = s.pushable
+        ? '<div id="sched-'+item.id+'" style="display:none;padding:10px 0 14px;">'
+          + '<div class="field" style="margin-bottom:8px;"><label>Go live on</label><input type="datetime-local" id="sched-when-'+item.id+'" style="width:100%;max-width:280px;"/></div>'
+          + '<div class="field-hint" style="margin-bottom:10px;">Pick a date and time at least 48 hours away. It stays in your library until then, and appears on your space automatically.</div>'
+          + '<div style="display:flex;gap:8px;"><button class="btn btn-teal" data-schedsave="'+item.id+'" type="button" style="font-size:12px;">Schedule it</button><button class="btn btn-ghost" data-schedclose="'+item.id+'" type="button" style="font-size:12px;">Cancel</button></div>'
+          + '<div id="sched-err-'+item.id+'" style="font-size:12px;color:var(--danger);margin-top:6px;"></div></div>'
+        : '';
       // PM-1169: live items can REQUEST removal (VYVE actions it); an open request can be cancelled.
+      // PM-1190: a scheduled item can be brought forward or put back in the library
+      var unschedPanel = '';
+      if (s.scheduled) {
+        pushBtn = '<button class="btn btn-teal" data-push="'+item.id+'" type="button" style="font-size:12px;padding:7px 14px;flex:none;">Go live now</button>'
+          + '<button class="btn btn-ghost" data-unsched="'+item.id+'" type="button" style="font-size:12px;padding:7px 12px;flex:none;">Cancel schedule</button>';
+      }
       var rmBtn = s.live && !s.removalOpen ? '<button class="btn btn-ghost" data-rmreq="'+item.id+'" type="button" style="font-size:12px;padding:7px 12px;flex:none;">Request removal</button>'
                : (s.removalOpen && !item.removal_urgent ? '<button class="btn btn-ghost" data-rmcancel="'+item.id+'" type="button" style="font-size:12px;padding:7px 12px;flex:none;">Cancel request</button>' : '');
       var rmPanel = s.live && !s.removalOpen
@@ -1489,16 +1504,17 @@
         + '<div class="content-item" data-cid="'+item.id+'" style="border-bottom:none;">'+thumb
         + '<div class="content-info"><div class="content-info-title">'+escHtml(item.title)+'</div><div class="content-info-meta">'+s.meta+w3stats+'</div></div>'
         + '<div class="content-actions">'+editBtn+pushBtn+rmBtn+'<span class="mod-chip '+s.cls+'">'+s.label+'</span></div></div>'
-        + editor + rmPanel + '</div>';
+        + editor + rmPanel + schedPanel + unschedPanel + '</div>';
     }).join('');
     el.querySelectorAll('[data-push]').forEach(function(btn) {
       btn.addEventListener('click', async function() {
         if (!confirm('Push this video to your space now? Your community will see it straight away.')) return;
+        var wasScheduled = btn.textContent.indexOf('Go live now') === 0;
         btn.disabled = true; btn.textContent = 'Pushing\u2026';
         try {
           var r = await fetch(_SUPA_URL + '/functions/v1/partner-content-upload', {
             method: 'POST', headers: efHeaders(),
-            body: JSON.stringify({ action: 'publish', id: btn.getAttribute('data-push'), partner_id: state.partnerId })
+            body: JSON.stringify({ action: wasScheduled ? 'publish_now' : 'publish', id: btn.getAttribute('data-push'), partner_id: state.partnerId })
           });
           var j = await r.json().catch(function(){ return {}; });
           if (!r.ok || j.error) { toast(j.error || 'Could not push \u2014 try again', 'error'); btn.disabled = false; btn.textContent = 'Push to my space'; return; }
@@ -1508,6 +1524,23 @@
       });
     });
     el.querySelectorAll('[data-edit]').forEach(function(b){ b.addEventListener('click', function(){ var r = $('edit-'+b.getAttribute('data-edit')); r.style.display = (r.style.display === 'none' ? 'block' : 'none'); }); });
+    // PM-1190: schedule / reschedule
+    el.querySelectorAll('[data-sched]').forEach(function(b){ b.addEventListener('click', function(){
+      var id = b.getAttribute('data-sched'), r = $('sched-'+id);
+      if (r){ if (r.style.display === 'none'){ var i = $('sched-when-'+id); if (i && !i.value) i.value = defaultGoLive(); r.style.display = 'block'; } else r.style.display = 'none'; }
+    }); });
+    el.querySelectorAll('[data-schedclose]').forEach(function(b){ b.addEventListener('click', function(){ var r = $('sched-'+b.getAttribute('data-schedclose')); if (r) r.style.display = 'none'; }); });
+    el.querySelectorAll('[data-schedsave]').forEach(function(b){ b.addEventListener('click', function(){ saveSchedule(b.getAttribute('data-schedsave'), b); }); });
+    el.querySelectorAll('[data-unsched]').forEach(function(b){ b.addEventListener('click', async function(){
+      if (!confirm('Cancel the schedule? It goes back to your library and you can push it whenever you like.')) return;
+      b.disabled = true; b.textContent = 'Cancelling\u2026';
+      try {
+        var r = await fetch(_SUPA_URL + '/functions/v1/partner-content-upload', { method:'POST', headers: efHeaders(), body: JSON.stringify({ action:'unschedule', id: b.getAttribute('data-unsched'), partner_id: state.partnerId }) });
+        var j = await r.json().catch(function(){ return {}; });
+        if (!r.ok || j.error){ toast(j.error || 'Could not cancel \u2014 try again', 'error'); b.disabled = false; b.textContent = 'Cancel schedule'; return; }
+        toast('Back in your library'); await loadContent();
+      } catch(e){ toast('Connection problem \u2014 try again', 'error'); b.disabled = false; b.textContent = 'Cancel schedule'; }
+    }); });
     el.querySelectorAll('[data-edit-cancel]').forEach(function(b){ b.addEventListener('click', function(){ $('edit-'+b.getAttribute('data-edit-cancel')).style.display = 'none'; }); });
     el.querySelectorAll('[data-edit-save]').forEach(function(b){ b.addEventListener('click', function(){ saveEdit(b.getAttribute('data-edit-save')); }); });
     // PM-1169: removal requests
@@ -1523,6 +1556,28 @@
         toast('Request cancelled \u2014 it stays live'); await loadContent();
       } catch(e){ toast('Connection problem \u2014 try again', 'error'); b.disabled = false; b.textContent = 'Cancel request'; }
     }); });
+  }
+
+  // PM-1190: default the picker to 48h + a bit, in the partner's own timezone
+  function defaultGoLive(){
+    var d = new Date(Date.now() + 49 * 3600 * 1000); d.setMinutes(0, 0, 0);
+    var p = function(n){ return String(n).padStart(2, '0'); };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+  async function saveSchedule(id, btn) {
+    var when = ($('sched-when-' + id) || {}).value || '', err = $('sched-err-' + id);
+    if (err) err.textContent = '';
+    if (!when) { if (err) err.textContent = 'Pick a date and time.'; return; }
+    if (new Date(when).getTime() < Date.now() + 48 * 3600 * 1000) { if (err) err.textContent = 'Go-live must be at least 48 hours from now.'; return; }
+    btn.disabled = true; btn.textContent = 'Scheduling\u2026';
+    try {
+      var r = await fetch(_SUPA_URL + '/functions/v1/partner-content-upload', { method: 'POST', headers: efHeaders(),
+        body: JSON.stringify({ action: 'schedule', id: id, publish_at: new Date(when).toISOString(), partner_id: state.partnerId }) });
+      var j = await r.json().catch(function(){ return {}; });
+      if (!r.ok || j.error) { if (err) err.textContent = j.error || 'Could not schedule \u2014 try again'; btn.disabled = false; btn.textContent = 'Schedule it'; return; }
+      toast('Scheduled \u2014 it goes live on ' + fmtDateTime(j.item && j.item.publish_at));
+      await loadContent();
+    } catch (e) { if (err) err.textContent = 'Connection problem \u2014 try again'; btn.disabled = false; btn.textContent = 'Schedule it'; }
   }
 
   async function sendRemoval(id, btn) {
