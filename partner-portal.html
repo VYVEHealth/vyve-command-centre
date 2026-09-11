@@ -4448,8 +4448,11 @@ body.w1 .pp-content { grid-row:2; grid-column:2; max-width:1280px; width:100%; }
     if (!partnerId) return;
     mountOverlay();
     var f = $('pv-frame');
-    var src = ORIGIN + '/partner-profile.html?id=' + encodeURIComponent(partnerId) + '&preview=1';
-    if (f.getAttribute('src') !== src) f.setAttribute('src', src);
+    // PM-1166: fresh every open — the member app's SW serves HTML stale-while-revalidate, so a
+    // repeat open within a deploy showed the previous page (Dean, 18:39). A unique query string is
+    // a cache miss for the SW's navigation cache, so the preview always reflects the live page.
+    var src = ORIGIN + '/partner-profile.html?id=' + encodeURIComponent(partnerId) + '&preview=1&v=' + Date.now();
+    f.setAttribute('src', src);
     $('pv-ov').classList.add('open');
     document.body.style.overflow = 'hidden';
   }
