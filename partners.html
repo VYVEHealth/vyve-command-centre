@@ -1411,7 +1411,8 @@ async function loadPartnerContent(p){
           ${c.type==='video'?ICONS.film:c.type==='live_session'?ICONS.cal||ICONS.phone:c.type==='program'?ICONS.cap:ICONS.doc}
         </div>
         <div style="flex:1"><div class="ct">${esc(c.title)}</div><div class="cs">${c.type}${c.duration_sec?' · '+Math.floor(c.duration_sec/60)+'m':''} · ${c.play_count} plays</div></div>
-        <span class="pill ${modColors[c.moderation_status]||'p-draft'}">${c.moderation_status}</span>
+        ${c.removed_at?`<span class="pill p-draft" title="${c.removed_by==='partner:safeguarding'?'Hidden by the partner (safeguarding) — awaiting your review':'Removed '+(c.removed_by||'')}">${c.removed_by==='partner:safeguarding'?'hidden · safeguarding':'removed'}</span>`:`<span class="pill ${modColors[c.moderation_status]||'p-draft'}">${c.moderation_status}</span>`}
+        ${c.removal_requested_at&&(!c.removed_at||c.removed_by==='partner:safeguarding')?`<span class="pill p-suspended" title="${esc(c.removal_note||'')}">removal requested · ${esc((c.removal_reason||'').replace(/_/g,' '))}</span><div class="row-actions"><button class="tb-btn" onclick="actionRemoval('${c.id}','remove')">${c.removed_at?'Confirm removal':'Remove'}</button><button class="tb-btn" onclick="actionRemoval('${c.id}','keep')">${c.removed_at?'Reinstate':'Keep live'}</button></div>`:''}
         ${c.moderation_status==='in_review'?`<div class="row-actions"><button class="icon-btn btn-approve" onclick="moderateContent('${c.id}','approved')">${ICONS.check}</button><button class="icon-btn btn-reject" onclick="moderateContent('${c.id}','returned')">${ICONS.x}</button></div>`:''}
       </div>`).join('')}</div>`:'<div class="empty-state">No content yet</div>';
 }
