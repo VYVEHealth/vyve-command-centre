@@ -3964,5 +3964,209 @@ body.w1 .pp-content { grid-row:2; grid-column:2; max-width:1280px; width:100%; }
 })();
 </script>
 
+<script>
+/* ══ PM-1158 PARTNER PORTAL P0 ZONE — AI help drawer (gap map #24–26). "?" in the top bar opens
+     a right-hand drawer over the coach-help EF (v6: any partner JWT; surface derived server-side
+     from partner_type — creators/ambassadors get the 'partner' corpus). Ported from the coach
+     portal's W2b drawer (PM-1083); same history-in-localStorage, route buttons, feedback and idle
+     nudge. Self-contained IIFE (§23.167), fail-open: no partner id → no button. ══ */
+(function(){
+  'use strict';
+  var REST = _SUPA_URL + '/rest/v1';
+  var EF = _SUPA_URL + '/functions/v1/coach-help', MAX = 500, GAP = 3000, IDLE = 180000, KEEP = 40;
+  var CHIPS = ['Share my referral link', 'What is left before I go live?', 'Upload my welcome video', 'When do I get paid?', 'Schedule a live session'];
+  var inited = false, partnerId = null;
+  var st = { open: false, busy: false, hist: [], lastSent: 0, lastQ: '', idle: null, nudged: false, remaining: null };
+  function $(id){ return document.getElementById(id); }
+  function esc(x){ return String(x==null?'':x).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  async function jwt(){ var r = await _getSB().auth.getSession(); return (r.data.session && r.data.session.access_token) || ''; }
+  (function css(){
+    var s = document.createElement('style');
+    s.textContent =
+      '#pp-help{position:relative;background:none;border:1px solid rgba(255,255,255,.28);border-radius:99px;color:var(--sidebar-text,#e6f2ef);font-weight:800;font-size:14px;width:30px;height:30px;line-height:28px;text-align:center;cursor:pointer;padding:0;font-family:inherit;opacity:.9;}' +
+      '#pp-help .h6-dot{position:absolute;top:-3px;right:-3px;width:8px;height:8px;border-radius:99px;background:#C9A84C;}' +
+      '#h6-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:140;}' +
+      '#h6-ov.show{display:block;}' +
+      '#h6{position:fixed;top:0;right:0;bottom:0;width:min(420px,100vw);background:var(--surface,#fff);color:var(--text,#0D2B2B);border-left:1px solid var(--border,#dde5e3);box-shadow:-12px 0 34px rgba(0,0,0,.35);z-index:141;display:flex;flex-direction:column;transform:translateX(105%);transition:transform .22s ease;}' +
+      '#h6.open{transform:none;}' +
+      '.h6-h{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--border,#dde5e3);}' +
+      '.h6-h b{font-size:14px;} .h6-h span{display:block;font-size:11.5px;color:var(--text-muted,#5b7a76);}' +
+      '.h6-x{background:none;border:0;color:var(--text-muted,#5b7a76);font-size:20px;cursor:pointer;padding:4px 8px;font-family:inherit;}' +
+      '.h6-body{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:12px;-webkit-overflow-scrolling:touch;}' +
+      '.h6-m{max-width:88%;padding:10px 12px;border-radius:12px;font-size:13.5px;line-height:1.5;word-wrap:break-word;}' +
+      '.h6-me{align-self:flex-end;background:var(--vyve-teal,#1B7878);color:#fff;border-bottom-right-radius:4px;}' +
+      '.h6-bot{align-self:flex-start;background:var(--surface-2,#f3f7f6);border:1px solid var(--border,#dde5e3);border-bottom-left-radius:4px;}' +
+      '.h6-bot.ref{border-style:dashed;}' +
+      '.h6-bot ol{padding-left:20px;margin:6px 0 4px;} .h6-bot ol li{margin-bottom:5px;}' +
+      '.h6-bot ul{padding-left:18px;margin:6px 0 4px;color:var(--text-muted,#5b7a76);font-size:12.5px;}' +
+      '.h6-rel{font-size:12.5px;color:var(--text-muted,#5b7a76);margin-top:6px;}' +
+      '.h6-clar{margin-top:6px;font-weight:600;}' +
+      '.h6-route{display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:7px 12px;border-radius:8px;background:var(--vyve-teal,#1B7878);color:#fff;font-weight:700;font-size:12.5px;border:0;cursor:pointer;font-family:inherit;}' +
+      '.h6-fb{display:flex;gap:6px;margin-top:8px;align-items:center;font-size:11.5px;color:var(--text-dim,#7A9A9A);}' +
+      '.h6-fb button{background:none;border:1px solid var(--border,#dde5e3);border-radius:99px;color:var(--text-muted,#5b7a76);padding:2px 9px;font-size:12px;cursor:pointer;font-family:inherit;}' +
+      '.h6-fb button.on{border-color:var(--vyve-teal,#1B7878);color:var(--vyve-teal,#1B7878);}' +
+      '.h6-hello{color:var(--text-muted,#5b7a76);font-size:13px;} .h6-hello b{color:var(--text,#0D2B2B);display:block;margin-bottom:4px;font-size:14px;}' +
+      '.h6-chips{display:flex;flex-wrap:wrap;gap:7px;}' +
+      '.h6-chip{border:1px solid var(--border-strong,var(--border,#c9d6d3));background:var(--surface-2,#f3f7f6);color:var(--text,#0D2B2B);border-radius:99px;padding:7px 12px;font-size:12.5px;font-family:inherit;cursor:pointer;}' +
+      '.h6-nudge{align-self:center;font-size:11.5px;color:var(--text-dim,#7A9A9A);background:var(--surface-2,#f3f7f6);padding:5px 10px;border-radius:99px;border:1px solid var(--border,#dde5e3);}' +
+      '.h6-typing{align-self:flex-start;color:var(--text-dim,#7A9A9A);font-size:12px;padding:4px 12px;}' +
+      '.h6-c{border-top:1px solid var(--border,#dde5e3);padding:10px 12px;display:flex;gap:8px;align-items:flex-end;}' +
+      '.h6-c textarea{flex:1;resize:none;height:42px;max-height:110px;border:1px solid var(--border,#dde5e3);border-radius:10px;background:var(--surface-2,#f3f7f6);color:var(--text,#0D2B2B);padding:10px 12px;font-family:inherit;font-size:16px;line-height:1.35;}' +
+      '.h6-c button{background:var(--vyve-teal,#1B7878);color:#fff;border:0;border-radius:10px;padding:0 14px;height:42px;font-weight:700;font-family:inherit;cursor:pointer;}' +
+      '.h6-c button:disabled{opacity:.5;cursor:default;}' +
+      '.h6-f{font-size:10.5px;color:var(--text-dim,#7A9A9A);padding:0 12px 10px;text-align:center;}' +
+      '@media (max-width:640px){#h6{width:100vw;}}';
+    document.head.appendChild(s);
+  })();
+  function key(){ return 'vyve_partner_help_' + (partnerId || 'x'); }
+  function load(){ try { var h = JSON.parse(localStorage.getItem(key()) || '[]'); st.hist = Array.isArray(h) ? h : []; } catch(_){ st.hist = []; } }
+  function save(){ try { localStorage.setItem(key(), JSON.stringify(st.hist.slice(-KEEP))); } catch(_){} }
+  function md(t){ return esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>'); }
+  function flat(a){ return [a.ack, a.clarify].concat(a.steps || []).filter(Boolean).join(' ').slice(0, 1200); }
+  function mount(){
+    if ($('h6')) return;
+    var right = document.querySelector('.pp-topbar-right'); if (!right) return;
+    var seen = false; try { seen = localStorage.getItem('vyve_partner_help_seen') === '1'; } catch(_){}
+    var b = document.createElement('button');
+    b.id = 'pp-help'; b.type = 'button'; b.title = 'Help'; b.setAttribute('aria-label', 'Help');
+    b.innerHTML = '?' + (seen ? '' : '<span class="h6-dot"></span>');
+    var theme = $('pp-theme-toggle');
+    right.insertBefore(b, theme || null);
+    var ov = document.createElement('div'); ov.id = 'h6-ov'; document.body.appendChild(ov);
+    var d = document.createElement('div'); d.id = 'h6'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-label', 'Help');
+    d.innerHTML =
+      '<div class="h6-h"><div><b>Help</b><span>How-to for this portal. Answers in seconds, links straight to the page.</span></div><button class="h6-x" type="button" id="h6-close" aria-label="Close">&times;</button></div>' +
+      '<div class="h6-body" id="h6-body"></div>' +
+      '<div class="h6-c"><textarea id="h6-in" placeholder="Ask a question\u2026" maxlength="' + MAX + '" rows="1"></textarea><button type="button" id="h6-send">Ask</button></div>' +
+      '<div class="h6-f" id="h6-foot">Portal help only \u00b7 40 questions a day</div>';
+    document.body.appendChild(d);
+    b.addEventListener('click', function(){ toggle(!st.open); });
+    ov.addEventListener('click', function(){ toggle(false); });
+    $('h6-close').addEventListener('click', function(){ toggle(false); });
+    $('h6-send').addEventListener('click', function(){ send($('h6-in').value); });
+    $('h6-in').addEventListener('keydown', function(e){ if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); send(e.target.value); } });
+    document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && st.open) toggle(false); });
+    $('h6-body').addEventListener('click', function(ev){
+      var t = ev.target.closest && ev.target.closest('[data-h6]'); if (!t) return;
+      var act = t.dataset.h6;
+      if (act === 'chip') send(t.textContent);
+      else if (act === 'route') goRoute(t.dataset.route);
+      else if (act === 'fb') feedback(t.dataset.id, t.dataset.val === '1', t);
+    });
+  }
+  function toggle(on){
+    st.open = !!on;
+    var d = $('h6'), ov = $('h6-ov'); if (!d) return;
+    d.classList.toggle('open', st.open); ov.classList.toggle('show', st.open);
+    if (st.open){
+      try { localStorage.setItem('vyve_partner_help_seen', '1'); } catch(_){}
+      var dot = document.querySelector('#pp-help .h6-dot'); if (dot) dot.remove();
+      load(); render(); setTimeout(function(){ var i = $('h6-in'); if (i && window.innerWidth > 640) i.focus(); }, 240);
+    } else { idle(false); }
+  }
+  // Routes: the W1 shell's go() is exposed as window.w1Go; 'leads' is the W5 zone's own view,
+  // reached by its hash (W5 listens for #leads). Anything unknown falls back to the hash.
+  function goRoute(route){
+    if (!route) return; toggle(false);
+    try {
+      if (route === 'leads') { location.hash = '#leads'; window.dispatchEvent(new HashChangeEvent('hashchange')); return; }
+      if (typeof window.w1Go === 'function') { window.w1Go(route); return; }
+    } catch(_){}
+    location.hash = '#' + route;
+  }
+  function render(){
+    var body = $('h6-body'); if (!body) return;
+    var h = '';
+    if (!st.hist.length){
+      h += '<div class="h6-hello"><b>What do you want to do?</b>Ask in your own words. I only know the partner portal, so I\u2019ll say so if it\u2019s not about VYVE.</div>' +
+           '<div class="h6-chips">' + CHIPS.map(function(c){ return '<button type="button" class="h6-chip" data-h6="chip">' + esc(c) + '</button>'; }).join('') + '</div>';
+    }
+    st.hist.forEach(function(m){
+      if (m.role === 'user'){ h += '<div class="h6-m h6-me">' + esc(m.content) + '</div>'; return; }
+      if (m.role === 'nudge'){ h += '<div class="h6-nudge">' + esc(m.content) + '</div>'; return; }
+      var a = m.answer || {};
+      var refused = !!m.refused;
+      h += '<div class="h6-m h6-bot' + (refused ? ' ref' : '') + '">' + md(a.ack || m.content || '');
+      if (a.clarify) h += '<div class="h6-clar">' + md(a.clarify) + '</div>';
+      if (a.steps && a.steps.length) h += '<ol>' + a.steps.map(function(s){ return '<li>' + md(s) + '</li>'; }).join('') + '</ol>';
+      if (a.constraints && a.constraints.length) h += '<ul>' + a.constraints.map(function(s){ return '<li>' + md(s) + '</li>'; }).join('') + '</ul>';
+      if (a.related) h += '<div class="h6-rel">' + md(a.related) + '</div>';
+      if (a.route) h += '<button type="button" class="h6-route" data-h6="route" data-route="' + esc(a.route) + '">' + esc(a.route_label || 'Open') + ' \u2192</button>';
+      if (m.id && !refused) h += '<div class="h6-fb">Did that help? <button type="button" data-h6="fb" data-id="' + esc(m.id) + '" data-val="1"' + (m.helpful === true ? ' class="on"' : '') + '>\ud83d\udc4d</button><button type="button" data-h6="fb" data-id="' + esc(m.id) + '" data-val="0"' + (m.helpful === false ? ' class="on"' : '') + '>\ud83d\udc4e</button></div>';
+      h += '</div>';
+    });
+    if (st.busy) h += '<div class="h6-typing">Thinking\u2026</div>';
+    body.innerHTML = h;
+    body.scrollTop = body.scrollHeight;
+    var f = $('h6-foot'); if (f) f.textContent = 'Portal help only \u00b7 ' + (st.remaining == null ? '40 questions a day' : (st.remaining + ' question' + (st.remaining === 1 ? '' : 's') + ' left today'));
+  }
+  function idle(arm){
+    if (st.idle){ clearTimeout(st.idle); st.idle = null; }
+    if (!arm || st.nudged) return;
+    st.idle = setTimeout(function(){
+      if (!st.open || st.busy || st.nudged) return;
+      st.nudged = true;
+      st.hist.push({ role: 'nudge', content: 'Still stuck? Ask a follow-up, or tell me what you were trying to do.' });
+      render();
+    }, IDLE);
+  }
+  async function send(text){
+    var q = String(text || '').replace(/\s+/g, ' ').trim();
+    var inp = $('h6-in');
+    if (!q || st.busy) return;
+    if (q.length > MAX){ q = q.slice(0, MAX); }
+    var now = Date.now();
+    if (now - st.lastSent < GAP) return;
+    if (q.toLowerCase() === st.lastQ.toLowerCase() && now - st.lastSent < 120000){ if (inp) inp.value = ''; return; }
+    st.lastSent = now; st.lastQ = q; st.nudged = false; idle(false);
+    var turns = st.hist.filter(function(m){ return m.role === 'user' || m.role === 'bot'; }).slice(-4).map(function(m){
+      return { role: m.role === 'user' ? 'user' : 'assistant', content: m.role === 'user' ? m.content : (m.answer ? flat(m.answer) : String(m.content || '')) };
+    });
+    st.hist.push({ role: 'user', content: q }); if (inp) inp.value = '';
+    st.busy = true; render(); var sb = $('h6-send'); if (sb) sb.disabled = true;
+    try {
+      var t = await jwt();
+      var r = await fetch(EF, { method: 'POST', headers: { 'Authorization': 'Bearer ' + t, 'Content-Type': 'application/json' }, body: JSON.stringify({ question: q, history: turns }) });
+      var j = await r.json().catch(function(){ return {}; });
+      if (typeof j.remaining === 'number') st.remaining = j.remaining;
+      if (!r.ok || !j.answer){
+        st.hist.push({ role: 'bot', refused: true, answer: { ack: j.error || 'Help is unavailable right now \u2014 try again in a minute.' } });
+      } else {
+        st.hist.push({ role: 'bot', id: j.id || null, refused: !!j.refused, answer: j.answer, cached: !!j.cached });
+        if (!j.refused) idle(true);
+      }
+    } catch(e){
+      st.hist.push({ role: 'bot', refused: true, answer: { ack: 'Help is unavailable right now \u2014 try again in a minute.' } });
+    }
+    st.busy = false; if (sb) sb.disabled = false;
+    save(); render();
+  }
+  async function feedback(id, helpful){
+    if (!id) return;
+    var m = st.hist.filter(function(x){ return x.id === id; })[0];
+    if (m && m.helpful === helpful) return;
+    if (m) m.helpful = helpful;
+    save(); render();
+    try {
+      var t = await jwt();
+      await fetch(EF, { method: 'POST', headers: { 'Authorization': 'Bearer ' + t, 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'feedback', id: id, helpful: helpful }) });
+    } catch(_){}
+  }
+  /* ── boot ── */
+  var poll = setInterval(async function(){
+    var shell = $('shell');
+    if (!shell || !shell.classList.contains('ready') || inited) return;
+    inited = true; clearInterval(poll);
+    try {
+      var tk = await jwt(); if (!tk) return;
+      var r = await fetch(REST + '/rpc/get_my_partner_id', { method: 'POST', headers: { 'apikey': _SUPA_ANON, 'Authorization': 'Bearer ' + tk, 'Content-Type': 'application/json' }, body: '{}' });
+      var pid = r.ok ? await r.json().catch(function(){ return null; }) : null;
+      partnerId = (typeof pid === 'string' && pid) ? pid : null;
+      if (!partnerId) return; // demo/anon — the EF would 403
+      mount();
+    } catch(e){ try { window.reportError && window.reportError('h6_zone_boot', e); } catch(_){} }
+  }, 350);
+})();
+</script>
 </body>
 </html>
