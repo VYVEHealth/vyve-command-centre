@@ -233,6 +233,7 @@
     .chip-live      { background: var(--success-pale); color: var(--success); }
     .chip-returned  { background: var(--danger-pale);  color: var(--danger); }
     .chip-approved  { background: var(--surface-3);     color: var(--text-muted); }
+    .chip-removed   { background: var(--surface-3);     color: var(--text-muted); border:1px dashed var(--border); } /* PM-1169 */
     .content-edit-btn { background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 4px; border-radius: 6px; display: inline-flex; }
     .content-edit-btn:hover { color: var(--vyve-teal-light); background: var(--accent-pale); }
     .reschedule-row { display: flex; gap: 8px; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
@@ -1271,6 +1272,7 @@
   });
 
   // ── Content ───────────────────────────────────────────────────────────────
+  window.addEventListener('vyve:content-reload', function(){ loadContent(); }); // PM-1169: library zone asks for a refresh after bulk push
   async function loadContent() {
     if (!state.partnerId) return;
     // Read via the EF (service role) — anon REST returns 0 rows because
@@ -1307,10 +1309,20 @@
     var future = pub && pub.getTime() > Date.now();
     if (st === 'returned') return { cls:'chip-returned', label:'Returned', meta:'Returned by VYVE — make changes and resubmit', editable:false };
     if (st === 'flagged')  return { cls:'chip-returned', label:'Flagged',  meta:'Flagged for review by VYVE', editable:false };
+    // PM-1169: removal lifecycle — partners request, VYVE actions; safeguarding hides at once.
+    var RM = { mistake:'a mistake in it', out_of_date:'it\u2019s out of date', replacing:'you\u2019re replacing it', copyright:'a copyright or permission issue', safeguarding:'a safeguarding or wellbeing concern', other:'another reason' };
+    if (item.removed_at) {
+      var byPartner = item.removed_by === 'partner:safeguarding';
+      return { cls:'chip-removed', label:'Removed', removed:true, editable:false,
+        meta: byPartner ? 'Hidden from members straight away \u2014 you flagged a safeguarding or wellbeing concern. The VYVE team is reviewing it.'
+                        : 'Removed from your space by VYVE' + (item.removal_reason ? ' \u2014 you asked because of ' + (RM[item.removal_reason] || item.removal_reason) : '') };
+    }
     if (st === 'approved') {
-      if (!pub) return { cls:'chip-approved', label:'In your library', meta:'Approved — push it to your space whenever you\u2019re ready', editable:false, pushable:true };
+      if (!pub) return { cls:'chip-approved', label:'Ready to push', meta:'Approved \u2014 push it to your space whenever you\u2019re ready', editable:false, pushable:true };
       if (future) return { cls:'chip-scheduled', label:'Scheduled · '+fmtDateTime(item.publish_at), meta:'Approved · goes live '+fmtDateTime(item.publish_at), editable:false };
-      return { cls:'chip-live', label:'Live', meta:'Live since '+fmtDateTime(item.publish_at)+' · visible to your community', editable:false };
+      if (item.removal_requested_at) return { cls:'chip-live', label:'Live · removal requested', live:true, removalOpen:true, editable:false,
+        meta:'Still visible to members until the VYVE team actions your request (' + (RM[item.removal_reason] || 'reason given') + ')' };
+      return { cls:'chip-live', label:'Live', live:true, meta:'Live since '+fmtDateTime(item.publish_at)+' · visible to your community', editable:false };
     }
     // in_review / draft — always "Pending approval"; partner can still edit until VYVE acts
     var meta = pub ? ('Uploaded '+fmtDate(item.created_at)+' · scheduled for '+fmtDateTime(item.publish_at))
@@ -1369,6 +1381,18 @@
       /* PM-901: approved library items get an explicit push — going live in the
          partner's space is THEIR act, approval is only VYVE's gate. */
       var pushBtn = s.pushable ? '<button class="btn btn-teal" data-push="'+item.id+'" type="button" style="font-size:12px;padding:7px 14px;flex:none;">Push to my space</button>' : '';
+      // PM-1169: live items can REQUEST removal (VYVE actions it); an open request can be cancelled.
+      var rmBtn = s.live && !s.removalOpen ? '<button class="btn btn-ghost" data-rmreq="'+item.id+'" type="button" style="font-size:12px;padding:7px 12px;flex:none;">Request removal</button>'
+               : (s.removalOpen && !item.removal_urgent ? '<button class="btn btn-ghost" data-rmcancel="'+item.id+'" type="button" style="font-size:12px;padding:7px 12px;flex:none;">Cancel request</button>' : '');
+      var rmPanel = s.live && !s.removalOpen
+        ? '<div id="rm-'+item.id+'" style="display:none;padding:10px 0 14px;">'
+          + '<div class="field" style="margin-bottom:8px;"><label>Why should this come down?</label><select id="rm-reason-'+item.id+'">'
+          + '<option value="">Choose a reason\u2026</option><option value="mistake">There\u2019s a mistake in it</option><option value="out_of_date">It\u2019s out of date</option><option value="replacing">Replacing it with a new version</option><option value="copyright">Copyright or permission issue</option><option value="safeguarding">Safeguarding or wellbeing concern</option><option value="other">Other</option></select></div>'
+          + '<div class="field" style="margin-bottom:8px;"><label>Anything the team should know? (required for Other)</label><textarea id="rm-note-'+item.id+'" rows="2" maxlength="600" style="width:100%;resize:vertical;"></textarea></div>'
+          + '<div class="field-hint" style="margin-bottom:10px;">Most requests stay live until the VYVE team actions them, usually within a business day. A safeguarding or wellbeing concern hides the video from members immediately.</div>'
+          + '<div style="display:flex;gap:8px;"><button class="btn btn-teal" data-rmsend="'+item.id+'" type="button" style="font-size:12px;">Send request</button><button class="btn btn-ghost" data-rmclose="'+item.id+'" type="button" style="font-size:12px;">Cancel</button></div>'
+          + '<div id="rm-err-'+item.id+'" style="font-size:12px;color:var(--danger);margin-top:6px;"></div></div>'
+        : '';
       var editor = s.editable
         ? '<div class="edit-row" id="edit-'+item.id+'" style="display:none;">'
           + '<div class="field" style="margin-bottom:10px;"><label>Title</label><input type="text" id="edit-title-'+item.id+'" value="'+escAttr(item.title)+'"/></div>'
@@ -1386,8 +1410,8 @@
       return '<div style="'+(last?'':'border-bottom:1px solid var(--border);')+'">'
         + '<div class="content-item" data-cid="'+item.id+'" style="border-bottom:none;">'+thumb
         + '<div class="content-info"><div class="content-info-title">'+escHtml(item.title)+'</div><div class="content-info-meta">'+s.meta+w3stats+'</div></div>'
-        + '<div class="content-actions">'+editBtn+pushBtn+'<span class="mod-chip '+s.cls+'">'+s.label+'</span></div></div>'
-        + editor + '</div>';
+        + '<div class="content-actions">'+editBtn+pushBtn+rmBtn+'<span class="mod-chip '+s.cls+'">'+s.label+'</span></div></div>'
+        + editor + rmPanel + '</div>';
     }).join('');
     el.querySelectorAll('[data-push]').forEach(function(btn) {
       btn.addEventListener('click', async function() {
@@ -1408,6 +1432,34 @@
     el.querySelectorAll('[data-edit]').forEach(function(b){ b.addEventListener('click', function(){ var r = $('edit-'+b.getAttribute('data-edit')); r.style.display = (r.style.display === 'none' ? 'block' : 'none'); }); });
     el.querySelectorAll('[data-edit-cancel]').forEach(function(b){ b.addEventListener('click', function(){ $('edit-'+b.getAttribute('data-edit-cancel')).style.display = 'none'; }); });
     el.querySelectorAll('[data-edit-save]').forEach(function(b){ b.addEventListener('click', function(){ saveEdit(b.getAttribute('data-edit-save')); }); });
+    // PM-1169: removal requests
+    el.querySelectorAll('[data-rmreq]').forEach(function(b){ b.addEventListener('click', function(){ var r = $('rm-'+b.getAttribute('data-rmreq')); if (r) r.style.display = (r.style.display === 'none' ? 'block' : 'none'); }); });
+    el.querySelectorAll('[data-rmclose]').forEach(function(b){ b.addEventListener('click', function(){ var r = $('rm-'+b.getAttribute('data-rmclose')); if (r) r.style.display = 'none'; }); });
+    el.querySelectorAll('[data-rmsend]').forEach(function(b){ b.addEventListener('click', function(){ sendRemoval(b.getAttribute('data-rmsend'), b); }); });
+    el.querySelectorAll('[data-rmcancel]').forEach(function(b){ b.addEventListener('click', async function(){
+      b.disabled = true; b.textContent = 'Cancelling\u2026';
+      try {
+        var r = await fetch(_SUPA_URL + '/functions/v1/partner-content-upload', { method:'POST', headers: efHeaders(), body: JSON.stringify({ action:'cancel_removal', id: b.getAttribute('data-rmcancel'), partner_id: state.partnerId }) });
+        var jr = await r.json().catch(function(){ return {}; });
+        if (!r.ok || jr.error) { toast(jr.error || 'Could not cancel \u2014 try again', 'error'); b.disabled = false; b.textContent = 'Cancel request'; return; }
+        toast('Request cancelled \u2014 it stays live'); await loadContent();
+      } catch(e){ toast('Connection problem \u2014 try again', 'error'); b.disabled = false; b.textContent = 'Cancel request'; }
+    }); });
+  }
+
+  async function sendRemoval(id, btn) {
+    var reason = ($('rm-reason-'+id) || {}).value || '', note = (($('rm-note-'+id) || {}).value || '').trim(), err = $('rm-err-'+id);
+    if (err) err.textContent = '';
+    if (!reason) { if (err) err.textContent = 'Choose a reason.'; return; }
+    if (reason === 'other' && !note) { if (err) err.textContent = 'Tell us why in the note.'; return; }
+    btn.disabled = true; btn.textContent = 'Sending\u2026';
+    try {
+      var r = await fetch(_SUPA_URL + '/functions/v1/partner-content-upload', { method:'POST', headers: efHeaders(), body: JSON.stringify({ action:'request_removal', id: id, reason: reason, note: note, partner_id: state.partnerId }) });
+      var jr = await r.json().catch(function(){ return {}; });
+      if (!r.ok || jr.error) { if (err) err.textContent = jr.error || 'Could not send \u2014 try again'; btn.disabled = false; btn.textContent = 'Send request'; return; }
+      toast(reason === 'safeguarding' ? 'Hidden from members \u2014 the VYVE team has been alerted' : 'Request sent \u2014 the VYVE team will action it');
+      await loadContent();
+    } catch(e){ if (err) err.textContent = 'Connection problem \u2014 try again'; btn.disabled = false; btn.textContent = 'Send request'; }
   }
 
   async function saveEdit(id) {
@@ -3128,6 +3180,12 @@ body.w1 .pp-content { grid-row:2; grid-column:2; max-width:1280px; width:100%; }
 .w3badge{background:#E8834A;color:#fff;border-radius:999px;font-size:10px;font-weight:700;padding:1px 8px;}
 .w3-row{display:flex;gap:12px;align-items:center;padding:9px 6px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
 .w3-lanes,.w3-folders{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+.w3-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:12px;}
+.w3-tab{background:none;border:0;border-bottom:2px solid transparent;padding:10px 14px;font-size:14px;font-weight:600;color:var(--text-muted);cursor:pointer;font-family:inherit;margin-bottom:-1px;}
+.w3-tab.on{color:var(--vyve-teal);border-bottom-color:var(--vyve-teal);}
+.w3-tab-n{display:inline-block;min-width:18px;padding:0 6px;border-radius:999px;background:var(--surface-3);color:var(--text-muted);font-size:11px;line-height:18px;text-align:center;margin-left:4px;}
+.w3-tab.on .w3-tab-n{background:var(--vyve-teal);color:#fff;}
+.w3-bulk{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);}
 .w3-lane{border:1px solid var(--border);background:var(--surface-2);color:var(--text-muted);border-radius:999px;padding:5px 12px;font-size:12px;cursor:pointer;}
 .w3-lane.on{background:var(--vyve-teal);color:#fff;border-color:transparent;}
 .w3-fold-row{font-size:11.5px;color:var(--text-muted);margin-top:4px;display:flex;align-items:center;gap:6px;}
@@ -3420,15 +3478,18 @@ body.w1 .pp-content { grid-row:2; grid-column:2; max-width:1280px; width:100%; }
   }
 
   /* ── CONTENT LIBRARY: lanes + folders ──────────────────── */
+  // PM-1169: two places — Library (everything not yet visible to members) and On my space (live).
+  var TABS = [ { k:'library', label:'Library' }, { k:'space', label:'On my space' } ];
   var LANES = [
-    { k:'all', label:'All' },
-    { k:'chip-review', label:'Pending approval' },
-    { k:'chip-returned', label:'Needs changes' },
-    { k:'chip-approved', label:'In your library' },
-    { k:'chip-scheduled', label:'Scheduled' },
-    { k:'chip-live', label:'Live' }
+    { k:'all', label:'All', tab:'library' },
+    { k:'chip-approved', label:'Ready to push', tab:'library' },
+    { k:'chip-scheduled', label:'Scheduled', tab:'library' },
+    { k:'chip-review', label:'In review', tab:'library' },
+    { k:'chip-returned', label:'Needs changes', tab:'library' },
+    { k:'chip-removed', label:'Removed', tab:'library' },
+    { k:'chip-live', label:'Live', tab:'space' }
   ];
-  var lib = { lane:'all', folder:'all', folders:{ folders:[], items:{} }, ready:false };
+  var lib = { tab:'library', lane:'all', folder:'all', folders:{ folders:[], items:{} }, ready:false, sel:{} };
   function laneOf(wrapper){
     var chip = wrapper.querySelector('.mod-chip');
     if (!chip) return null;
@@ -3446,16 +3507,59 @@ body.w1 .pp-content { grid-row:2; grid-column:2; max-width:1280px; width:100%; }
     var wraps = libWrappers();
     var lanesEl = $('w3-lanes'), foldEl = $('w3-folders');
     if (!lanesEl) return;
-    if (!wraps.length){ lanesEl.innerHTML = ''; if (foldEl) foldEl.innerHTML = ''; return; }
-    // lane chips with counts
-    var counts = { all: wraps.length };
-    wraps.forEach(function(w){ var l = laneOf(w); if (l) counts[l] = (counts[l] || 0) + 1; });
-    if (counts[lib.lane] === undefined) lib.lane = 'all';
-    lanesEl.innerHTML = LANES.filter(function(l){ return l.k === 'all' || counts[l.k]; }).map(function(l){
+    var tabsEl = $('w3-tabs'), bulkEl = $('w3-bulk');
+    if (!wraps.length){ lanesEl.innerHTML = ''; if (foldEl) foldEl.innerHTML = ''; if (tabsEl) tabsEl.innerHTML = ''; if (bulkEl) bulkEl.style.display = 'none'; return; }
+    // counts per lane; Library = everything that isn't live
+    var counts = { all: 0 };
+    wraps.forEach(function(w){ var l = laneOf(w); if (l) counts[l] = (counts[l] || 0) + 1; if (l !== 'chip-live') counts.all++; });
+    var liveN = counts['chip-live'] || 0, libN = counts.all;
+    if (tabsEl){
+      tabsEl.innerHTML = TABS.map(function(t){
+        var n = t.k === 'space' ? liveN : libN;
+        return '<button class="w3-tab' + (lib.tab === t.k ? ' on' : '') + '" data-w3tab="' + t.k + '" type="button">' + t.label + ' <span class="w3-tab-n">' + n + '</span></button>';
+      }).join('');
+      tabsEl.querySelectorAll('[data-w3tab]').forEach(function(b){
+        b.addEventListener('click', function(){ lib.tab = b.getAttribute('data-w3tab'); lib.lane = lib.tab === 'space' ? 'chip-live' : 'all'; lib.sel = {}; applyLib(); });
+      });
+    }
+    if (lib.tab === 'library' && lib.lane !== 'all' && counts[lib.lane] === undefined) lib.lane = 'all';
+    var laneSet = LANES.filter(function(l){ return l.tab === lib.tab && (l.k === 'all' || counts[l.k]); });
+    lanesEl.innerHTML = lib.tab === 'space' ? '' : laneSet.map(function(l){
       return '<button class="w3-lane' + (lib.lane === l.k ? ' on' : '') + '" data-w3lane="' + l.k + '" type="button">' + l.label + ' (' + (counts[l.k] || 0) + ')</button>';
     }).join('');
     lanesEl.querySelectorAll('[data-w3lane]').forEach(function(b){
       b.addEventListener('click', function(){ lib.lane = b.getAttribute('data-w3lane'); applyLib(); });
+    });
+    // bulk push bar — Library tab, only when something is ready
+    var readyWraps = wraps.filter(function(w){ return laneOf(w) === 'chip-approved'; });
+    if (bulkEl){
+      var selN = Object.keys(lib.sel).filter(function(k){ return lib.sel[k]; }).length;
+      var show = lib.tab === 'library' && readyWraps.length > 0;
+      bulkEl.style.display = show ? 'flex' : 'none';
+      bulkEl.innerHTML = show
+        ? '<span style="font-size:12.5px;color:var(--text-muted);">' + readyWraps.length + ' ready to push \u00b7 tick the ones you want live</span>'
+          + '<button class="w3-lane" id="w3-selall" type="button">' + (selN === readyWraps.length ? 'Clear' : 'Select all') + '</button>'
+          + '<button class="w3-lane on" id="w3-pushsel" type="button"' + (selN ? '' : ' disabled style="opacity:.5"') + '>Push selected (' + selN + ')</button>'
+        : '';
+      var sa = $('w3-selall'), ps = $('w3-pushsel');
+      if (sa) sa.addEventListener('click', function(){
+        var all = selN === readyWraps.length;
+        readyWraps.forEach(function(w){ var cid = w.querySelector('.content-item[data-cid]').getAttribute('data-cid'); if (all) delete lib.sel[cid]; else lib.sel[cid] = true; });
+        applyLib();
+      });
+      if (ps) ps.addEventListener('click', pushSelected);
+    }
+    // checkboxes on ready items
+    readyWraps.forEach(function(w){
+      var thumb = w.querySelector('.content-thumb');
+      var cid = w.querySelector('.content-item[data-cid]').getAttribute('data-cid');
+      if (thumb && !w.querySelector('.w3-sel')){
+        var cb = document.createElement('input'); cb.type = 'checkbox'; cb.className = 'w3-sel'; cb.setAttribute('aria-label', 'Select for push');
+        cb.style.cssText = 'width:20px;height:20px;margin-right:8px;flex:0 0 20px;accent-color:var(--vyve-teal);';
+        thumb.insertAdjacentElement('beforebegin', cb);
+        cb.addEventListener('change', function(){ if (cb.checked) lib.sel[cid] = true; else delete lib.sel[cid]; applyLib(); });
+      }
+      var box = w.querySelector('.w3-sel'); if (box) box.checked = !!lib.sel[cid];
     });
     // folder chips + per-item selects (real-partner only — demo/anon can't read/write own row)
     if (lib.ready){
@@ -3514,7 +3618,9 @@ body.w1 .pp-content { grid-row:2; grid-column:2; max-width:1280px; width:100%; }
     }
     // filter
     wraps.forEach(function(w){
-      var laneOK = lib.lane === 'all' || laneOf(w) === lib.lane;
+      var ln = laneOf(w);
+      var tabOK = lib.tab === 'space' ? ln === 'chip-live' : ln !== 'chip-live';
+      var laneOK = tabOK && (lib.lane === 'all' || ln === lib.lane);
       var cid = w.querySelector('.content-item[data-cid]').getAttribute('data-cid');
       var f = (lib.folders.items || {})[cid] || '';
       var foldOK = !lib.ready || lib.folder === 'all' || (lib.folder === '__none' ? !f : f === lib.folder);
@@ -3523,16 +3629,33 @@ body.w1 .pp-content { grid-row:2; grid-column:2; max-width:1280px; width:100%; }
   }
   function applyLib0(){
     // full rebuild: drop stale fold-rows then re-apply
-    libWrappers().forEach(function(w){ var r = w.querySelector('.w3-fold-row'); if (r) r.remove(); });
+    libWrappers().forEach(function(w){ var r = w.querySelector('.w3-fold-row'); if (r) r.remove(); var c = w.querySelector('.w3-sel'); if (c) c.remove(); });
     applyLib();
+  }
+  async function pushSelected(){
+    var ids = Object.keys(lib.sel).filter(function(k){ return lib.sel[k]; });
+    if (!ids.length) return;
+    var ps = $('w3-pushsel'); if (ps){ ps.disabled = true; ps.textContent = 'Pushing\u2026'; }
+    try {
+      var t = await jwt();
+      var r = await fetch(_SUPA_URL + '/functions/v1/partner-content-upload', { method:'POST', headers:{ 'Authorization':'Bearer ' + t, 'apikey':_SUPA_ANON, 'Content-Type':'application/json' }, body: JSON.stringify({ action:'publish_many', ids: ids, partner_id: partnerId }) });
+      var jr = await r.json().catch(function(){ return {}; });
+      if (!r.ok || jr.error) { var e1 = $('w3-bulk'); if (e1) e1.insertAdjacentHTML('beforeend', '<span style="font-size:12px;color:var(--danger);">' + esc(jr.error || 'Could not push \u2014 try again') + '</span>'); if (ps){ ps.disabled = false; ps.textContent = 'Push selected (' + ids.length + ')'; } return; }
+      lib.sel = {}; lib.tab = 'space'; lib.lane = 'chip-live';
+      try { window.dispatchEvent(new CustomEvent('vyve:content-reload')); } catch(_){}
+    } catch(e){ if (ps){ ps.disabled = false; ps.textContent = 'Push selected (' + ids.length + ')'; } }
   }
   function buildLib(){
     var list = $('content-list');
     if (!list || $('w3-lanes')) return false;
+    var tabs = document.createElement('div'); tabs.className = 'w3-tabs'; tabs.id = 'w3-tabs';
     var bar = document.createElement('div'); bar.className = 'w3-lanes'; bar.id = 'w3-lanes';
+    var bulk = document.createElement('div'); bulk.className = 'w3-bulk'; bulk.id = 'w3-bulk'; bulk.style.display = 'none';
     var fb = document.createElement('div'); fb.className = 'w3-folders'; fb.id = 'w3-folders'; fb.style.display = 'none';
+    list.parentNode.insertBefore(tabs, list);
     list.parentNode.insertBefore(bar, list);
     list.parentNode.insertBefore(fb, list);
+    list.parentNode.insertBefore(bulk, list);
     new MutationObserver(function(){ applyLib0(); }).observe(list, { childList: true });
     applyLib();
     return true;
