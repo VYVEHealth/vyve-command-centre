@@ -344,12 +344,22 @@
     <div class="login-logo">VYVE</div>
     <div class="login-sub">Partner Portal</div>
     <h2>Welcome back</h2>
-    <p>Sign in with your VYVE partner login.</p>
-    <label for="pp-email">Email</label>
-    <input id="pp-email" type="email" placeholder="you@example.com" autocomplete="username"/>
-    <label for="pp-password">Password</label>
-    <input id="pp-password" type="password" placeholder="Password" autocomplete="current-password"/>
-    <button class="btn-primary" id="pp-login-btn" type="button">Sign in</button>
+    <p id="pp-login-lead">Sign in with your VYVE partner login.</p>
+    <div id="pp-login-fields">
+      <label for="pp-email">Email</label>
+      <input id="pp-email" type="email" placeholder="you@example.com" autocomplete="username"/>
+      <label for="pp-password">Password</label>
+      <input id="pp-password" type="password" placeholder="Password" autocomplete="current-password"/>
+      <button class="btn-primary" id="pp-login-btn" type="button">Sign in</button>
+      <div style="text-align:center;margin-top:12px;"><a id="pp-forgot" href="#" style="font-size:12.5px;color:var(--text-muted);text-decoration:underline;">Forgot your password?</a></div>
+    </div>
+    <div id="pp-reset" style="display:none;">
+      <label for="pp-new-pw">New password</label>
+      <input id="pp-new-pw" type="password" placeholder="At least 8 characters" autocomplete="new-password"/>
+      <label for="pp-new-pw2">Confirm new password</label>
+      <input id="pp-new-pw2" type="password" placeholder="Same again" autocomplete="new-password"/>
+      <button class="btn-primary" id="pp-reset-btn" type="button">Set new password</button>
+    </div>
     <div id="login-msg"></div>
   </div>
 </div>
@@ -949,6 +959,9 @@
 
     client.auth.onAuthStateChange(function(event, sess) {
       state.session = sess;
+      // PM-1189: the recovery link signs the user in BEFORE PASSWORD_RECOVERY fires — hold the portal
+      // shut until the new password is set (same shape as coach-portal PM-1158).
+      if (event === 'PASSWORD_RECOVERY') { ppRecovery = true; showReset(); return; }
       if (sess) showApp(sess);
       else showLogin();
     });
@@ -966,7 +979,52 @@
     $('shell').classList.remove('ready');
   }
 
+  /* PM-1189: forgot-password + in-page recovery for partners (Sharon, 11 Sep — existing VYVE login,
+     password forgotten, no reset route on this page; the provision email pointed her at the app's
+     sign-in page instead). The recovery link (redirectTo = this page) arrives as
+     #access_token=…&type=recovery; the SDK fires SIGNED_IN with a session BEFORE PASSWORD_RECOVERY,
+     so showApp() must not open the portal while a recovery is pending. */
+  var ppRecovery = /type=recovery/.test(window.location.hash);
+  function showReset() {
+    $('login-overlay').classList.add('show');
+    $('shell').classList.remove('ready');
+    $('pp-login-fields').style.display = 'none';
+    $('pp-reset').style.display = '';
+    $('pp-login-lead').textContent = 'Choose a new password for your VYVE login \u2014 it works for the partner portal and the app.';
+    $('login-msg').textContent = '';
+  }
+  $('pp-forgot').addEventListener('click', async function(ev) {
+    ev.preventDefault();
+    var email = $('pp-email').value.trim(), msg = $('login-msg');
+    msg.style.color = '';
+    if (!email) { msg.textContent = 'Type your email above first, then tap Forgot your password.'; $('pp-email').focus(); return; }
+    this.textContent = 'Sending\u2026';
+    var r = await sb().auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + window.location.pathname });
+    this.textContent = 'Forgot your password?';
+    if (r.error) { msg.textContent = r.error.message; return; }
+    msg.style.color = 'var(--success, #3DB89F)';
+    msg.textContent = 'Check your inbox \u2014 the reset link brings you straight back here.';
+  });
+  $('pp-reset-btn').addEventListener('click', async function() {
+    var pw = $('pp-new-pw').value, pw2 = $('pp-new-pw2').value, msg = $('login-msg');
+    msg.style.color = '';
+    if (pw.length < 8) { msg.textContent = 'Use at least 8 characters.'; return; }
+    if (pw !== pw2) { msg.textContent = 'Those don\u2019t match.'; return; }
+    this.disabled = true;
+    var r = await sb().auth.updateUser({ password: pw });
+    this.disabled = false;
+    if (r.error) { msg.textContent = r.error.message; return; }
+    ppRecovery = false;
+    try { history.replaceState(null, '', window.location.pathname + window.location.search); } catch(_) {}
+    $('pp-reset').style.display = 'none'; $('pp-login-fields').style.display = '';
+    $('pp-login-lead').textContent = 'Sign in with your VYVE partner login.';
+    var s = await sb().auth.getSession();
+    if (s.data.session) { state.session = s.data.session; showApp(s.data.session); } else showLogin();
+  });
+  $('pp-new-pw2').addEventListener('keydown', function(e) { if (e.key === 'Enter') $('pp-reset-btn').click(); });
+
   async function showApp(session) {
+    if (ppRecovery) { showReset(); return; }
     // Verify they are a partner role
     var client = sb();
     // PM-1159: an RPC that FAILS (offline, expired token, 5xx) is not "not provisioned" —
