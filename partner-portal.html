@@ -4279,7 +4279,7 @@ body.w1 .pp-content { grid-row:2; grid-column:2; max-width:1280px; width:100%; }
   var EF = _SUPA_URL + '/functions/v1/coach-help', MAX = 500, GAP = 3000, IDLE = 180000, KEEP = 40;
   var CHIPS = ['Share my referral link', 'What is left before I go live?', 'Upload my welcome video', 'When do I get paid?', 'Are my bank details safe?'];
   var inited = false, partnerId = null, roots = [];
-  var st = { open: false, busy: false, hist: [], lastSent: 0, lastQ: '', idle: null, nudged: false, remaining: null };
+  var st = { open: false, busy: false, hist: [], lastSent: 0, lastQ: '', idle: null, nudged: false, remaining: null, canned: [], cannedShown: false };
   function $(id){ return document.getElementById(id); }
   function esc(x){ return String(x==null?'':x).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
   async function jwt(){ var r = await _getSB().auth.getSession(); return (r.data.session && r.data.session.access_token) || ''; }
@@ -4313,6 +4313,10 @@ body.w1 .pp-content { grid-row:2; grid-column:2; max-width:1280px; width:100%; }
       '.h6-hello{color:var(--text-muted,#5b7a76);font-size:13px;} .h6-hello b{color:var(--text,#0D2B2B);display:block;margin-bottom:4px;font-size:14px;}' +
       '.h6-chips{display:flex;flex-wrap:wrap;gap:7px;}' +
       '.h6-chip{border:1px solid var(--border-strong,var(--border,#c9d6d3));background:var(--surface-2,#f3f7f6);color:var(--text,#0D2B2B);border-radius:99px;padding:7px 12px;font-size:12.5px;font-family:inherit;cursor:pointer;}' +
+      '.h6-cq{margin-top:4px;} .h6-cq-h{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted,#5b7a76);margin:10px 0 6px;}' +
+      '.h6-cq button{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--border,#dde5e3);background:none;color:var(--text,#0D2B2B);font-family:inherit;font-size:13.5px;padding:11px 2px;cursor:pointer;}' +
+      '.h6-cq button:last-child{border-bottom:0;} .h6-cq button:after{content:"\u203a";float:right;color:var(--text-muted,#5b7a76);}' +
+      '.h6-cq-more{font-size:12.5px;color:var(--vyve-teal,#1B7878);background:none;border:0;padding:8px 2px;cursor:pointer;font-family:inherit;}' +
       '.h6-nudge{align-self:center;font-size:11.5px;color:var(--text-dim,#7A9A9A);background:var(--surface-2,#f3f7f6);padding:5px 10px;border-radius:99px;border:1px solid var(--border,#dde5e3);}' +
       '.h6-typing{align-self:flex-start;color:var(--text-dim,#7A9A9A);font-size:12px;padding:4px 12px;}' +
       '.h6-c{border-top:1px solid var(--border,#dde5e3);padding:10px 12px;display:flex;gap:8px;align-items:flex-end;}' +
@@ -4343,6 +4347,8 @@ body.w1 .pp-content { grid-row:2; grid-column:2; max-width:1280px; width:100%; }
       var t = ev.target.closest && ev.target.closest('[data-h6]'); if (!t) return;
       var act = t.dataset.h6;
       if (act === 'chip') send(t.textContent, root);
+      else if (act === 'canned') answerCanned(+t.dataset.i);
+      else if (act === 'cqmore') { st.cannedShown = true; render(); }
       else if (act === 'route') goRoute(t.dataset.route);
       else if (act === 'fb') feedback(t.dataset.id, t.dataset.val === '1');
     });
@@ -4420,6 +4426,14 @@ body.w1 .pp-content { grid-row:2; grid-column:2; max-width:1280px; width:100%; }
       if (!st.hist.length){
         h += '<div class="h6-hello"><b>What do you want to do?</b>Ask in your own words. I only know the partner portal, so I\u2019ll say so if it\u2019s not about VYVE.</div>' +
              '<div class="h6-chips">' + CHIPS.map(function(c){ return '<button type="button" class="h6-chip" data-h6="chip">' + esc(c) + '</button>'; }).join('') + '</div>';
+        // PM-1177: common questions answered straight from the canned set — no request at all
+        if (st.canned.length){
+          var show = st.cannedShown ? st.canned : st.canned.slice(0, 6);
+          h += '<div class="h6-cq"><div class="h6-cq-h">Common questions</div>' +
+               show.map(function(c, i){ return '<button type="button" data-h6="canned" data-i="' + i + '">' + esc(c.question) + '</button>'; }).join('') +
+               (st.canned.length > 6 && !st.cannedShown ? '<button type="button" class="h6-cq-more" data-h6="cqmore">Show all ' + st.canned.length + '</button>' : '') +
+               '</div>';
+        }
       }
       st.hist.forEach(function(m){
         if (m.role === 'user'){ h += '<div class="h6-m h6-me">' + esc(m.content) + '</div>'; return; }
@@ -4482,6 +4496,22 @@ body.w1 .pp-content { grid-row:2; grid-column:2; max-width:1280px; width:100%; }
     st.busy = false;
     save(); render();
   }
+  // PM-1177: a canned question is answered locally — zero EF calls, zero model cost.
+  function answerCanned(i){
+    var c = st.canned[i]; if (!c) return;
+    st.hist.push({ role: 'user', content: c.question });
+    st.hist.push({ role: 'bot', id: null, answer: c.answer, canned: true });
+    st.lastSent = Date.now(); st.lastQ = c.question;
+    save(); render(); idle(true);
+  }
+  async function loadCanned(){
+    try {
+      var t = await jwt();
+      var r = await fetch(EF, { method: 'POST', headers: { 'Authorization': 'Bearer ' + t, 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'canned_list' }) });
+      var j = await r.json().catch(function(){ return {}; });
+      if (Array.isArray(j.items)) { st.canned = j.items; render(); }
+    } catch(_){}
+  }
   async function feedback(id, helpful){
     if (!id) return;
     var m = st.hist.filter(function(x){ return x.id === id; })[0];
@@ -4506,6 +4536,7 @@ body.w1 .pp-content { grid-row:2; grid-column:2; max-width:1280px; width:100%; }
       if (!partnerId) { var host = $('h6-inline-root'); if (host) host.innerHTML = '<div style="padding:16px;font-size:13px;color:var(--text-muted);">Help chat is available on a partner login.</div>'; return; }
       mountDrawer();
       mountInline();
+      loadCanned();
     } catch(e){ try { window.reportError && window.reportError('h6_zone_boot', e); } catch(_){} }
   }, 350);
 })();
