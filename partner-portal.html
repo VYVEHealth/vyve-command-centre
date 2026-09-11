@@ -3176,24 +3176,54 @@ body.w1 .pp-content { grid-row:2; grid-column:2; max-width:1280px; width:100%; }
     }
   }
   function ckRow(done, t, s, view){
+    // PM-1174: 'profile' opens My Space on the Overview tab; other views go through the W1 router
+    var go = view === 'profile' ? "window.w2Open('ov')" : "w1Go('" + view + "')";
     return '<div class="w2-ck-row' + (done ? ' done' : '') + '"><div class="w2-ck-dot">' + (done ? '\u2713' : '') + '</div>' +
       '<div><div class="w2-ck-t">' + t + '</div><div class="w2-ck-s">' + s + '</div></div>' +
-      (done || !view ? '' : '<button class="btn btn-ghost w2-ck-go" type="button" onclick="w1Go(\'' + view + '\')">Go \u2192</button>') + '</div>';
+      (done || !view ? '' : '<button class="btn btn-ghost w2-ck-go" type="button" onclick="' + go + '">Go \u2192</button>') + '</div>';
   }
+  // PM-1174: the launch steps (Dean, 11 Sep 2026) — polish your space, welcome video, first content,
+  // bank details, go live. No live-session step. Shared by the Launch checklist tab and the Home card.
+  function ckSteps(comp){
+    var profDone = comp.slice(0, 7).every(function(c){ return c.ok; });
+    return [
+      { done: profDone, t: 'Polish your space', s: profDone ? 'Profile, photos and story all in place' : 'Finish your profile, photos and story', view: 'profile' },
+      { done: !!ckData.welcome, t: 'Upload your welcome video', s: 'A short hello \u2014 the first thing members see', view: 'content' },
+      { done: !!ckData.content, t: 'Upload your first piece of content', s: 'Give members something to watch on day one', view: 'content' },
+      { done: !!ckData.bank, t: 'Add your bank details', s: 'Needed before any payout can reach you', view: 'earnings' },
+      { done: !!ckData.live, t: ckData.live ? 'You\u2019re live' : 'Go live', s: ckData.live ? 'Your space is visible to members' : 'The VYVE team flips this once the steps above are done', view: null }
+    ];
+  }
+  function ckRowsHtml(comp){ return ckSteps(comp).map(function(r){ return ckRow(r.done, r.t, r.s, r.view); }).join(''); }
+  // PM-1174: until a partner is live, the checklist IS the front page — a card at the top of Home.
+  // Removed the moment status is live.
+  function renderLaunchCard(){
+    var dash = $('panel-dashboard'); if (!dash) return;
+    var old = $('lc-card'); if (old) old.remove();
+    if (ckData.live) return;
+    var comp = compChecks(), steps = ckSteps(comp);
+    var n = steps.filter(function(r){ return r.done && r.view; }).length, total = steps.filter(function(r){ return r.view; }).length;
+    var card = document.createElement('div'); card.className = 'card'; card.id = 'lc-card'; card.style.marginBottom = '16px';
+    card.innerHTML = '<div class="card-title">Get your space ready <span style="margin-left:auto;font-size:13px;color:var(--vyve-teal);">' + n + ' of ' + total + ' done</span></div>' +
+      '<div class="w2-comp-bar" style="margin-bottom:6px;"><div class="w2-comp-fill" style="width:' + Math.round(n / total * 100) + '%"></div></div>' +
+      '<p style="font-size:12.5px;color:var(--text-muted);margin:0 0 6px;">Work through these and the VYVE team sets your space live to members within 2 business days. Your referral link and code already work.</p>' +
+      '<div>' + ckRowsHtml(comp) + '</div>';
+    dash.insertAdjacentElement('afterbegin', card);
+  }
+  window.w2Open = function(tab){
+    try { if (typeof window.w1Go === 'function') window.w1Go('profile'); } catch(_){}
+    var b = document.querySelector('.w2-tab[data-w2="' + tab + '"]'); if (b) b.click();
+    try { window.scrollTo(0, 0); } catch(_){}
+  };
   async function renderChecklist(){
     var el = $('w2-ck-rows'); if (!el) return;
     try {
       await loadCk();
       var comp = compChecks();
       var profDone = comp.slice(0, 7).every(function(c){ return c.ok; });
-      el.innerHTML =
-        ckRow(profDone, 'Polish your space', profDone ? 'Profile, photos and story all in place' : 'Finish your profile, photos and story on the Overview tab', null) +
-        ckRow(ckData.welcome, 'Record your welcome video', 'A short hello that goes live to members the moment you\u2019re approved', 'content') +
-        ckRow(ckData.content, 'Upload your first piece of content', 'Give members something to watch on day one', 'content') +
-        ckRow(ckData.session, 'Schedule your first live session', 'Sessions appear in the member app calendar', 'sessions') +
-        ckRow(ckData.bank, 'Add your bank details', 'Needed before any payout can reach you', 'earnings') +
-        ckRow(ckData.live, ckData.live ? 'You\u2019re live' : 'Go live', ckData.live ? 'Your space is visible to members' : 'The VYVE team flips this once the steps above are done', null);
+      el.innerHTML = ckRowsHtml(comp);
       renderComp();
+      renderLaunchCard();
     } catch(e){ el.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">Couldn\u2019t load the checklist \u2014 try again shortly.</div>'; }
   }
   function renderSettings(){
@@ -3246,6 +3276,13 @@ body.w1 .pp-content { grid-row:2; grid-column:2; max-width:1280px; width:100%; }
       if (!partnerId) return;
       await loadCk();
       renderComp();
+      renderLaunchCard();
+      // PM-1174: not live yet → My Space opens on the checklist; live → the tab goes away
+      var ckTab = document.querySelector('.w2-tab[data-w2="ck"]');
+      if (ckData.live) { if (ckTab) ckTab.style.display = 'none'; }
+      else if (ckTab) { ckTab.click(); }
+      window.addEventListener('vyve:content-reload', function(){ loadCk().then(function(){ renderComp(); renderLaunchCard(); }).catch(function(){}); });
+      window.addEventListener('hashchange', function(){ if ((location.hash || '') === '#dashboard') loadCk().then(renderLaunchCard).catch(function(){}); });
       // recompute the bar as the legacy editor populates / the partner types
       var ov = $('w2-ov');
       ov.addEventListener('input', function(){ clearTimeout(ov._w2t); ov._w2t = setTimeout(renderComp, 600); });
@@ -4585,6 +4622,7 @@ body.w1 .pp-content { grid-row:2; grid-column:2; max-width:1280px; width:100%; }
   function apply(){ document.body.classList.toggle('mb', !!mq.matches); document.documentElement.classList.toggle('mb-x', !!mq.matches); if (!mq.matches) closeAll(); gate(); }
   // PM-1163: mirror the Gate B notice (PM-1157 copy) onto Home for non-live partners.
   function gate(){
+    var old = $('mb-gate'); if (old) old.remove(); return; // PM-1174: superseded by the Home launch card (#lc-card)
     var dash = $('panel-dashboard'), src = $('gate-b-notice'), t = $('gate-b-title'), x = $('gate-b-text');
     if (!dash || !src || !t || !x) return;
     var live = !(src.style.display && src.style.display !== 'none');
