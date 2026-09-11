@@ -389,8 +389,8 @@
         <div id="gate-b-notice" class="gate-notice" style="display:none">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           <div class="gate-notice-text">
-            <h4>Your profile is being reviewed</h4>
-            <p>The VYVE team will complete a safeguarding and GDPR review before your community goes live to members. This usually takes 1–2 business days. You can continue uploading content and drafting sessions in the meantime.</p>
+            <h4 id="gate-b-title">Finish your profile to go live</h4>
+            <p id="gate-b-text">Complete the steps in the checklist above. Once they're done, the VYVE team will set your community live to members within 2 business days. Your referral link and code already work — you can start inviting people now.</p>
           </div>
         </div>
 
@@ -2989,6 +2989,26 @@ body.w1 .pp-content { grid-row:2; grid-column:2; max-width:1280px; width:100%; }
     if ($('w2-comp-hints')) $('w2-comp-hints').innerHTML = checks.map(function(c){
       return '<span class="w2-chip' + (c.ok ? ' done' : '') + '">' + (c.ok ? '\u2713 ' : '') + esc(c.n) + '</span>';
     }).join('');
+    updateGateNotice(checks);
+  }
+  // PM-1156: the Gate B card names what is actually outstanding instead of claiming a
+  // 1-2 day review that nobody is running. Bank details are a payout prerequisite, not a
+  // go-live one, so they are called out separately. Link + code already work (Gate A).
+  function updateGateNotice(checks){
+    var t = $('gate-b-title'), x = $('gate-b-text');
+    if (!t || !x || ckData.live) return;
+    var todo = checks.filter(function(c){ return !c.ok && c.n !== 'Bank details'; }).map(function(c){ return c.n; });
+    var bankTodo = checks.some(function(c){ return c.n === 'Bank details' && !c.ok; });
+    var tail = ' Your referral link and code already work \u2014 you can start inviting people now.';
+    if (todo.length) {
+      t.textContent = 'Finish your profile to go live';
+      x.innerHTML = 'Still to do: <b>' + todo.map(esc).join('</b>, <b>') + '</b>. Once these are complete, the VYVE team will set your community live to members within 2 business days.' +
+        (bankTodo ? ' Bank details are only needed before your first payout.' : '') + tail;
+    } else {
+      t.textContent = 'Your profile is complete \u2014 going live';
+      x.innerHTML = 'The VYVE team will set your community live to members within 2 business days.' +
+        (bankTodo ? ' Add your bank details before your first payout.' : '') + tail;
+    }
   }
   function ckRow(done, t, s, view){
     return '<div class="w2-ck-row' + (done ? ' done' : '') + '"><div class="w2-ck-dot">' + (done ? '\u2713' : '') + '</div>' +
