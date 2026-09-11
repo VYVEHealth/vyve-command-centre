@@ -4394,5 +4394,106 @@ body.w1 .pp-content { grid-row:2; grid-column:2; max-width:1280px; width:100%; }
   }, 350);
 })();
 </script>
+<style id="pv-style">
+/* ══ PM-1164 VIEW MY PAGE — the member app's partner-profile page in a frame ══ */
+#pv-ov { display:none; position:fixed; inset:0; z-index:200; background:#0D2B2B; }
+#pv-ov.open { display:flex; align-items:center; justify-content:center; }
+#pv-frame { width:100%; height:100%; border:0; background:#fff; }
+#pv-close { position:fixed; top:calc(10px + env(safe-area-inset-top)); right:12px; z-index:201; width:38px; height:38px; border-radius:50%; border:0; background:rgba(13,43,43,.85); color:#fff; font-size:22px; line-height:38px; text-align:center; cursor:pointer; font-family:inherit; }
+#pv-ov.open #pv-close { display:block; }
+@media (min-width:901px){
+  #pv-ov.open { background:rgba(13,43,43,.92); }
+  #pv-shell { width:390px; height:min(844px, calc(100vh - 40px)); border-radius:44px; border:10px solid #111; overflow:hidden; background:#fff; box-shadow:0 30px 80px rgba(0,0,0,.5); }
+  #pv-frame { width:100%; height:100%; }
+}
+@media (max-width:900px){ #pv-shell { width:100%; height:100%; } }
+.pv-btn { display:inline-flex; align-items:center; gap:6px; border:1px solid var(--vyve-teal); color:var(--vyve-teal); background:none; border-radius:999px; padding:6px 12px; font-size:12px; font-weight:700; font-family:inherit; cursor:pointer; }
+.pv-btn svg { width:14px; height:14px; }
+</style>
+<script>
+/* ══ PM-1164 VIEW MY PAGE ZONE — "View my page" on My Space and on Home opens the MEMBER APP's
+     partner-profile.html for this partner (online.vyvehealth.co.uk, ?preview=1) in a full-screen overlay:
+     edge-to-edge on a phone, a phone-shaped frame on desktop. The page is the real thing — nav.js, hero,
+     content, sessions — not a mockup. The partner's own access token is handed across by postMessage
+     (strict target origin, access token only, never the refresh token) so the page can read their space
+     before go-live. Self-contained IIFE (§23.167), fail-open. ══ */
+(function(){
+  'use strict';
+  var ORIGIN = 'https://online.vyvehealth.co.uk';
+  var REST = _SUPA_URL + '/rest/v1';
+  var inited = false, partnerId = null;
+  function $(id){ return document.getElementById(id); }
+  async function jwt(){ var r = await _getSB().auth.getSession(); return (r.data.session && r.data.session.access_token) || ''; }
+  var EYE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+  function mountOverlay(){
+    if ($('pv-ov')) return;
+    var ov = document.createElement('div'); ov.id = 'pv-ov';
+    ov.innerHTML = '<button type="button" id="pv-close" aria-label="Close preview">&times;</button><div id="pv-shell"><iframe id="pv-frame" title="Your page as members see it" allow="autoplay"></iframe></div>';
+    document.body.appendChild(ov);
+    $('pv-close').addEventListener('click', close);
+    document.addEventListener('keydown', function(e){ if (e.key === 'Escape') close(); });
+    window.addEventListener('message', function(e){
+      if (e.origin !== ORIGIN) return;
+      if (e.data && e.data.type === 'vyve-preview-ready') sendToken();
+    });
+    $('pv-frame').addEventListener('load', sendToken);
+  }
+  async function sendToken(){
+    var f = $('pv-frame'); if (!f || !f.contentWindow) return;
+    try { var t = await jwt(); if (t) f.contentWindow.postMessage({ type: 'vyve-preview-token', token: t }, ORIGIN); } catch(_){}
+  }
+  function open(){
+    if (!partnerId) return;
+    mountOverlay();
+    var f = $('pv-frame');
+    var src = ORIGIN + '/partner-profile.html?id=' + encodeURIComponent(partnerId) + '&preview=1';
+    if (f.getAttribute('src') !== src) f.setAttribute('src', src);
+    $('pv-ov').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function close(){
+    var ov = $('pv-ov'); if (!ov) return;
+    ov.classList.remove('open');
+    document.body.style.overflow = '';
+    var f = $('pv-frame'); if (f) f.removeAttribute('src'); // stop any playing video, drop the token
+  }
+  function button(label){
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'pv-btn';
+    b.innerHTML = EYE + '<span>' + label + '</span>';
+    b.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); open(); });
+    return b;
+  }
+  function mountButtons(){
+    // My Space › Overview: next to the status badge on "Your Partner Profile"
+    var badge = $('profile-status');
+    if (badge && !$('pv-btn-space')){
+      var b = button('View my page'); b.id = 'pv-btn-space'; b.style.marginLeft = '8px';
+      badge.insertAdjacentElement('afterend', b);
+    }
+    // Home: quick action (no data-qa, so the W1 handler ignores it)
+    var qa = document.querySelector('#panel-dashboard .w1-qa');
+    if (qa && !$('pv-btn-home')){
+      var h = document.createElement('button'); h.type = 'button'; h.id = 'pv-btn-home';
+      h.innerHTML = EYE.replace('<svg', '<svg width="16" height="16"') + 'View my page';
+      h.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); open(); });
+      qa.appendChild(h);
+    }
+  }
+  var poll = setInterval(async function(){
+    var shell = $('shell');
+    if (!shell || !shell.classList.contains('ready') || inited) return;
+    inited = true; clearInterval(poll);
+    try {
+      var tk = await jwt(); if (!tk) return;
+      var r = await fetch(REST + '/rpc/get_my_partner_id', { method:'POST', headers:{ 'apikey':_SUPA_ANON, 'Authorization':'Bearer ' + tk, 'Content-Type':'application/json' }, body:'{}' });
+      var pid = r.ok ? await r.json().catch(function(){ return null; }) : null;
+      partnerId = (typeof pid === 'string' && pid) ? pid : null;
+      if (!partnerId) return; // demo/admin logins: nothing to preview as
+      mountButtons();
+      var tries = 0, t2 = setInterval(function(){ mountButtons(); if (++tries > 20 || ($('pv-btn-space') && $('pv-btn-home'))) clearInterval(t2); }, 500);
+    } catch(e){ try { window.reportError && window.reportError('pv_zone_boot', e); } catch(_){} }
+  }, 350);
+})();
+</script>
 </body>
 </html>
