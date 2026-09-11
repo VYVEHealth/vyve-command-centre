@@ -726,7 +726,16 @@
          + "message us" form via the partner-support EF (rate-limited, logged, emailed
          to team@ with reply-to the partner). -->
     <div class="pp-panel" id="panel-help">
-      <div class="card">
+      <!-- PM-1176: one Help & Support surface — Ask (chat) · FAQs · Contact -->
+      <div class="w2-tabs" id="hp-tabs" style="margin-bottom:14px;">
+        <button class="w2-tab active" data-hp="ask" type="button">Ask</button>
+        <button class="w2-tab" data-hp="faq" type="button">FAQs</button>
+        <button class="w2-tab" data-hp="contact" type="button">Contact</button>
+      </div>
+      <div id="hp-ask" class="card" style="padding:0;overflow:hidden;">
+        <div id="h6-inline-root" style="display:flex;flex-direction:column;min-height:420px;max-height:70vh;"></div>
+      </div>
+      <div class="card" id="hp-faq" style="display:none;">
         <div class="card-title">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           Frequently asked questions
@@ -745,6 +754,7 @@
         </div>
       </div>
 
+      <div id="hp-contact" style="display:none;">
       <!-- PM-890: the partner's own inbox — threads with VYVE, replies inline. -->
       <div class="card" id="sup-inbox-card" style="display:none;">
         <div class="card-title">
@@ -766,6 +776,7 @@
           <button class="btn btn-primary" id="sup-send-btn" type="button" style="font-size:13px;">Send message</button>
           <div id="sup-msg" style="margin-top:8px;font-size:12.5px;color:var(--text-muted);"></div>
         </div>
+      </div>
       </div>
     </div>
 
@@ -4256,17 +4267,18 @@ body.w1 .pp-content { grid-row:2; grid-column:2; max-width:1280px; width:100%; }
 </script>
 
 <script>
-/* ══ PM-1158 PARTNER PORTAL P0 ZONE — AI help drawer (gap map #24–26). "?" in the top bar opens
-     a right-hand drawer over the coach-help EF (v6: any partner JWT; surface derived server-side
-     from partner_type — creators/ambassadors get the 'partner' corpus). Ported from the coach
-     portal's W2b drawer (PM-1083); same history-in-localStorage, route buttons, feedback and idle
-     nudge. Self-contained IIFE (§23.167), fail-open: no partner id → no button. ══ */
+/* ══ PM-1158 / PM-1176 HELP ZONE — one chat, two homes. The "?" in the top bar opens a right-hand
+     drawer; the same conversation is also rendered inline on Help & Support › Ask. Both roots share
+     state and history (localStorage per partner), route buttons (window.w1Go / #leads), thumbs
+     feedback and the idle nudge. The Help panel's Ask · FAQs · Contact tabs live here too, and a
+     one-time "Stuck? Tap ? for help" hint shows under the button on a partner's first visit.
+     Server: coach-help (v7: surface from partner_type; follow-ups skip the gate). Fail-open. ══ */
 (function(){
   'use strict';
   var REST = _SUPA_URL + '/rest/v1';
   var EF = _SUPA_URL + '/functions/v1/coach-help', MAX = 500, GAP = 3000, IDLE = 180000, KEEP = 40;
-  var CHIPS = ['Share my referral link', 'What is left before I go live?', 'Upload my welcome video', 'When do I get paid?', 'Schedule a live session'];
-  var inited = false, partnerId = null;
+  var CHIPS = ['Share my referral link', 'What is left before I go live?', 'Upload my welcome video', 'When do I get paid?', 'Are my bank details safe?'];
+  var inited = false, partnerId = null, roots = [];
   var st = { open: false, busy: false, hist: [], lastSent: 0, lastQ: '', idle: null, nudged: false, remaining: null };
   function $(id){ return document.getElementById(id); }
   function esc(x){ return String(x==null?'':x).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
@@ -4276,6 +4288,8 @@ body.w1 .pp-content { grid-row:2; grid-column:2; max-width:1280px; width:100%; }
     s.textContent =
       '#pp-help{position:relative;background:none;border:1px solid rgba(255,255,255,.28);border-radius:99px;color:var(--sidebar-text,#e6f2ef);font-weight:800;font-size:14px;width:30px;height:30px;line-height:28px;text-align:center;cursor:pointer;padding:0;font-family:inherit;opacity:.9;}' +
       '#pp-help .h6-dot{position:absolute;top:-3px;right:-3px;width:8px;height:8px;border-radius:99px;background:#C9A84C;}' +
+      '#h6-hint{position:fixed;z-index:139;background:#C9A84C;color:#0D2B2B;font-size:12.5px;font-weight:600;padding:9px 12px;border-radius:10px;max-width:230px;line-height:1.4;box-shadow:0 8px 24px rgba(0,0,0,.25);cursor:pointer;}' +
+      '#h6-hint:after{content:"";position:absolute;top:-6px;right:14px;border:6px solid transparent;border-top:0;border-bottom-color:#C9A84C;}' +
       '#h6-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:140;}' +
       '#h6-ov.show{display:block;}' +
       '#h6{position:fixed;top:0;right:0;bottom:0;width:min(420px,100vw);background:var(--surface,#fff);color:var(--text,#0D2B2B);border-left:1px solid var(--border,#dde5e3);box-shadow:-12px 0 34px rgba(0,0,0,.35);z-index:141;display:flex;flex-direction:column;transform:translateX(105%);transition:transform .22s ease;}' +
@@ -4314,49 +4328,83 @@ body.w1 .pp-content { grid-row:2; grid-column:2; max-width:1280px; width:100%; }
   function save(){ try { localStorage.setItem(key(), JSON.stringify(st.hist.slice(-KEEP))); } catch(_){} }
   function md(t){ return esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>'); }
   function flat(a){ return [a.ack, a.clarify].concat(a.steps || []).filter(Boolean).join(' ').slice(0, 1200); }
-  function mount(){
+  function seen(){ try { return localStorage.getItem('vyve_partner_help_seen') === '1'; } catch(_){ return true; } }
+  function markSeen(){ try { localStorage.setItem('vyve_partner_help_seen', '1'); } catch(_){} var dot = document.querySelector('#pp-help .h6-dot'); if (dot) dot.remove(); var h = $('h6-hint'); if (h) h.remove(); }
+  // one chat root = body + composer + footer, built into any container
+  function buildRoot(container, sfx, header){
+    container.innerHTML = (header || '') +
+      '<div class="h6-body" id="h6-body-' + sfx + '"></div>' +
+      '<div class="h6-c"><textarea id="h6-in-' + sfx + '" placeholder="Ask a question\u2026" maxlength="' + MAX + '" rows="1"></textarea><button type="button" id="h6-send-' + sfx + '">Ask</button></div>' +
+      '<div class="h6-f" id="h6-foot-' + sfx + '">Portal help only \u00b7 40 questions a day</div>';
+    var root = { sfx: sfx, body: $('h6-body-' + sfx), input: $('h6-in-' + sfx), send: $('h6-send-' + sfx), foot: $('h6-foot-' + sfx) };
+    root.send.addEventListener('click', function(){ send(root.input.value, root); });
+    root.input.addEventListener('keydown', function(e){ if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); send(root.input.value, root); } });
+    root.body.addEventListener('click', function(ev){
+      var t = ev.target.closest && ev.target.closest('[data-h6]'); if (!t) return;
+      var act = t.dataset.h6;
+      if (act === 'chip') send(t.textContent, root);
+      else if (act === 'route') goRoute(t.dataset.route);
+      else if (act === 'fb') feedback(t.dataset.id, t.dataset.val === '1');
+    });
+    roots.push(root);
+    return root;
+  }
+  function mountDrawer(){
     if ($('h6')) return;
     var right = document.querySelector('.pp-topbar-right'); if (!right) return;
-    var seen = false; try { seen = localStorage.getItem('vyve_partner_help_seen') === '1'; } catch(_){}
     var b = document.createElement('button');
     b.id = 'pp-help'; b.type = 'button'; b.title = 'Help'; b.setAttribute('aria-label', 'Help');
-    b.innerHTML = '?' + (seen ? '' : '<span class="h6-dot"></span>');
+    b.innerHTML = '?' + (seen() ? '' : '<span class="h6-dot"></span>');
     var theme = $('pp-theme-toggle');
     right.insertBefore(b, theme || null);
     var ov = document.createElement('div'); ov.id = 'h6-ov'; document.body.appendChild(ov);
     var d = document.createElement('div'); d.id = 'h6'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-label', 'Help');
-    d.innerHTML =
-      '<div class="h6-h"><div><b>Help</b><span>How-to for this portal. Answers in seconds, links straight to the page.</span></div><button class="h6-x" type="button" id="h6-close" aria-label="Close">&times;</button></div>' +
-      '<div class="h6-body" id="h6-body"></div>' +
-      '<div class="h6-c"><textarea id="h6-in" placeholder="Ask a question\u2026" maxlength="' + MAX + '" rows="1"></textarea><button type="button" id="h6-send">Ask</button></div>' +
-      '<div class="h6-f" id="h6-foot">Portal help only \u00b7 40 questions a day</div>';
     document.body.appendChild(d);
+    buildRoot(d, 'dr', '<div class="h6-h"><div><b>Help</b><span>How-to for this portal. Answers in seconds, links straight to the page.</span></div><button class="h6-x" type="button" id="h6-close" aria-label="Close">&times;</button></div>');
     b.addEventListener('click', function(){ toggle(!st.open); });
     ov.addEventListener('click', function(){ toggle(false); });
     $('h6-close').addEventListener('click', function(){ toggle(false); });
-    $('h6-send').addEventListener('click', function(){ send($('h6-in').value); });
-    $('h6-in').addEventListener('keydown', function(e){ if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); send(e.target.value); } });
     document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && st.open) toggle(false); });
-    $('h6-body').addEventListener('click', function(ev){
-      var t = ev.target.closest && ev.target.closest('[data-h6]'); if (!t) return;
-      var act = t.dataset.h6;
-      if (act === 'chip') send(t.textContent);
-      else if (act === 'route') goRoute(t.dataset.route);
-      else if (act === 'fb') feedback(t.dataset.id, t.dataset.val === '1', t);
-    });
+    // PM-1176: first-visit hint under the "?"
+    if (!seen()){
+      setTimeout(function(){
+        if (seen() || $('h6-hint')) return;
+        var r = b.getBoundingClientRect();
+        var h = document.createElement('div'); h.id = 'h6-hint';
+        h.textContent = 'Stuck? Tap ? any time \u2014 instant answers about the portal.';
+        h.style.top = (r.bottom + 10) + 'px'; h.style.right = Math.max(8, window.innerWidth - r.right - 4) + 'px';
+        document.body.appendChild(h);
+        h.addEventListener('click', function(){ markSeen(); toggle(true); });
+        setTimeout(function(){ var x = $('h6-hint'); if (x) x.remove(); }, 12000);
+      }, 1500);
+    }
   }
+  function mountInline(){
+    var host = $('h6-inline-root'); if (!host || host.getAttribute('data-built')) return;
+    host.setAttribute('data-built', '1');
+    buildRoot(host, 'in', '<div class="h6-h"><div><b>Ask VYVE Help</b><span>Instant answers about this portal. For anything else, use Contact.</span></div></div>');
+    var tabs = $('hp-tabs');
+    if (tabs) tabs.addEventListener('click', function(e){
+      var t = e.target.closest('.w2-tab'); if (!t) return;
+      var k = t.getAttribute('data-hp');
+      tabs.querySelectorAll('.w2-tab').forEach(function(x){ x.classList.toggle('active', x === t); });
+      $('hp-ask').style.display = k === 'ask' ? '' : 'none';
+      $('hp-faq').style.display = k === 'faq' ? '' : 'none';
+      $('hp-contact').style.display = k === 'contact' ? '' : 'none';
+      if (k === 'ask'){ load(); render(); }
+    });
+    load(); render();
+  }
+  window.h6ShowTab = function(k){ var b = document.querySelector('#hp-tabs .w2-tab[data-hp="' + k + '"]'); if (b) b.click(); };
   function toggle(on){
     st.open = !!on;
     var d = $('h6'), ov = $('h6-ov'); if (!d) return;
     d.classList.toggle('open', st.open); ov.classList.toggle('show', st.open);
     if (st.open){
-      try { localStorage.setItem('vyve_partner_help_seen', '1'); } catch(_){}
-      var dot = document.querySelector('#pp-help .h6-dot'); if (dot) dot.remove();
-      load(); render(); setTimeout(function(){ var i = $('h6-in'); if (i && window.innerWidth > 640) i.focus(); }, 240);
+      markSeen();
+      load(); render(); setTimeout(function(){ var i = $('h6-in-dr'); if (i && window.innerWidth > 640) i.focus(); }, 240);
     } else { idle(false); }
   }
-  // Routes: the W1 shell's go() is exposed as window.w1Go; 'leads' is the W5 zone's own view,
-  // reached by its hash (W5 listens for #leads). Anything unknown falls back to the hash.
   function goRoute(route){
     if (!route) return; toggle(false);
     try {
@@ -4366,55 +4414,57 @@ body.w1 .pp-content { grid-row:2; grid-column:2; max-width:1280px; width:100%; }
     location.hash = '#' + route;
   }
   function render(){
-    var body = $('h6-body'); if (!body) return;
-    var h = '';
-    if (!st.hist.length){
-      h += '<div class="h6-hello"><b>What do you want to do?</b>Ask in your own words. I only know the partner portal, so I\u2019ll say so if it\u2019s not about VYVE.</div>' +
-           '<div class="h6-chips">' + CHIPS.map(function(c){ return '<button type="button" class="h6-chip" data-h6="chip">' + esc(c) + '</button>'; }).join('') + '</div>';
-    }
-    st.hist.forEach(function(m){
-      if (m.role === 'user'){ h += '<div class="h6-m h6-me">' + esc(m.content) + '</div>'; return; }
-      if (m.role === 'nudge'){ h += '<div class="h6-nudge">' + esc(m.content) + '</div>'; return; }
-      var a = m.answer || {};
-      var refused = !!m.refused;
-      h += '<div class="h6-m h6-bot' + (refused ? ' ref' : '') + '">' + md(a.ack || m.content || '');
-      if (a.clarify) h += '<div class="h6-clar">' + md(a.clarify) + '</div>';
-      if (a.steps && a.steps.length) h += '<ol>' + a.steps.map(function(s){ return '<li>' + md(s) + '</li>'; }).join('') + '</ol>';
-      if (a.constraints && a.constraints.length) h += '<ul>' + a.constraints.map(function(s){ return '<li>' + md(s) + '</li>'; }).join('') + '</ul>';
-      if (a.related) h += '<div class="h6-rel">' + md(a.related) + '</div>';
-      if (a.route) h += '<button type="button" class="h6-route" data-h6="route" data-route="' + esc(a.route) + '">' + esc(a.route_label || 'Open') + ' \u2192</button>';
-      if (m.id && !refused) h += '<div class="h6-fb">Did that help? <button type="button" data-h6="fb" data-id="' + esc(m.id) + '" data-val="1"' + (m.helpful === true ? ' class="on"' : '') + '>\ud83d\udc4d</button><button type="button" data-h6="fb" data-id="' + esc(m.id) + '" data-val="0"' + (m.helpful === false ? ' class="on"' : '') + '>\ud83d\udc4e</button></div>';
-      h += '</div>';
+    roots.forEach(function(root){
+      var body = root.body; if (!body) return;
+      var h = '';
+      if (!st.hist.length){
+        h += '<div class="h6-hello"><b>What do you want to do?</b>Ask in your own words. I only know the partner portal, so I\u2019ll say so if it\u2019s not about VYVE.</div>' +
+             '<div class="h6-chips">' + CHIPS.map(function(c){ return '<button type="button" class="h6-chip" data-h6="chip">' + esc(c) + '</button>'; }).join('') + '</div>';
+      }
+      st.hist.forEach(function(m){
+        if (m.role === 'user'){ h += '<div class="h6-m h6-me">' + esc(m.content) + '</div>'; return; }
+        if (m.role === 'nudge'){ h += '<div class="h6-nudge">' + esc(m.content) + '</div>'; return; }
+        var a = m.answer || {};
+        var refused = !!m.refused;
+        h += '<div class="h6-m h6-bot' + (refused ? ' ref' : '') + '">' + md(a.ack || m.content || '');
+        if (a.clarify) h += '<div class="h6-clar">' + md(a.clarify) + '</div>';
+        if (a.steps && a.steps.length) h += '<ol>' + a.steps.map(function(s){ return '<li>' + md(s) + '</li>'; }).join('') + '</ol>';
+        if (a.constraints && a.constraints.length) h += '<ul>' + a.constraints.map(function(s){ return '<li>' + md(s) + '</li>'; }).join('') + '</ul>';
+        if (a.related) h += '<div class="h6-rel">' + md(a.related) + '</div>';
+        if (a.route) h += '<button type="button" class="h6-route" data-h6="route" data-route="' + esc(a.route) + '">' + esc(a.route_label || 'Open') + ' \u2192</button>';
+        if (m.id && !refused) h += '<div class="h6-fb">Did that help? <button type="button" data-h6="fb" data-id="' + esc(m.id) + '" data-val="1"' + (m.helpful === true ? ' class="on"' : '') + '>\ud83d\udc4d</button><button type="button" data-h6="fb" data-id="' + esc(m.id) + '" data-val="0"' + (m.helpful === false ? ' class="on"' : '') + '>\ud83d\udc4e</button></div>';
+        h += '</div>';
+      });
+      if (st.busy) h += '<div class="h6-typing">Thinking\u2026</div>';
+      body.innerHTML = h;
+      body.scrollTop = body.scrollHeight;
+      if (root.foot) root.foot.textContent = 'Portal help only \u00b7 ' + (st.remaining == null ? '40 questions a day' : (st.remaining + ' question' + (st.remaining === 1 ? '' : 's') + ' left today'));
+      if (root.send) root.send.disabled = st.busy;
     });
-    if (st.busy) h += '<div class="h6-typing">Thinking\u2026</div>';
-    body.innerHTML = h;
-    body.scrollTop = body.scrollHeight;
-    var f = $('h6-foot'); if (f) f.textContent = 'Portal help only \u00b7 ' + (st.remaining == null ? '40 questions a day' : (st.remaining + ' question' + (st.remaining === 1 ? '' : 's') + ' left today'));
   }
   function idle(arm){
     if (st.idle){ clearTimeout(st.idle); st.idle = null; }
     if (!arm || st.nudged) return;
     st.idle = setTimeout(function(){
-      if (!st.open || st.busy || st.nudged) return;
+      if (st.busy || st.nudged) return;
       st.nudged = true;
       st.hist.push({ role: 'nudge', content: 'Still stuck? Ask a follow-up, or tell me what you were trying to do.' });
       render();
     }, IDLE);
   }
-  async function send(text){
+  async function send(text, root){
     var q = String(text || '').replace(/\s+/g, ' ').trim();
-    var inp = $('h6-in');
     if (!q || st.busy) return;
     if (q.length > MAX){ q = q.slice(0, MAX); }
     var now = Date.now();
     if (now - st.lastSent < GAP) return;
-    if (q.toLowerCase() === st.lastQ.toLowerCase() && now - st.lastSent < 120000){ if (inp) inp.value = ''; return; }
+    if (q.toLowerCase() === st.lastQ.toLowerCase() && now - st.lastSent < 120000){ if (root && root.input) root.input.value = ''; return; }
     st.lastSent = now; st.lastQ = q; st.nudged = false; idle(false);
     var turns = st.hist.filter(function(m){ return m.role === 'user' || m.role === 'bot'; }).slice(-4).map(function(m){
       return { role: m.role === 'user' ? 'user' : 'assistant', content: m.role === 'user' ? m.content : (m.answer ? flat(m.answer) : String(m.content || '')) };
     });
-    st.hist.push({ role: 'user', content: q }); if (inp) inp.value = '';
-    st.busy = true; render(); var sb = $('h6-send'); if (sb) sb.disabled = true;
+    st.hist.push({ role: 'user', content: q }); roots.forEach(function(r){ if (r.input) r.input.value = ''; });
+    st.busy = true; render();
     try {
       var t = await jwt();
       var r = await fetch(EF, { method: 'POST', headers: { 'Authorization': 'Bearer ' + t, 'Content-Type': 'application/json' }, body: JSON.stringify({ question: q, history: turns }) });
@@ -4429,7 +4479,7 @@ body.w1 .pp-content { grid-row:2; grid-column:2; max-width:1280px; width:100%; }
     } catch(e){
       st.hist.push({ role: 'bot', refused: true, answer: { ack: 'Help is unavailable right now \u2014 try again in a minute.' } });
     }
-    st.busy = false; if (sb) sb.disabled = false;
+    st.busy = false;
     save(); render();
   }
   async function feedback(id, helpful){
@@ -4453,15 +4503,16 @@ body.w1 .pp-content { grid-row:2; grid-column:2; max-width:1280px; width:100%; }
       var r = await fetch(REST + '/rpc/get_my_partner_id', { method: 'POST', headers: { 'apikey': _SUPA_ANON, 'Authorization': 'Bearer ' + tk, 'Content-Type': 'application/json' }, body: '{}' });
       var pid = r.ok ? await r.json().catch(function(){ return null; }) : null;
       partnerId = (typeof pid === 'string' && pid) ? pid : null;
-      if (!partnerId) return; // demo/anon — the EF would 403
-      mount();
+      if (!partnerId) { var host = $('h6-inline-root'); if (host) host.innerHTML = '<div style="padding:16px;font-size:13px;color:var(--text-muted);">Help chat is available on a partner login.</div>'; return; }
+      mountDrawer();
+      mountInline();
     } catch(e){ try { window.reportError && window.reportError('h6_zone_boot', e); } catch(_){} }
   }, 350);
 })();
 </script>
 <style id="mb-style">
 /* ══ PM-1161 MOBILE SHELL (≤900px): bottom tab bar + More sheet + avatar menu — Dean picked option A ══ */
-#mb-tabs, #mb-sheet, #mb-ov, #mb-menu, #mb-avatar { display:none; }
+#mb-tabs, #mb-sheet, #mb-ov, #mb-menu, #mb-avatar, #mb-bell { display:none; }
 @media (max-width:900px){
   body.w1.mb #w1-side { display:none; }
   body.w1.mb .pp-content { padding-bottom:calc(84px + env(safe-area-inset-bottom)); }
@@ -4469,6 +4520,12 @@ body.w1 .pp-content { grid-row:2; grid-column:2; max-width:1280px; width:100%; }
   body.mb #pp-user-email, body.mb #pp-signout { display:none; }
   body.mb #pp-theme-toggle { display:none; }
   body.mb #pp-help { width:30px; height:30px; }
+  #mb-bell { display:none; position:relative; width:30px; height:30px; border-radius:50%; border:1px solid rgba(255,255,255,.28); background:none; color:var(--sidebar-text,#e6f2ef); cursor:pointer; padding:0; align-items:center; justify-content:center; }
+  #mb-bell svg { width:16px; height:16px; }
+  #mb-bell.active { background:rgba(255,255,255,.12); }
+  #mb-bell .mb-badge { position:absolute; top:-5px; right:-6px; left:auto; }
+  body.mb #mb-bell { display:inline-flex; }
+  body.mb .pp-topbar-right { gap:10px; }
   #mb-avatar { display:none; width:30px; height:30px; border-radius:50%; border:0; background:var(--vyve-teal); color:#fff; font-size:11.5px; font-weight:700; font-family:inherit; cursor:pointer; padding:0; letter-spacing:.02em; }
   body.mb #mb-avatar { display:inline-flex; align-items:center; justify-content:center; }
   #mb-tabs { display:none; position:fixed; left:0; right:0; bottom:0; z-index:120; background:var(--surface); border-top:1px solid var(--border); padding:4px 4px calc(6px + env(safe-area-inset-bottom)); }
@@ -4593,6 +4650,11 @@ body.w1 .pp-content { grid-row:2; grid-column:2; max-width:1280px; width:100%; }
     var right = document.querySelector('.pp-topbar-right');
     var email = (($('pp-user-email') || {}).textContent || '').trim();
     var initials = email ? email.split('@')[0].split(/[._-]+/).map(function(p){ return p.charAt(0); }).join('').slice(0,2).toUpperCase() : 'ME';
+    // PM-1176: notification bell between "?" and the avatar on mobile
+    var bell = document.createElement('button'); bell.id = 'mb-bell'; bell.type = 'button'; bell.title = 'Notifications'; bell.setAttribute('aria-label','Notifications');
+    bell.innerHTML = ico('bell') + '<span class="mb-badge" id="mb-bell-badge">0</span>';
+    if (right){ var helpBtn = $('pp-help'); if (helpBtn && helpBtn.parentNode === right) helpBtn.insertAdjacentElement('afterend', bell); else right.appendChild(bell); }
+    bell.addEventListener('click', function(){ nav('notifs'); });
     var av = document.createElement('button'); av.id = 'mb-avatar'; av.type = 'button'; av.title = 'Account'; av.setAttribute('aria-label','Account'); av.textContent = initials || 'ME';
     if (right) right.appendChild(av);
     var mn = document.createElement('div'); mn.id = 'mb-menu'; mn.setAttribute('role','dialog'); mn.setAttribute('aria-label','Account');
@@ -4644,9 +4706,11 @@ body.w1 .pp-content { grid-row:2; grid-column:2; max-width:1280px; width:100%; }
     });
     document.querySelectorAll('.mb-row[data-mb]').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-mb') === v); });
     var src = $('w1-nbadge'), n = src ? src.textContent : '0', show = !!(src && src.classList.contains('show'));
-    var mb = $('mb-more-badge'), nb = $('mb-notif-badge');
+    var mb = $('mb-more-badge'), nb = $('mb-notif-badge'), bb = $('mb-bell-badge');
     if (mb){ mb.textContent = n; mb.classList.toggle('show', show); }
     if (nb){ nb.textContent = n; nb.classList.toggle('show', show); }
+    if (bb){ bb.textContent = n; bb.classList.toggle('show', show); }
+    var bellEl = $('mb-bell'); if (bellEl) bellEl.classList.toggle('active', v === 'notifs');
   }
   /* ── boot ── */
   var poll = setInterval(async function(){
