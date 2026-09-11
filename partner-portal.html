@@ -3463,10 +3463,29 @@ body.w1 .pp-content { grid-row:2; grid-column:2; max-width:1280px; width:100%; }
       foldEl.style.display = '';
       foldEl.innerHTML = '<button class="w3-lane' + (lib.folder === 'all' ? ' on' : '') + '" data-w3fold="all" type="button">All folders</button>' +
         names.map(function(n){ return '<button class="w3-lane' + (lib.folder === n ? ' on' : '') + '" data-w3fold="' + esc(n) + '" type="button">' + esc(n) + '</button>'; }).join('') +
-        '<button class="w3-lane' + (lib.folder === '__none' ? ' on' : '') + '" data-w3fold="__none" type="button">Unfiled</button>';
+        '<button class="w3-lane' + (lib.folder === '__none' ? ' on' : '') + '" data-w3fold="__none" type="button">Unfiled</button>' +
+        // PM-1168: inline creator — prompt() was silently swallowed on iOS when fired from a <select>
+        '<button class="w3-lane" id="w3-newfold" type="button">+ New folder</button>' +
+        '<span id="w3-newfold-row" style="display:none;align-items:center;gap:6px;flex:0 0 auto;"><input id="w3-newfold-in" type="text" maxlength="40" placeholder="Folder name" style="font-size:12px;padding:5px 10px;border:1px solid var(--border);border-radius:999px;background:var(--surface-2);color:var(--text);width:140px;"/><button class="w3-lane on" id="w3-newfold-save" type="button">Save</button><button class="w3-lane" id="w3-newfold-cancel" type="button">Cancel</button></span>';
       foldEl.querySelectorAll('[data-w3fold]').forEach(function(b){
         b.addEventListener('click', function(){ lib.folder = b.getAttribute('data-w3fold'); applyLib(); });
       });
+      var nfBtn = $('w3-newfold'), nfRow = $('w3-newfold-row'), nfIn = $('w3-newfold-in');
+      function nfOpen(){ nfBtn.style.display = 'none'; nfRow.style.display = 'inline-flex'; nfIn.value = ''; setTimeout(function(){ nfIn.focus(); }, 50); }
+      function nfClose(){ nfRow.style.display = 'none'; nfBtn.style.display = ''; }
+      async function nfSave(){
+        var nn = (nfIn.value || '').trim().slice(0, 40);
+        if (!nn){ nfIn.focus(); return; }
+        if ((lib.folders.folders || []).indexOf(nn) === -1) lib.folders.folders = (lib.folders.folders || []).concat([nn]);
+        lib.folder = nn;
+        try { await saveFolders(); } catch(e){ alert('Couldn\u2019t save the folder \u2014 try again.'); }
+        applyLib0();
+      }
+      nfBtn.addEventListener('click', nfOpen);
+      $('w3-newfold-cancel').addEventListener('click', nfClose);
+      $('w3-newfold-save').addEventListener('click', nfSave);
+      nfIn.addEventListener('keydown', function(e){ if (e.key === 'Enter'){ e.preventDefault(); nfSave(); } if (e.key === 'Escape') nfClose(); });
+      window.w3NewFolderOpen = function(){ try { foldEl.scrollIntoView({ behavior:'smooth', block:'center' }); } catch(_){} nfOpen(); };
       wraps.forEach(function(w){
         var info = w.querySelector('.content-info');
         var cid = w.querySelector('.content-item[data-cid]').getAttribute('data-cid');
@@ -3480,11 +3499,10 @@ body.w1 .pp-content { grid-row:2; grid-column:2; max-width:1280px; width:100%; }
           info.appendChild(sel);
           sel.querySelector('select').addEventListener('change', async function(){
             var v = this.value;
-            if (v === '__new'){
-              var nn = (prompt('Folder name:') || '').trim().slice(0, 40);
-              if (!nn){ this.value = cur; return; }
-              if ((lib.folders.folders || []).indexOf(nn) === -1){ lib.folders.folders = (lib.folders.folders || []).concat([nn]); }
-              v = nn;
+            if (v === '__new'){ // PM-1168: no prompt() — open the inline creator in the folder bar
+              this.value = cur;
+              if (window.w3NewFolderOpen) window.w3NewFolderOpen();
+              return;
             }
             lib.folders.items = lib.folders.items || {};
             if (v) lib.folders.items[cid] = v; else delete lib.folders.items[cid];
