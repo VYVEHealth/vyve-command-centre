@@ -484,8 +484,8 @@
         <div class="upload-zone" id="upload-zone">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
           <p>Click to select a video, or drag and drop here</p>
-          <p style="font-size:11px;margin-top:4px;">MP4, MOV — max 2GB</p>
-          <input type="file" id="upload-file" accept="video/*" style="display:none"/>
+          <p style="font-size:11px;margin-top:4px;">MP4, MOV — max 2GB each · pick several at once to upload a batch</p>
+          <input type="file" id="upload-file" accept="video/*" multiple style="display:none"/>
         </div>
         <div id="upload-meta" style="display:none;margin-top:16px;">
           <div class="field">
@@ -508,6 +508,15 @@
             <div id="upload-progress-label" style="font-size:12px;color:var(--text-muted);margin-top:6px;"></div>
           </div>
           <button class="btn btn-teal" id="upload-submit-btn" type="button">Submit for review</button>
+        </div>
+        <!-- PM-1170: batch upload queue — shown when 2+ files are chosen; each lands in In review, dateless (push later from the Library) -->
+        <div id="upload-queue" style="display:none;margin-top:16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+            <div style="font-size:13px;color:var(--text-muted);" id="uq-summary"></div>
+            <div style="display:flex;gap:8px;"><button class="btn btn-teal" id="uq-start" type="button" style="font-size:12.5px;">Upload all</button><button class="btn btn-ghost" id="uq-clear" type="button" style="font-size:12.5px;">Clear</button></div>
+          </div>
+          <div id="uq-list"></div>
+          <div class="field-hint" style="margin-top:8px;">Each video goes to VYVE for review, then sits in your Library as <b>Ready to push</b> — you choose when it goes on your space.</div>
         </div>
       </div>
 
@@ -1522,15 +1531,104 @@
   }
   $('upload-zone').addEventListener('click', function() { $('upload-file').click(); });
   $('upload-file').addEventListener('change', function(e) {
-    acceptUpload(e.target.files[0]);
+    var fl = Array.prototype.slice.call(e.target.files || []);
+    if (fl.length > 1) acceptQueue(fl); else acceptUpload(fl[0]);
   });
 
   $('upload-zone').addEventListener('dragover', function(e){ e.preventDefault(); this.classList.add('dragover'); });
   $('upload-zone').addEventListener('dragleave', function(){ this.classList.remove('dragover'); });
   $('upload-zone').addEventListener('drop', function(e){
     e.preventDefault(); this.classList.remove('dragover');
-    acceptUpload(e.dataTransfer.files[0]);
+    var fl = Array.prototype.slice.call(e.dataTransfer.files || []);
+    if (fl.length > 1) acceptQueue(fl); else acceptUpload(fl[0]);
   });
+
+  /* ── PM-1170: batch upload queue ─────────────────────────────────────────
+     2+ files → a per-file list (title editable, filename default), Upload all runs
+     sign → PUT (progress) → poster frame → commit sequentially. Every item lands
+     in_review and dateless, so it appears in the Library as Ready to push once
+     approved. Failed rows get Retry; the single-file path above is untouched. */
+  var uq = { items: [], running: false };
+  function uqRender() {
+    var list = $('uq-list'); if (!list) return;
+    list.innerHTML = uq.items.map(function(it, i) {
+      var st = it.status, pill;
+      if (st === 'done') pill = '<span class="mod-chip chip-review">In review</span>';
+      else if (st === 'failed') pill = '<span class="mod-chip chip-returned">Failed</span> <button class="btn btn-ghost" data-uq-retry="' + i + '" type="button" style="font-size:11.5px;padding:5px 10px;">Retry</button>';
+      else if (st === 'uploading') pill = '<span class="mod-chip chip-scheduled">' + (it.pct || 0) + '%</span>';
+      else if (st === 'finishing') pill = '<span class="mod-chip chip-scheduled">Finishing\u2026</span>';
+      else pill = '<span class="mod-chip chip-approved">Waiting</span> <button class="btn btn-ghost" data-uq-remove="' + i + '" type="button" style="font-size:11.5px;padding:5px 10px;">Remove</button>';
+      return '<div class="content-item" style="align-items:flex-start;">'
+        + '<div class="content-info"><input type="text" data-uq-title="' + i + '" value="' + escAttr(it.title) + '" maxlength="120" ' + (st === 'waiting' || st === 'failed' ? '' : 'disabled ') + 'style="width:100%;font-size:13.5px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);"/>'
+        + '<div class="content-info-meta">' + escHtml(it.file.name) + ' \u00b7 ' + (it.file.size / 1048576).toFixed(0) + ' MB' + (it.error ? ' \u00b7 <span style="color:var(--danger)">' + escHtml(it.error) + '</span>' : '') + '</div>'
+        + (st === 'uploading' ? '<div style="background:var(--surface-3);border-radius:4px;height:5px;overflow:hidden;margin-top:6px;"><div style="height:100%;background:var(--vyve-teal);width:' + (it.pct || 0) + '%;transition:width .3s;"></div></div>' : '')
+        + '</div><div class="content-actions">' + pill + '</div></div>';
+    }).join('');
+    var done = uq.items.filter(function(i){ return i.status === 'done'; }).length, failed = uq.items.filter(function(i){ return i.status === 'failed'; }).length;
+    $('uq-summary').textContent = uq.items.length + ' video' + (uq.items.length === 1 ? '' : 's') + (done ? ' \u00b7 ' + done + ' uploaded' : '') + (failed ? ' \u00b7 ' + failed + ' failed' : '');
+    var start = $('uq-start'); if (start) { var pending = uq.items.some(function(i){ return i.status === 'waiting' || i.status === 'failed'; }); start.disabled = uq.running || !pending; start.textContent = uq.running ? 'Uploading\u2026' : (failed && !uq.items.some(function(i){ return i.status === 'waiting'; }) ? 'Retry failed' : 'Upload all'); }
+    list.querySelectorAll('[data-uq-title]').forEach(function(inp){ inp.addEventListener('input', function(){ uq.items[+inp.getAttribute('data-uq-title')].title = inp.value; }); });
+    list.querySelectorAll('[data-uq-remove]').forEach(function(b){ b.addEventListener('click', function(){ uq.items.splice(+b.getAttribute('data-uq-remove'), 1); if (!uq.items.length) uqClear(); else uqRender(); }); });
+    list.querySelectorAll('[data-uq-retry]').forEach(function(b){ b.addEventListener('click', function(){ var it = uq.items[+b.getAttribute('data-uq-retry')]; it.status = 'waiting'; it.error = null; uqRender(); uqRun(); }); });
+  }
+  function acceptQueue(files) {
+    var ok = [], rejected = 0;
+    files.forEach(function(f){ if (f.size > MAX_UPLOAD_BYTES) rejected++; else ok.push({ file: f, title: f.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' '), status: 'waiting', pct: 0, error: null }); });
+    if (rejected) toast(rejected + ' file' + (rejected === 1 ? ' is' : 's are') + ' over the 2GB limit and ' + (rejected === 1 ? 'was' : 'were') + ' left out');
+    if (!ok.length) return;
+    state.welcomeMode = false; state.uploadFile = null;
+    $('upload-meta').style.display = 'none';
+    uq.items = uq.items.concat(ok);
+    $('upload-queue').style.display = 'block';
+    uqRender();
+  }
+  function uqClear() { uq.items = []; uq.running = false; $('upload-queue').style.display = 'none'; $('upload-file').value = ''; }
+  async function uploadOne(it) {
+    var sign = await fetch(_SUPA_URL + '/functions/v1/partner-content-upload', { method: 'POST', headers: efHeaders(), body: JSON.stringify({ action: 'sign', partner_id: state.partnerId, file_name: it.file.name }) });
+    var sd = await sign.json().catch(function(){ return {}; });
+    if (!sd.signed_url) throw new Error(sd.error || 'Could not get upload URL');
+    it.status = 'uploading'; it.pct = 0; uqRender();
+    await new Promise(function(resolve, reject) {
+      var xhr = new XMLHttpRequest();
+      xhr.upload.onprogress = function(e){ if (e.lengthComputable) { it.pct = Math.round(e.loaded / e.total * 100); var f = document.activeElement; if (f && f.hasAttribute && f.hasAttribute('data-uq-title')) return; uqRender(); } }; // don't re-render while a title is being typed
+      xhr.onload = function(){ if (xhr.status >= 200 && xhr.status < 300) resolve(); else reject(new Error('Upload failed: ' + xhr.status)); };
+      xhr.onerror = function(){ reject(new Error('Network error during upload')); };
+      xhr.open('PUT', sd.signed_url); xhr.setRequestHeader('Content-Type', it.file.type || 'video/mp4'); xhr.send(it.file);
+    });
+    it.status = 'finishing'; uqRender();
+    var thumbUrl = null;
+    try {
+      var blob = await captureThumb(it.file);
+      if (blob) {
+        var tRes = await fetch(_SUPA_URL + '/functions/v1/partner-content-upload', { method: 'POST', headers: efHeaders(), body: JSON.stringify({ action: 'sign-thumb', partner_id: state.partnerId }) });
+        var tData = await tRes.json();
+        if (tData.signed_url) { var pr = await fetch(tData.signed_url, { method: 'PUT', headers: { 'Content-Type': 'image/jpeg' }, body: blob }); if (pr.ok) thumbUrl = tData.public_url; }
+      }
+    } catch (e) { /* thumbnail is best-effort */ }
+    var ins = await fetch(_SUPA_URL + '/functions/v1/partner-content-upload', { method: 'POST', headers: efHeaders(), body: JSON.stringify({
+      action: 'commit', partner_id: state.partnerId, title: (it.title || '').trim() || it.file.name, description: null,
+      storage_path: sd.storage_path, pillar: state.partnerRow ? state.partnerRow.pillar : 'mind', publish_at: null, is_welcome: false, thumbnail_url: thumbUrl }) });
+    var id = await ins.json().catch(function(){ return {}; });
+    if (!ins.ok || id.error) throw new Error(id.error || ('Insert failed: ' + ins.status));
+  }
+  async function uqRun() {
+    if (uq.running || !state.partnerId) return;
+    uq.running = true; uqRender();
+    for (var i = 0; i < uq.items.length; i++) {
+      var it = uq.items[i];
+      if (it.status !== 'waiting') continue;
+      if (!(it.title || '').trim()) { it.status = 'failed'; it.error = 'Give it a title'; uqRender(); continue; }
+      try { await uploadOne(it); it.status = 'done'; it.error = null; }
+      catch (e) { it.status = 'failed'; it.error = /Upload failed: 0|NetworkError|Failed to fetch|network/i.test(e.message || '') ? 'Connection dropped \u2014 retry on wifi' : (e.message || 'Upload error'); reportError('video-upload-batch', e.message, { file_mb: +(it.file.size / 1048576).toFixed(1), file_type: it.file.type }); }
+      uqRender();
+    }
+    uq.running = false; uqRender();
+    var done = uq.items.filter(function(x){ return x.status === 'done'; }).length;
+    if (done) { toast(done + ' video' + (done === 1 ? '' : 's') + ' uploaded \u2014 with VYVE for review'); await loadContent(); }
+    if (uq.items.every(function(x){ return x.status === 'done'; })) uqClear();
+  }
+  $('uq-start').addEventListener('click', uqRun);
+  $('uq-clear').addEventListener('click', function(){ if (!uq.running) uqClear(); });
 
   $('upload-submit-btn').addEventListener('click', async function() {
     if (!state.uploadFile || !state.partnerId) return;
