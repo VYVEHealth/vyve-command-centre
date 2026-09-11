@@ -1399,22 +1399,66 @@ async function suspendPartner(id){
   openPartner(id);
 }
 
+/* PM-1173: manageable per-partner content library — search, status filters with counts, sort,
+   Play on every row, Approve/Return, Remove / Reinstate on anything (not only requests), 25 at a
+   time. State lives on window.__pcl so re-renders keep the admin's filter. */
 async function loadPartnerContent(p){
   const {data}=await sb.from('partner_content_items').select('*').eq('partner_id',p.id).order('created_at',{ascending:false});
   const items=data||[];
-  const modColors={approved:'p-live',in_review:'p-review',flagged:'p-suspended',returned:'p-review',draft:'p-draft'};
-  const typeColors={video:'var(--mental)',live_session:'var(--mint)',program:'var(--warning)',post:'var(--muted)'};
-  document.getElementById('pd-content').innerHTML=items.length?`
-    <div>${items.map(c=>`
-      <div class="ctile">
-        <div class="th" style="background:rgba(77,170,170,.1);color:${typeColors[c.type]||'var(--muted)'}">
-          ${c.type==='video'?ICONS.film:c.type==='live_session'?ICONS.cal||ICONS.phone:c.type==='program'?ICONS.cap:ICONS.doc}
-        </div>
-        <div style="flex:1"><div class="ct">${esc(c.title)}</div><div class="cs">${c.type}${c.duration_sec?' · '+Math.floor(c.duration_sec/60)+'m':''} · ${c.play_count} plays</div></div>
-        ${c.removed_at?`<span class="pill p-draft" title="${c.removed_by==='partner:safeguarding'?'Hidden by the partner (safeguarding) — awaiting your review':'Removed '+(c.removed_by||'')}">${c.removed_by==='partner:safeguarding'?'hidden · safeguarding':'removed'}</span>`:`<span class="pill ${modColors[c.moderation_status]||'p-draft'}">${c.moderation_status}</span>`}
-        ${c.removal_requested_at&&(!c.removed_at||c.removed_by==='partner:safeguarding')?`<span class="pill p-suspended" title="${esc(c.removal_note||'')}">removal requested · ${esc((c.removal_reason||'').replace(/_/g,' '))}</span><div class="row-actions"><button class="tb-btn" onclick="actionRemoval('${c.id}','remove')">${c.removed_at?'Confirm removal':'Remove'}</button><button class="tb-btn" onclick="actionRemoval('${c.id}','keep')">${c.removed_at?'Reinstate':'Keep live'}</button></div>`:''}
-        ${c.moderation_status==='in_review'?`<div class="row-actions"><button class="icon-btn btn-approve" onclick="moderateContent('${c.id}','approved')">${ICONS.check}</button><button class="icon-btn btn-reject" onclick="moderateContent('${c.id}','returned')">${ICONS.x}</button></div>`:''}
-      </div>`).join('')}</div>`:'<div class="empty-state">No content yet</div>';
+  // keep allContent current so watchPartnerFile / actionRemoval can find these rows
+  const known=new Set(allContent.map(c=>c.id)); items.forEach(c=>{ if(!known.has(c.id)) allContent.push(c); });
+  const st=window.__pcl=window.__pcl||{q:'',lane:'all',sort:'newest',limit:25,pid:null};
+  if(st.pid!==p.id){st.q='';st.lane='all';st.sort='newest';st.limit=25;st.pid=p.id;}
+  const laneOf=c=>{
+    if(c.removed_at) return 'removed';
+    if(c.moderation_status==='in_review'||c.moderation_status==='draft') return 'review';
+    if(c.moderation_status==='returned'||c.moderation_status==='flagged') return 'returned';
+    if(c.moderation_status==='approved'){ if(!c.publish_at) return 'ready'; return new Date(c.publish_at).getTime()>Date.now()?'scheduled':'live'; }
+    return 'other';
+  };
+  const LANES=[['all','All'],['review','In review'],['ready','Ready to push'],['scheduled','Scheduled'],['live','Live'],['returned','Returned'],['removed','Removed']];
+  const counts={all:items.length}; items.forEach(c=>{const l=laneOf(c);counts[l]=(counts[l]||0)+1;});
+  const q=(st.q||'').trim().toLowerCase();
+  let list=items.filter(c=>(st.lane==='all'||laneOf(c)===st.lane)&&(!q||(c.title||'').toLowerCase().includes(q)||(c.description||'').toLowerCase().includes(q)));
+  const by={newest:(a,b)=>a.created_at<b.created_at?1:-1,oldest:(a,b)=>a.created_at<b.created_at?-1:1,title:(a,b)=>(a.title||'').localeCompare(b.title||''),plays:(a,b)=>(b.play_count||0)-(a.play_count||0)};
+  list.sort(by[st.sort]||by.newest);
+  const shown=list.slice(0,st.limit);
+  const pillCls={review:'p-review',ready:'p-pending',scheduled:'p-pending',live:'p-live',returned:'p-review',removed:'p-draft',other:'p-draft'};
+  const pillTxt=c=>{const l=laneOf(c); if(l==='removed') return c.removed_by==='partner:safeguarding'?'hidden · safeguarding':'removed'; if(l==='scheduled') return 'scheduled '+new Date(c.publish_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'}); return {review:'in review',ready:'ready to push',live:'live',returned:'returned',other:c.moderation_status}[l];};
+  const fmt=d=>d?new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'2-digit'}):'';
+  const row=c=>{
+    const l=laneOf(c), openReq=c.removal_requested_at&&(!c.removed_at||c.removed_by==='partner:safeguarding');
+    const meta=[c.type,c.duration_sec?Math.floor(c.duration_sec/60)+'m':null,(c.play_count||0)+' plays','uploaded '+fmt(c.created_at),l==='live'?'live since '+fmt(c.publish_at):null].filter(Boolean).join(' · ');
+    return `<div class="ctile" style="${openReq&&c.removal_urgent?'border-color:var(--danger);':''}">
+      <div class="th" style="${c.thumbnail_url?`background-image:url('${c.thumbnail_url}');background-size:cover;background-position:center`:'background:rgba(77,170,170,.1);color:var(--mental)'}">${c.thumbnail_url?'':ICONS.film}</div>
+      <div style="flex:1;min-width:0"><div class="ct" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(c.title)}${c.is_welcome?' <span class="pill p-pending">welcome</span>':''}</div>
+        <div class="cs">${meta}${openReq?` · <span style="color:var(--danger)">removal requested · ${esc((c.removal_reason||'').replace(/_/g,' '))}${c.removal_note?' — “'+esc(c.removal_note)+'”':''}</span>`:''}</div></div>
+      <span class="pill ${pillCls[l]}">${pillTxt(c)}</span>
+      <div class="row-actions">
+        ${c.media_url?`<button class="icon-btn" onclick="watchPartnerFile('${c.id}')" title="Play"><span data-i="play"></span></button>`:''}
+        ${l==='review'?`<button class="icon-btn btn-approve" onclick="moderateContent('${c.id}','approved')" title="Approve">${ICONS.check}</button><button class="icon-btn btn-reject" onclick="moderateContent('${c.id}','returned')" title="Return to partner">${ICONS.x}</button>`:''}
+        ${(l==='live'||l==='ready'||l==='scheduled')?`<button class="tb-btn" onclick="actionRemoval('${c.id}','remove')" title="${openReq?'Action the partner request':'Pull it from the partner space'}">${openReq?'Confirm removal':'Remove'}</button>`:''}
+        ${openReq&&!c.removed_at?`<button class="tb-btn" onclick="actionRemoval('${c.id}','keep')" title="Decline the request and keep it live">Keep live</button>`:''}
+        ${l==='removed'?`<button class="tb-btn" onclick="actionRemoval('${c.id}','keep')" title="Put it back on the partner space">Reinstate</button>`:''}
+      </div></div>`;
+  };
+  const el=document.getElementById('pd-content');
+  el.innerHTML=`
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+      <input type="text" id="pcl-q" placeholder="Search titles…" value="${esc(st.q)}" style="flex:1;min-width:180px;padding:8px 12px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface);color:var(--text)"/>
+      <select id="pcl-sort" style="padding:8px 10px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface);color:var(--text)">
+        ${[['newest','Newest first'],['oldest','Oldest first'],['title','Title A–Z'],['plays','Most played']].map(([k,l])=>`<option value="${k}"${st.sort===k?' selected':''}>${l}</option>`).join('')}
+      </select>
+    </div>
+    <div class="subtabs" style="margin-bottom:12px">${LANES.filter(([k])=>k==='all'||counts[k]).map(([k,l])=>`<button class="subtab${st.lane===k?' active':''}" data-pcl-lane="${k}">${l} <span class="pill ${k===st.lane?'p-live':'p-draft'}" style="margin-left:4px">${counts[k]||0}</span></button>`).join('')}</div>
+    ${shown.length?shown.map(row).join(''):'<div class="empty-state">'+(items.length?'Nothing matches':'No content yet')+'</div>'}
+    ${list.length>shown.length?`<button class="tb-btn" id="pcl-more" style="width:100%">Show ${Math.min(25,list.length-shown.length)} more (${list.length-shown.length} left)</button>`:''}`;
+  setIcons(el);
+  const qEl=el.querySelector('#pcl-q'); let t;
+  qEl.addEventListener('input',()=>{st.q=qEl.value;clearTimeout(t);t=setTimeout(()=>{const pos=qEl.selectionStart;loadPartnerContent(p).then(()=>{const n=document.getElementById('pcl-q');if(n){n.focus();try{n.setSelectionRange(pos,pos);}catch(_){}}});},250);});
+  el.querySelector('#pcl-sort').addEventListener('change',e=>{st.sort=e.target.value;loadPartnerContent(p);});
+  el.querySelectorAll('[data-pcl-lane]').forEach(b=>b.addEventListener('click',()=>{st.lane=b.getAttribute('data-pcl-lane');st.limit=25;loadPartnerContent(p);}));
+  const more=el.querySelector('#pcl-more'); if(more) more.addEventListener('click',()=>{st.limit+=25;loadPartnerContent(p);});
 }
 
 async function loadPartnerMembers(p){
@@ -1969,7 +2013,7 @@ async function actionRemoval(id,what){
   allContent=allContent.map(x=>x.id===id?{...x,...patch}:x);
   renderContent();
   if(currentDetailId) loadPartnerContent(partnerMap[currentDetailId]);
-  toast(what==='remove'?'Removed from the partner\'s space':'Kept live — request closed');
+  toast(what==='remove'?'Removed from the partner\'s space':(c.removed_at?'Reinstated — back on the partner\'s space':'Kept live — request closed'));
 }
 
 async function bulkApprove(){
