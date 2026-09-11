@@ -1151,28 +1151,23 @@ async function openAppDetail(id){
 
 async function advancePartner(id,newStatus){
   if(newStatus==='live'){
-    /* PM-880: the old gate (safeguarding && gdpr && pct=100) was UNPASSABLE for the
-       PM-659/857 deferred-assessment cohort — those flags are false by design, so the
-       first real Go Live click bounced with only a toast (which Dean never saw).
-       New shape = the PM-857 agreed model: deferred cohort may go live via an EXPLICIT
-       confirm spelling out the posture, and doing so stamps
-       steps.assessments_deferred_at_golive permanently so CC always shows the truth.
-       Non-deferred partners keep the hard gate unchanged. Lewis's sign-off on the
-       posture itself remains outstanding — the confirm says so out loud. */
+    /* PM-1192 (Dean, 11 Sep 2026): training modules, the safeguarding assessment and the GDPR
+       assessment DO NOT EXIST YET — they are "coming soon", not something a partner can fail.
+       The old shape treated their absence as a blocker (hard gate for everyone without the
+       PM-659 modules_deferred flag, which April Rosson and every recent applicant lack), so a
+       fully-ready partner could not be set live at all. New shape: portal minimums above are the
+       real gate; onboarding basics are still required; going live stamps
+       steps.assessments_pending_at_golive so that when the modules DO ship we know exactly who
+       needs back-filling. The PM-880 deferred branch is retired — everyone is "pending" now. */
     const {data:prog}=await sb.from('partner_onboarding_progress').select('*').eq('partner_id',id).single();
     if(!prog){toast('Cannot go live: no onboarding record for this partner','error');return;}
     const _s=prog.steps||{};
-    if(_s.modules_deferred){
-      if(!(_s.agreement_signed&&_s.identity_verified&&_s.profile_complete)){
-        toast('Cannot go live: agreement, identity and profile must be complete first','error');return;
-      }
-      if(!confirm('DEFERRED ASSESSMENTS \u2014 read before proceeding.\n\nThis partner\u2019s training modules, safeguarding assessment and GDPR assessment are DEFERRED by design (PM-659 cohort). Going live makes them visible to all members WITHOUT those assessments completed.\n\nThis posture is still awaiting Lewis\u2019s sign-off. Proceeding stamps \u201cassessments deferred at go-live\u201d permanently on this partner\u2019s record.\n\nGo live anyway?')){return;}
-      const {error:se}=await sb.from('partner_onboarding_progress').update({steps:{..._s,assessments_deferred_at_golive:new Date().toISOString()}}).eq('partner_id',id);
-      if(se){toast('Could not record the deferred-assessments stamp \u2014 go-live aborted: '+se.message,'error');return;}
-    }else if(!prog.safeguarding_passed||!prog.gdpr_passed||prog.pct_complete<100){
-      toast('Cannot go live: safeguarding, GDPR and all 8 onboarding steps must be complete first','error');return;
+    if(!(_s.agreement_signed&&_s.identity_verified&&_s.profile_complete)){
+      toast('Cannot go live: agreement, identity and profile must be complete first','error');return;
     }
-    if(!confirm('This will make the partner VISIBLE TO ALL MEMBERS. Confirm Dean and Lewis have both approved this partner before proceeding.')){return;}
+    if(!confirm('This will make the partner VISIBLE TO ALL MEMBERS.\n\nTraining modules, safeguarding and GDPR assessments are not live yet \u2014 this partner goes live without them, and will be asked to complete them once they exist. Confirm Dean and Lewis have both approved this partner.')){return;}
+    const {error:se}=await sb.from('partner_onboarding_progress').update({steps:{..._s,assessments_pending_at_golive:new Date().toISOString()}}).eq('partner_id',id);
+    if(se){toast('Could not record the assessments-pending stamp \u2014 go-live aborted: '+se.message,'error');return;}
   }
   if(newStatus==='onboarding'){
     if(!confirm('This will provision a web login for this partner and email them credentials. Proceed?')){return;}
@@ -1551,14 +1546,17 @@ async function loadPartnerApplication(p,targetId){
        collects (PM-659), so a COMPLETE application read 38%. Display pct = done/total across the gates
        the partner can actually complete in the apply flow; deferred gates leave the denominator.
        prog.pct_complete itself is untouched — it still feeds the go-live gate. */
-    const deferred=steps.modules_deferred===true;
+    /* PM-1192: the modules/safeguarding/GDPR gates aren't built yet, so they're "coming soon"
+       for EVERY partner, not just the PM-659 cohort — they never count toward the displayed
+       percentage and always render as pending rather than missing. */
+    const deferred=true;
     const DEFER_KEYS=['videos_watched','safeguarding_passed','gdpr_passed'];
-    const applyGates=['agreement_signed','identity_verified','profile_complete'].concat(deferred?[]:DEFER_KEYS);
+    const applyGates=['agreement_signed','identity_verified','profile_complete'];
     const pct=Math.round(applyGates.filter(k=>steps[k]===true).length/applyGates.length*100);
     const chips=Object.keys(STEP_LBL).filter(k=>(k in steps)||['agreement_signed','identity_verified','profile_complete','safeguarding_passed','gdpr_passed'].includes(k)).map(k=>{
       const done=steps[k]===true;
       const isDeferred=!done&&deferred&&DEFER_KEYS.includes(k);
-      if(isDeferred)return `<span title="Deferred by design (PM-659) — not part of the apply flow; resolved before go-live" style="display:inline-flex;align-items:center;gap:5px;font-size:11.5px;padding:3px 9px;border-radius:10px;margin:0 6px 6px 0;background:rgba(224,155,61,.15);color:var(--warning)">&#10003; ${STEP_LBL[k]} (deferred)</span>`;
+      if(isDeferred)return `<span title="Coming soon — training modules and the safeguarding/GDPR assessments are not built yet (PM-1192)" style="display:inline-flex;align-items:center;gap:5px;font-size:11.5px;padding:3px 9px;border-radius:10px;margin:0 6px 6px 0;background:rgba(224,155,61,.15);color:var(--warning)">&#10003; ${STEP_LBL[k]} (deferred)</span>`;
       return `<span style="display:inline-flex;align-items:center;gap:5px;font-size:11.5px;padding:3px 9px;border-radius:10px;margin:0 6px 6px 0;${done?'background:rgba(77,170,170,.15);color:var(--mint)':'background:var(--surface);color:var(--muted)'}">${done?'&#10003;':'&#9675;'} ${STEP_LBL[k]}</span>`;
     }).join('');
     const lastActive=prog.updated_at?new Date(prog.updated_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'})+' '+new Date(prog.updated_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'';
