@@ -97,9 +97,11 @@
     .status-badge.applied { background: var(--surface-3); color: var(--text-muted); }
 
     /* My Space editor (PM-788) */
-    .img-drop { position:relative; border:1.5px dashed var(--border); border-radius:10px; height:110px; display:flex; align-items:center; justify-content:center; cursor:pointer; overflow:hidden; background:var(--bg-elevated,var(--card)); }
+    .img-drop { position:relative; border:1.5px dashed var(--border); border-radius:10px; height:110px;
+      /* PM-1165: #cover-drop below overrides to the app's 3:1 banner shape */ display:flex; align-items:center; justify-content:center; cursor:pointer; overflow:hidden; background:var(--bg-elevated,var(--card)); }
     .img-drop:hover { border-color: var(--vyve-teal); }
     .img-drop img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+    #cover-drop { height:auto; aspect-ratio:3/1; min-height:96px; } /* PM-1165: same shape as the member-app hero */
     /* PM-860: avatar drop previews as a circle so the framing matches the app before saving. */
     #avatar-drop { border-radius:50%; width:110px; margin:0 auto; }
     /* ── PM-860 crop / reposition modal ── */
