@@ -68,6 +68,7 @@
         "physio/plans.js",
         "physio/patient.js",
         "physio/messages.js",
+        "physio/print.js",
         "290-boot-call.js",
         "999-close.js"
       ]

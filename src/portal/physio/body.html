@@ -99,12 +99,13 @@
         <button class="btn btn-primary" id="rh-send" type="button">Send to patient</button>
         <button class="btn" id="rh-save" type="button">Save draft</button>
         <button class="btn" id="rh-tpl-save" type="button" style="font-size:12.5px;">Save as template</button>
+        <button class="btn" id="rh-print-btn" type="button" style="font-size:12.5px;" title="Print, or save as PDF, for a patient who wants paper">Print / PDF</button>
         <button class="btn" id="rh-archive" type="button" style="font-size:12.5px;margin-left:auto;color:var(--text-muted);">Archive</button>
       </div>
       <div id="rh-msg" style="font-size:12.5px;color:var(--text-muted);margin-top:8px;min-height:18px;"></div>
     </div>
     <div class="card" id="rh-pv" style="display:none;">
-      <div class="card-title" style="align-items:flex-start;"><button class="btn" id="pv-back" type="button" style="font-size:12px;">&larr; Plans</button><div style="flex:1;min-width:0;"><div id="pv-name">Patient</div><div id="pv-sub" style="font-size:12px;color:var(--text-muted);font-weight:500;margin-top:2px;"></div></div><span id="pv-status"></span><button class="btn" id="pv-msg" type="button" style="font-size:12px;">Message</button><button class="btn" id="pv-edit" type="button" style="font-size:12px;">Edit plan</button></div>
+      <div class="card-title" style="align-items:flex-start;"><button class="btn" id="pv-back" type="button" style="font-size:12px;">&larr; Plans</button><div style="flex:1;min-width:0;"><div id="pv-name">Patient</div><div id="pv-sub" style="font-size:12px;color:var(--text-muted);font-weight:500;margin-top:2px;"></div></div><span id="pv-status"></span><button class="btn" id="pv-msg" type="button" style="font-size:12px;">Message</button><button class="btn" id="pv-print" type="button" style="font-size:12px;" title="Print, or save as PDF, for a patient who wants paper">Print / PDF</button><button class="btn" id="pv-edit" type="button" style="font-size:12px;">Edit plan</button></div>
       <div id="pv-alerts"></div>
       <div class="pv-tabs" id="pv-tabs"><button type="button" data-pv-tab="plan" class="on">Plan</button><button type="button" data-pv-tab="track">Tracking</button><button type="button" data-pv-tab="mon">Monitor</button></div>
       <div id="pv-plan"></div>
@@ -155,7 +156,7 @@
     </div>
   </div>
   <div id="view-templates" style="display:none;">
-    <div class="card"><div class="card-title">Templates</div><p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Reusable plans by condition and phase. Yours, plus the VYVE set as it grows. &ldquo;Use&rdquo; opens a new plan pre-filled &mdash; pick the patient and send.</p><div id="rh-tpl-list"></div></div>
+    <div class="card"><div class="card-title">Templates</div><p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Reusable plans, grouped by condition with their phases in order. Yours, plus the VYVE set as it grows. &ldquo;Use&rdquo; opens a new plan pre-filled &mdash; pick the patient and send. &ldquo;Details&rdquo; sets the condition and phase; that is also how a condition shows up under &ldquo;By condition&rdquo; when you add exercises.</p><div id="rh-tpl-list"></div></div>
   </div>
   <div id="view-msgs" style="display:none;">
     <div class="card"><div class="card-title">Messages</div><p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">One thread per patient. Questions typed on the post-session sheet and anything you send land here; the patient reads it in the app. Alerts for a patient sit at the top of their thread.</p>

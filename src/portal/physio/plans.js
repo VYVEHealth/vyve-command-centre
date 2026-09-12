@@ -17,7 +17,8 @@
   var RH_SEL = 'id,partner_id,member_email,name,status,start_date,duration_weeks,note,safety_netting,red_flags,monitor,template_id,sent_at,wpc_id,created_at,updated_at';
   var RH_ITEM_SEL = 'id,plan_id,position,exercise_id,name,cues,video_url,image_url,hold_s,reps,times_daily,rest_s,days_per_week,both_sides,note,removed_at';
   var rhPlans = [], rhPlansLoaded = false, rhFilterEmail = '', rhTpls = [], rhTplsLoaded = false;
-  var rhCur = null;        /* the plan being edited: { id, name, member_email, start_date, duration_weeks, note, safety_netting, red_flags, monitor[], template_id, status, items[] } */
+  var rhCur = null;
+  var rhPickSub = '', rhPickMode = 'library', rhPickCond = ''; /* PM-1216 W5: picker sub-filter + condition mode */        /* the plan being edited: { id, name, member_email, start_date, duration_weeks, note, safety_netting, red_flags, monitor[], template_id, status, items[] } */
   var rhCssDone = false;
   function rhCss(){
     if (rhCssDone) return; rhCssDone = true;
@@ -41,6 +42,8 @@
       '.rh-pick .c img,.rh-pick .c .noimg{width:100%;aspect-ratio:16/9;object-fit:cover;background:#000;display:block;}.rh-pick .c .noimg{display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:11px;}' +
       '.rh-pick .c .n{padding:8px 10px;font-size:12.5px;font-weight:600;line-height:1.3;}.rh-pick .c .m{padding:0 10px 8px;font-size:11px;color:var(--text-muted);}' +
       '.rh-ph{font-size:11px;color:var(--gold);margin-top:4px;}' +
+      '.rh-seg{display:inline-flex;border:1px solid var(--border);border-radius:9px;overflow:hidden;}.rh-seg button{background:var(--surface-2);border:0;color:var(--text-muted);font-size:12px;font-family:inherit;padding:6px 11px;cursor:pointer;}.rh-seg button.on{background:var(--vyve-teal);color:#fff;}' +
+      '.rh-cond{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;}.rh-cond .c{text-align:left;border:1px solid var(--border);border-radius:10px;padding:12px;background:var(--surface-2);cursor:pointer;font-family:inherit;color:var(--text);}.rh-cond .c:hover{border-color:var(--vyve-teal);}.rh-cond .n{font-weight:600;font-size:13.5px;}.rh-cond .m{font-size:11.5px;color:var(--text-muted);margin-top:3px;}' +
       '.rh-ta{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:13px;font-family:inherit;resize:vertical;}';
     document.head.appendChild(s);
   }
@@ -235,12 +238,31 @@
     rhCollect();
     if (!rhCur.name){ $c('rh-msg').textContent = 'Give the plan a name first.'; return; }
     if (!rhCur.items.length){ $c('rh-msg').textContent = 'Add exercises before saving a template.'; return; }
-    var name = prompt('Template name (e.g. "ACL — Phase 1", "Lower back pain — weeks 1–2")', rhCur.name); if (!name) return;
-    var payload = { duration_weeks: rhCur.duration_weeks, note: rhCur.note, safety_netting: rhCur.safety_netting, red_flags: rhCur.red_flags, monitor: rhCur.monitor, items: rhCur.items.map(function(it){ return { exercise_id: it.exercise_id || null, name: it.name, cues: it.cues || null, video_url: it.video_url || null, image_url: it.image_url || null, hold_s: it.hold_s || 0, reps: it.reps || 10, times_daily: it.times_daily || 1, rest_s: it.rest_s || 0, days_per_week: it.days_per_week || 7, both_sides: !!it.both_sides, note: it.note || null }; }) };
-    try {
-      await rest('/coach_templates', { method: 'POST', body: { partner_id: partnerId, kind: 'rehab_plan', name: name.trim(), payload: payload, active: true } });
-      rhTplsLoaded = false; $c('rh-msg').textContent = 'Template saved.';
-    } catch(e){ $c('rh-msg').textContent = 'Could not save the template (' + (e.message || e) + ').'; }
+    rhTplForm(null, function(f){
+      var payload = { diagnosis: f.diagnosis || null, phase: f.phase || null, phase_label: f.phase_label || null, duration_weeks: rhCur.duration_weeks, note: rhCur.note, safety_netting: rhCur.safety_netting, red_flags: rhCur.red_flags, monitor: rhCur.monitor, items: rhCur.items.map(function(it){ return { exercise_id: it.exercise_id || null, name: it.name, cues: it.cues || null, video_url: it.video_url || null, image_url: it.image_url || null, hold_s: it.hold_s || 0, reps: it.reps || 10, times_daily: it.times_daily || 1, rest_s: it.rest_s || 0, days_per_week: it.days_per_week || 7, both_sides: !!it.both_sides, note: it.note || null }; }) };
+      return rest('/coach_templates', { method: 'POST', body: { partner_id: partnerId, kind: 'rehab_plan', name: f.name, payload: payload, active: true } }).then(function(){ rhTplsLoaded = false; $c('rh-msg').textContent = 'Template saved' + (f.diagnosis ? ' under ' + f.diagnosis : '') + '.'; });
+    });
+  }
+  /* PM-1216 W5: one small form for a template's name, condition and phase — used on save and on re-tagging an existing one */
+  function rhTplForm(t, onOk){
+    rhTplLoad(false).then(function(){
+      var pl = t ? (t.payload || {}) : {}, by = rhCondIndex();
+      var m = document.createElement('div'); m.className = 'w3-modal'; m.id = 'rh-tplform';
+      m.innerHTML = '<div class="in" style="width:min(520px,96vw);"><div class="hd"><div style="flex:1;font-weight:700;font-size:15px;">' + (t ? 'Template details' : 'Save as template') + '</div><button class="btn" type="button" data-x style="font-size:12px;">Cancel</button></div><div class="sc">' +
+        '<div class="field"><label>Template name</label><input id="rhtf-name" type="text" maxlength="120" value="' + esc(t ? t.name : rhCur.name) + '" placeholder="e.g. ACL reconstruction \u2014 Phase 1"/></div>' +
+        '<div class="field" style="margin-top:10px;"><label>Condition / diagnosis (groups templates A\u2013Z, and is how you\u2019ll find them in the picker)</label><input id="rhtf-diag" type="text" maxlength="80" list="rhtf-diag-names" value="' + esc(pl.diagnosis || '') + '" placeholder="e.g. ACL reconstruction, Lower back pain (facet joint)"/><datalist id="rhtf-diag-names">' + Object.keys(by).sort().map(function(k){ return '<option value="' + esc(by[k].name) + '">'; }).join('') + '</datalist></div>' +
+        '<div class="field-row" style="margin-top:10px;"><div class="field"><label>Phase number</label><input id="rhtf-phase" type="number" min="1" max="20" value="' + esc(pl.phase || '') + '" placeholder="1"/></div><div class="field"><label>Phase label (optional)</label><input id="rhtf-plabel" type="text" maxlength="40" value="' + esc(pl.phase_label || '') + '" placeholder="e.g. weeks 1\u20132, post-op"/></div></div>' +
+        '<div style="display:flex;gap:10px;margin-top:16px;"><button class="btn btn-primary" type="button" id="rhtf-go">' + (t ? 'Save' : 'Save template') + '</button><span id="rhtf-msg" style="font-size:12px;color:var(--text-muted);align-self:center;"></span></div></div></div>';
+      m.addEventListener('click', function(e){ if (e.target === m || e.target.hasAttribute('data-x')) m.remove(); });
+      document.body.appendChild(m);
+      $c('rhtf-go').addEventListener('click', function(){
+        var f = { name: $c('rhtf-name').value.trim(), diagnosis: $c('rhtf-diag').value.trim(), phase: parseInt($c('rhtf-phase').value, 10) || null, phase_label: $c('rhtf-plabel').value.trim() };
+        if (!f.name){ $c('rhtf-msg').textContent = 'Name it.'; return; }
+        $c('rhtf-go').disabled = true; $c('rhtf-msg').textContent = 'Saving\u2026';
+        Promise.resolve(onOk(f)).then(function(){ m.remove(); }, function(e){ $c('rhtf-go').disabled = false; $c('rhtf-msg').textContent = 'Could not save (' + (e && e.message || e) + ').'; });
+      });
+      $c('rhtf-name').focus();
+    });
   }
   async function rhArchive(){
     if (!rhCur.id) return;
@@ -252,31 +274,86 @@
   async function rhPickOpen(){
     rhPickClose();
     var m = document.createElement('div'); m.className = 'w3-modal'; m.id = 'rh-pick';
-    m.innerHTML = '<div class="in" style="width:min(980px,96vw);max-height:92vh;display:flex;flex-direction:column;"><div class="hd"><div style="flex:1;font-weight:700;font-size:15px;">Add exercises</div>' +
+    m.innerHTML = '<div class="in" style="width:min(980px,96vw);max-height:92vh;display:flex;flex-direction:column;"><div class="hd"><div style="font-weight:700;font-size:15px;">Add exercises</div>' +
+      '<div class="rh-seg" id="rh-pick-mode"><button type="button" data-rh-mode="library" class="on">Library</button><button type="button" data-rh-mode="condition">By condition</button></div>' +
+      '<span style="flex:1;"></span>' +
       '<input id="rh-pick-q" type="search" placeholder="Search" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:13px;font-family:inherit;min-width:140px;"/>' +
       '<select id="rh-pick-cat" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:12.5px;font-family:inherit;"></select>' +
-      '<button class="btn" type="button" data-rh-pick-close style="font-size:12px;">Done</button></div><div class="sc"><div id="rh-pick-count" style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">Loading the library\u2026</div><div class="rh-pick" id="rh-pick-grid"></div></div></div>';
+      '<button class="btn" type="button" data-rh-pick-close style="font-size:12px;">Done</button></div><div class="sc"><div id="rh-pick-sub-row"><span id="rh-pick-sub-anchor" style="display:none;"></span></div><div id="rh-pick-count" style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">Loading the library\u2026</div><div class="rh-pick" id="rh-pick-grid"></div></div></div>';
     m.addEventListener('click', function(e){ if (e.target === m || e.target.hasAttribute('data-rh-pick-close')) rhPickClose(); });
     document.body.appendChild(m);
     document.addEventListener('keydown', rhPickEsc);
     await exLoad();
     var cats = {}; cexRows.forEach(function(r){ if (r.category) cats[r.category] = 1; });
     $c('rh-pick-cat').innerHTML = '<option value="">All body regions</option>' + Object.keys(cats).sort().map(function(c){ return '<option>' + esc(c) + '</option>'; }).join('');
-    $c('rh-pick-q').addEventListener('input', rhPickPaint); $c('rh-pick-cat').addEventListener('change', rhPickPaint);
+    $c('rh-pick-q').addEventListener('input', rhPickPaint); $c('rh-pick-cat').addEventListener('change', function(){ rhPickSub = ''; rhPickPaint(); });
+    rhPickMode = 'library'; rhPickCond = ''; rhPickSub = '';
+    $c('rh-pick-mode').querySelectorAll('[data-rh-mode]').forEach(function(b){ b.addEventListener('click', function(){ rhPickMode = b.getAttribute('data-rh-mode'); rhPickCond = ''; $c('rh-pick-mode').querySelectorAll('button').forEach(function(x){ x.classList.toggle('on', x === b); }); rhPickPaint(); }); });
+    rhTplLoad(false).then(function(){ if ($c('rh-pick')) rhPickPaint(); });
     rhPickPaint(); $c('rh-pick-q').focus();
   }
   function rhPickPaint(){
+    if (!$c('rh-pick')) return;
+    if (rhPickMode === 'condition'){ $c('rh-pick-cat').style.display = 'none'; var sr = $c('rh-pick-sub'); if (sr) sr.style.display = 'none'; rhPickCondPaint(); return; }
+    $c('rh-pick-cat').style.display = ''; $c('rh-pick-grid').classList.add('rh-pick');
     var q = ($c('rh-pick-q').value || '').trim().toLowerCase(), fc = $c('rh-pick-cat').value;
-    var rows = cexRows.filter(function(r){ if (fc && r.category !== fc) return false; if (q && (r.name || '').toLowerCase().indexOf(q) < 0) return false; return true; });
+    /* PM-1216 W5: sub-filter chips under the chosen region (same helper as the library page) */
+    if (exSubChips(fc, 'rh-pick-sub', $c('rh-pick-sub-anchor'), rhPickSub, function(v){ rhPickSub = v; rhPickPaint(); }, null)) return;
+    var rows = cexRows.filter(function(r){ if (fc && r.category !== fc) return false; if (rhPickSub && r.subcategory !== rhPickSub) return false; if (q && (r.name || '').toLowerCase().indexOf(q) < 0) return false; return true; });
     var shown = rows.slice(0, 120);
     $c('rh-pick-count').textContent = rows.length + ' exercise' + (rows.length === 1 ? '' : 's') + (rows.length > shown.length ? ' \u2014 showing the first ' + shown.length + ', narrow the search to see more' : '') + ' \u00b7 tap to add';
     $c('rh-pick-grid').innerHTML = shown.map(function(r){
       var th = w3ThumbSrc(r);
       var inPlan = rhCur.items.some(function(i){ return i.exercise_id === r.id; });
-      return '<div class="c" data-rh-add="' + esc(r.id) + '"' + (inPlan ? ' style="opacity:.55;"' : '') + '>' + (th ? '<img src="' + esc(th) + '" alt="" loading="lazy"/>' : '<div class="noimg">no video</div>') + '<div class="n">' + esc(r.name) + (inPlan ? ' \u2713' : '') + '</div><div class="m">' + esc([r.category, r.equipment].filter(Boolean).join(' \u00b7 ')) + '</div></div>';
+      return '<div class="c" data-rh-add="' + esc(r.id) + '"' + (inPlan ? ' style="opacity:.55;"' : '') + '>' + (th ? '<img src="' + esc(th) + '" alt="" loading="lazy"/>' : '<div class="noimg">no video</div>') + '<div class="n">' + esc(r.name) + (inPlan ? ' \u2713' : '') + '</div><div class="m">' + esc([r.category, r.subcategory, r.equipment].filter(Boolean).join(' \u00b7 ')) + '</div></div>';
     }).join('');
     $c('rh-pick-grid').querySelectorAll('[data-rh-add]').forEach(function(c){ c.addEventListener('click', function(){ rhAdd(c.getAttribute('data-rh-add')); }); });
   }
+  /* ── PM-1216 W5: diagnosis-led entry. A condition is the set of rehab_plan templates that share a `diagnosis`
+        (yours + VYVE stock), ordered by `phase`; picking a phase drops its exercises — prescriptions included — into
+        the plan. Nothing here is a new table: it is the templates, grouped. ── */
+  function rhCondIndex(){
+    var by = {};
+    rhTpls.forEach(function(t){ var d = ((t.payload || {}).diagnosis || '').trim(); if (!d) return; var k = d.toLowerCase(); (by[k] = by[k] || { name: d, tpls: [] }).tpls.push(t); });
+    Object.keys(by).forEach(function(k){ by[k].tpls.sort(function(a, b){ return (+(a.payload || {}).phase || 99) - (+(b.payload || {}).phase || 99) || a.name.localeCompare(b.name); }); });
+    return by;
+  }
+  function rhPhaseLabel(t){ var pl = t.payload || {}; return pl.phase ? ('Phase ' + pl.phase + (pl.phase_label ? ' \u00b7 ' + pl.phase_label : '')) : (pl.phase_label || 'Unphased'); }
+  function rhPickCondPaint(){
+    var q = ($c('rh-pick-q').value || '').trim().toLowerCase(), by = rhCondIndex(), grid = $c('rh-pick-grid');
+    grid.classList.remove('rh-pick');
+    if (!rhPickCond){
+      var keys = Object.keys(by).filter(function(k){ return !q || k.indexOf(q) >= 0; }).sort();
+      $c('rh-pick-count').textContent = keys.length ? (keys.length + ' condition' + (keys.length === 1 ? '' : 's') + ' \u00b7 tap one to see its phases') : '';
+      if (!keys.length){ grid.innerHTML = '<div class="empty-state"><h3>No conditions yet</h3><p>Conditions come from your templates: build a plan, choose \u201cSave as template\u201d and give it a condition and phase (\u201cACL \u2014 Phase 1\u201d). They\u2019ll appear here, A\u2013Z, and the VYVE set will grow under them.</p></div>'; return; }
+      grid.innerHTML = '<div class="rh-cond">' + keys.map(function(k){ var c = by[k]; return '<button type="button" class="c" data-rh-cond="' + esc(k) + '"><div class="n">' + esc(c.name) + '</div><div class="m">' + c.tpls.length + ' phase' + (c.tpls.length === 1 ? '' : 's') + ' \u00b7 ' + c.tpls.reduce(function(n, t){ return n + ((t.payload || {}).items || []).length; }, 0) + ' exercises</div></button>'; }).join('') + '</div>';
+      grid.querySelectorAll('[data-rh-cond]').forEach(function(b){ b.addEventListener('click', function(){ rhPickCond = b.getAttribute('data-rh-cond'); rhPickPaint(); }); });
+      return;
+    }
+    var c = by[rhPickCond]; if (!c){ rhPickCond = ''; rhPickPaint(); return; }
+    $c('rh-pick-count').innerHTML = '<a href="#" data-rh-cond-back style="color:var(--vyve-teal);text-decoration:none;">&larr; All conditions</a> \u00b7 <b style="color:var(--text);">' + esc(c.name) + '</b>';
+    $c('rh-pick-count').querySelector('[data-rh-cond-back]').addEventListener('click', function(e){ e.preventDefault(); rhPickCond = ''; rhPickPaint(); });
+    grid.innerHTML = c.tpls.map(function(t){
+      var items = (t.payload || {}).items || [];
+      var have = items.filter(function(i){ return i.exercise_id && rhCur.items.some(function(x){ return x.exercise_id === i.exercise_id; }); }).length;
+      return '<div class="rh-row" style="flex-direction:column;gap:8px;"><div style="display:flex;gap:10px;align-items:center;width:100%;"><div style="flex:1;min-width:0;"><div style="font-weight:600;font-size:13.5px;">' + esc(rhPhaseLabel(t)) + (t.partner_id ? '' : ' <span class="rh-pill">VYVE</span>') + '</div><div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;">' + esc(t.name) + ' \u00b7 ' + items.length + ' exercise' + (items.length === 1 ? '' : 's') + ' \u00b7 ' + esc((t.payload || {}).duration_weeks || '?') + ' weeks' + (have ? ' \u00b7 ' + have + ' already in this plan' : '') + '</div></div>' +
+        '<button class="btn btn-primary" type="button" data-rh-tpl-add="' + esc(t.id) + '" style="font-size:12px;"' + (have === items.length && items.length ? ' disabled' : '') + '>Add ' + (items.length - have) + ' exercise' + (items.length - have === 1 ? '' : 's') + '</button></div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:6px;">' + items.map(function(i){ return '<span class="w3-chip" title="' + esc(rhRxLine(i)) + '">' + esc(i.name) + '</span>'; }).join('') + '</div></div>';
+    }).join('');
+    grid.querySelectorAll('[data-rh-tpl-add]').forEach(function(b){ b.addEventListener('click', function(){ var t = rhTpls.filter(function(x){ return x.id === b.getAttribute('data-rh-tpl-add'); })[0]; if (t) rhAddFromTemplate(t); }); });
+  }
+  function rhAddFromTemplate(t){
+    var n = 0;
+    ((t.payload || {}).items || []).forEach(function(i){
+      if (i.exercise_id && rhCur.items.some(function(x){ return x.exercise_id === i.exercise_id; })) return;
+      rhCur.items.push({ id: null, exercise_id: i.exercise_id || null, name: i.name, cues: i.cues || '', video_url: i.video_url || null, image_url: i.image_url || null, hold_s: i.hold_s || 0, reps: i.reps || 10, times_daily: i.times_daily || 1, rest_s: i.rest_s || 0, days_per_week: i.days_per_week || 7, both_sides: !!i.both_sides, note: i.note || '' }); n++;
+    });
+    if (n && !rhCur.name) { rhCur.name = t.name; $c('rhf-name').value = t.name; }
+    if (n && !rhCur.template_id) rhCur.template_id = t.id;
+    rhPaintItems(); rhTotals(); rhPickPaint();
+  }
+  function rhRxLine(i){ return 'Hold ' + (i.hold_s || 0) + 's \u00b7 ' + (i.reps || 10) + ' reps \u00b7 ' + (i.times_daily || 1) + '\u00d7 daily \u00b7 rest ' + (i.rest_s || 0) + 's \u00b7 ' + ((i.days_per_week || 7) === 7 ? 'every day' : (i.days_per_week + ' days/week')) + (i.both_sides ? ' \u00b7 both sides' : ''); }
+
   function rhAdd(id){
     var r = w3ById(id); if (!r) return;
     rhCur.items.push({ id: null, exercise_id: r.id, name: r.name, cues: r.cues || '', video_url: r.video_url || r.media_url || null, image_url: w3ThumbSrc(r) || null, hold_s: r.default_duration_seconds || 0, reps: r.default_reps ? parseInt(r.default_reps, 10) || 10 : 10, times_daily: 1, rest_s: r.default_rest_seconds || 0, days_per_week: 7, both_sides: false, note: '' });
@@ -286,20 +363,28 @@
   function rhPickEsc(e){ if (e.key === 'Escape') rhPickClose(); }
 
   /* ── Templates ── */
+  async function rhTplLoad(force){
+    if (rhTplsLoaded && !force) return rhTpls;
+    try { rhTpls = await rest('/coach_templates?kind=eq.rehab_plan&active=eq.true&or=(partner_id.eq.' + partnerId + ',partner_id.is.null)&select=id,partner_id,name,payload,updated_at&order=name.asc') || []; } catch(_){ rhTpls = []; }
+    rhTplsLoaded = true; return rhTpls;
+  }
   async function rhTplInit(force){
     rhCss();
-    if (!rhTplsLoaded || force){
-      try { rhTpls = await rest('/coach_templates?kind=eq.rehab_plan&active=eq.true&or=(partner_id.eq.' + partnerId + ',partner_id.is.null)&select=id,partner_id,name,payload,updated_at&order=name.asc') || []; } catch(_){ rhTpls = []; }
-      rhTplsLoaded = true;
-    }
+    await rhTplLoad(force);
     var box = $c('rh-tpl-list');
-    if (!rhTpls.length){ box.innerHTML = '<div class="empty-state"><h3>No templates yet</h3><p>Build a plan, then choose \u201cSave as template\u201d. Name them by condition and phase \u2014 \u201cACL \u2014 Phase 1\u201d, \u201cLower back pain \u2014 weeks 1\u20132\u201d.</p></div>'; return; }
-    box.innerHTML = rhTpls.map(function(t){
+    if (!rhTpls.length){ box.innerHTML = '<div class="empty-state"><h3>No templates yet</h3><p>Build a plan, then choose \u201cSave as template\u201d and give it a condition and phase \u2014 \u201cACL \u2014 Phase 1\u201d, \u201cLower back pain \u2014 weeks 1\u20132\u201d. Conditions become the \u201cBy condition\u201d way in when you add exercises to a plan.</p></div>'; return; }
+    /* PM-1216 W5: grouped by condition (A\u2013Z, phases in order), untagged ones last */
+    var by = rhCondIndex(), loose = rhTpls.filter(function(t){ return !((t.payload || {}).diagnosis || '').trim(); });
+    function row(t, showName){
       var pl = t.payload || {}, n = (pl.items || []).length;
-      return '<div class="rh-row" style="align-items:center;"><div style="flex:1;min-width:0;"><div style="font-weight:600;font-size:13.5px;">' + esc(t.name) + (t.partner_id ? '' : ' <span class="rh-pill">VYVE</span>') + '</div><div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;">' + n + ' exercise' + (n === 1 ? '' : 's') + ' \u00b7 ' + esc(pl.duration_weeks || '?') + ' weeks \u00b7 Monitor: ' + esc((pl.monitor || []).join(', ') || 'none') + '</div></div>' +
-        '<button class="btn btn-primary" type="button" data-rh-tpl-use="' + esc(t.id) + '" style="font-size:12px;">Use</button>' + (t.partner_id ? '<button class="rh-ib" type="button" data-rh-tpl-del="' + esc(t.id) + '">Delete</button>' : '') + '</div>';
-    }).join('');
+      return '<div class="rh-row" style="align-items:center;"><div style="flex:1;min-width:0;"><div style="font-weight:600;font-size:13.5px;">' + esc(showName ? t.name : rhPhaseLabel(t)) + (t.partner_id ? '' : ' <span class="rh-pill">VYVE</span>') + '</div><div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;">' + (showName ? '' : esc(t.name) + ' \u00b7 ') + n + ' exercise' + (n === 1 ? '' : 's') + ' \u00b7 ' + esc(pl.duration_weeks || '?') + ' weeks \u00b7 Monitor: ' + esc((pl.monitor || []).join(', ') || 'none') + '</div></div>' +
+        '<button class="btn btn-primary" type="button" data-rh-tpl-use="' + esc(t.id) + '" style="font-size:12px;">Use</button>' + (t.partner_id ? '<button class="rh-ib" type="button" data-rh-tpl-tag="' + esc(t.id) + '">Details</button><button class="rh-ib" type="button" data-rh-tpl-del="' + esc(t.id) + '">Delete</button>' : '') + '</div>';
+    }
+    box.innerHTML = Object.keys(by).sort().map(function(k){ return '<div style="font-size:13px;font-weight:700;margin:14px 0 8px;">' + esc(by[k].name) + '</div>' + by[k].tpls.map(function(t){ return row(t, false); }).join(''); }).join('') +
+      (loose.length ? '<div style="font-size:13px;font-weight:700;margin:14px 0 8px;color:var(--text-muted);">' + (Object.keys(by).length ? 'Not yet under a condition' : 'Templates') + '</div>' + loose.map(function(t){ return row(t, true); }).join('') : '');
     box.querySelectorAll('[data-rh-tpl-use]').forEach(function(b){ b.addEventListener('click', function(){ var t = rhTpls.filter(function(x){ return x.id === b.getAttribute('data-rh-tpl-use'); })[0]; if (t) rhFromTemplate(t); }); });
+    box.querySelectorAll('[data-rh-tpl-tag]').forEach(function(b){ b.addEventListener('click', function(){ var t = rhTpls.filter(function(x){ return x.id === b.getAttribute('data-rh-tpl-tag'); })[0]; if (!t) return;
+      rhTplForm(t, function(f){ var pl = Object.assign({}, t.payload || {}, { diagnosis: f.diagnosis || null, phase: f.phase || null, phase_label: f.phase_label || null }); return rest('/coach_templates?id=eq.' + t.id, { method: 'PATCH', body: { name: f.name, payload: pl } }).then(function(){ rhTplInit(true); }); }); }); });
     box.querySelectorAll('[data-rh-tpl-del]').forEach(function(b){ b.addEventListener('click', async function(){ if (!confirm('Delete this template?')) return; try { await rest('/coach_templates?id=eq.' + b.getAttribute('data-rh-tpl-del'), { method: 'PATCH', body: { active: false } }); rhTplInit(true); } catch(_){} }); });
   }
 

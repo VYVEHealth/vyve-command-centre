@@ -251,12 +251,13 @@
         <button class="btn btn-primary" id="rh-send" type="button">Send to patient</button>
         <button class="btn" id="rh-save" type="button">Save draft</button>
         <button class="btn" id="rh-tpl-save" type="button" style="font-size:12.5px;">Save as template</button>
+        <button class="btn" id="rh-print-btn" type="button" style="font-size:12.5px;" title="Print, or save as PDF, for a patient who wants paper">Print / PDF</button>
         <button class="btn" id="rh-archive" type="button" style="font-size:12.5px;margin-left:auto;color:var(--text-muted);">Archive</button>
       </div>
       <div id="rh-msg" style="font-size:12.5px;color:var(--text-muted);margin-top:8px;min-height:18px;"></div>
     </div>
     <div class="card" id="rh-pv" style="display:none;">
-      <div class="card-title" style="align-items:flex-start;"><button class="btn" id="pv-back" type="button" style="font-size:12px;">&larr; Plans</button><div style="flex:1;min-width:0;"><div id="pv-name">Patient</div><div id="pv-sub" style="font-size:12px;color:var(--text-muted);font-weight:500;margin-top:2px;"></div></div><span id="pv-status"></span><button class="btn" id="pv-msg" type="button" style="font-size:12px;">Message</button><button class="btn" id="pv-edit" type="button" style="font-size:12px;">Edit plan</button></div>
+      <div class="card-title" style="align-items:flex-start;"><button class="btn" id="pv-back" type="button" style="font-size:12px;">&larr; Plans</button><div style="flex:1;min-width:0;"><div id="pv-name">Patient</div><div id="pv-sub" style="font-size:12px;color:var(--text-muted);font-weight:500;margin-top:2px;"></div></div><span id="pv-status"></span><button class="btn" id="pv-msg" type="button" style="font-size:12px;">Message</button><button class="btn" id="pv-print" type="button" style="font-size:12px;" title="Print, or save as PDF, for a patient who wants paper">Print / PDF</button><button class="btn" id="pv-edit" type="button" style="font-size:12px;">Edit plan</button></div>
       <div id="pv-alerts"></div>
       <div class="pv-tabs" id="pv-tabs"><button type="button" data-pv-tab="plan" class="on">Plan</button><button type="button" data-pv-tab="track">Tracking</button><button type="button" data-pv-tab="mon">Monitor</button></div>
       <div id="pv-plan"></div>
@@ -307,7 +308,7 @@
     </div>
   </div>
   <div id="view-templates" style="display:none;">
-    <div class="card"><div class="card-title">Templates</div><p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Reusable plans by condition and phase. Yours, plus the VYVE set as it grows. &ldquo;Use&rdquo; opens a new plan pre-filled &mdash; pick the patient and send.</p><div id="rh-tpl-list"></div></div>
+    <div class="card"><div class="card-title">Templates</div><p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Reusable plans, grouped by condition with their phases in order. Yours, plus the VYVE set as it grows. &ldquo;Use&rdquo; opens a new plan pre-filled &mdash; pick the patient and send. &ldquo;Details&rdquo; sets the condition and phase; that is also how a condition shows up under &ldquo;By condition&rdquo; when you add exercises.</p><div id="rh-tpl-list"></div></div>
   </div>
   <div id="view-msgs" style="display:none;">
     <div class="card"><div class="card-title">Messages</div><p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">One thread per patient. Questions typed on the post-session sheet and anything you send land here; the patient reads it in the app. Alerts for a patient sit at the top of their thread.</p>
@@ -598,7 +599,10 @@
   /* PM-1208: shelves. EX_SHELVES = the stock shelves this portal reads (coach: strength, + rehab on opt-in;
      physio: rehab); EX_HOME_SHELF = the shelf a new exercise saved here lands on. Own rows always show. */
   var EX_SHELVES = ['strength'], EX_HOME_SHELF = 'strength', EX_CAT_LABEL = 'All muscle groups';
-  var W3_SEL = 'id,partner_id,library,name,category,equipment,video_url,media_url,cues,muscle_volumes,image_url,exercise_type,default_sets,default_reps,default_rest_seconds,default_duration_seconds,alternatives,video_url_alt,alt_label';
+  /* PM-1216 (physio W5): second axis under a body region. Free text in the column; this is the suggested vocabulary. */
+  var EX_SUBCATS = ['Flexion', 'Extension', 'Side Flexion', 'Rotation', 'Abduction', 'Adduction', 'Stretching', 'Strengthening', 'Swiss Ball', 'Posture', 'Advice'];
+  var exSubSel = '';
+  var W3_SEL = 'id,partner_id,library,name,category,subcategory,equipment,video_url,media_url,cues,muscle_volumes,image_url,exercise_type,default_sets,default_reps,default_rest_seconds,default_duration_seconds,alternatives,video_url_alt,alt_label';
   (function(){
     var st = document.createElement('style');
     st.textContent =
@@ -713,17 +717,48 @@
       if ($c('ex-f-eq')) $c('ex-f-eq').innerHTML = '<option value="">Any equipment</option>' + eo.map(function(c){ return '<option>' + esc(c) + '</option>'; }).join('');
       if ($c('ex-cat-names')) $c('ex-cat-names').innerHTML = co.map(function(c){ return '<option value="' + esc(c) + '">'; }).join('');
       if ($c('ex-eq-names')) $c('ex-eq-names').innerHTML = eo.map(function(c){ return '<option value="' + esc(c) + '">'; }).join('');
+      exSubNames();
     } catch(e){ cexRows = []; }
+  }
+
+  /* ── PM-1216 (physio W5): sub-filter chips under a selected region, in the library and the rehab picker.
+        Painted only when the region has at least one tagged row, so a shelf with no second axis (today's
+        strength stock) renders exactly as before. hostId is created on first use, right after `anchor`'s row. ── */
+  function exSubChips(cat, hostId, anchor, sel, onPick, rowOk){
+    var host = $c(hostId);
+    if (!host){
+      if (!anchor || !anchor.parentElement) return;
+      host = document.createElement('div'); host.id = hostId;
+      host.style.cssText = 'display:none;flex-wrap:wrap;gap:6px;margin:8px 0 2px;';
+      anchor.parentElement.parentElement.insertBefore(host, anchor.parentElement.nextSibling);
+    }
+    var subs = {}, any = 0;
+    if (cat) cexRows.forEach(function(r){ if (r.category === cat && r.subcategory && (!rowOk || rowOk(r))){ subs[r.subcategory] = (subs[r.subcategory] || 0) + 1; any++; } });
+    var keys = Object.keys(subs).sort(function(a, b){ var ia = EX_SUBCATS.indexOf(a), ib = EX_SUBCATS.indexOf(b); if (ia < 0) ia = 99; if (ib < 0) ib = 99; return ia - ib || a.localeCompare(b); });
+    if (!any){ host.style.display = 'none'; host.innerHTML = ''; if (sel){ onPick(''); return true; } return false; }
+    if (sel && !subs[sel]){ onPick(''); return true; }
+    host.style.display = 'flex';
+    host.innerHTML = '<button type="button" class="w3-chip ex-sub" data-ex-sub="" style="' + (sel ? '' : 'border-color:var(--vyve-teal);color:var(--vyve-teal);') + 'cursor:pointer;">All ' + esc(cat) + ' (' + any + ')</button>' +
+      keys.map(function(k){ return '<button type="button" class="w3-chip ex-sub" data-ex-sub="' + esc(k) + '" style="' + (sel === k ? 'border-color:var(--vyve-teal);color:var(--vyve-teal);' : '') + 'cursor:pointer;">' + esc(k) + ' (' + subs[k] + ')</button>'; }).join('');
+    host.querySelectorAll('[data-ex-sub]').forEach(function(b){ b.addEventListener('click', function(){ onPick(b.getAttribute('data-ex-sub')); }); });
+    return false;
+  }
+  function exSubNames(){
+    var seen = {}; EX_SUBCATS.forEach(function(k){ seen[k] = 1; });
+    cexRows.forEach(function(r){ if (r.subcategory) seen[r.subcategory] = 1; });
+    var dl = $c('ex-sub-names'); if (dl) dl.innerHTML = Object.keys(seen).sort().map(function(c){ return '<option value="' + esc(c) + '">'; }).join('');
   }
 
   /* ── #26/#25 exRender v3: browsable card grid with thumbnails + tag chips. ── */
   function exRender(){
     var q = ($c('ex-f-q').value || '').trim().toLowerCase();
     var fc = $c('ex-f-cat').value, fe = $c('ex-f-eq').value;
+    if (exSubChips(fc, 'ex-f-sub', $c('ex-f-cat'), exSubSel, function(v){ exSubSel = v; exRender(); }, function(r){ return (exScope === 'mine' && !r.partner_id) || (exScope === 'vyve' && r.partner_id) ? false : true; })) return; /* selection reset re-rendered */
     var rows = cexRows.filter(function(r){
       if (exScope === 'mine' && !r.partner_id) return false;
       if (exScope === 'vyve' && r.partner_id) return false;
       if (fc && r.category !== fc) return false;
+      if (exSubSel && r.subcategory !== exSubSel) return false;
       if (fe && r.equipment !== fe) return false;
       if (q && (r.name || '').toLowerCase().indexOf(q) < 0 && JSON.stringify(r.muscle_volumes || {}).toLowerCase().indexOf(q) < 0) return false;
       var vsel = $c('ex-f-vidsel') ? $c('ex-f-vidsel').value : '';
@@ -755,7 +790,7 @@
       return '<div class="w3-card"><div class="im"' + (dv ? ' data-ex-play="' + r.id + '" title="Play video"' : '') + '>' + w3ThumbImg(r, '') + (dv ? '<span class="w3-play">\u25b6</span>' : '') + '</div><div class="bd">' +
         '<div class="nm">' + esc(r.name) + ' <span class="src-tag ' + (mine ? 'src-mine' : 'src-vyve') + '">' + (mine ? 'Yours' : 'VYVE') + '</span></div>' +
         '<div>' + w3MvChips(r.muscle_volumes, 3) + dur + '</div>' +
-        '<div style="font-size:11px;color:var(--text-muted);">' + esc(r.category || '') + (r.equipment ? ' \u00b7 ' + esc(r.equipment) : '') + '</div>' +
+        '<div style="font-size:11px;color:var(--text-muted);">' + esc(r.category || '') + (r.subcategory ? ' \u203a ' + esc(r.subcategory) : '') + (r.equipment ? ' \u00b7 ' + esc(r.equipment) : '') + '</div>' +
         (vid || presets ? '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">' + vid + presets + '</div>' : '') +
         '<div style="display:flex;gap:6px;margin-top:auto;padding-top:4px;">' + acts + '</div>' +
         '</div></div>';
@@ -784,6 +819,9 @@
     host.id = 'w3-ex-extras';
     host.innerHTML =
       '<div class="field-row" style="margin-top:2px;">' +
+        '<div class="field"><label>Movement / sub-category</label><input id="w3f-sub" type="text" maxlength="60" list="ex-sub-names" placeholder="e.g. Stretching, Flexion, Advice"/><datalist id="ex-sub-names"></datalist></div>' +
+      '</div>' +
+      '<div class="field-row">' +
         '<div class="field"><label>Exercise type</label><select id="w3f-type"><option value="reps">Sets &amp; reps</option><option value="duration">Time-based (hold / work interval)</option></select></div>' +
         '<div class="field" id="w3f-durwrap" style="display:none;"><label>Default seconds per set</label><input id="w3f-dur" type="number" min="5" step="5" placeholder="30"/></div>' +
       '</div>' +
@@ -846,7 +884,7 @@
     var player = url
       ? '<video controls autoplay playsinline preload="metadata" style="width:100%;aspect-ratio:16/9;background:#000;border-radius:10px;display:block;"' + (poster ? ' poster="' + esc(poster) + '"' : '') + ' src="' + esc(url) + '"></video>'
       : '<div style="position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:10px;overflow:hidden;"><iframe src="https://www.youtube-nocookie.com/embed/' + esc(yid) + '?autoplay=1&rel=0&modestbranding=1&playsinline=1" title="' + esc(r.name) + '" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0;"></iframe></div>';
-    var meta = [r.category, r.equipment].filter(Boolean).map(esc).join(' \u00b7 ');
+    var meta = [r.category, r.subcategory, r.equipment].filter(Boolean).map(esc).join(' \u00b7 ');
     var m = document.createElement('div');
     m.className = 'w3-modal'; m.id = 'ex-play-sheet';
     m.innerHTML = '<div class="in" style="width:min(760px,96vw);max-height:92vh;display:flex;flex-direction:column;">' +
@@ -876,6 +914,7 @@
     $c('exf-name').value = seed.name || '';
     $c('exf-cat').value = seed.category || '';
     $c('exf-eq').value = seed.equipment || '';
+    $c('w3f-sub').value = seed.subcategory || ''; exSubNames();
     $c('exf-video').value = (row && (row.video_url || (!row.partner_id ? row.media_url : ''))) || ''; /* PM-1157: stock rows show what a member actually plays (video_url ∥ media_url) */
     $c('exf-cues').value = seed.cues || '';
     $c('w3f-type').value = seed.exercise_type === 'duration' ? 'duration' : 'reps';
@@ -893,7 +932,7 @@
     w3AltsPaint();
     $c('cex-alt-names').innerHTML = cexRows.slice(0, 900).map(function(r){ return '<option value="' + esc(r.name) + '">'; }).join('');
     var ro = row && !mine;
-    ['exf-name','exf-cat','exf-eq','exf-video','exf-cues','w3f-type','w3f-dur','w3f-dsets','w3f-dreps','w3f-drest','w3f-alt-q'].forEach(function(id){ var el = $c(id); if (el) el.disabled = ro; });
+    ['exf-name','exf-cat','exf-eq','w3f-sub','exf-video','exf-cues','w3f-type','w3f-dur','w3f-dsets','w3f-dreps','w3f-drest','w3f-alt-q'].forEach(function(id){ var el = $c(id); if (el) el.disabled = ro; });
     $c('w3-ex-extras').querySelectorAll('.mv-m,.mv-w,.mv-x').forEach(function(el){ el.disabled = ro; });
     $c('ex-save').style.display = ro ? 'none' : '';
     $c('ex-msg').textContent = ro ? 'VYVE library exercise \u2014 duplicate it to your library to change anything.' : (dupFrom ? 'Saving adds a copy you fully own \u2014 rename it or attach your own video.' : '');
@@ -914,6 +953,7 @@
     var body = {
       name: name,
       category: $c('exf-cat').value.trim() || null,
+      subcategory: $c('w3f-sub').value.trim() || null,
       equipment: $c('exf-eq').value.trim() || null,
       video_url: vraw || null,
       cues: $c('exf-cues').value.trim() || null,
@@ -1025,7 +1065,7 @@
       }
       /* PM-1211: the rehab face is a capability VYVE grants (partner_partners.capabilities.rehab), not something a coach opts into */
       var caps = null;
-      try { var pr = await rest('/partner_partners?id=eq.' + partnerId + '&select=capabilities'); caps = pr && pr[0] && pr[0].capabilities; } catch(_){}
+      try { var pr = await rest('/partner_partners?id=eq.' + partnerId + '&select=capabilities,name'); caps = pr && pr[0] && pr[0].capabilities; rhPartnerName = (pr && pr[0] && pr[0].name) || ''; } catch(_){}
       if (!caps || !caps.rehab){
         $c('pt-list').innerHTML = '<div class="empty-state"><h3>Physio access not switched on</h3><p>Your partner account doesn\u2019t have the rehab tools enabled yet \u2014 contact the VYVE team.</p></div>';
         $c('pt-add-toggle').style.display = 'none';
@@ -1056,7 +1096,8 @@
   var RH_SEL = 'id,partner_id,member_email,name,status,start_date,duration_weeks,note,safety_netting,red_flags,monitor,template_id,sent_at,wpc_id,created_at,updated_at';
   var RH_ITEM_SEL = 'id,plan_id,position,exercise_id,name,cues,video_url,image_url,hold_s,reps,times_daily,rest_s,days_per_week,both_sides,note,removed_at';
   var rhPlans = [], rhPlansLoaded = false, rhFilterEmail = '', rhTpls = [], rhTplsLoaded = false;
-  var rhCur = null;        /* the plan being edited: { id, name, member_email, start_date, duration_weeks, note, safety_netting, red_flags, monitor[], template_id, status, items[] } */
+  var rhCur = null;
+  var rhPickSub = '', rhPickMode = 'library', rhPickCond = ''; /* PM-1216 W5: picker sub-filter + condition mode */        /* the plan being edited: { id, name, member_email, start_date, duration_weeks, note, safety_netting, red_flags, monitor[], template_id, status, items[] } */
   var rhCssDone = false;
   function rhCss(){
     if (rhCssDone) return; rhCssDone = true;
@@ -1080,6 +1121,8 @@
       '.rh-pick .c img,.rh-pick .c .noimg{width:100%;aspect-ratio:16/9;object-fit:cover;background:#000;display:block;}.rh-pick .c .noimg{display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:11px;}' +
       '.rh-pick .c .n{padding:8px 10px;font-size:12.5px;font-weight:600;line-height:1.3;}.rh-pick .c .m{padding:0 10px 8px;font-size:11px;color:var(--text-muted);}' +
       '.rh-ph{font-size:11px;color:var(--gold);margin-top:4px;}' +
+      '.rh-seg{display:inline-flex;border:1px solid var(--border);border-radius:9px;overflow:hidden;}.rh-seg button{background:var(--surface-2);border:0;color:var(--text-muted);font-size:12px;font-family:inherit;padding:6px 11px;cursor:pointer;}.rh-seg button.on{background:var(--vyve-teal);color:#fff;}' +
+      '.rh-cond{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;}.rh-cond .c{text-align:left;border:1px solid var(--border);border-radius:10px;padding:12px;background:var(--surface-2);cursor:pointer;font-family:inherit;color:var(--text);}.rh-cond .c:hover{border-color:var(--vyve-teal);}.rh-cond .n{font-weight:600;font-size:13.5px;}.rh-cond .m{font-size:11.5px;color:var(--text-muted);margin-top:3px;}' +
       '.rh-ta{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:13px;font-family:inherit;resize:vertical;}';
     document.head.appendChild(s);
   }
@@ -1274,12 +1317,31 @@
     rhCollect();
     if (!rhCur.name){ $c('rh-msg').textContent = 'Give the plan a name first.'; return; }
     if (!rhCur.items.length){ $c('rh-msg').textContent = 'Add exercises before saving a template.'; return; }
-    var name = prompt('Template name (e.g. "ACL — Phase 1", "Lower back pain — weeks 1–2")', rhCur.name); if (!name) return;
-    var payload = { duration_weeks: rhCur.duration_weeks, note: rhCur.note, safety_netting: rhCur.safety_netting, red_flags: rhCur.red_flags, monitor: rhCur.monitor, items: rhCur.items.map(function(it){ return { exercise_id: it.exercise_id || null, name: it.name, cues: it.cues || null, video_url: it.video_url || null, image_url: it.image_url || null, hold_s: it.hold_s || 0, reps: it.reps || 10, times_daily: it.times_daily || 1, rest_s: it.rest_s || 0, days_per_week: it.days_per_week || 7, both_sides: !!it.both_sides, note: it.note || null }; }) };
-    try {
-      await rest('/coach_templates', { method: 'POST', body: { partner_id: partnerId, kind: 'rehab_plan', name: name.trim(), payload: payload, active: true } });
-      rhTplsLoaded = false; $c('rh-msg').textContent = 'Template saved.';
-    } catch(e){ $c('rh-msg').textContent = 'Could not save the template (' + (e.message || e) + ').'; }
+    rhTplForm(null, function(f){
+      var payload = { diagnosis: f.diagnosis || null, phase: f.phase || null, phase_label: f.phase_label || null, duration_weeks: rhCur.duration_weeks, note: rhCur.note, safety_netting: rhCur.safety_netting, red_flags: rhCur.red_flags, monitor: rhCur.monitor, items: rhCur.items.map(function(it){ return { exercise_id: it.exercise_id || null, name: it.name, cues: it.cues || null, video_url: it.video_url || null, image_url: it.image_url || null, hold_s: it.hold_s || 0, reps: it.reps || 10, times_daily: it.times_daily || 1, rest_s: it.rest_s || 0, days_per_week: it.days_per_week || 7, both_sides: !!it.both_sides, note: it.note || null }; }) };
+      return rest('/coach_templates', { method: 'POST', body: { partner_id: partnerId, kind: 'rehab_plan', name: f.name, payload: payload, active: true } }).then(function(){ rhTplsLoaded = false; $c('rh-msg').textContent = 'Template saved' + (f.diagnosis ? ' under ' + f.diagnosis : '') + '.'; });
+    });
+  }
+  /* PM-1216 W5: one small form for a template's name, condition and phase — used on save and on re-tagging an existing one */
+  function rhTplForm(t, onOk){
+    rhTplLoad(false).then(function(){
+      var pl = t ? (t.payload || {}) : {}, by = rhCondIndex();
+      var m = document.createElement('div'); m.className = 'w3-modal'; m.id = 'rh-tplform';
+      m.innerHTML = '<div class="in" style="width:min(520px,96vw);"><div class="hd"><div style="flex:1;font-weight:700;font-size:15px;">' + (t ? 'Template details' : 'Save as template') + '</div><button class="btn" type="button" data-x style="font-size:12px;">Cancel</button></div><div class="sc">' +
+        '<div class="field"><label>Template name</label><input id="rhtf-name" type="text" maxlength="120" value="' + esc(t ? t.name : rhCur.name) + '" placeholder="e.g. ACL reconstruction \u2014 Phase 1"/></div>' +
+        '<div class="field" style="margin-top:10px;"><label>Condition / diagnosis (groups templates A\u2013Z, and is how you\u2019ll find them in the picker)</label><input id="rhtf-diag" type="text" maxlength="80" list="rhtf-diag-names" value="' + esc(pl.diagnosis || '') + '" placeholder="e.g. ACL reconstruction, Lower back pain (facet joint)"/><datalist id="rhtf-diag-names">' + Object.keys(by).sort().map(function(k){ return '<option value="' + esc(by[k].name) + '">'; }).join('') + '</datalist></div>' +
+        '<div class="field-row" style="margin-top:10px;"><div class="field"><label>Phase number</label><input id="rhtf-phase" type="number" min="1" max="20" value="' + esc(pl.phase || '') + '" placeholder="1"/></div><div class="field"><label>Phase label (optional)</label><input id="rhtf-plabel" type="text" maxlength="40" value="' + esc(pl.phase_label || '') + '" placeholder="e.g. weeks 1\u20132, post-op"/></div></div>' +
+        '<div style="display:flex;gap:10px;margin-top:16px;"><button class="btn btn-primary" type="button" id="rhtf-go">' + (t ? 'Save' : 'Save template') + '</button><span id="rhtf-msg" style="font-size:12px;color:var(--text-muted);align-self:center;"></span></div></div></div>';
+      m.addEventListener('click', function(e){ if (e.target === m || e.target.hasAttribute('data-x')) m.remove(); });
+      document.body.appendChild(m);
+      $c('rhtf-go').addEventListener('click', function(){
+        var f = { name: $c('rhtf-name').value.trim(), diagnosis: $c('rhtf-diag').value.trim(), phase: parseInt($c('rhtf-phase').value, 10) || null, phase_label: $c('rhtf-plabel').value.trim() };
+        if (!f.name){ $c('rhtf-msg').textContent = 'Name it.'; return; }
+        $c('rhtf-go').disabled = true; $c('rhtf-msg').textContent = 'Saving\u2026';
+        Promise.resolve(onOk(f)).then(function(){ m.remove(); }, function(e){ $c('rhtf-go').disabled = false; $c('rhtf-msg').textContent = 'Could not save (' + (e && e.message || e) + ').'; });
+      });
+      $c('rhtf-name').focus();
+    });
   }
   async function rhArchive(){
     if (!rhCur.id) return;
@@ -1291,31 +1353,86 @@
   async function rhPickOpen(){
     rhPickClose();
     var m = document.createElement('div'); m.className = 'w3-modal'; m.id = 'rh-pick';
-    m.innerHTML = '<div class="in" style="width:min(980px,96vw);max-height:92vh;display:flex;flex-direction:column;"><div class="hd"><div style="flex:1;font-weight:700;font-size:15px;">Add exercises</div>' +
+    m.innerHTML = '<div class="in" style="width:min(980px,96vw);max-height:92vh;display:flex;flex-direction:column;"><div class="hd"><div style="font-weight:700;font-size:15px;">Add exercises</div>' +
+      '<div class="rh-seg" id="rh-pick-mode"><button type="button" data-rh-mode="library" class="on">Library</button><button type="button" data-rh-mode="condition">By condition</button></div>' +
+      '<span style="flex:1;"></span>' +
       '<input id="rh-pick-q" type="search" placeholder="Search" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:13px;font-family:inherit;min-width:140px;"/>' +
       '<select id="rh-pick-cat" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:12.5px;font-family:inherit;"></select>' +
-      '<button class="btn" type="button" data-rh-pick-close style="font-size:12px;">Done</button></div><div class="sc"><div id="rh-pick-count" style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">Loading the library\u2026</div><div class="rh-pick" id="rh-pick-grid"></div></div></div>';
+      '<button class="btn" type="button" data-rh-pick-close style="font-size:12px;">Done</button></div><div class="sc"><div id="rh-pick-sub-row"><span id="rh-pick-sub-anchor" style="display:none;"></span></div><div id="rh-pick-count" style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">Loading the library\u2026</div><div class="rh-pick" id="rh-pick-grid"></div></div></div>';
     m.addEventListener('click', function(e){ if (e.target === m || e.target.hasAttribute('data-rh-pick-close')) rhPickClose(); });
     document.body.appendChild(m);
     document.addEventListener('keydown', rhPickEsc);
     await exLoad();
     var cats = {}; cexRows.forEach(function(r){ if (r.category) cats[r.category] = 1; });
     $c('rh-pick-cat').innerHTML = '<option value="">All body regions</option>' + Object.keys(cats).sort().map(function(c){ return '<option>' + esc(c) + '</option>'; }).join('');
-    $c('rh-pick-q').addEventListener('input', rhPickPaint); $c('rh-pick-cat').addEventListener('change', rhPickPaint);
+    $c('rh-pick-q').addEventListener('input', rhPickPaint); $c('rh-pick-cat').addEventListener('change', function(){ rhPickSub = ''; rhPickPaint(); });
+    rhPickMode = 'library'; rhPickCond = ''; rhPickSub = '';
+    $c('rh-pick-mode').querySelectorAll('[data-rh-mode]').forEach(function(b){ b.addEventListener('click', function(){ rhPickMode = b.getAttribute('data-rh-mode'); rhPickCond = ''; $c('rh-pick-mode').querySelectorAll('button').forEach(function(x){ x.classList.toggle('on', x === b); }); rhPickPaint(); }); });
+    rhTplLoad(false).then(function(){ if ($c('rh-pick')) rhPickPaint(); });
     rhPickPaint(); $c('rh-pick-q').focus();
   }
   function rhPickPaint(){
+    if (!$c('rh-pick')) return;
+    if (rhPickMode === 'condition'){ $c('rh-pick-cat').style.display = 'none'; var sr = $c('rh-pick-sub'); if (sr) sr.style.display = 'none'; rhPickCondPaint(); return; }
+    $c('rh-pick-cat').style.display = ''; $c('rh-pick-grid').classList.add('rh-pick');
     var q = ($c('rh-pick-q').value || '').trim().toLowerCase(), fc = $c('rh-pick-cat').value;
-    var rows = cexRows.filter(function(r){ if (fc && r.category !== fc) return false; if (q && (r.name || '').toLowerCase().indexOf(q) < 0) return false; return true; });
+    /* PM-1216 W5: sub-filter chips under the chosen region (same helper as the library page) */
+    if (exSubChips(fc, 'rh-pick-sub', $c('rh-pick-sub-anchor'), rhPickSub, function(v){ rhPickSub = v; rhPickPaint(); }, null)) return;
+    var rows = cexRows.filter(function(r){ if (fc && r.category !== fc) return false; if (rhPickSub && r.subcategory !== rhPickSub) return false; if (q && (r.name || '').toLowerCase().indexOf(q) < 0) return false; return true; });
     var shown = rows.slice(0, 120);
     $c('rh-pick-count').textContent = rows.length + ' exercise' + (rows.length === 1 ? '' : 's') + (rows.length > shown.length ? ' \u2014 showing the first ' + shown.length + ', narrow the search to see more' : '') + ' \u00b7 tap to add';
     $c('rh-pick-grid').innerHTML = shown.map(function(r){
       var th = w3ThumbSrc(r);
       var inPlan = rhCur.items.some(function(i){ return i.exercise_id === r.id; });
-      return '<div class="c" data-rh-add="' + esc(r.id) + '"' + (inPlan ? ' style="opacity:.55;"' : '') + '>' + (th ? '<img src="' + esc(th) + '" alt="" loading="lazy"/>' : '<div class="noimg">no video</div>') + '<div class="n">' + esc(r.name) + (inPlan ? ' \u2713' : '') + '</div><div class="m">' + esc([r.category, r.equipment].filter(Boolean).join(' \u00b7 ')) + '</div></div>';
+      return '<div class="c" data-rh-add="' + esc(r.id) + '"' + (inPlan ? ' style="opacity:.55;"' : '') + '>' + (th ? '<img src="' + esc(th) + '" alt="" loading="lazy"/>' : '<div class="noimg">no video</div>') + '<div class="n">' + esc(r.name) + (inPlan ? ' \u2713' : '') + '</div><div class="m">' + esc([r.category, r.subcategory, r.equipment].filter(Boolean).join(' \u00b7 ')) + '</div></div>';
     }).join('');
     $c('rh-pick-grid').querySelectorAll('[data-rh-add]').forEach(function(c){ c.addEventListener('click', function(){ rhAdd(c.getAttribute('data-rh-add')); }); });
   }
+  /* ── PM-1216 W5: diagnosis-led entry. A condition is the set of rehab_plan templates that share a `diagnosis`
+        (yours + VYVE stock), ordered by `phase`; picking a phase drops its exercises — prescriptions included — into
+        the plan. Nothing here is a new table: it is the templates, grouped. ── */
+  function rhCondIndex(){
+    var by = {};
+    rhTpls.forEach(function(t){ var d = ((t.payload || {}).diagnosis || '').trim(); if (!d) return; var k = d.toLowerCase(); (by[k] = by[k] || { name: d, tpls: [] }).tpls.push(t); });
+    Object.keys(by).forEach(function(k){ by[k].tpls.sort(function(a, b){ return (+(a.payload || {}).phase || 99) - (+(b.payload || {}).phase || 99) || a.name.localeCompare(b.name); }); });
+    return by;
+  }
+  function rhPhaseLabel(t){ var pl = t.payload || {}; return pl.phase ? ('Phase ' + pl.phase + (pl.phase_label ? ' \u00b7 ' + pl.phase_label : '')) : (pl.phase_label || 'Unphased'); }
+  function rhPickCondPaint(){
+    var q = ($c('rh-pick-q').value || '').trim().toLowerCase(), by = rhCondIndex(), grid = $c('rh-pick-grid');
+    grid.classList.remove('rh-pick');
+    if (!rhPickCond){
+      var keys = Object.keys(by).filter(function(k){ return !q || k.indexOf(q) >= 0; }).sort();
+      $c('rh-pick-count').textContent = keys.length ? (keys.length + ' condition' + (keys.length === 1 ? '' : 's') + ' \u00b7 tap one to see its phases') : '';
+      if (!keys.length){ grid.innerHTML = '<div class="empty-state"><h3>No conditions yet</h3><p>Conditions come from your templates: build a plan, choose \u201cSave as template\u201d and give it a condition and phase (\u201cACL \u2014 Phase 1\u201d). They\u2019ll appear here, A\u2013Z, and the VYVE set will grow under them.</p></div>'; return; }
+      grid.innerHTML = '<div class="rh-cond">' + keys.map(function(k){ var c = by[k]; return '<button type="button" class="c" data-rh-cond="' + esc(k) + '"><div class="n">' + esc(c.name) + '</div><div class="m">' + c.tpls.length + ' phase' + (c.tpls.length === 1 ? '' : 's') + ' \u00b7 ' + c.tpls.reduce(function(n, t){ return n + ((t.payload || {}).items || []).length; }, 0) + ' exercises</div></button>'; }).join('') + '</div>';
+      grid.querySelectorAll('[data-rh-cond]').forEach(function(b){ b.addEventListener('click', function(){ rhPickCond = b.getAttribute('data-rh-cond'); rhPickPaint(); }); });
+      return;
+    }
+    var c = by[rhPickCond]; if (!c){ rhPickCond = ''; rhPickPaint(); return; }
+    $c('rh-pick-count').innerHTML = '<a href="#" data-rh-cond-back style="color:var(--vyve-teal);text-decoration:none;">&larr; All conditions</a> \u00b7 <b style="color:var(--text);">' + esc(c.name) + '</b>';
+    $c('rh-pick-count').querySelector('[data-rh-cond-back]').addEventListener('click', function(e){ e.preventDefault(); rhPickCond = ''; rhPickPaint(); });
+    grid.innerHTML = c.tpls.map(function(t){
+      var items = (t.payload || {}).items || [];
+      var have = items.filter(function(i){ return i.exercise_id && rhCur.items.some(function(x){ return x.exercise_id === i.exercise_id; }); }).length;
+      return '<div class="rh-row" style="flex-direction:column;gap:8px;"><div style="display:flex;gap:10px;align-items:center;width:100%;"><div style="flex:1;min-width:0;"><div style="font-weight:600;font-size:13.5px;">' + esc(rhPhaseLabel(t)) + (t.partner_id ? '' : ' <span class="rh-pill">VYVE</span>') + '</div><div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;">' + esc(t.name) + ' \u00b7 ' + items.length + ' exercise' + (items.length === 1 ? '' : 's') + ' \u00b7 ' + esc((t.payload || {}).duration_weeks || '?') + ' weeks' + (have ? ' \u00b7 ' + have + ' already in this plan' : '') + '</div></div>' +
+        '<button class="btn btn-primary" type="button" data-rh-tpl-add="' + esc(t.id) + '" style="font-size:12px;"' + (have === items.length && items.length ? ' disabled' : '') + '>Add ' + (items.length - have) + ' exercise' + (items.length - have === 1 ? '' : 's') + '</button></div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:6px;">' + items.map(function(i){ return '<span class="w3-chip" title="' + esc(rhRxLine(i)) + '">' + esc(i.name) + '</span>'; }).join('') + '</div></div>';
+    }).join('');
+    grid.querySelectorAll('[data-rh-tpl-add]').forEach(function(b){ b.addEventListener('click', function(){ var t = rhTpls.filter(function(x){ return x.id === b.getAttribute('data-rh-tpl-add'); })[0]; if (t) rhAddFromTemplate(t); }); });
+  }
+  function rhAddFromTemplate(t){
+    var n = 0;
+    ((t.payload || {}).items || []).forEach(function(i){
+      if (i.exercise_id && rhCur.items.some(function(x){ return x.exercise_id === i.exercise_id; })) return;
+      rhCur.items.push({ id: null, exercise_id: i.exercise_id || null, name: i.name, cues: i.cues || '', video_url: i.video_url || null, image_url: i.image_url || null, hold_s: i.hold_s || 0, reps: i.reps || 10, times_daily: i.times_daily || 1, rest_s: i.rest_s || 0, days_per_week: i.days_per_week || 7, both_sides: !!i.both_sides, note: i.note || '' }); n++;
+    });
+    if (n && !rhCur.name) { rhCur.name = t.name; $c('rhf-name').value = t.name; }
+    if (n && !rhCur.template_id) rhCur.template_id = t.id;
+    rhPaintItems(); rhTotals(); rhPickPaint();
+  }
+  function rhRxLine(i){ return 'Hold ' + (i.hold_s || 0) + 's \u00b7 ' + (i.reps || 10) + ' reps \u00b7 ' + (i.times_daily || 1) + '\u00d7 daily \u00b7 rest ' + (i.rest_s || 0) + 's \u00b7 ' + ((i.days_per_week || 7) === 7 ? 'every day' : (i.days_per_week + ' days/week')) + (i.both_sides ? ' \u00b7 both sides' : ''); }
+
   function rhAdd(id){
     var r = w3ById(id); if (!r) return;
     rhCur.items.push({ id: null, exercise_id: r.id, name: r.name, cues: r.cues || '', video_url: r.video_url || r.media_url || null, image_url: w3ThumbSrc(r) || null, hold_s: r.default_duration_seconds || 0, reps: r.default_reps ? parseInt(r.default_reps, 10) || 10 : 10, times_daily: 1, rest_s: r.default_rest_seconds || 0, days_per_week: 7, both_sides: false, note: '' });
@@ -1325,20 +1442,28 @@
   function rhPickEsc(e){ if (e.key === 'Escape') rhPickClose(); }
 
   /* ── Templates ── */
+  async function rhTplLoad(force){
+    if (rhTplsLoaded && !force) return rhTpls;
+    try { rhTpls = await rest('/coach_templates?kind=eq.rehab_plan&active=eq.true&or=(partner_id.eq.' + partnerId + ',partner_id.is.null)&select=id,partner_id,name,payload,updated_at&order=name.asc') || []; } catch(_){ rhTpls = []; }
+    rhTplsLoaded = true; return rhTpls;
+  }
   async function rhTplInit(force){
     rhCss();
-    if (!rhTplsLoaded || force){
-      try { rhTpls = await rest('/coach_templates?kind=eq.rehab_plan&active=eq.true&or=(partner_id.eq.' + partnerId + ',partner_id.is.null)&select=id,partner_id,name,payload,updated_at&order=name.asc') || []; } catch(_){ rhTpls = []; }
-      rhTplsLoaded = true;
-    }
+    await rhTplLoad(force);
     var box = $c('rh-tpl-list');
-    if (!rhTpls.length){ box.innerHTML = '<div class="empty-state"><h3>No templates yet</h3><p>Build a plan, then choose \u201cSave as template\u201d. Name them by condition and phase \u2014 \u201cACL \u2014 Phase 1\u201d, \u201cLower back pain \u2014 weeks 1\u20132\u201d.</p></div>'; return; }
-    box.innerHTML = rhTpls.map(function(t){
+    if (!rhTpls.length){ box.innerHTML = '<div class="empty-state"><h3>No templates yet</h3><p>Build a plan, then choose \u201cSave as template\u201d and give it a condition and phase \u2014 \u201cACL \u2014 Phase 1\u201d, \u201cLower back pain \u2014 weeks 1\u20132\u201d. Conditions become the \u201cBy condition\u201d way in when you add exercises to a plan.</p></div>'; return; }
+    /* PM-1216 W5: grouped by condition (A\u2013Z, phases in order), untagged ones last */
+    var by = rhCondIndex(), loose = rhTpls.filter(function(t){ return !((t.payload || {}).diagnosis || '').trim(); });
+    function row(t, showName){
       var pl = t.payload || {}, n = (pl.items || []).length;
-      return '<div class="rh-row" style="align-items:center;"><div style="flex:1;min-width:0;"><div style="font-weight:600;font-size:13.5px;">' + esc(t.name) + (t.partner_id ? '' : ' <span class="rh-pill">VYVE</span>') + '</div><div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;">' + n + ' exercise' + (n === 1 ? '' : 's') + ' \u00b7 ' + esc(pl.duration_weeks || '?') + ' weeks \u00b7 Monitor: ' + esc((pl.monitor || []).join(', ') || 'none') + '</div></div>' +
-        '<button class="btn btn-primary" type="button" data-rh-tpl-use="' + esc(t.id) + '" style="font-size:12px;">Use</button>' + (t.partner_id ? '<button class="rh-ib" type="button" data-rh-tpl-del="' + esc(t.id) + '">Delete</button>' : '') + '</div>';
-    }).join('');
+      return '<div class="rh-row" style="align-items:center;"><div style="flex:1;min-width:0;"><div style="font-weight:600;font-size:13.5px;">' + esc(showName ? t.name : rhPhaseLabel(t)) + (t.partner_id ? '' : ' <span class="rh-pill">VYVE</span>') + '</div><div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;">' + (showName ? '' : esc(t.name) + ' \u00b7 ') + n + ' exercise' + (n === 1 ? '' : 's') + ' \u00b7 ' + esc(pl.duration_weeks || '?') + ' weeks \u00b7 Monitor: ' + esc((pl.monitor || []).join(', ') || 'none') + '</div></div>' +
+        '<button class="btn btn-primary" type="button" data-rh-tpl-use="' + esc(t.id) + '" style="font-size:12px;">Use</button>' + (t.partner_id ? '<button class="rh-ib" type="button" data-rh-tpl-tag="' + esc(t.id) + '">Details</button><button class="rh-ib" type="button" data-rh-tpl-del="' + esc(t.id) + '">Delete</button>' : '') + '</div>';
+    }
+    box.innerHTML = Object.keys(by).sort().map(function(k){ return '<div style="font-size:13px;font-weight:700;margin:14px 0 8px;">' + esc(by[k].name) + '</div>' + by[k].tpls.map(function(t){ return row(t, false); }).join(''); }).join('') +
+      (loose.length ? '<div style="font-size:13px;font-weight:700;margin:14px 0 8px;color:var(--text-muted);">' + (Object.keys(by).length ? 'Not yet under a condition' : 'Templates') + '</div>' + loose.map(function(t){ return row(t, true); }).join('') : '');
     box.querySelectorAll('[data-rh-tpl-use]').forEach(function(b){ b.addEventListener('click', function(){ var t = rhTpls.filter(function(x){ return x.id === b.getAttribute('data-rh-tpl-use'); })[0]; if (t) rhFromTemplate(t); }); });
+    box.querySelectorAll('[data-rh-tpl-tag]').forEach(function(b){ b.addEventListener('click', function(){ var t = rhTpls.filter(function(x){ return x.id === b.getAttribute('data-rh-tpl-tag'); })[0]; if (!t) return;
+      rhTplForm(t, function(f){ var pl = Object.assign({}, t.payload || {}, { diagnosis: f.diagnosis || null, phase: f.phase || null, phase_label: f.phase_label || null }); return rest('/coach_templates?id=eq.' + t.id, { method: 'PATCH', body: { name: f.name, payload: pl } }).then(function(){ rhTplInit(true); }); }); }); });
     box.querySelectorAll('[data-rh-tpl-del]').forEach(function(b){ b.addEventListener('click', async function(){ if (!confirm('Delete this template?')) return; try { await rest('/coach_templates?id=eq.' + b.getAttribute('data-rh-tpl-del'), { method: 'PATCH', body: { active: false } }); rhTplInit(true); } catch(_){} }); });
   }
 
@@ -1698,6 +1823,71 @@
   }
   function rhMsgOpen(email){ msThread = (email || '').toLowerCase(); go('messages'); }
   /* ============================ end PM-1214 Messages ============================ */
+  /* ============================ PM-1216: physio W5 — printable plan (the paper fallback) ============================
+     RMP delivers plans as a PDF; ours is the app. This is the fallback for a patient who wants paper: a print
+     sheet built in-page and shown only under @media print, so the browser's Print → Save as PDF does the export
+     with no library and no popup. Works for a draft (from the builder) and a sent plan (from the patient view). */
+  var rhPrintCssDone = false, rhPartnerName = '';
+  function rhPrintCss(){
+    if (rhPrintCssDone) return; rhPrintCssDone = true;
+    var s = document.createElement('style');
+    s.textContent =
+      '#rh-print{display:none;}' +
+      '@media print{' +
+        'body *{visibility:hidden !important;}' +
+        '#rh-print,#rh-print *{visibility:visible !important;}' +
+        '#rh-print{display:block !important;position:absolute;left:0;top:0;width:100%;background:#fff;color:#111;font-family:Inter,"DM Sans",system-ui,sans-serif;font-size:11.5pt;line-height:1.4;padding:0;margin:0;}' +
+        '#rh-print h1{font-size:19pt;margin:0 0 2pt;}#rh-print h2{font-size:13pt;margin:16pt 0 6pt;border-bottom:1px solid #999;padding-bottom:3pt;}' +
+        '#rh-print .meta{color:#444;font-size:10.5pt;margin-bottom:8pt;}' +
+        '#rh-print .ex{display:flex;gap:10pt;align-items:flex-start;padding:8pt 0;border-bottom:1px solid #ddd;break-inside:avoid;page-break-inside:avoid;}' +
+        '#rh-print .ex img{width:96pt;height:60pt;object-fit:cover;border:1px solid #ccc;flex:none;}#rh-print .ex .noimg{width:96pt;height:60pt;border:1px solid #ccc;flex:none;display:flex;align-items:center;justify-content:center;font-size:9pt;color:#888;}' +
+        '#rh-print .ex .nm{font-weight:700;font-size:12pt;}#rh-print .ex .rx{font-weight:600;color:#155;margin:2pt 0;}#rh-print .ex .cu{white-space:pre-wrap;color:#333;font-size:10.5pt;}#rh-print .ex .nt{color:#555;font-size:10.5pt;font-style:italic;margin-top:2pt;}' +
+        '#rh-print .box{border:1px solid #999;padding:8pt 10pt;margin:8pt 0;break-inside:avoid;}#rh-print .box.warn{border-color:#a33;}' +
+        '#rh-print table{border-collapse:collapse;width:100%;font-size:9.5pt;margin-top:6pt;break-inside:avoid;page-break-inside:avoid;}#rh-print th,#rh-print td{border:1px solid #bbb;padding:3pt 4pt;text-align:left;vertical-align:middle;}#rh-print th{background:#eee;font-weight:600;}' +
+        '#rh-print .tick{display:inline-block;width:9pt;height:9pt;border:1px solid #666;margin-right:2pt;vertical-align:middle;}' +
+        '#rh-print .q{margin:3pt 0;}#rh-print .q small{color:#555;}' +
+        '#rh-print .foot{margin-top:14pt;font-size:9pt;color:#666;border-top:1px solid #999;padding-top:4pt;}' +
+        '#rh-print .pb{page-break-before:always;}' +
+      '}';
+    document.head.appendChild(s);
+  }
+  function rhPrintPlan(p, items){
+    rhPrintCss();
+    var host = $c('rh-print'); if (!host){ host = document.createElement('div'); host.id = 'rh-print'; document.body.appendChild(host); }
+    var live = (items || []).filter(function(i){ return !i.removed_at; });
+    var patient = rhPtLabel(p.member_email) || '\u2014', pemail = (p.member_email || '').toLowerCase();
+    var weeks = Math.max(1, Math.min(52, +p.duration_weeks || 4)), start = p.start_date ? new Date(p.start_date + 'T00:00:00') : new Date();
+    var mons = Array.isArray(p.monitor) ? p.monitor : [];
+    var dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    function ticks(n){ var o = ''; for (var i = 0; i < n; i++) o += '<span class="tick"></span>'; return o; }
+    /* one diary table per week: a row per exercise (N tick boxes per day = times daily), plus one row for the monitor check-in */
+    var diary = '';
+    for (var w = 0; w < weeks; w++){
+      var ws = new Date(start.getTime() + w * 7 * 86400000);
+      diary += '<table' + (w % 4 === 0 && w ? ' class="pb"' : '') + '><thead><tr><th style="width:34%;">Week ' + (w + 1) + ' \u2014 from ' + ws.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + '</th>' + dayNames.map(function(d){ return '<th>' + d + '</th>'; }).join('') + '</tr></thead><tbody>' +
+        live.map(function(i){ return '<tr><td>' + esc(i.name) + '<br><small>' + esc((i.times_daily || 1) + '\u00d7 daily' + ((i.days_per_week || 7) < 7 ? ', ' + i.days_per_week + ' days/wk' : '')) + '</small></td>' + dayNames.map(function(){ return '<td>' + ticks(Math.min(4, i.times_daily || 1)) + '</td>'; }).join('') + '</tr>'; }).join('') +
+        (mons.length ? '<tr><td>Check-in (0\u201310): ' + esc(mons.map(function(k){ var m = RH_MONITOR.filter(function(x){ return x.key === k; })[0]; return m ? m.label : k; }).join(' / ')) + '</td>' + dayNames.map(function(){ return '<td style="height:18pt;"></td>'; }).join('') + '</tr>' : '') +
+        '</tbody></table>';
+    }
+    host.innerHTML =
+      '<h1>' + esc(p.name || 'Rehab plan') + '</h1>' +
+      '<div class="meta">For <b>' + esc(patient) + '</b>' + (pemail && pemail !== patient ? ' (' + esc(pemail) + ')' : '') + ' \u00b7 from ' + esc(rhFmt(p.start_date)) + ' \u00b7 ' + weeks + ' week' + (weeks === 1 ? '' : 's') + (rhPartnerName ? ' \u00b7 ' + esc(rhPartnerName) : '') + (p.status ? ' \u00b7 ' + esc(p.status) : '') + '</div>' +
+      (p.note ? '<div class="box"><b>From your physio</b><br>' + esc(p.note).replace(/\n/g, '<br>') + '</div>' : '') +
+      '<h2>Your exercises</h2>' +
+      (live.length ? live.map(function(i, n){ return '<div class="ex">' + (i.image_url ? '<img src="' + esc(i.image_url) + '" alt=""/>' : '<div class="noimg">no picture</div>') + '<div><div class="nm">' + (n + 1) + '. ' + esc(i.name) + '</div><div class="rx">' + esc(rhRxLine(i)) + '</div>' + (i.cues ? '<div class="cu">' + esc(i.cues) + '</div>' : '') + (i.note ? '<div class="nt">' + esc(i.note) + '</div>' : '') + '</div></div>'; }).join('') : '<div class="meta">No exercises on this plan yet.</div>') +
+      (mons.length ? '<h2>After each session</h2><div class="meta">Rate these 0\u201310 once a day, after your exercises:</div>' + mons.map(function(k){ var m = RH_MONITOR.filter(function(x){ return x.key === k; })[0]; return m ? '<div class="q">' + esc(m.q) + ' <small>0 = ' + esc(m.lo) + ' \u00b7 10 = ' + esc(m.hi) + '</small></div>' : ''; }).join('') : '') +
+      (p.safety_netting ? '<div class="box warn"><b>Important</b><br>' + esc(p.safety_netting).replace(/\n/g, '<br>') + '</div>' : '') +
+      (p.red_flags ? '<div class="box warn"><b>Watch for</b><br>' + esc(p.red_flags).replace(/\n/g, '<br>') + '</div>' : '') +
+      '<h2 class="pb">Exercise diary</h2><div class="meta">Tick a box each time you do the exercise. Bring this to your next appointment \u2014 or use the VYVE app and your physio sees it as you go.</div>' + diary +
+      '<div class="foot">VYVE Health CIC \u00b7 vyvehealth.co.uk \u00b7 printed ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) + '</div>';
+    /* let images start loading before the dialog opens; the dialog itself waits for none of them, so a short beat helps */
+    setTimeout(function(){ try { window.print(); } catch(_){} }, 250);
+  }
+  function rhPrintCurrent(){ if (!rhCur) return; rhCollect(); rhPrintPlan(rhCur, rhCur.items); }
+  function rhPrintPv(){ if (pvPlan) rhPrintPlan(pvPlan, pvItems); }
+  if ($c('rh-print-btn')) $c('rh-print-btn').addEventListener('click', rhPrintCurrent);
+  if ($c('pv-print')) $c('pv-print').addEventListener('click', rhPrintPv);
+  /* ============================ end PM-1216 print ============================ */
   boot();
 
 })();

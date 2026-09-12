@@ -1,7 +1,10 @@
   /* PM-1208: shelves. EX_SHELVES = the stock shelves this portal reads (coach: strength, + rehab on opt-in;
      physio: rehab); EX_HOME_SHELF = the shelf a new exercise saved here lands on. Own rows always show. */
   var EX_SHELVES = ['strength'], EX_HOME_SHELF = 'strength', EX_CAT_LABEL = 'All muscle groups';
-  var W3_SEL = 'id,partner_id,library,name,category,equipment,video_url,media_url,cues,muscle_volumes,image_url,exercise_type,default_sets,default_reps,default_rest_seconds,default_duration_seconds,alternatives,video_url_alt,alt_label';
+  /* PM-1216 (physio W5): second axis under a body region. Free text in the column; this is the suggested vocabulary. */
+  var EX_SUBCATS = ['Flexion', 'Extension', 'Side Flexion', 'Rotation', 'Abduction', 'Adduction', 'Stretching', 'Strengthening', 'Swiss Ball', 'Posture', 'Advice'];
+  var exSubSel = '';
+  var W3_SEL = 'id,partner_id,library,name,category,subcategory,equipment,video_url,media_url,cues,muscle_volumes,image_url,exercise_type,default_sets,default_reps,default_rest_seconds,default_duration_seconds,alternatives,video_url_alt,alt_label';
   (function(){
     var st = document.createElement('style');
     st.textContent =
@@ -116,17 +119,48 @@
       if ($c('ex-f-eq')) $c('ex-f-eq').innerHTML = '<option value="">Any equipment</option>' + eo.map(function(c){ return '<option>' + esc(c) + '</option>'; }).join('');
       if ($c('ex-cat-names')) $c('ex-cat-names').innerHTML = co.map(function(c){ return '<option value="' + esc(c) + '">'; }).join('');
       if ($c('ex-eq-names')) $c('ex-eq-names').innerHTML = eo.map(function(c){ return '<option value="' + esc(c) + '">'; }).join('');
+      exSubNames();
     } catch(e){ cexRows = []; }
+  }
+
+  /* ── PM-1216 (physio W5): sub-filter chips under a selected region, in the library and the rehab picker.
+        Painted only when the region has at least one tagged row, so a shelf with no second axis (today's
+        strength stock) renders exactly as before. hostId is created on first use, right after `anchor`'s row. ── */
+  function exSubChips(cat, hostId, anchor, sel, onPick, rowOk){
+    var host = $c(hostId);
+    if (!host){
+      if (!anchor || !anchor.parentElement) return;
+      host = document.createElement('div'); host.id = hostId;
+      host.style.cssText = 'display:none;flex-wrap:wrap;gap:6px;margin:8px 0 2px;';
+      anchor.parentElement.parentElement.insertBefore(host, anchor.parentElement.nextSibling);
+    }
+    var subs = {}, any = 0;
+    if (cat) cexRows.forEach(function(r){ if (r.category === cat && r.subcategory && (!rowOk || rowOk(r))){ subs[r.subcategory] = (subs[r.subcategory] || 0) + 1; any++; } });
+    var keys = Object.keys(subs).sort(function(a, b){ var ia = EX_SUBCATS.indexOf(a), ib = EX_SUBCATS.indexOf(b); if (ia < 0) ia = 99; if (ib < 0) ib = 99; return ia - ib || a.localeCompare(b); });
+    if (!any){ host.style.display = 'none'; host.innerHTML = ''; if (sel){ onPick(''); return true; } return false; }
+    if (sel && !subs[sel]){ onPick(''); return true; }
+    host.style.display = 'flex';
+    host.innerHTML = '<button type="button" class="w3-chip ex-sub" data-ex-sub="" style="' + (sel ? '' : 'border-color:var(--vyve-teal);color:var(--vyve-teal);') + 'cursor:pointer;">All ' + esc(cat) + ' (' + any + ')</button>' +
+      keys.map(function(k){ return '<button type="button" class="w3-chip ex-sub" data-ex-sub="' + esc(k) + '" style="' + (sel === k ? 'border-color:var(--vyve-teal);color:var(--vyve-teal);' : '') + 'cursor:pointer;">' + esc(k) + ' (' + subs[k] + ')</button>'; }).join('');
+    host.querySelectorAll('[data-ex-sub]').forEach(function(b){ b.addEventListener('click', function(){ onPick(b.getAttribute('data-ex-sub')); }); });
+    return false;
+  }
+  function exSubNames(){
+    var seen = {}; EX_SUBCATS.forEach(function(k){ seen[k] = 1; });
+    cexRows.forEach(function(r){ if (r.subcategory) seen[r.subcategory] = 1; });
+    var dl = $c('ex-sub-names'); if (dl) dl.innerHTML = Object.keys(seen).sort().map(function(c){ return '<option value="' + esc(c) + '">'; }).join('');
   }
 
   /* ── #26/#25 exRender v3: browsable card grid with thumbnails + tag chips. ── */
   function exRender(){
     var q = ($c('ex-f-q').value || '').trim().toLowerCase();
     var fc = $c('ex-f-cat').value, fe = $c('ex-f-eq').value;
+    if (exSubChips(fc, 'ex-f-sub', $c('ex-f-cat'), exSubSel, function(v){ exSubSel = v; exRender(); }, function(r){ return (exScope === 'mine' && !r.partner_id) || (exScope === 'vyve' && r.partner_id) ? false : true; })) return; /* selection reset re-rendered */
     var rows = cexRows.filter(function(r){
       if (exScope === 'mine' && !r.partner_id) return false;
       if (exScope === 'vyve' && r.partner_id) return false;
       if (fc && r.category !== fc) return false;
+      if (exSubSel && r.subcategory !== exSubSel) return false;
       if (fe && r.equipment !== fe) return false;
       if (q && (r.name || '').toLowerCase().indexOf(q) < 0 && JSON.stringify(r.muscle_volumes || {}).toLowerCase().indexOf(q) < 0) return false;
       var vsel = $c('ex-f-vidsel') ? $c('ex-f-vidsel').value : '';
@@ -158,7 +192,7 @@
       return '<div class="w3-card"><div class="im"' + (dv ? ' data-ex-play="' + r.id + '" title="Play video"' : '') + '>' + w3ThumbImg(r, '') + (dv ? '<span class="w3-play">\u25b6</span>' : '') + '</div><div class="bd">' +
         '<div class="nm">' + esc(r.name) + ' <span class="src-tag ' + (mine ? 'src-mine' : 'src-vyve') + '">' + (mine ? 'Yours' : 'VYVE') + '</span></div>' +
         '<div>' + w3MvChips(r.muscle_volumes, 3) + dur + '</div>' +
-        '<div style="font-size:11px;color:var(--text-muted);">' + esc(r.category || '') + (r.equipment ? ' \u00b7 ' + esc(r.equipment) : '') + '</div>' +
+        '<div style="font-size:11px;color:var(--text-muted);">' + esc(r.category || '') + (r.subcategory ? ' \u203a ' + esc(r.subcategory) : '') + (r.equipment ? ' \u00b7 ' + esc(r.equipment) : '') + '</div>' +
         (vid || presets ? '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">' + vid + presets + '</div>' : '') +
         '<div style="display:flex;gap:6px;margin-top:auto;padding-top:4px;">' + acts + '</div>' +
         '</div></div>';
@@ -187,6 +221,9 @@
     host.id = 'w3-ex-extras';
     host.innerHTML =
       '<div class="field-row" style="margin-top:2px;">' +
+        '<div class="field"><label>Movement / sub-category</label><input id="w3f-sub" type="text" maxlength="60" list="ex-sub-names" placeholder="e.g. Stretching, Flexion, Advice"/><datalist id="ex-sub-names"></datalist></div>' +
+      '</div>' +
+      '<div class="field-row">' +
         '<div class="field"><label>Exercise type</label><select id="w3f-type"><option value="reps">Sets &amp; reps</option><option value="duration">Time-based (hold / work interval)</option></select></div>' +
         '<div class="field" id="w3f-durwrap" style="display:none;"><label>Default seconds per set</label><input id="w3f-dur" type="number" min="5" step="5" placeholder="30"/></div>' +
       '</div>' +
@@ -249,7 +286,7 @@
     var player = url
       ? '<video controls autoplay playsinline preload="metadata" style="width:100%;aspect-ratio:16/9;background:#000;border-radius:10px;display:block;"' + (poster ? ' poster="' + esc(poster) + '"' : '') + ' src="' + esc(url) + '"></video>'
       : '<div style="position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:10px;overflow:hidden;"><iframe src="https://www.youtube-nocookie.com/embed/' + esc(yid) + '?autoplay=1&rel=0&modestbranding=1&playsinline=1" title="' + esc(r.name) + '" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0;"></iframe></div>';
-    var meta = [r.category, r.equipment].filter(Boolean).map(esc).join(' \u00b7 ');
+    var meta = [r.category, r.subcategory, r.equipment].filter(Boolean).map(esc).join(' \u00b7 ');
     var m = document.createElement('div');
     m.className = 'w3-modal'; m.id = 'ex-play-sheet';
     m.innerHTML = '<div class="in" style="width:min(760px,96vw);max-height:92vh;display:flex;flex-direction:column;">' +
@@ -279,6 +316,7 @@
     $c('exf-name').value = seed.name || '';
     $c('exf-cat').value = seed.category || '';
     $c('exf-eq').value = seed.equipment || '';
+    $c('w3f-sub').value = seed.subcategory || ''; exSubNames();
     $c('exf-video').value = (row && (row.video_url || (!row.partner_id ? row.media_url : ''))) || ''; /* PM-1157: stock rows show what a member actually plays (video_url ∥ media_url) */
     $c('exf-cues').value = seed.cues || '';
     $c('w3f-type').value = seed.exercise_type === 'duration' ? 'duration' : 'reps';
@@ -296,7 +334,7 @@
     w3AltsPaint();
     $c('cex-alt-names').innerHTML = cexRows.slice(0, 900).map(function(r){ return '<option value="' + esc(r.name) + '">'; }).join('');
     var ro = row && !mine;
-    ['exf-name','exf-cat','exf-eq','exf-video','exf-cues','w3f-type','w3f-dur','w3f-dsets','w3f-dreps','w3f-drest','w3f-alt-q'].forEach(function(id){ var el = $c(id); if (el) el.disabled = ro; });
+    ['exf-name','exf-cat','exf-eq','w3f-sub','exf-video','exf-cues','w3f-type','w3f-dur','w3f-dsets','w3f-dreps','w3f-drest','w3f-alt-q'].forEach(function(id){ var el = $c(id); if (el) el.disabled = ro; });
     $c('w3-ex-extras').querySelectorAll('.mv-m,.mv-w,.mv-x').forEach(function(el){ el.disabled = ro; });
     $c('ex-save').style.display = ro ? 'none' : '';
     $c('ex-msg').textContent = ro ? 'VYVE library exercise \u2014 duplicate it to your library to change anything.' : (dupFrom ? 'Saving adds a copy you fully own \u2014 rename it or attach your own video.' : '');
@@ -317,6 +355,7 @@
     var body = {
       name: name,
       category: $c('exf-cat').value.trim() || null,
+      subcategory: $c('w3f-sub').value.trim() || null,
       equipment: $c('exf-eq').value.trim() || null,
       video_url: vraw || null,
       cues: $c('exf-cues').value.trim() || null,

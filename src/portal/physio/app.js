@@ -79,7 +79,7 @@
       }
       /* PM-1211: the rehab face is a capability VYVE grants (partner_partners.capabilities.rehab), not something a coach opts into */
       var caps = null;
-      try { var pr = await rest('/partner_partners?id=eq.' + partnerId + '&select=capabilities'); caps = pr && pr[0] && pr[0].capabilities; } catch(_){}
+      try { var pr = await rest('/partner_partners?id=eq.' + partnerId + '&select=capabilities,name'); caps = pr && pr[0] && pr[0].capabilities; rhPartnerName = (pr && pr[0] && pr[0].name) || ''; } catch(_){}
       if (!caps || !caps.rehab){
         $c('pt-list').innerHTML = '<div class="empty-state"><h3>Physio access not switched on</h3><p>Your partner account doesn\u2019t have the rehab tools enabled yet \u2014 contact the VYVE team.</p></div>';
         $c('pt-add-toggle').style.display = 'none';
