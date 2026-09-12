@@ -26,9 +26,9 @@
       '#w3-recbar .bar{flex:1;height:22px;background:repeating-linear-gradient(90deg,rgba(232,131,74,.7) 0 2px,transparent 2px 5px);border-radius:3px;}' +
       '#w3-recbar .t{font-size:12px;color:#E8834A;font-weight:700;white-space:nowrap;}' +
       '.w3-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:900;display:flex;align-items:center;justify-content:center;padding:16px;}' +
-      '.w3-modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;width:100%;max-width:460px;max-height:90vh;overflow:auto;}' +
-      '.w3-modal h3{font-size:14px;margin:0 0 8px;}.w3-modal label{display:block;font-size:11.5px;color:var(--text-muted);margin:10px 0 4px;}' +
-      '.w3-modal input[type=text]{width:100%;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font:inherit;}' +
+      '.w3-mdlg{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;width:100%;max-width:460px;max-height:90vh;overflow:auto;}' +
+      '.w3-mdlg h3{font-size:14px;margin:0 0 8px;}.w3-mdlg label{display:block;font-size:11.5px;color:var(--text-muted);margin:10px 0 4px;}' +
+      '.w3-mdlg input[type=text]{width:100%;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font:inherit;}' +
       '.w3-cl{display:flex;flex-wrap:wrap;gap:6px;}.w3-cl span{border:1px solid var(--border);border-radius:99px;padding:4px 10px;font-size:12px;cursor:pointer;user-select:none;}.w3-cl span.on{background:#1B7878;border-color:#1B7878;color:#fff;}' +
       '.w3-note{font-size:11.5px;color:var(--text-muted);margin-top:8px;}' +
       '#msg-head .w3-hm{font-size:11.5px;color:var(--text-muted);font-weight:400;}#msg-head .w3-hm u{cursor:pointer;}' +
@@ -414,7 +414,7 @@
     var act = roster.filter(function(c){ return c.status === 'active' && !c.lapsed_at; });
     var have = {}; (thread && thread.coach_thread_members || []).forEach(function(m){ have[(m.member_email || '').toLowerCase()] = 1; });
     var bg = document.createElement('div'); bg.className = 'w3-modal-bg';
-    bg.innerHTML = '<div class="w3-modal"><h3>' + (thread ? 'Manage group' : 'New message') + '</h3>' +
+    bg.innerHTML = '<div class="w3-mdlg"><h3>' + (thread ? 'Manage group' : 'New message') + '</h3>' +
       '<label>' + (thread ? 'Clients in this group' : 'To') + '</label><div class="w3-cl" id="w3-cl">' + (act.length ? act.map(function(c){ var em = (c.member_email || '').toLowerCase(); return '<span data-em="' + esc(em) + '" class="' + (have[em] ? 'on' : '') + '">' + esc(nameOf(c)) + '</span>'; }).join('') : '<span style="border:0;color:var(--text-muted);">No active clients</span>') + '</div>' +
       (thread ? '' : '<label>Send as</label><div class="w3-cl" id="w3-mode"><span data-m="group" class="on">One group conversation</span><span data-m="sep">Separate messages</span></div>') +
       '<div id="w3-namewrap"><label>Group name</label><input type="text" id="w3-name" maxlength="80" placeholder="e.g. Monday 6am crew" value="' + esc(thread ? thread.title : '') + '"></div>' +
