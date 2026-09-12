@@ -13010,9 +13010,12 @@
       '.exv2-chip.on{border-color:var(--teal);color:var(--teal-lt);background:rgba(27,120,120,.12);font-weight:600;}' +
       '.w3-card .exv2-star{position:absolute;top:6px;left:6px;width:26px;height:26px;border-radius:50%;background:rgba(13,43,43,.55);color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;border:0;cursor:pointer;z-index:2;}' +
       '.w3-card .exv2-star.on{color:var(--gold);}' +
-      '.exv2-modal .in{max-width:1400px;height:92vh;}' +
+      '.exv2-modal{justify-content:flex-end;align-items:stretch;padding:0;}' +
+      '.exv2-modal .in{max-width:min(1180px,88vw);width:100%;height:100vh;max-height:100vh;border-radius:14px 0 0 14px;transform:translateX(100%);transition:transform .22s ease;}' +
+      '.exv2-modal.open .in{transform:none;}' +
       '.exv2-modal .in .sc{flex:1;}' +
-      '.exv2-modal .exv2-rail{max-height:calc(92vh - 130px);}' +
+      '.exv2-modal .exv2-rail{max-height:calc(100vh - 150px);}' +
+      '.exv2-modal .in .hd{flex-wrap:wrap;}' +
       '.exv2-picks{display:flex;gap:6px;flex-wrap:wrap;align-items:center;min-height:30px;}' +
       '.exv2-pk{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 8px;border-radius:999px;background:rgba(27,120,120,.14);color:var(--teal-lt);font-size:11.5px;font-weight:600;}' +
       '.exv2-pk button{background:none;border:0;color:inherit;cursor:pointer;font-size:13px;padding:0;line-height:1;}' +
@@ -13222,7 +13225,22 @@
   exInit = async function(){ await Promise.all([exLoad(), exv2FavsLoad()]); exv2Ensure(); exv2RailPaint(); exRender(); };
   /* exLoad is also called from go() for the workout sections — keep the rail's counts in step */
   var _exv2Load = exLoad;
-  exLoad = async function(){ var r = await _exv2Load.apply(this, arguments); if (exv2.built) exv2RailPaint(); return r; };
+  exLoad = async function(){
+    /* PM-1225: single-flight. Two callers (exInit and go()'s section preload) could both pass the
+       cexLoaded=false guard and both concat their pages — every row twice, "2,956 exercises". */
+    if (cexLoaded) return;
+    if (exv2.loading) return exv2.loading;
+    var self = this, args = arguments;
+    exv2.loading = (async function(){
+      try {
+        var r = await _exv2Load.apply(self, args);
+        var seen = {}; cexRows = cexRows.filter(function(x){ if (!x || seen[x.id]) return false; seen[x.id] = 1; return true; });
+        if (exv2.built) exv2RailPaint();
+        return r;
+      } finally { exv2.loading = null; }
+    })();
+    return exv2.loading;
+  };
 
   /* ── the picker: the library moves into a sheet over the builder, Done drops rows into the block ── */
   var exv2Modal = null;
@@ -13256,6 +13274,7 @@
     $c('exv2-mtitle').textContent = 'Choose exercises \u2014 ' + blockLabel;
     $c('exv2-mbody').appendChild(w);
     exv2Modal.style.display = 'flex';
+    setTimeout(function(){ exv2Modal.classList.add('open'); }, 10);
     exv2PicksPaint(); exRender();
     var q = $c('ex-f-q'); if (q){ q.value = ''; try { q.focus(); } catch(_){} }
   }
@@ -13276,6 +13295,7 @@
     var w = $c('exv2-wrap');
     if (w && p.home){ if (p.next && p.next.parentElement === p.home) p.home.insertBefore(w, p.next); else p.home.appendChild(w); }
     exv2.pick = null;
+    exv2Modal.classList.remove('open');
     exv2Modal.style.display = 'none';
     exRender();
   }
@@ -13284,13 +13304,21 @@
   var _exv2RDE = renderDayEditor;
   renderDayEditor = function(container, day){
     _exv2RDE.apply(this, arguments);
+    /* PM-1225 (Dean): "+ Exercise" itself opens the library drawer — that is the add path. The
+       blank typed row survives as a quiet secondary link for coaches who know the name. */
     [['de-add-warm', 'de-warm', 'Warm up', { sets: '1', reps: '', rest_seconds: 0 }], ['de-add-main', 'de-main', 'Workout', {}], ['de-add-cool', 'de-cool', 'Cool down', { sets: '1', reps: '', rest_seconds: 0 }]].forEach(function(spec){
-      var btn = container.querySelector('.' + spec[0]); if (!btn || btn.nextElementSibling && btn.nextElementSibling.classList.contains('exv2-choose')) return;
-      var b = document.createElement('button');
-      b.type = 'button'; b.className = 'btn btn-primary exv2-choose'; b.style.cssText = 'font-size:11.5px;padding:5px 10px;margin-left:6px;';
-      b.textContent = '\u2630 Choose from library';
-      b.addEventListener('click', function(){ exv2PickerOpen(container.querySelector('.' + spec[1]), spec[2], spec[3]); });
-      btn.parentElement.insertBefore(b, btn.nextSibling);
+      var btn = container.querySelector('.' + spec[0]); if (!btn || btn.dataset.exv2) return;
+      var fresh = btn.cloneNode(true);          /* drops the original "add a blank row" listener */
+      fresh.dataset.exv2 = '1';
+      fresh.classList.add('btn-primary');
+      fresh.textContent = '+ ' + (spec[2] === 'Workout' ? 'Add exercises' : spec[2] + ' exercises');
+      fresh.addEventListener('click', function(){ exv2PickerOpen(container.querySelector('.' + spec[1]), spec[2], spec[3]); });
+      btn.parentElement.replaceChild(fresh, btn);
+      var link = document.createElement('button');
+      link.type = 'button'; link.className = 'btn exv2-blank'; link.style.cssText = 'font-size:11px;padding:5px 8px;margin-left:6px;border-color:transparent;color:var(--text-muted);';
+      link.textContent = 'or type a name';
+      link.addEventListener('click', function(){ addDayRow(container.querySelector('.' + spec[1]), Object.assign({}, spec[3])); var host = container.closest('[data-w3-tvs-host]') || container; if (typeof w3TvsRefresh === 'function') w3TvsRefresh(host); });
+      fresh.parentElement.insertBefore(link, fresh.nextSibling);
     });
   };
 
