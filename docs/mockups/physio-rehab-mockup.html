@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="robots" content="noindex,nofollow"/>
+<title>VYVE Rehab — mockup (Wave 1, PM-1210)</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+/* CC tokens (assets/tokens.css) inlined so this file stands alone. No schema, no code paths — a picture to react to. */
+:root{--vyve-dark:#0D2B2B;--vyve-teal:#1B7878;--vyve-teal-light:#4DAAAA;--vyve-gold:#C9A84C;--pillar-physical:#D49B2C;--pillar-mental:#4DAAAA;--pillar-social:#D17F6E;
+--bg:#F7F9F9;--surface:#FFFFFF;--surface-2:#F0F4F4;--surface-3:#E4EBEB;--border:rgba(13,43,43,.09);--border-strong:rgba(13,43,43,.18);--text:#0D2B2B;--text-muted:#4E6E6E;--text-dim:#8CA6A6;
+--success:#1F8F45;--warning:#E09B3D;--danger:#C64545;--info:#3D7FD9;--accent:#1B7878;--accent-pale:#DEEFEF;--on-accent:#fff;--gold:#A8873A;--gold-pale:rgba(201,168,76,.14);
+--sidebar-bg:#0D2B2B;--sidebar-text:rgba(245,242,236,.75);--sidebar-active:rgba(77,170,170,.16);--sidebar-active-fg:#EAF5F5;--sidebar-hover:rgba(255,255,255,.05);
+--font:'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;--mono:'DM Mono','SF Mono',ui-monospace,monospace;--shadow-lg:0 24px 64px rgba(0,0,0,.18);}
+html[data-theme="dark"]{--bg:#081616;--surface:#0E2222;--surface-2:#132C2C;--surface-3:#1A3838;--border:rgba(141,196,196,.12);--border-strong:rgba(141,196,196,.22);--text:#E9F3F3;--text-muted:#93B3B3;--text-dim:#5E7D7D;
+--success:#4ADE80;--warning:#E8A855;--danger:#F87171;--info:#60A5FA;--accent:#4DAAAA;--accent-pale:rgba(77,170,170,.10);--on-accent:#081616;--gold:#D5B65E;--gold-pale:rgba(213,182,94,.12);--sidebar-bg:#061212;--shadow-lg:0 24px 64px rgba(0,0,0,.6);}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0}
+.btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 14px;border:1px solid var(--border-strong);border-radius:8px;background:var(--surface);color:var(--text);font-weight:600;font-size:13px}
+.btn:hover{background:var(--surface-2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.sm{height:28px;padding:0 10px;font-size:12px}
+.btn.ghost{background:transparent}
+.btn.on{background:var(--accent-pale);border-color:var(--accent);color:var(--accent)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px}
+.muted{color:var(--text-muted)}.dim{color:var(--text-dim)}.small{font-size:12px}.xs{font-size:11px}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+h1{font-size:22px;font-weight:700;line-height:1.2}h2{font-size:16px;font-weight:700}h3{font-size:14px;font-weight:700}
+input[type=text],input[type=date],input[type=number],select,textarea{height:34px;padding:0 10px;border:1px solid var(--border-strong);border-radius:8px;background:var(--surface-2);color:var(--text);width:100%}
+textarea{height:auto;padding:8px 10px;resize:vertical}
+label.f{display:block;font-size:12px;color:var(--text-muted);margin-bottom:4px}
+.pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;border:1px solid var(--border-strong)}
+.pill.teal{color:var(--accent);border-color:var(--accent);background:var(--accent-pale)}
+.pill.gold{color:var(--gold);border-color:var(--gold);background:var(--gold-pale)}
+.pill.ok{color:var(--success);border-color:var(--success)}
+.pill.warn{color:var(--warning);border-color:var(--warning)}
+.pill.bad{color:var(--danger);border-color:var(--danger)}
+
+/* switcher */
+.top{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-wrap:wrap}
+.top .brand{font-weight:700;letter-spacing:.06em;margin-right:8px}
+.top .sw{display:flex;gap:4px;background:var(--surface-2);padding:3px;border-radius:10px}
+.top .sw button{padding:6px 12px;border-radius:8px;font-weight:600;font-size:13px;color:var(--text-muted)}
+.top .sw button.on{background:var(--surface);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.ribbon{margin-left:auto;font-size:11px;color:var(--warning);border:1px solid var(--warning);border-radius:6px;padding:2px 8px}
+.screen{display:none}.screen.on{display:block}
+
+/* portal chrome */
+.portal{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 53px)}
+.side{background:var(--sidebar-bg);color:var(--sidebar-text);padding:16px 10px;display:flex;flex-direction:column;gap:2px}
+.side .sb{font-weight:700;letter-spacing:.08em;color:#EAF5F5;padding:6px 10px 14px}
+.side .it{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;font-size:13.5px;text-align:left;color:var(--sidebar-text);width:100%}
+.side .it:hover{background:var(--sidebar-hover)}.side .it.on{background:var(--sidebar-active);color:var(--sidebar-active-fg);font-weight:600}
+.side .it svg{width:16px;height:16px;flex:none}
+.side .foot{margin-top:auto;font-size:11px;color:rgba(255,255,255,.35);padding:10px}
+.main{padding:20px 24px;max-width:1120px}
+.topbar{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.topbar .who{margin-left:auto;font-size:12.5px;color:var(--text-muted)}
+.grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;align-items:start}
+@media (max-width:900px){.portal{grid-template-columns:1fr}.side{flex-direction:row;flex-wrap:wrap;padding:8px}.side .sb,.side .foot{display:none}.side .it{width:auto;padding:7px 10px}.grid2{grid-template-columns:1fr}}
+
+/* builder */
+.ex{border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;background:var(--surface-2)}
+.ex .hd{display:flex;align-items:center;gap:10px}
+.ex .th{width:56px;height:40px;border-radius:6px;background:linear-gradient(135deg,var(--surface-3),var(--accent-pale));flex:none;display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:16px}
+.ex .nm{font-weight:600}
+.rx{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:10px}
+.rx .c{display:flex;flex-direction:column;gap:3px}
+.rx .c span{font-size:10.5px;color:var(--text-muted)}
+.rx input,.rx select{height:30px;font-size:13px;padding:0 8px}
+@media (max-width:700px){.rx{grid-template-columns:repeat(3,1fr)}}
+.chk{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;cursor:pointer;background:var(--surface-2)}
+.chk input{width:16px;height:16px;accent-color:var(--accent)}
+.chk.on{border-color:var(--accent)}
+.q{padding:8px 10px;border-left:3px solid var(--accent);background:var(--surface-2);border-radius:0 8px 8px 0;margin-bottom:6px;font-size:13px}
+.q .ends{display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-top:4px}
+.safety{border:1px dashed var(--warning);border-radius:8px;padding:10px 12px;font-size:12.5px;color:var(--warning);background:rgba(232,168,85,.06)}
+.sum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.sum .k{font-size:11px;color:var(--text-muted)}.sum .v{font-size:20px;font-weight:700;font-family:var(--mono)}
+
+/* library picker sheet + generic modal */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100;display:none;align-items:center;justify-content:center;padding:16px}
+.modal.on{display:flex}
+.modal .in{background:var(--surface);border:1px solid var(--border);border-radius:14px;width:min(720px,100%);max-height:88vh;display:flex;flex-direction:column;box-shadow:var(--shadow-lg)}
+.modal .hd{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border)}
+.modal .sc{overflow:auto;padding:14px 16px}
+.lib{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.lib .c{border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--surface-2);cursor:pointer}
+.lib .c .im{height:80px;background:linear-gradient(135deg,var(--surface-3),var(--accent-pale));display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:20px}
+.lib .c .bd{padding:8px 10px;font-size:12.5px}
+.lib .c:hover{border-color:var(--accent)}
+
+/* phone */
+.phonewrap{display:flex;justify-content:center;gap:28px;padding:24px 16px;align-items:flex-start;flex-wrap:wrap}
+.phone{width:390px;height:800px;border:10px solid #1B2B2B;border-radius:44px;background:var(--bg);position:relative;overflow:hidden;box-shadow:var(--shadow-lg)}
+.phone .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:120px;height:28px;background:#1B2B2B;border-radius:0 0 18px 18px;z-index:5}
+.phone .scr{position:absolute;inset:0;overflow:auto;padding:44px 16px 90px}
+.phone .nav{position:absolute;left:0;right:0;bottom:0;height:72px;background:var(--surface);border-top:1px solid var(--border);display:flex;justify-content:space-around;align-items:center;padding-bottom:12px;z-index:5}
+.phone .nav div{font-size:10.5px;color:var(--text-dim);display:flex;flex-direction:column;align-items:center;gap:3px}
+.phone .nav div.on{color:var(--accent);font-weight:700}
+.phone .nav .ic{width:22px;height:22px;border-radius:6px;background:currentColor;opacity:.25}
+.phone .nav div.on .ic{opacity:1;background:var(--accent)}
+.hero{background:linear-gradient(160deg,var(--surface-2),var(--surface));border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:12px}
+.wk{display:flex;gap:4px;margin-top:8px}.wk i{flex:1;height:6px;border-radius:3px;background:var(--surface-3)}.wk i.d{background:var(--accent)}
+.pex{display:flex;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:10px;margin-bottom:8px}
+.pex .th{width:64px;height:48px;border-radius:8px;background:linear-gradient(135deg,var(--surface-3),var(--accent-pale));display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:18px;flex:none}
+.pex .nm{font-weight:600;font-size:13.5px}.pex .rx{display:block;font-size:11.5px;color:var(--text-muted);margin-top:2px}
+.pex .act{display:flex;gap:6px;margin-top:6px}
+.pex .act button{height:26px;padding:0 9px;border-radius:7px;border:1px solid var(--border-strong);font-size:11.5px;font-weight:600;background:var(--surface-2)}
+.pex .act button.done{background:var(--success);border-color:var(--success);color:#081616}
+.pex .act button.skip{background:var(--surface-3)}
+.pex .act button.lk{padding:0 7px}.pex .act button.lk.on{border-color:var(--accent);color:var(--accent);background:var(--accent-pale)}
+.pex.d{opacity:.72}
+.note{background:var(--gold-pale);border:1px solid var(--gold);border-radius:12px;padding:10px 12px;font-size:12.5px;margin-bottom:12px}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--surface);border-radius:22px 22px 0 0;border-top:1px solid var(--border);padding:12px 16px 24px;transform:translateY(105%);transition:transform .28s ease;z-index:20;box-shadow:var(--shadow-lg);max-height:92%;overflow:auto}
+.sheet.on{transform:none}
+.sheet .grab{width:40px;height:4px;border-radius:2px;background:var(--border-strong);margin:0 auto 12px}
+.sl{margin-bottom:14px}.sl .qq{font-weight:600;font-size:13.5px}
+.sl input[type=range]{width:100%;accent-color:var(--accent);margin:8px 0 2px}
+.sl .ends{display:flex;justify-content:space-between;font-size:10.5px;color:var(--text-muted)}
+.sl .val{font-family:var(--mono);font-size:12px;color:var(--accent);float:right}
+.bigbtn{display:block;width:100%;height:46px;border-radius:12px;background:var(--accent);color:var(--on-accent);font-weight:700;font-size:15px;margin-top:6px}
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:15;display:none}.scrim.on{display:block}
+.aside{max-width:340px;font-size:13px;color:var(--text-muted)}
+.aside h3{color:var(--text);margin-bottom:6px}
+.aside li{margin:0 0 8px 16px}
+
+/* patient view */
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:14px}
+.tabs button{padding:9px 14px;font-weight:600;font-size:13.5px;color:var(--text-muted);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button.on{color:var(--text);border-bottom-color:var(--accent)}
+.tab{display:none}.tab.on{display:block}
+.trk{width:100%;border-collapse:collapse;font-size:12.5px}
+.trk th{font-weight:600;color:var(--text-muted);font-size:11px;padding:4px 6px;text-align:center;border-bottom:1px solid var(--border)}
+.trk th:first-child,.trk td:first-child{text-align:left;white-space:nowrap}
+.trk td{padding:6px;text-align:center}
+.dot{display:inline-block;width:12px;height:12px;border-radius:50%;background:var(--surface-3)}
+.dot.y{background:var(--success)}.dot.n{background:var(--danger);opacity:.85}.dot.p{background:var(--warning)}
+.ring{width:110px;height:110px;position:relative;flex:none}
+.ring svg{transform:rotate(-90deg)}
+.ring .n{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:22px}
+.ring .n small{font-family:var(--font);font-weight:500;font-size:10.5px;color:var(--text-muted)}
+.chart{width:100%;height:190px;display:block}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--text-muted);margin-top:6px}.legend i{display:inline-block;width:10px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
+.alert{border:1px solid var(--warning);background:rgba(232,168,85,.08);border-radius:10px;padding:10px 12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.alert b{color:var(--warning)}
+.thread{border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:var(--surface-2);font-size:13px}
+.thread .m{margin-bottom:8px}.thread .m small{display:block;color:var(--text-dim);font-size:11px}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <span class="brand">VYVE</span>
+  <div class="sw" role="tablist">
+    <button class="on" data-s="a">1 · Physio — plan builder</button>
+    <button data-s="b">2 · Patient — Rehab tab</button>
+    <button data-s="c">3 · Physio — patient view</button>
+  </div>
+  <button class="btn sm ghost" id="theme">Light / dark</button>
+  <span class="ribbon">Mockup — copy not final (Lewis), clinical wording not final (Phil)</span>
+</div>
+
+<!-- ============================ SCREEN A: plan builder ============================ -->
+<section class="screen on" id="s-a">
+<div class="portal">
+  <aside class="side">
+    <div class="sb">VYVE</div>
+    <button class="it"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Patients</button>
+    <button class="it on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg>Plans</button>
+    <button class="it"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>Library</button>
+    <button class="it"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Templates</button>
+    <button class="it"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Messages</button>
+    <button class="it"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</button>
+    <div class="foot">Physio Portal · Riverside Physio</div>
+  </aside>
+  <div class="main">
+    <div class="topbar"><h1>New rehab plan</h1><span class="pill teal">Draft</span><span class="who">Phil Carter · Riverside Physio</span></div>
+    <div class="grid2">
+      <div>
+        <div class="card" style="margin-bottom:14px">
+          <div class="row" style="gap:12px;margin-bottom:10px">
+            <div style="flex:2;min-width:200px"><label class="f">Plan name</label><input type="text" value="Knee rehab — Phase 1"/></div>
+            <div style="flex:1.4;min-width:170px"><label class="f">Patient</label><select><option>Sarah Ahmed</option><option>Tom Reilly</option><option>+ New patient…</option></select></div>
+          </div>
+          <div class="row" style="gap:12px">
+            <div style="flex:1;min-width:140px"><label class="f">Start date</label><input type="date" value="2026-09-14"/></div>
+            <div style="flex:1;min-width:120px"><label class="f">Duration (weeks)</label><input type="number" id="wks" value="6" min="1" max="20"/></div>
+            <div style="flex:1;min-width:140px"><label class="f">Template</label><select><option>None — build from scratch</option><option>Knee — ACL rehab, Phase 1</option><option>Knee — Meniscus, Weeks 1–2</option></select></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:14px">
+          <div class="row" style="margin-bottom:10px"><h2>Exercises</h2><span class="muted small" id="excount">3 exercises</span><button class="btn sm" style="margin-left:auto" id="addex">+ Add from library</button></div>
+          <div id="exlist"></div>
+          <p class="xs dim" style="margin-top:6px">Each exercise carries a rehab prescription — hold, repeat, times daily, rest, days per week, both sides. The patient's app turns this into today's session and the reminders.</p>
+        </div>
+
+        <div class="card" style="margin-bottom:14px">
+          <h2 style="margin-bottom:8px">Note to Sarah</h2>
+          <textarea rows="3">Go gently this week — the goal is control, not range. If the knee swells after a session, skip the next one and tell me.</textarea>
+          <div style="margin-top:12px"><h3 style="margin-bottom:6px">Safety netting <span class="pill warn" style="margin-left:6px">Phil's copy</span></h3>
+            <div class="safety">Fixed paragraph shown to every patient on every plan — when to stop and seek urgent help. Wording is Phil's and Lewis's; nothing ships until they sign it off.</div></div>
+          <div style="margin-top:12px"><label class="f">Red flags for this plan (optional)</label><input type="text" value="Locking or giving way; swelling that doesn't settle overnight"/></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card" style="margin-bottom:14px">
+          <h2 style="margin-bottom:4px">Monitor</h2>
+          <p class="small muted" style="margin-bottom:10px">Tick what you want to track. Sarah answers these once a day, after her last session.</p>
+          <div id="mon"></div>
+          <div style="margin-top:12px"><h3 style="margin-bottom:6px">What Sarah will be asked</h3><div id="monq"></div></div>
+          <p class="xs dim">Plus: "Anything you want to ask your physio?" — lands in your Messages.</p>
+        </div>
+
+        <div class="card" style="margin-bottom:14px">
+          <h2 style="margin-bottom:8px">This plan adds up to</h2>
+          <div class="sum">
+            <div><div class="k">Sessions / day</div><div class="v" id="s-day">3</div></div>
+            <div><div class="k">Days / week</div><div class="v" id="s-wk">5</div></div>
+            <div><div class="k">Sessions in plan</div><div class="v" id="s-tot">90</div></div>
+          </div>
+          <p class="xs dim" style="margin-top:8px">Adherence = sessions done ÷ this number. Reminders go at 8am, 1pm and 7pm (Sarah can move them).</p>
+        </div>
+
+        <div class="card">
+          <h2 style="margin-bottom:6px">Send to Sarah</h2>
+          <p class="small muted" style="margin-bottom:10px">She gets the VYVE app invite with her free rehab month applied. The plan is in the app when she opens it — no PDF, no code.</p>
+          <button class="btn primary" style="width:100%;height:40px" id="send">Send plan &amp; invite</button>
+          <div class="row" style="margin-top:8px"><button class="btn sm ghost">Save as template</button><button class="btn sm ghost">Export PDF (paper fallback)</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ============================ SCREEN B: patient Rehab tab ============================ -->
+<section class="screen" id="s-b">
+<div class="phonewrap">
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="scr">
+      <div class="row" style="justify-content:space-between;margin-bottom:10px"><h1 style="font-size:20px">Rehab</h1><span class="pill teal">Week 2 of 6</span></div>
+      <div class="hero">
+        <div style="font-weight:700;font-size:15px">Knee rehab — Phase 1</div>
+        <div class="small muted">From Phil Carter · Riverside Physio</div>
+        <div class="row" style="margin-top:10px;gap:16px">
+          <div><div style="font-family:var(--mono);font-size:22px;font-weight:700" id="today-n">1 <span class="muted" style="font-size:13px">/ 3</span></div><div class="xs muted">sessions today</div></div>
+          <div><div style="font-family:var(--mono);font-size:22px;font-weight:700">9 <span style="font-size:13px">🔥</span></div><div class="xs muted">day streak</div></div>
+          <div><div style="font-family:var(--mono);font-size:22px;font-weight:700">78%</div><div class="xs muted">on plan</div></div>
+        </div>
+        <div class="wk"><i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="xs dim" style="margin-top:4px">Next reminder 1:00pm</div>
+      </div>
+
+      <div class="note" id="pnote"><b>Note from Phil</b> — Go gently this week: the goal is control, not range. If the knee swells after a session, skip the next one and tell me. <button class="btn sm ghost" style="height:24px;margin-top:6px" onclick="document.getElementById('pnote').style.display='none'">Got it</button></div>
+
+      <h3 style="margin-bottom:8px">This session — 1:00pm</h3>
+      <div id="pex"></div>
+      <button class="bigbtn" id="finish">Finish session</button>
+      <p class="xs dim" style="text-align:center;margin-top:8px">Videos play offline once downloaded · Long-press an exercise for the instruction</p>
+    </div>
+    <div class="scrim" id="scrim"></div>
+    <div class="sheet" id="sheet">
+      <div class="grab"></div>
+      <h2 style="margin-bottom:2px">How did that go?</h2>
+      <p class="small muted" style="margin-bottom:12px">Three quick questions for Phil. Once a day, after your last session.</p>
+      <div class="sl"><div class="qq">How is your pain today? <span class="val" id="v1">4</span></div><input type="range" min="0" max="10" value="4" oninput="document.getElementById('v1').textContent=this.value"/><div class="ends"><span>No pain</span><span>Worst pain possible</span></div></div>
+      <div class="sl"><div class="qq">How is your mobility today? <span class="val" id="v2">6</span></div><input type="range" min="0" max="10" value="6" oninput="document.getElementById('v2').textContent=this.value"/><div class="ends"><span>I can't move at all</span><span>I have full mobility</span></div></div>
+      <div class="sl"><div class="qq">How difficult was the session? <span class="val" id="v3">5</span></div><input type="range" min="0" max="10" value="5" oninput="document.getElementById('v3').textContent=this.value"/><div class="ends"><span>Easy</span><span>Very difficult</span></div></div>
+      <div class="sl"><div class="qq">Anything you want to ask Phil?</div><textarea rows="2" placeholder="Optional — goes straight to Phil" style="margin-top:6px;font-size:13px"></textarea></div>
+      <button class="bigbtn" id="submit">Send to Phil</button>
+      <div id="sent" style="display:none;text-align:center;padding:18px 0 6px"><div style="font-size:28px">✓</div><div style="font-weight:700">Sent</div><div class="small muted">Phil sees your pain trend and today's session without you having to chase.</div><button class="btn sm" style="margin-top:12px" id="closesheet">Back to Rehab</button></div>
+    </div>
+    <div class="nav">
+      <div><span class="ic"></span>Home</div><div><span class="ic"></span>Body</div><div><span class="ic"></span>Mind</div><div class="on"><span class="ic"></span>Rehab</div><div><span class="ic"></span>More</div>
+    </div>
+  </div>
+  <div class="aside">
+    <h3>What's different from a PDF or a web link</h3>
+    <ul>
+      <li>The Rehab tab only exists while there's an active plan — it appears when the physio sends one and goes when the plan ends.</li>
+      <li>Each exercise is done or skipped, with a thumbs up/down; the sliders come once a day and only for what the physio ticked.</li>
+      <li>Push reminders at the prescribed times; videos cached for offline; the existing player, streaks and check-ins are reused.</li>
+      <li>"Ask Phil" lands in the coach thread that already exists in the app.</li>
+      <li>Every string here is a placeholder until Lewis signs it; the slider wording is RMP's for reference until Phil replaces it.</li>
+    </ul>
+  </div>
+</div>
+</section>
+
+<!-- ============================ SCREEN C: physio patient view ============================ -->
+<section class="screen" id="s-c">
+<div class="portal">
+  <aside class="side">
+    <div class="sb">VYVE</div>
+    <button class="it on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Patients</button>
+    <button class="it"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg>Plans</button>
+    <button class="it"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>Library</button>
+    <button class="it"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Templates</button>
+    <button class="it"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Messages <span class="pill teal" style="margin-left:auto">1</span></button>
+    <button class="it"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/></svg>Settings</button>
+    <div class="foot">Physio Portal · Riverside Physio</div>
+  </aside>
+  <div class="main">
+    <div class="topbar"><div><h1>Sarah Ahmed</h1><div class="small muted">Knee rehab — Phase 1 · started 30 Aug · week 2 of 6 · last active today, 1:04pm</div></div><span class="who"><button class="btn sm">Message</button> <button class="btn sm">Edit plan</button></span></div>
+
+    <div class="alert"><div><b>Pain rose three days running</b> (10–12 Sep) while adherence held. Worth a check-in?</div><span class="row" style="margin-left:auto"><button class="btn sm primary">Message Sarah</button><button class="btn sm">Book a review</button><button class="btn sm ghost">Dismiss</button></span></div>
+    <p class="xs dim" style="margin:-8px 0 14px">The trigger and its thresholds are Phil's — this one is illustrative.</p>
+
+    <div class="tabs"><button class="on" data-t="plan">Plan</button><button data-t="track">Tracking</button><button data-t="mon">Monitor</button></div>
+
+    <div class="tab on" id="t-plan">
+      <div class="grid2">
+        <div class="card">
+          <h2 style="margin-bottom:10px">Prescription</h2>
+          <table class="trk" style="font-size:13px">
+            <tr><th>Exercise</th><th>Hold</th><th>Reps</th><th>Daily</th><th>Rest</th><th>Days/wk</th><th>Sides</th></tr>
+            <tr><td>Static quad contraction</td><td>5s</td><td>10</td><td>3×</td><td>10s</td><td>5</td><td>both</td></tr>
+            <tr><td>Straight leg raise</td><td>3s</td><td>10</td><td>3×</td><td>15s</td><td>5</td><td>right</td></tr>
+            <tr><td>Wall squat (mini)</td><td>10s</td><td>8</td><td>3×</td><td>20s</td><td>5</td><td>both</td></tr>
+          </table>
+          <p class="small muted" style="margin-top:10px">Note to Sarah: "Go gently this week — the goal is control, not range…"</p>
+        </div>
+        <div class="card">
+          <h2 style="margin-bottom:10px">Monitoring</h2>
+          <div class="row" style="gap:6px;margin-bottom:10px"><span class="pill teal">Pain</span><span class="pill teal">Mobility</span><span class="pill teal">Difficulty</span></div>
+          <div class="thread"><div class="m">"Is it normal for the wall squat to pinch at the front of the knee at the bottom?"<small>Sarah · 10 Sep, 7:12pm · from the post-session sheet</small></div><div class="m" style="color:var(--text-muted)">"Yes if it's mild — stop short of that point for now. Nice work on the streak."<small>You · 10 Sep, 9:30pm</small></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab" id="t-track">
+      <div class="grid2" style="grid-template-columns:1fr 240px">
+        <div class="card">
+          <h2 style="margin-bottom:10px">Last 14 days</h2>
+          <div style="overflow:auto"><table class="trk" id="trk"></table></div>
+          <div class="legend" style="margin-top:10px"><span><span class="dot y"></span> all sessions done</span><span><span class="dot p"></span> some done</span><span><span class="dot n"></span> skipped</span><span><span class="dot"></span> rest day</span></div>
+        </div>
+        <div>
+          <div class="card" style="display:flex;gap:14px;align-items:center;margin-bottom:12px">
+            <div class="ring"><svg width="110" height="110" viewBox="0 0 110 110"><circle cx="55" cy="55" r="47" fill="none" stroke="var(--surface-3)" stroke-width="10"/><circle cx="55" cy="55" r="47" fill="none" stroke="var(--accent)" stroke-width="10" stroke-linecap="round" stroke-dasharray="295" stroke-dashoffset="82"/></svg><div class="n">72%<small>adherence</small></div></div>
+            <div class="small muted">30 of 42 prescribed sessions<br/>9-day streak · best 9</div>
+          </div>
+          <div class="card">
+            <h3 style="margin-bottom:8px">Liked / disliked</h3>
+            <div class="small" style="display:grid;grid-template-columns:1fr auto;gap:6px 10px"><span>Static quad</span><span>👍 11 · 👎 0</span><span>Straight leg raise</span><span>👍 6 · 👎 1</span><span>Wall squat</span><span style="color:var(--warning)">👍 2 · 👎 5</span></div>
+            <p class="xs dim" style="margin-top:8px">Wall squat is the one she skips and dislikes — swap or regress?</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab" id="t-mon">
+      <div class="card">
+        <div class="row" style="margin-bottom:8px"><h2>Monitor — last 14 days</h2><span class="pill gold" style="margin-left:auto">0–10, once a day</span></div>
+        <svg class="chart" id="chart" viewBox="0 0 700 190" preserveAspectRatio="none"></svg>
+        <div class="legend"><span><i style="background:var(--danger)"></i>Pain (No pain → Worst pain)</span><span><i style="background:var(--accent)"></i>Mobility (Can't move → Full mobility)</span><span><i style="background:var(--warning)"></i>Difficulty (Easy → Very difficult)</span></div>
+        <p class="small muted" style="margin-top:10px">Pain came down from 7 to 4 over the fortnight, mobility up from 3 to 6, difficulty settling — then pain ticked up 3 days running from the 10th, which is what raised the flag at the top of the page.</p>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- library picker (screen A) -->
+<div class="modal" id="lib">
+  <div class="in">
+    <div class="hd"><div><b>Rehab library</b><div class="xs muted">Knee › Strengthening · 41 body regions · diagnosis and muscle entry points</div></div><button class="btn sm" style="margin-left:auto" onclick="document.getElementById('lib').classList.remove('on')">Close</button></div>
+    <div class="sc">
+      <div class="row" style="margin-bottom:12px"><input type="text" placeholder="Search" style="max-width:220px"/><select style="max-width:150px"><option>Knee</option><option>Hip</option><option>Lumbar spine</option></select><select style="max-width:150px"><option>Strengthening</option><option>Stretching</option><option>Flexion</option><option>Extension</option></select><select style="max-width:170px"><option>Diagnosis: any</option><option>ACL reconstruction</option><option>Patellofemoral pain</option></select></div>
+      <div class="lib" id="libgrid"></div>
+      <p class="xs dim" style="margin-top:10px">Tap a card to add it with a sensible default prescription; the play button previews the video.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  /* switcher */
+  document.querySelectorAll('.top .sw button').forEach(function(b){ b.addEventListener('click', function(){
+    document.querySelectorAll('.top .sw button').forEach(function(x){ x.classList.remove('on'); }); b.classList.add('on');
+    document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('on'); }); $('s-' + b.dataset.s).classList.add('on');
+    window.scrollTo(0, 0);
+  }); });
+  $('theme').addEventListener('click', function(){ var h = document.documentElement; h.setAttribute('data-theme', h.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'); });
+
+  /* ---- Screen A: builder ---- */
+  var EX = [
+    { n: 'Static quad contraction', hold: 5, reps: 10, daily: 3, rest: 10, days: 5, sides: 'Both' },
+    { n: 'Straight leg raise', hold: 3, reps: 10, daily: 3, rest: 15, days: 5, sides: 'Right' },
+    { n: 'Wall squat (mini)', hold: 10, reps: 8, daily: 3, rest: 20, days: 5, sides: 'Both' }
+  ];
+  function rx(e, i){
+    function c(k, lbl, v){ return '<div class="c"><span>' + lbl + '</span><input type="number" value="' + v + '" data-i="' + i + '" data-k="' + k + '"/></div>'; }
+    return '<div class="ex"><div class="hd"><div class="th">▶</div><div style="flex:1"><div class="nm">' + e.n + '</div><div class="xs muted">Knee · Strengthening</div></div><button class="btn sm ghost" data-rm="' + i + '">Remove</button></div>' +
+      '<div class="rx">' + c('hold', 'Hold (s)', e.hold) + c('reps', 'Repeat', e.reps) + c('daily', 'Times daily', e.daily) + c('rest', 'Rest (s)', e.rest) + c('days', 'Days / week', e.days) +
+      '<div class="c"><span>Both sides</span><select data-i="' + i + '" data-k="sides"><option' + (e.sides === 'Both' ? ' selected' : '') + '>Both</option><option' + (e.sides === 'Left' ? ' selected' : '') + '>Left</option><option' + (e.sides === 'Right' ? ' selected' : '') + '>Right</option></select></div></div></div>';
+  }
+  function sums(){
+    var d = 0, w = 0; EX.forEach(function(e){ d = Math.max(d, +e.daily || 0); w = Math.max(w, +e.days || 0); });
+    var wks = +$('wks').value || 0;
+    $('s-day').textContent = d; $('s-wk').textContent = w; $('s-tot').textContent = d * w * wks;
+    $('excount').textContent = EX.length + ' exercise' + (EX.length === 1 ? '' : 's');
+  }
+  function renderEx(){
+    $('exlist').innerHTML = EX.map(rx).join('') || '<div class="muted small" style="padding:10px">No exercises yet — add from the library.</div>';
+    $('exlist').querySelectorAll('input,select').forEach(function(el){ el.addEventListener('input', function(){ EX[+el.dataset.i][el.dataset.k] = el.value; sums(); }); });
+    $('exlist').querySelectorAll('[data-rm]').forEach(function(b){ b.addEventListener('click', function(){ EX.splice(+b.dataset.rm, 1); renderEx(); }); });
+    sums();
+  }
+  $('wks').addEventListener('input', sums);
+  renderEx();
+  var MON = [
+    ['Pain', 'How is your pain today?', 'No pain', 'Worst pain possible', true],
+    ['Mobility', 'How is your mobility today?', "I can't move at all", 'I have full mobility', true],
+    ['Difficulty', 'How difficult was your session today?', 'Easy', 'Very difficult', true],
+    ['Strength', 'How was your strength today?', 'Low strength', 'High strength', false],
+    ['Everyday tasks', 'How was your ability to do everyday tasks?', 'Unable to do normal activities', 'Fully able to do all activities', false]
+  ];
+  function renderMon(){
+    $('mon').innerHTML = MON.map(function(m, i){ return '<label class="chk' + (m[4] ? ' on' : '') + '"><input type="checkbox" data-m="' + i + '"' + (m[4] ? ' checked' : '') + '/><span>' + m[0] + '</span></label>'; }).join('');
+    $('mon').querySelectorAll('input').forEach(function(c){ c.addEventListener('change', function(){ MON[+c.dataset.m][4] = c.checked; renderMon(); }); });
+    var on = MON.filter(function(m){ return m[4]; });
+    $('monq').innerHTML = on.length ? on.map(function(m){ return '<div class="q">' + m[1] + '<div class="ends"><span>' + m[2] + '</span><span>' + m[3] + '</span></div></div>'; }).join('') : '<div class="small muted">Nothing ticked — Sarah won\'t be asked anything after sessions.</div>';
+  }
+  renderMon();
+  var LIB = ['Terminal knee extension', 'Seated knee flexion', 'Heel slide', 'Step-up (low step)', 'Clam', 'Bridge', 'Calf stretch (wall)', 'Hamstring stretch (towel)'];
+  $('libgrid').innerHTML = LIB.map(function(n){ return '<div class="c" data-n="' + n + '"><div class="im">▶</div><div class="bd">' + n + '<div class="xs muted">Knee · Strengthening</div></div></div>'; }).join('');
+  $('addex').addEventListener('click', function(){ $('lib').classList.add('on'); });
+  $('libgrid').querySelectorAll('.c').forEach(function(c){ c.addEventListener('click', function(){ EX.push({ n: c.dataset.n, hold: 5, reps: 10, daily: 3, rest: 15, days: 5, sides: 'Both' }); renderEx(); $('lib').classList.remove('on'); }); });
+  $('send').addEventListener('click', function(){ this.textContent = 'Sent — invite on its way to Sarah ✓'; this.disabled = true; });
+
+  /* ---- Screen B: patient ---- */
+  var PEX = [
+    { n: 'Static quad contraction', rx: 'Hold 5s · 10 reps · both sides · rest 10s', st: '' },
+    { n: 'Straight leg raise', rx: 'Hold 3s · 10 reps · right · rest 15s', st: '' },
+    { n: 'Wall squat (mini)', rx: 'Hold 10s · 8 reps · both sides · rest 20s', st: '' }
+  ];
+  function renderP(){
+    $('pex').innerHTML = PEX.map(function(e, i){
+      return '<div class="pex' + (e.st ? ' d' : '') + '"><div class="th">▶</div><div style="flex:1"><div class="nm">' + e.n + '</div><span class="rx">' + e.rx + '</span>' +
+        '<div class="act"><button class="' + (e.st === 'done' ? 'done' : '') + '" data-p="' + i + '" data-s="done">' + (e.st === 'done' ? '✓ Done' : 'Done') + '</button><button class="' + (e.st === 'skip' ? 'skip' : '') + '" data-p="' + i + '" data-s="skip">' + (e.st === 'skip' ? 'Skipped' : 'Skip') + '</button>' +
+        '<button class="lk' + (e.lk === 1 ? ' on' : '') + '" data-p="' + i + '" data-l="1">👍</button><button class="lk' + (e.lk === -1 ? ' on' : '') + '" data-p="' + i + '" data-l="-1">👎</button></div></div></div>';
+    }).join('');
+    $('pex').querySelectorAll('[data-s]').forEach(function(b){ b.addEventListener('click', function(){ var e = PEX[+b.dataset.p]; e.st = e.st === b.dataset.s ? '' : b.dataset.s; renderP(); }); });
+    $('pex').querySelectorAll('[data-l]').forEach(function(b){ b.addEventListener('click', function(){ var e = PEX[+b.dataset.p]; e.lk = e.lk === +b.dataset.l ? 0 : +b.dataset.l; renderP(); }); });
+  }
+  renderP();
+  $('finish').addEventListener('click', function(){ PEX.forEach(function(e){ if (!e.st) e.st = 'done'; }); renderP(); $('today-n').innerHTML = '2 <span class="muted" style="font-size:13px">/ 3</span>'; $('sheet').classList.add('on'); $('scrim').classList.add('on'); });
+  $('submit').addEventListener('click', function(){ $('sheet').querySelectorAll('.sl, #submit, h2, p').forEach(function(el){ el.style.display = 'none'; }); $('sent').style.display = ''; });
+  function closeSheet(){ $('sheet').classList.remove('on'); $('scrim').classList.remove('on'); setTimeout(function(){ $('sheet').querySelectorAll('.sl, #submit, h2, p').forEach(function(el){ el.style.display = ''; }); $('sent').style.display = 'none'; }, 320); }
+  $('closesheet').addEventListener('click', closeSheet); $('scrim').addEventListener('click', closeSheet);
+
+  /* ---- Screen C: patient view ---- */
+  document.querySelectorAll('.tabs button').forEach(function(b){ b.addEventListener('click', function(){
+    document.querySelectorAll('.tabs button').forEach(function(x){ x.classList.remove('on'); }); b.classList.add('on');
+    document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('on'); }); $('t-' + b.dataset.t).classList.add('on');
+  }); });
+  /* seeded fortnight 30 Aug – 12 Sep: per exercise per day: y all done, p some, n skipped, r rest */
+  var DAYS = ['30','31','1','2','3','4','5','6','7','8','9','10','11','12'];
+  var TRK = {
+    'Static quad':       'yyyyyryyyypyyy'.split(''),
+    'Straight leg raise':'ypyyyryyynyyyy'.split(''),
+    'Wall squat (mini)': 'ynpnyrnypnnyny'.split('')
+  };
+  var t = '<tr><th>Exercise</th>' + DAYS.map(function(d){ return '<th>' + d + '</th>'; }).join('') + '</tr>';
+  Object.keys(TRK).forEach(function(k){ t += '<tr><td>' + k + '</td>' + TRK[k].map(function(s){ return '<td><span class="dot ' + (s === 'r' ? '' : s) + '" title="' + ({y:'all sessions done',p:'some done',n:'skipped',r:'rest day'})[s] + '"></span></td>'; }).join('') + '</tr>'; });
+  $('trk').innerHTML = t;
+  var PAIN = [7,7,6,6,6,5,5,5,4,4,4,5,6,6], MOB = [3,3,3,4,4,4,5,5,5,6,6,6,6,6], DIF = [7,7,6,6,6,6,5,5,5,5,4,5,5,5];
+  function line(arr, col){
+    var w = 700, h = 190, px = 36, py = 14, n = arr.length;
+    var pts = arr.map(function(v, i){ return [px + i * (w - px - 10) / (n - 1), py + (10 - v) * (h - py - 26) / 10]; });
+    return '<polyline fill="none" stroke="' + col + '" stroke-width="2.5" stroke-linejoin="round" points="' + pts.map(function(p){ return p.join(','); }).join(' ') + '"/>' + pts.map(function(p){ return '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="3" fill="' + col + '"/>'; }).join('');
+  }
+  var g = '';
+  for (var y = 0; y <= 10; y += 2){ var yy = 14 + (10 - y) * (190 - 14 - 26) / 10; g += '<line x1="36" x2="690" y1="' + yy + '" y2="' + yy + '" stroke="var(--border)"/><text x="28" y="' + (yy + 4) + '" font-size="10" fill="var(--text-dim)" text-anchor="end" font-family="DM Mono,monospace">' + y + '</text>'; }
+  g += DAYS.map(function(d, i){ return '<text x="' + (36 + i * (700 - 46) / 13) + '" y="185" font-size="10" fill="var(--text-dim)" text-anchor="middle" font-family="DM Mono,monospace">' + d + '</text>'; }).join('');
+  g += '<rect x="' + (36 + 11 * (700 - 46) / 13 - 8) + '" y="14" width="' + (2 * (700 - 46) / 13 + 16) + '" height="150" fill="var(--warning)" opacity=".08"/>';
+  $('chart').innerHTML = g + line(PAIN, 'var(--danger)') + line(MOB, 'var(--accent)') + line(DIF, 'var(--warning)');
+})();
+</script>
+</body>
+</html>
