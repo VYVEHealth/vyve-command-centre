@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="robots" content="noindex,nofollow"/>
+<title>VYVE Programme builder — mockup (Calum Batch 2, PM-1221)</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{--vyve-dark:#0D2B2B;--vyve-teal:#1B7878;--vyve-teal-light:#4DAAAA;--vyve-gold:#C9A84C;
+--bg:#F7F9F9;--surface:#FFFFFF;--surface-2:#F0F4F4;--surface-3:#E4EBEB;--border:rgba(13,43,43,.09);--border-strong:rgba(13,43,43,.18);--text:#0D2B2B;--text-muted:#4E6E6E;--text-dim:#8CA6A6;
+--success:#1F8F45;--warning:#E09B3D;--danger:#C64545;--accent:#1B7878;--accent-pale:#DEEFEF;--on-accent:#fff;--gold:#A8873A;--gold-pale:rgba(201,168,76,.14);
+--font:'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;--shadow-lg:0 24px 64px rgba(0,0,0,.18);}
+html[data-theme="dark"]{--bg:#081616;--surface:#0E2222;--surface-2:#132C2C;--surface-3:#1A3838;--border:rgba(141,196,196,.12);--border-strong:rgba(141,196,196,.22);--text:#E9F3F3;--text-muted:#93B3B3;--text-dim:#5E7D7D;
+--success:#4ADE80;--warning:#E8A855;--danger:#F87171;--accent:#4DAAAA;--accent-pale:rgba(77,170,170,.10);--on-accent:#081616;--gold:#D5B65E;--gold-pale:rgba(213,182,94,.12);--shadow-lg:0 24px 64px rgba(0,0,0,.6);}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}button{cursor:pointer;background:none;border:0}
+.btn{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border:1px solid var(--border-strong);border-radius:8px;background:var(--surface);font-weight:600;font-size:12.5px;white-space:nowrap}
+.btn:hover{background:var(--surface-2)}.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.sm{height:26px;padding:0 9px;font-size:11.5px}.btn.ghost{border-color:transparent;background:transparent;color:var(--accent)}
+.muted{color:var(--text-muted)}.dim{color:var(--text-dim)}.small{font-size:12px}.xs{font-size:11px}
+input[type=text],textarea{width:100%;padding:0 11px;height:36px;border:1px solid var(--border-strong);border-radius:9px;background:var(--surface-2);outline:0}
+textarea{height:auto;padding:9px 11px;resize:vertical}
+label.f{display:block;font-size:12px;font-weight:600;color:var(--text-muted);margin:0 0 5px}
+.mk-bar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;padding:10px 18px;background:var(--surface);border-bottom:1px solid var(--border)}
+.mk-bar strong{letter-spacing:4px;color:var(--vyve-teal-light)}
+.mk-bar .tabs{display:flex;gap:4px;margin-left:12px}
+.mk-bar .tabs button{padding:6px 12px;border-radius:8px;font-weight:600;font-size:12.5px;color:var(--text-muted)}
+.mk-bar .tabs button.on{background:var(--accent-pale);color:var(--accent)}
+.mk-note{margin-left:auto;font-size:11.5px;color:var(--text-dim);max-width:560px;text-align:right}
+.wrap{max-width:1720px;margin:0 auto;padding:16px 18px;display:grid;grid-template-columns:1fr;gap:16px}
+.wrap.drawer{grid-template-columns:1fr 360px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px}
+.hd{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.hd h1{font-size:18px;font-weight:700}
+.two{display:grid;grid-template-columns:1.2fr 1fr;gap:14px}
+/* chooser */
+.chooser{max-width:860px;margin:60px auto 0}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+.tile{border:1px solid var(--border-strong);border-radius:12px;padding:20px 16px;text-align:center;display:flex;flex-direction:column;gap:8px;align-items:center;background:var(--surface-2)}
+.tile .ic{font-size:26px}.tile h3{font-size:14px}.tile p{font-size:12px;color:var(--text-muted);min-height:54px}
+.tile.dis{opacity:.5}
+/* day tabs */
+.days{display:flex;align-items:center;gap:4px;padding:6px;background:var(--surface-2);border-radius:10px;margin:14px 0 12px;flex-wrap:wrap}
+.day{padding:7px 12px;border-radius:8px;font-size:13px;font-weight:600;color:var(--text-muted)}
+.day.on{background:var(--surface);color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.day.rest{color:var(--text-dim);font-weight:500;font-style:italic}
+.plus{position:relative}
+.menu{display:none;position:absolute;top:36px;left:0;background:var(--surface);border:1px solid var(--border-strong);border-radius:10px;box-shadow:var(--shadow-lg);min-width:230px;padding:6px;z-index:30}
+.menu.on{display:block}
+.menu button{display:flex;gap:8px;align-items:center;width:100%;padding:8px 10px;border-radius:7px;font-size:13px;text-align:left}
+.menu button:hover{background:var(--surface-2)}
+.menu .sep{height:1px;background:var(--border);margin:4px 0}
+.mode{display:inline-flex;border:1px solid var(--border-strong);border-radius:8px;overflow:hidden}
+.mode button{padding:6px 11px;font-size:12px;font-weight:600;color:var(--text-muted)}
+.mode button.on{background:var(--accent-pale);color:var(--accent)}
+/* blocks */
+.blk{border:1px solid var(--border);border-radius:11px;margin-top:12px;overflow:hidden}
+.blk .bh{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface-2);font-weight:700;font-size:13px}
+.blk .bh .n{font-size:11.5px;font-weight:500;color:var(--text-dim)}
+.blk .bh .r{margin-left:auto;display:flex;gap:6px}
+.ex{display:flex;align-items:center;gap:10px;padding:8px 12px;border-top:1px solid var(--border)}
+.ex .th{width:52px;height:38px;border-radius:6px;background:var(--surface-3);display:flex;align-items:center;justify-content:center;font-size:18px;opacity:.7;flex:none}
+.ex .nm{font-weight:600;font-size:13px}.ex .mt{font-size:11.5px;color:var(--text-muted)}
+.ex .rx{margin-left:auto;display:flex;gap:6px;align-items:center}
+.ex .rx input{width:52px;height:30px;text-align:center;padding:0}
+.ex .rx select{height:30px;border:1px solid var(--border-strong);border-radius:7px;background:var(--surface-2);padding:0 6px;font-size:12px}
+.ex .ss{width:28px;height:28px;border-radius:7px;border:1px dashed var(--border-strong);font-size:11px;font-weight:700;color:var(--text-dim)}
+.ex .ss.on{border-style:solid;border-color:var(--gold);color:var(--gold);background:var(--gold-pale)}
+.addrow{display:flex;justify-content:center;padding:10px;border-top:1px solid var(--border)}
+.empty{padding:14px;text-align:center;color:var(--text-dim);font-size:12.5px}
+/* drawer */
+.dr{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;position:sticky;top:64px;max-height:calc(100vh - 80px);display:flex;flex-direction:column}
+.dr h2{font-size:14px;font-weight:700}
+.dr .for{font-size:12px;color:var(--text-muted);margin-bottom:10px}
+.search{display:flex;align-items:center;gap:8px;height:36px;padding:0 11px;border:1px solid var(--accent);border-radius:9px;background:var(--surface-2);margin-bottom:8px}
+.search input{border:0;background:none;height:auto;padding:0;flex:1}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.chip{height:26px;padding:0 9px;border-radius:999px;border:1px solid var(--border-strong);font-size:11.5px;color:var(--text-muted);display:inline-flex;align-items:center;gap:4px}
+.chip.on{border-color:var(--accent);background:var(--accent-pale);color:var(--accent);font-weight:600}
+.res{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:4px;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.rr{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;border:1px solid transparent}
+.rr:hover{background:var(--surface-2);border-color:var(--border)}
+.rr .th{width:44px;height:32px;border-radius:5px;background:var(--surface-3);display:flex;align-items:center;justify-content:center;font-size:15px;opacity:.7;flex:none}
+.rr .nm{font-size:12.5px;font-weight:600;line-height:1.25}.rr .mt{font-size:11px;color:var(--text-muted)}
+.rr .src{font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:1px 5px;border-radius:999px;background:var(--surface-3);color:var(--text-muted)}
+.rr .src.own{background:var(--gold-pale);color:var(--gold)}
+.rr .add{margin-left:auto}
+.browse{border-top:1px solid var(--border);margin-top:8px;padding-top:8px}
+.browse .bh{display:flex;align-items:center;gap:6px;width:100%;font-size:12px;font-weight:700;color:var(--text-muted);padding:4px 0}
+.browse .bh .car{margin-left:auto;transition:transform .15s}.browse .bh.open .car{transform:rotate(90deg)}
+.browse .bb{display:none;padding-top:6px}.browse .bh.open+.bb{display:block}
+.rail{display:grid;grid-template-columns:1fr 1fr;gap:2px}
+.ri{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:7px;font-size:12px;color:var(--text-muted);text-align:left}
+.ri:hover{background:var(--surface-2)}.ri.on{background:var(--accent-pale);color:var(--accent);font-weight:600}
+.ri .n{margin-left:auto;font-size:10.5px;color:var(--text-dim)}
+.note{background:var(--gold-pale);border:1px solid var(--gold);border-radius:10px;padding:10px 12px;font-size:12px;margin-bottom:12px}
+.note b{color:var(--gold)}
+@media(max-width:1000px){.wrap.drawer{grid-template-columns:1fr}.dr{position:static;max-height:none}.two{grid-template-columns:1fr}.tiles{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="mk-bar">
+  <strong>VYVE</strong><span class="muted small">Programme builder — mockup</span>
+  <div class="tabs">
+    <button id="t-choose" class="on" onclick="show('choose')">1 · New programme</button>
+    <button id="t-build" onclick="show('build')">2 · Builder</button>
+    <button onclick="var h=document.documentElement;h.dataset.theme=h.dataset.theme==='dark'?'light':'dark'">Light / dark</button>
+  </div>
+  <div class="mk-note">The builder is the page, not a card appended under the list. Add an exercise opens the drawer on the right; search first, browse if you want. Everything clicks.</div>
+</div>
+
+<!-- ── 1 · chooser ── -->
+<div class="wrap" id="v-choose">
+  <div class="card chooser">
+    <div class="hd"><h1>New programme</h1><span class="muted small">— how do you want to build it?</span></div>
+    <div class="tiles">
+      <div class="tile"><div class="ic">✍️</div><h3>Simple</h3><p>Type or paste the plan as text. Your client reads it in the app and ticks the session done. No exercise tracking.</p><button class="btn" onclick="alert('Simple = one text box per day (mockup)')">Create simple</button></div>
+      <div class="tile" style="border-color:var(--accent)"><div class="ic">🏗️</div><h3>Detailed</h3><p>Days, warm-up / workout / cool-down blocks, exercises from the library with sets, reps, time and videos. Tracked in the app.</p><button class="btn primary" onclick="show('build')">Create detailed</button></div>
+      <div class="tile dis"><div class="ic">📄</div><h3>Upload a PDF</h3><p>Attach a plan you already have. Client sees the file; nothing is tracked. Later, if wanted.</p><button class="btn" disabled>Upload</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── 2 · builder ── -->
+<div class="wrap" id="v-build" style="display:none">
+  <div class="card">
+    <div class="hd"><button class="btn sm" onclick="show('choose')">←</button><h1>Create a programme</h1><span class="muted small">Detailed</span><span style="margin-left:auto" class="btn sm ghost" onclick="alert('Save as template (mockup)')">Save as template</span><button class="btn primary" onclick="alert('Saved · back to Programmes list (mockup)')">Save &amp; close</button></div>
+    <div class="two">
+      <div><label class="f">Programme title</label><input type="text" value="Upper / Lower — 4 day"/></div>
+      <div><label class="f">Tags <span class="dim" style="font-weight:400">— filter your programmes later</span></label><input type="text" placeholder="e.g. hypertrophy, intermediate, 4-day"/></div>
+    </div>
+    <div style="margin-top:12px"><label class="f">Overview <span class="dim" style="font-weight:400">— shown to the client on the programme card</span></label><textarea rows="2" placeholder="Four sessions a week, upper / lower split. Progress the weight when you hit the top of the rep range."></textarea></div>
+
+    <div class="days" id="days"></div>
+
+    <div id="day-body"></div>
+  </div>
+
+  <!-- drawer -->
+  <aside class="dr" id="dr" style="display:none">
+    <h2>Choose exercise</h2>
+    <div class="for" id="dr-for">Adding to <b>Workout</b> · Day 1</div>
+    <div class="search">🔍 <input id="q" placeholder="Search by name — “chest press”, “squat”, “hamstring stretch”" oninput="paintRes()" autofocus/></div>
+    <div class="chips">
+      <button class="chip on" onclick="src='all';chipSrc(this)">All</button><button class="chip" onclick="src='vyve';chipSrc(this)">VYVE</button><button class="chip" onclick="src='own';chipSrc(this)">Mine</button><button class="chip" onclick="src='fav';chipSrc(this)">★ Favourites</button>
+      <button class="chip" style="margin-left:auto" onclick="alert('New exercise form opens in the drawer (mockup)')">+ New</button>
+    </div>
+    <div class="res" id="res"></div>
+    <div class="browse">
+      <button class="bh" onclick="this.classList.toggle('open')">Browse the library instead <span class="car">›</span></button>
+      <div class="bb">
+        <div class="xs dim" style="margin-bottom:6px">Muscle group</div>
+        <div class="rail" id="rail-m"></div>
+        <div class="xs dim" style="margin:8px 0 6px">Stretching &amp; mobility</div>
+        <div class="rail" id="rail-s"></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px"><button class="btn" style="flex:1;justify-content:center" onclick="closeDrawer()">Close</button></div>
+  </aside>
+</div>
+
+<script>
+/* ── data ── */
+var LIB = [
+ ['Chest Press','Chest','Machine','reps','vyve',1],['Dumbbell Chest Press — Flat','Chest','Dumbbell','reps','vyve',1],['Dumbbell Chest Press — Incline','Chest','Dumbbell','reps','vyve',0],['Barbell Bench Press','Chest','Barbell','reps','vyve',1],['Band Low Chest Press','Chest','Bands','reps','vyve',0],['Chest Fly — Cable','Chest','Cable','reps','vyve',0],
+ ['Goblet Squat','Quads','Kettlebell','reps','vyve',1],['Back Squat','Quads','Barbell','reps','vyve',1],['Bulgarian Split Squat','Quads','Dumbbell','reps','vyve',0],['Leg Press','Quads','Machine','reps','vyve',0],
+ ['Romanian Deadlift','Hamstrings','Barbell','reps','vyve',1],['Standing Leg Curl','Hamstrings','Machine','reps','vyve',0],['Calum: Trap Bar Deadlift (cue video)','Hamstrings','Barbell','reps','own',1],
+ ['Arnold Press','Shoulders','Dumbbell','reps','vyve',1],['Lateral Raise','Shoulders','Dumbbell','reps','vyve',0],['Face Pull','Shoulders','Cable','reps','vyve',0],
+ ['Lat Pulldown','Lats','Machine','reps','vyve',0],['Chest-Supported Row','Mid back','Machine','reps','vyve',0],['Pallof Press','Abs & core','Cable','reps','vyve',1],['Plank','Abs & core','Bodyweight','time','vyve',0],
+ ['Treadmill Run','Cardio','Machine','distance','vyve',0],['Bike — steady','Cardio','Machine','time','vyve',0],['Rower','Cardio','Machine','distance','vyve',0],['Skipping','Cardio','Bodyweight','time','vyve',0],
+ ['Hamstring stretch — standing','Stretch · Knee','Bodyweight','time','stretch',0],['Hip flexor stretch','Stretch · Hip','Bodyweight','time','stretch',0],['Chest stretch — doorway','Stretch · Shoulder','Bodyweight','time','stretch',0],['Cat–cow','Stretch · Lumbar','Bodyweight','reps','stretch',0],['Thoracic rotation','Stretch · Thoracic','Bodyweight','reps','stretch',0],['Calf stretch — wall','Stretch · Ankle','Bodyweight','time','stretch',0],['Band pull-apart','Shoulders','Bands','reps','vyve',0],['Arm circles','Shoulders','Bodyweight','time','vyve',0]
+];
+var FAV = {'Goblet Squat':1,'Romanian Deadlift':1,'Arnold Press':1,'Barbell Bench Press':1};
+var MUSCLE = [['Quads',148],['Shoulders',129],['Abs & core',96],['Chest',85],['Hamstrings',80],['Triceps',76],['Biceps',54],['Lats',38],['Glutes',33],['Cardio',8]];
+var STR = [['Knee',51],['Hip',29],['Ankle',24],['Shoulder',19],['Nerve glides',57],['Senior',72]];
+var ICON = { reps:'🏋️', time:'⏱️', distance:'🏃' };
+var TRACK = { reps:'sets × reps', time:'time', distance:'distance', kcal:'calories' };
+var BLOCKS = ['Warm up','Workout','Cool down'];
+
+/* ── programme state ── */
+var prog = { mode:'weekday', days:[
+  { name:'Upper A', wd:'Mon', rest:false, blocks:{ 'Warm up':[['Arm circles','time','30s']],'Workout':[['Barbell Bench Press','reps','4 × 6',''],['Chest-Supported Row','reps','4 × 8',''],['Arnold Press','reps','3 × 10','A'],['Lat Pulldown','reps','3 × 10','A'],['Pallof Press','reps','3 × 12','']],'Cool down':[['Chest stretch — doorway','time','45s']] } },
+  { name:'Lower A', wd:'Tue', rest:false, blocks:{ 'Warm up':[],'Workout':[['Back Squat','reps','4 × 6',''],['Romanian Deadlift','reps','3 × 8','']],'Cool down':[] } },
+  { name:'Rest day', wd:'Wed', rest:true, blocks:{} }
+], cur:0 };
+
+function show(v){
+  document.getElementById('v-choose').style.display = v === 'choose' ? '' : 'none';
+  document.getElementById('v-build').style.display = v === 'build' ? '' : 'none';
+  document.getElementById('t-choose').classList.toggle('on', v === 'choose');
+  document.getElementById('t-build').classList.toggle('on', v === 'build');
+  if (v === 'build') paintDays();
+}
+function paintDays(){
+  var d = document.getElementById('days');
+  d.innerHTML = '<div class="mode" style="margin-right:8px" title="Sessions tied to weekdays, or just numbered so the client does them when they can"><button class="' + (prog.mode === 'weekday' ? 'on' : '') + '" onclick="prog.mode=\'weekday\';paintDays()">Mon–Sun</button><button class="' + (prog.mode === 'session' ? 'on' : '') + '" onclick="prog.mode=\'session\';paintDays()">Session 1, 2, 3…</button></div>' +
+    prog.days.map(function(x, i){
+      var lbl = prog.mode === 'weekday' ? x.wd : (x.rest ? 'Rest' : 'Session ' + (prog.days.slice(0, i + 1).filter(function(y){ return !y.rest; }).length));
+      return '<button class="day' + (i === prog.cur ? ' on' : '') + (x.rest ? ' rest' : '') + '" onclick="prog.cur=' + i + ';paintDays()">' + lbl + (x.rest ? '' : ' · ' + x.name) + '</button>';
+    }).join('') +
+    '<div class="plus"><button class="day" onclick="this.nextElementSibling.classList.toggle(\'on\')">+ Add day</button><div class="menu">' +
+      '<button onclick="addDay(\'new\')">➕ Create new day</button>' +
+      '<button onclick="addDay(\'tpl\')">📥 Import a day template…</button>' +
+      '<button onclick="addDay(\'wk\')">📥 Import a weekly workout…</button>' +
+      '<div class="sep"></div><button onclick="addDay(\'rest\')">🛏️ Add rest day</button></div></div>' +
+    '<span class="xs dim" style="margin-left:auto;padding-right:6px">' + prog.days.filter(function(x){ return !x.rest; }).length + ' sessions / week · repeat for <b>8</b> weeks</span>';
+  paintDay();
+}
+function addDay(kind){
+  var wds = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  var wd = wds[Math.min(prog.days.length, 6)];
+  if (kind === 'rest') prog.days.push({ name:'Rest day', wd:wd, rest:true, blocks:{} });
+  else if (kind === 'tpl') prog.days.push({ name:'Push A (from template)', wd:wd, rest:false, blocks:{ 'Warm up':[['Band pull-apart','reps','2 × 15']],'Workout':[['Dumbbell Chest Press — Incline','reps','4 × 8',''],['Lateral Raise','reps','3 × 12','']],'Cool down':[] } });
+  else if (kind === 'wk'){ alert('Pulls every day of a saved weekly workout in as days (mockup)'); return; }
+  else prog.days.push({ name:'', wd:wd, rest:false, blocks:{ 'Warm up':[],'Workout':[],'Cool down':[] } });
+  prog.cur = prog.days.length - 1; paintDays();
+}
+function paintDay(){
+  var x = prog.days[prog.cur], el = document.getElementById('day-body');
+  if (x.rest){ el.innerHTML = '<div class="card" style="background:var(--surface-2);text-align:center;padding:28px"><div style="font-size:24px">🛏️</div><div style="font-weight:700;margin-top:6px">Rest day</div><div class="small muted">Shows in the client\'s week as a rest day. Nothing to add.</div><button class="btn sm" style="margin-top:10px" onclick="prog.days.splice(prog.cur,1);prog.cur=0;paintDays()">Remove</button></div>'; return; }
+  var head = '<div class="two"><div><label class="f">Day name</label><input type="text" value="' + x.name + '" placeholder="e.g. Push A" oninput="prog.days[prog.cur].name=this.value"/></div>' +
+    '<div style="display:flex;gap:8px;align-items:flex-end"><button class="btn" onclick="alert(\'Saves this day as a Day template (mockup)\')">Save day as template</button><button class="btn" onclick="alert(\'Duplicates the day (mockup)\')">Duplicate day</button><button class="btn" style="color:var(--danger)" onclick="prog.days.splice(prog.cur,1);prog.cur=0;paintDays()">Delete day</button></div></div>';
+  var blocks = Object.keys(x.blocks).map(function(b){
+    var rows = x.blocks[b];
+    return '<div class="blk"><div class="bh">' + b + ' <span class="n">' + (rows.length ? rows.length + ' exercise' + (rows.length === 1 ? '' : 's') : 'empty') + '</span>' +
+      '<div class="r"><button class="btn sm ghost" onclick="alert(\'Rename block (mockup)\')">Rename</button>' + (BLOCKS.indexOf(b) < 0 ? '<button class="btn sm ghost" style="color:var(--danger)" onclick="delete prog.days[prog.cur].blocks[\'' + b + '\'];paintDay()">Remove</button>' : '') + '</div></div>' +
+      (rows.length ? rows.map(function(r, i){ return exRow(b, r, i); }).join('') : '<div class="empty">Nothing here yet.</div>') +
+      '<div class="addrow"><button class="btn sm" onclick="openDrawer(\'' + b + '\')">+ Add an exercise</button></div></div>';
+  }).join('');
+  var addBlock = '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><span class="xs dim" style="align-self:center">Add a block:</span>' + ['Conditioning','Mobility','Core','Finisher'].filter(function(b){ return !x.blocks[b]; }).map(function(b){ return '<button class="btn sm" onclick="prog.days[prog.cur].blocks[\'' + b + '\']=[];paintDay()">+ ' + b + '</button>'; }).join('') + '</div>';
+  var instr = '<div style="margin-top:14px"><label class="f">Instructions for the client <span class="dim" style="font-weight:400">— optional</span></label><textarea rows="2" placeholder="Leave 2 reps in the tank on every working set this week."></textarea></div>';
+  el.innerHTML = head + blocks + addBlock + instr;
+}
+function exRow(b, r, i){
+  var lib = LIB.find(function(l){ return l[0] === r[0]; }) || [r[0], '', '', r[1], 'vyve', 0];
+  var t = r[1];
+  return '<div class="ex"><div class="th">' + (ICON[t] || '🏋️') + (lib[5] ? '<span style="font-size:9px;margin-left:2px">▶</span>' : '') + '</div>' +
+    '<div><div class="nm">' + r[0] + '</div><div class="mt">' + lib[1] + (lib[2] ? ' · ' + lib[2] : '') + '</div></div>' +
+    '<div class="rx"><select onchange="prog.days[prog.cur].blocks[\'' + b + '\'][' + i + '][1]=this.value;paintDay()" title="Tracking — change it here, not in the library">' + Object.keys(TRACK).map(function(k){ return '<option value="' + k + '"' + (k === t ? ' selected' : '') + '>' + TRACK[k] + '</option>'; }).join('') + '</select>' +
+    (t === 'reps' ? '<input type="text" value="' + (r[2] || '3 × 10') + '" title="sets × reps"/>' : t === 'time' ? '<input type="text" value="' + (r[2] || '45s') + '"/>' : t === 'distance' ? '<input type="text" value="' + (r[2] || '2 km') + '"/>' : '<input type="text" value="' + (r[2] || '100 kcal') + '"/>') +
+    '<input type="text" value="" placeholder="rest" style="width:56px" title="rest between sets"/>' +
+    '<button class="ss' + (r[3] ? ' on' : '') + '" title="Superset — give two exercises the same letter" onclick="var s=[\'\',\'A\',\'B\',\'C\'];var v=prog.days[prog.cur].blocks[\'' + b + '\'][' + i + '];v[3]=s[(s.indexOf(v[3]||\'\')+1)%4];paintDay()">' + (r[3] || '–') + '</button>' +
+    '<button class="btn sm ghost" title="Note to client" onclick="alert(\'Per-exercise note (mockup)\')">✎</button>' +
+    '<button class="btn sm ghost" style="color:var(--danger)" onclick="prog.days[prog.cur].blocks[\'' + b + '\'].splice(' + i + ',1);paintDay()">×</button></div></div>';
+}
+
+/* ── drawer ── */
+var src = 'all', railSel = '', targetBlock = 'Workout';
+function openDrawer(b){
+  targetBlock = b;
+  document.getElementById('v-build').classList.add('drawer');
+  document.getElementById('dr').style.display = '';
+  document.getElementById('dr-for').innerHTML = 'Adding to <b>' + b + '</b> · ' + (prog.days[prog.cur].name || 'this day');
+  var q = document.getElementById('q'); q.value = b === 'Warm up' ? '' : ''; q.focus();
+  paintRes();
+}
+function closeDrawer(){ document.getElementById('v-build').classList.remove('drawer'); document.getElementById('dr').style.display = 'none'; }
+function chipSrc(btn){ document.querySelectorAll('.chips .chip').forEach(function(c){ if (c !== btn && c.textContent.indexOf('New') < 0) c.classList.remove('on'); }); btn.classList.add('on'); paintRes(); }
+function paintRes(){
+  var q = document.getElementById('q').value.trim().toLowerCase();
+  var r = LIB.filter(function(l){
+    if (src === 'vyve' && l[4] !== 'vyve') return false;
+    if (src === 'own' && l[4] !== 'own') return false;
+    if (src === 'fav' && !FAV[l[0]]) return false;
+    if (railSel && l[1].indexOf(railSel) < 0) return false;
+    if (q && (l[0] + ' ' + l[1] + ' ' + l[2]).toLowerCase().indexOf(q) < 0) return false;
+    return true;
+  });
+  if (!q && !railSel && src === 'all' && targetBlock === 'Warm up') r = LIB.filter(function(l){ return l[4] === 'stretch' || l[3] === 'time' || l[1].indexOf('Cardio') === 0; }).concat(r.filter(function(l){ return l[4] !== 'stretch' && l[3] !== 'time'; }));
+  if (!q && !railSel && src === 'all' && targetBlock === 'Cool down') r = LIB.filter(function(l){ return l[4] === 'stretch'; }).concat(r.filter(function(l){ return l[4] !== 'stretch'; }));
+  var el = document.getElementById('res');
+  el.innerHTML = (r.length ? r : []).map(function(l){
+    var i = LIB.indexOf(l);
+    return '<div class="rr"><div class="th">' + (ICON[l[3]] || '🏋️') + '</div><div><div class="nm">' + l[0] + '</div><div class="mt">' + l[1] + ' · ' + l[2] + ' · ' + TRACK[l[3]] + (l[5] ? ' · ▶' : '') + '</div></div>' +
+      '<span class="src' + (l[4] === 'own' ? ' own' : '') + '" style="margin-left:6px">' + (l[4] === 'own' ? 'Mine' : l[4] === 'stretch' ? 'Stretch' : 'VYVE') + '</span>' +
+      '<button class="btn sm primary add" onclick="addEx(' + i + ')">Add</button></div>';
+  }).join('') || '<div class="empty">No match — <a href="#" onclick="alert(\'New exercise form (mockup)\');return false" style="color:var(--accent)">create “' + (q || 'it') + '” as your own exercise</a>.</div>';
+  if (!q && !railSel && src === 'all') el.insertAdjacentHTML('afterbegin', '<div class="xs dim" style="padding:2px 8px 4px">' + (targetBlock === 'Warm up' ? 'Warm-up picks first — stretches, timed and cardio' : targetBlock === 'Cool down' ? 'Stretches first' : 'Start typing, or pick a group below') + '</div>');
+}
+function addEx(i){
+  var l = LIB[i];
+  prog.days[prog.cur].blocks[targetBlock].push([l[0], l[3], '', '']);
+  paintDay();
+  var b = event && event.target; if (b){ b.textContent = '✓ Added'; b.disabled = true; setTimeout(function(){ b.textContent = 'Add'; b.disabled = false; }, 900); }
+}
+function fillRail(id, rows, prefix){
+  document.getElementById(id).innerHTML = rows.map(function(r){ return '<button class="ri" onclick="railPick(\'' + prefix + r[0] + '\',this)">' + r[0] + ' <span class="n">' + r[1] + '</span></button>'; }).join('');
+}
+function railPick(v, btn){
+  var on = btn.classList.contains('on');
+  document.querySelectorAll('.ri').forEach(function(b){ b.classList.remove('on'); });
+  railSel = on ? '' : v; if (!on) btn.classList.add('on');
+  document.getElementById('q').value = ''; paintRes();
+}
+fillRail('rail-m', MUSCLE, ''); fillRail('rail-s', STR, 'Stretch · ');
+document.addEventListener('click', function(e){ if (!e.target.closest('.plus')) document.querySelectorAll('.menu').forEach(function(m){ m.classList.remove('on'); }); });
+</script>
+</body>
+</html>
