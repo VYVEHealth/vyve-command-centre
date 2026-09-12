@@ -3821,7 +3821,14 @@
   async function exLoad(){
     if (cexLoaded) return;
     try {
-      cexRows = await rest('/coach_exercises?active=eq.true&select=' + W3_SEL + '&order=name.asc&limit=2000') || [];
+      /* PM-1207: page the library — PostgREST caps a single call at 1,000 rows, so 977 stock + any real
+         private library silently lost everything after ~C. Pull 1,000 at a time until a short page. */
+      cexRows = [];
+      for (var exOff = 0; ; exOff += 1000){
+        var exPg = await rest('/coach_exercises?active=eq.true&select=' + W3_SEL + '&order=name.asc,id.asc&limit=1000&offset=' + exOff) || [];
+        cexRows = cexRows.concat(exPg);
+        if (exPg.length < 1000) break;
+      }
       cexLoaded = true;
       var cats = {}, eqs = {};
       cexRows.forEach(function(r){ if (r.category) cats[r.category] = 1; if (r.equipment) eqs[r.equipment] = 1; });
