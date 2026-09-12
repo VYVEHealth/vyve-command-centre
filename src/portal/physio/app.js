@@ -18,6 +18,7 @@
     if (view === 'exercises'){ exInit().catch(function(){}); }
     if (view === 'plans'){ rhInit(false); }
     if (view === 'templates'){ rhTplInit(false); }
+    if (view === 'messages'){ msInit(); }
     try { history.replaceState(null, '', '#' + view); } catch(_){}
   }
   document.querySelectorAll('.cp-item').forEach(function(b){ b.addEventListener('click', function(){ go(b.dataset.go); }); });
@@ -27,6 +28,7 @@
   $c('set-signout').addEventListener('click', function(){ $c('cp-signout').click(); });
 
   async function loadPatients(){
+    pvCss(); rhCss();
     roster = await rest('/coach_clients?' + pscope() + '&order=created_at.desc&select=*') || [];
     memberMap = {};
     if (roster.length){
@@ -37,6 +39,7 @@
       } catch(_){ /* unconsented rows are simply not visible */ }
     }
     try { rhPlans = await rest('/rehab_plans?partner_id=eq.' + partnerId + '&select=' + RH_SEL + '&order=updated_at.desc') || []; rhPlansLoaded = true; } catch(_){}
+    await rhAlertsLoad(true); msUnreadLoad(); /* PM-1214: alert pills + unread badge */
     renderPatients();
   }
   function ptName(c){
@@ -58,7 +61,7 @@
       roster.map(function(c){
         var m = memberMap[(c.member_email || '').toLowerCase()];
         var pc = counts[(c.member_email || '').toLowerCase()] || 0;
-        return '<tr data-pt-plans="' + esc((c.member_email || '').toLowerCase()) + '" style="border-top:1px solid var(--border);cursor:pointer;"><td style="padding:9px 8px;"><div style="font-weight:600;">' + esc(ptName(c)) + '</div><div style="font-size:11.5px;color:var(--text-muted);">' + esc(c.member_email) + '</div></td>' +
+        return '<tr data-pt-plans="' + esc((c.member_email || '').toLowerCase()) + '" style="border-top:1px solid var(--border);cursor:pointer;"><td style="padding:9px 8px;"><div style="font-weight:600;">' + esc(ptName(c)) + rhAlertPill(c.member_email) + '</div><div style="font-size:11.5px;color:var(--text-muted);">' + esc(c.member_email) + '</div></td>' +
           '<td style="padding:9px 8px;">' + esc(c.status || '') + '</td><td style="padding:9px 8px;">' + esc(ptWhen(m && m.last_active_at)) + '</td><td style="padding:9px 8px;color:' + (pc ? 'var(--text)' : 'var(--text-muted)') + ';">' + (pc ? pc : 'none') + '</td></tr>';
       }).join('') + '</tbody></table>';
     list.querySelectorAll('[data-pt-plans]').forEach(function(tr){ tr.addEventListener('click', function(){ rhFilterEmail = tr.getAttribute('data-pt-plans'); go('plans'); }); });

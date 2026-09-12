@@ -74,7 +74,7 @@
     rhRenderList();
   }
   function rhRenderList(){
-    $c('rh-editor').style.display = 'none'; $c('rh-list-card').style.display = '';
+    $c('rh-editor').style.display = 'none'; $c('rh-pv').style.display = 'none'; $c('rh-list-card').style.display = '';
     var rows = rhFilterEmail ? rhPlans.filter(function(p){ return (p.member_email || '').toLowerCase() === rhFilterEmail; }) : rhPlans;
     $c('rh-filter').innerHTML = rhFilterEmail ? ('Showing plans for <b>' + esc(rhPtLabel(rhFilterEmail)) + '</b> \u00b7 <a href="#" id="rh-filter-clear" style="color:var(--vyve-teal);">show all</a>') : '';
     if ($c('rh-filter-clear')) $c('rh-filter-clear').addEventListener('click', function(e){ e.preventDefault(); rhFilterEmail = ''; rhRenderList(); });
@@ -82,10 +82,11 @@
     if (!rows.length){ list.innerHTML = '<div class="empty-state"><h3>No plans yet</h3><p>Build a rehab plan, then send it \u2014 it lands in your patient\u2019s VYVE app as their Rehab tab.</p></div>'; return; }
     list.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="text-align:left;color:var(--text-muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;"><th style="padding:6px 8px;">Plan</th><th style="padding:6px 8px;">Patient</th><th style="padding:6px 8px;">Status</th><th style="padding:6px 8px;">Starts</th><th style="padding:6px 8px;">Weeks</th><th style="padding:6px 8px;">Updated</th></tr></thead><tbody>' +
       rows.map(function(p){
-        return '<tr data-rh-open="' + esc(p.id) + '" style="border-top:1px solid var(--border);cursor:pointer;"><td style="padding:9px 8px;font-weight:600;">' + esc(p.name) + '</td><td style="padding:9px 8px;">' + esc(rhPtLabel(p.member_email)) + '</td>' +
+        return '<tr data-rh-open="' + esc(p.id) + '" style="border-top:1px solid var(--border);cursor:pointer;"><td style="padding:9px 8px;font-weight:600;">' + esc(p.name) + rhAlertPill(p.member_email, p.id) + '</td><td style="padding:9px 8px;">' + esc(rhPtLabel(p.member_email)) + '</td>' +
           '<td style="padding:9px 8px;"><span class="rh-pill ' + esc(p.status) + '">' + esc(p.status) + '</span></td><td style="padding:9px 8px;">' + esc(rhFmt(p.start_date)) + '</td><td style="padding:9px 8px;">' + esc(p.duration_weeks) + '</td><td style="padding:9px 8px;color:var(--text-muted);">' + esc(rhFmt(p.updated_at)) + '</td></tr>';
       }).join('') + '</tbody></table>';
-    list.querySelectorAll('[data-rh-open]').forEach(function(tr){ tr.addEventListener('click', function(){ rhOpen(tr.getAttribute('data-rh-open')); }); });
+    /* PM-1214: a sent plan opens the patient view (Plan · Tracking · Monitor); only drafts go straight to the builder */
+    list.querySelectorAll('[data-rh-open]').forEach(function(tr){ tr.addEventListener('click', function(){ var id = tr.getAttribute('data-rh-open'), p = rhPlans.filter(function(x){ return x.id === id; })[0]; if (p && p.status !== 'draft') rhPvOpen(id); else rhOpen(id); }); });
   }
 
   /* ── Builder ── */
@@ -113,7 +114,7 @@
     go('plans'); rhPaint();
   }
   function rhPaint(){
-    $c('rh-list-card').style.display = 'none'; $c('rh-editor').style.display = '';
+    $c('rh-list-card').style.display = 'none'; $c('rh-pv').style.display = 'none'; $c('rh-editor').style.display = '';
     var p = rhCur;
     $c('rh-title').textContent = p.id ? 'Edit plan' : 'New rehab plan';
     $c('rh-status').innerHTML = p.id ? ('<span class="rh-pill ' + esc(p.status) + '">' + esc(p.status) + '</span>' + (p.sent_at ? ' <span style="font-size:11.5px;color:var(--text-muted);">sent ' + esc(rhFmt(p.sent_at)) + '</span>' : '')) : '';

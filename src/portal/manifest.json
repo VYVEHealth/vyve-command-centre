@@ -66,6 +66,8 @@
         "132-shared-library.js",
         "physio/app.js",
         "physio/plans.js",
+        "physio/patient.js",
+        "physio/messages.js",
         "290-boot-call.js",
         "999-close.js"
       ]
