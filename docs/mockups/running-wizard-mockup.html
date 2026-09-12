@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>VYVE — Running plan wizard (mockup, PM-1245)</title>
+<title>VYVE — Running plan wizard (mockup, PM-1246)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
 <style>
 [data-theme="dark"]{
@@ -155,7 +155,7 @@ input[type=range]{width:100%;accent-color:var(--green);margin:6px 0 2px}
   <div class="doc-head">
     <div>
       <div class="doc-title">Running plan setup</div>
-      <div class="doc-sub">Wave 2 part 2 mockup. Ten single-question screens, a recommendation, a projection and a recap — every answer an enum or a number, so the plan appears instantly with no AI on the path. Nothing here is built.</div>
+      <div class="doc-sub">Wave 2 part 2 mockup. Twelve single-question screens, a recommendation, a projection and a recap — every answer an enum or a number, so the plan appears instantly with no AI on the path. Nothing here is built.</div>
     </div>
     <div class="doc-tools">
       <button class="tbtn" id="theme">Light</button>
@@ -179,7 +179,7 @@ input[type=range]{width:100%;accent-color:var(--green);margin:6px 0 2px}
         <div class="appbar">
           <button class="back" id="back" aria-label="Back">‹</button>
           <div class="prog"><span id="bar" style="width:9%"></span></div>
-          <div class="count" id="count">1 / 12</div>
+          <div class="count" id="count">1 / 14</div>
         </div>
         <div class="screen" id="screen"></div>
         <div class="foot" id="foot"></div>
@@ -190,9 +190,12 @@ input[type=range]{width:100%;accent-color:var(--green);margin:6px 0 2px}
 
 <script>
 const S = {
-  goal:'5k', ability:'30min', race:'27:40', raceDist:'5k', prefill:true,
-  days:4, longDay:'Sun', weeks:12, start:'Mon 21 Sep', injury:null
+  goal:'5k', ability:'30min', race:'27:40', raceDist:'5k', race2:false, prefill:true,
+  days:4, avail:[1,2,3,4,5,6,7], longDay:'Sun', weeks:12, start:'Mon 21 Sep', injury:null,
+  volume:'steady', diff:'balanced', surface:'outdoor'
 };
+const DOW=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const dowN = d => DOW.indexOf(d)+1;
 
 /* Plan length ranges as shipped PM-1244. start-running is deliberately fixed. */
 const PLANS = {
@@ -287,6 +290,7 @@ const SCREENS = [
       <div class="big-time time">27<small>min</small> 40<small>sec</small></div>
       <div class="keypad">${[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map(k=>`<button class="key">${k}</button>`).join('')}</div>
     </div>
+    <button class="opt" data-pick="second" aria-pressed="${S.race2}"><span class="mark"></span><span><span class="opt-t">Add a longer time too</span><span class="opt-d">${S.race2?'Half marathon 2:09:30 — your paces are set from both, weighted to the longer one.':'A 10k or half gives us the endurance end of your curve. Paces get sharper.'}</span></span></button>
     <button class="opt" data-pick="unknown" aria-pressed="false"><span class="mark"></span><span><span class="opt-t">I don't know my time</span><span class="opt-d">We'll start you conservatively and set paces from your first few runs.</span></span></button>`,
   next:'Continue' },
 
@@ -295,15 +299,26 @@ const SCREENS = [
   body:()=>`
     <div class="chips">${[3,4,5].map(d=>`<button class="chip" data-pick="${d}" aria-pressed="${S.days===d}">${d}</button>`).join('')}</div>
     <div class="card quiet">
-      <div class="opt-d">At ${S.days} days your week looks like ${S.days===3?'long run, easy run, one quality session':S.days===4?'long run, two easy runs, one quality session':'long run, two easy runs, a recovery run and one quality session'}.</div>
+      <div class="opt-d">At ${S.days} days your week looks like ${S.days===3?'long run, easy run, one quality session':S.days===4?'long run, two easy runs, one quality session':'long run, two easy runs, a recovery run and one quality session'}. More days means shorter runs, not harder ones.</div>
+    </div>`,
+  next:'Continue' },
+
+{ key:'avail', title:'Which days can you run?', gate:'',
+  sub:'Tap off anything that never works. We will not schedule a run on a day you have turned off.',
+  body:()=>`
+    <div class="chips">${DOW.map((d,n)=>`<button class="chip" data-pick="${n+1}" aria-pressed="${S.avail.includes(n+1)}" style="font-size:12.5px;padding:11px 0">${d}</button>`).join('')}</div>
+    <div class="card quiet">
+      <div class="opt-d">${S.avail.length<S.days
+        ? `You have ${S.avail.length} day${S.avail.length===1?'':'s'} open and asked for ${S.days} runs — we'll build ${S.avail.length} and drop the lowest-priority session rather than double up.`
+        : `Your runs would land on <b>${runDays()}</b>, spaced as far apart as your days allow.`}</div>
     </div>`,
   next:'Continue' },
 
 { key:'longDay', title:'Which day suits your long run?', gate:'',
   sub:'Everything else spaces itself out from there, so any back-to-back days land after it rather than before.',
   body:()=>`
-    <div class="chips">${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d=>`<button class="chip" data-pick="${d}" aria-pressed="${S.longDay===d}" style="font-size:12.5px;padding:11px 0">${d}</button>`).join('')}</div>
-    <div class="card quiet"><div class="opt-d">With ${S.days} runs and a ${S.longDay} long run: ${runDays()}.</div></div>`,
+    <div class="chips">${DOW.map((d,n)=>`<button class="chip" data-pick="${d}" aria-pressed="${S.longDay===d}" ${S.avail.includes(n+1)?'':'disabled style="opacity:.35;font-size:12.5px;padding:11px 0"'} style="font-size:12.5px;padding:11px 0">${d}</button>`).join('')}</div>
+    <div class="card quiet"><div class="opt-d">With ${S.days} runs and a ${DOW[longDow()-1]} long run: <b>${runDays()}</b>.${dowN(S.longDay)!==longDow()?` You've turned ${S.longDay} off, so it moves to the nearest day you can run.`:''}</div></div>`,
   next:'Continue' },
 
 { key:'weeks', title:'How long have you got?', gate:'',
@@ -348,6 +363,35 @@ const SCREENS = [
     <div class="hint">Today this only sets your starting volume, and only after Phil signs the wording off. It never changes a session type.</div>`,
   next:'Continue' },
 
+{ key:'settings', title:'How hard do you want this?', gate:'',
+  sub:'We have picked sensible middles. Move them if you know better — they stay changeable after the plan is built.',
+  body:()=>`
+    <div class="card">
+      <div class="knob" style="border-bottom:0;padding-bottom:4px"><div><div class="knob-n">Weekly running</div><div class="knob-d">${S.volume==='low'?'About 16 km a week to start':S.volume==='steady'?'About 19 km a week to start':'About 22 km a week to start'}</div></div></div>
+      <div class="chips" style="margin-bottom:4px">
+        <button class="chip wide" data-pick="v:low" aria-pressed="${S.volume==='low'}">Easing in</button>
+        <button class="chip wide" data-pick="v:steady" aria-pressed="${S.volume==='steady'}">Steady</button>
+        <button class="chip wide" data-pick="v:high" aria-pressed="${S.volume==='high'}">Bigger weeks</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="knob" style="border-bottom:0;padding-bottom:4px"><div><div class="knob-n">Session intensity</div><div class="knob-d">${S.diff==='gentle'?'Paces eased by about 2%':S.diff==='balanced'?'Paces straight off your race time':'Paces sharpened by about 2%'}</div></div></div>
+      <div class="chips" style="margin-bottom:4px">
+        <button class="chip wide" data-pick="d:gentle" aria-pressed="${S.diff==='gentle'}">Gentle</button>
+        <button class="chip wide" data-pick="d:balanced" aria-pressed="${S.diff==='balanced'}">Balanced</button>
+        <button class="chip wide" data-pick="d:hard" aria-pressed="${S.diff==='hard'}">Hard</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="knob" style="border-bottom:0;padding-bottom:4px"><div><div class="knob-n">Where you run</div><div class="knob-d">Treadmill sessions swap pace targets for a speed and an incline</div></div></div>
+      <div class="chips" style="margin-bottom:4px">
+        <button class="chip wide" data-pick="s:outdoor" aria-pressed="${S.surface==='outdoor'}">Outdoors</button>
+        <button class="chip wide" data-pick="s:treadmill" aria-pressed="${S.surface==='treadmill'}">Treadmill</button>
+      </div>
+      <div class="hint">You can flip any single session either way on the day.</div>
+    </div>`,
+  next:'Continue' },
+
 { key:'projection', title:'Where this gets you', gate:'',
   sub:'',
   body:()=>`
@@ -374,27 +418,44 @@ const SCREENS = [
       <div class="row"><span class="k">Plan</span><span class="v">${plan().name}</span></div>
       <div class="row"><span class="k">Length</span><span class="v">${S.weeks} weeks · ${finish()}</span></div>
       <div class="row"><span class="k">Starting</span><span class="v">${S.start}</span></div>
-      <div class="row"><span class="k">Days a week</span><span class="v">${S.days}, long run ${S.longDay}</span></div>
+      <div class="row"><span class="k">Running days</span><span class="v">${runDays()}</span></div>
+      <div class="row"><span class="k">Long run</span><span class="v">${DOW[longDow()-1]}</span></div>
       <div class="row"><span class="k">Current 5k</span><span class="v time">27:40</span></div>
       <div class="row"><span class="k">Easy pace</span><span class="v time">6:48 – 7:36 /km</span></div>
       <div class="row"><span class="k">Threshold pace</span><span class="v time">5:49 – 6:01 /km</span></div>
     </div>
     <div class="card">
-      <div class="eyebrow gold">We set these for you</div>
-      <div class="knob"><div><div class="knob-n">Training volume</div><div class="knob-d">How much you run in a week</div></div><span class="pill">Steady</span></div>
-      <div class="knob"><div><div class="knob-n">Difficulty</div><div class="knob-d">How hard the quality sessions are</div></div><span class="pill">Balanced</span></div>
+      <div class="eyebrow gold">Your settings</div>
+      <div class="knob"><div><div class="knob-n">Weekly running</div><div class="knob-d">How much you run in a week</div></div><span class="pill">${S.volume==='low'?'Easing in':S.volume==='steady'?'Steady':'Bigger weeks'}</span></div>
+      <div class="knob"><div><div class="knob-n">Session intensity</div><div class="knob-d">How hard the quality sessions are</div></div><span class="pill">${S.diff==='gentle'?'Gentle':S.diff==='balanced'?'Balanced':'Hard'}</span></div>
+      <div class="knob"><div><div class="knob-n">Where you run</div><div class="knob-d">Pace targets, or speed and incline</div></div><span class="pill">${S.surface==='outdoor'?'Outdoors':'Treadmill'}</span></div>
       <div class="knob"><div><div class="knob-n">Starting volume</div><div class="knob-d">Eased off for the niggle you mentioned</div></div><span class="pill amber">Adjusted</span></div>
-      <div class="hint">All three are yours to change later under Manage plan.</div>
+      <div class="hint">All of these stay changeable under Manage plan, and the plan rebuilds around them.</div>
     </div>`,
   next:'Build my plan', ghost:'Advanced settings' }
 ];
 
-function runDays(){
-  const order=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-  const li=order.indexOf(S.longDay), out=[];
-  for(let i=0;i<S.days;i++) out.push(order[(li+Math.floor(i*7/S.days))%7]);
-  return out.sort((a,b)=>order.indexOf(a)-order.indexOf(b)).join(' · ');
+/* Mirrors run-engine@0.6.0: long run first, then whichever available day sits
+   furthest from everything already chosen. Availability is the constraint. */
+const gap=(a,b)=>{const d=Math.abs(a-b);return Math.min(d,7-d);};
+function longDow(){
+  const a=S.avail; const l=dowN(S.longDay);
+  if(a.includes(l)) return l;
+  let best=a[0],bg=8;
+  for(const d of a){const g=gap(d,l); if(g<bg||(g===bg&&d>best)){bg=g;best=d;}}
+  return best;
 }
+function runDayNums(){
+  const a=[...S.avail].sort((x,y)=>x-y), l=longDow();
+  const want=Math.min(S.days,a.length), chosen=[l], rest=a.filter(d=>d!==l);
+  while(chosen.length<want&&rest.length){
+    let best=rest[0],bg=-1;
+    for(const d of rest){let g=7; for(const c of chosen) g=Math.min(g,gap(c,d)); if(g>bg){bg=g;best=d;}}
+    chosen.push(best); rest.splice(rest.indexOf(best),1);
+  }
+  return chosen.sort((x,y)=>x-y);
+}
+const runDays = () => runDayNums().map(n=>DOW[n-1]).join(' · ');
 function finish(){
   const d=new Date(2026,8,21); d.setDate(d.getDate()+S.weeks*7-1);
   return d.toLocaleDateString('en-GB',{day:'numeric',month:'long'});
@@ -430,7 +491,17 @@ function render(){
     if(k==='ability') S.ability=v;
     if(k==='race') S.raceDist=v;
     if(k==='days') S.days=+v;
-    if(k==='longDay') S.longDay=v;
+    if(k==='avail'){
+      const n=+v, has=S.avail.includes(n);
+      if(has && S.avail.length>2) S.avail=S.avail.filter(x=>x!==n);
+      else if(!has) S.avail=[...S.avail,n].sort((a,b)=>a-b);
+    }
+    if(k==='race'&&v==='second') S.race2=!S.race2;
+    if(k==='settings'){
+      const [g,val]=v.split(':');
+      if(g==='v') S.volume=val; if(g==='d') S.diff=val; if(g==='s') S.surface=val;
+    }
+    if(k==='longDay'&&S.avail.includes(dowN(v))) S.longDay=v;
     if(k==='injury') S.injury=v;
     if(k==='start') S.start = v==='next'?'Mon 28 Sep':'Mon 21 Sep';
     render();
