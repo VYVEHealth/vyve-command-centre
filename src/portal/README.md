@@ -30,7 +30,7 @@ Rules:
 | Page | Sources | Notes |
 |---|---|---|
 | `coach-portal.html` | `shared/head-*`, `coach/*`, every `js/*` slice in manifest order | Calum's portal. Slice order = the PM-1207 monolith's order. |
-| `physio-portal.html` | `shared/head-*`, `physio/*`, plus `js/010-core`, `080-library-v1`, `105-shared-auth`, `132-shared-library` | The physio face. `physio/app.js` declares the state the shared slices expect and its own init/nav/Patients; per-page copy is set by reassigning `CP_LOGIN_LEAD`, `CP_RESET_LEAD`, `EX_SHELVES`, `EX_HOME_SHELF`, `EX_CAT_LABEL` before `boot()`. |
+| `physio-portal.html` | `shared/head-*`, `physio/*`, plus `js/010-core`, `080-library-v1`, `105-shared-auth`, `132-shared-library` | The physio face. `physio/app.js` declares the state the shared slices expect and its own init (capability-gated on `partner_partners.capabilities.rehab`)/nav/Patients; `physio/plans.js` (PM-1211) is the rehab plan builder — plans list, prescription editor, library picker, templates (`coach_templates` kind `rehab_plan`), add-patient, Send → `rpc/rehab_apply_plan`; per-page copy is set by reassigning `CP_LOGIN_LEAD`, `CP_RESET_LEAD`, `EX_SHELVES`, `EX_HOME_SHELF`, `EX_CAT_LABEL` before `boot()`. |
 
 Shared slices today: `010-core.js` (Supabase client, `rest()`, `ef()`, scope helpers), `105-shared-auth.js`
 (login, forgot-password, recovery, boot), `080-library-v1.js` + `132-shared-library.js` (exercise library:

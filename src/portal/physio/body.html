@@ -51,13 +51,58 @@
   <div id="view-patients">
     <div class="card">
       <div class="card-title">Patients</div>
-      <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Everyone you have prescribed to. Adding a patient sends them the VYVE app invite with their free rehab month applied &mdash; that arrives with the plan builder.</p>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Everyone you have prescribed to. Adding a patient sends them the VYVE app invite with their free rehab period applied; tap a patient to see their plans.</p>
+      <button class="btn btn-primary" id="pt-add-toggle" type="button" style="font-size:12px;margin-bottom:12px;">+ Add patient</button>
+      <div id="pt-add-form" style="display:none;border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px;background:var(--surface-2);">
+        <div class="field-row">
+          <div class="field"><label>First name</label><input id="ptf-first" type="text" maxlength="60" autocomplete="off"/></div>
+          <div class="field"><label>Last name</label><input id="ptf-last" type="text" maxlength="60" autocomplete="off"/></div>
+        </div>
+        <div class="field" style="margin-bottom:10px;"><label>Email</label><input id="ptf-email" type="email" placeholder="patient@example.com" autocomplete="off"/></div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <button class="btn btn-primary" id="ptf-go" type="button">Send VYVE invite</button>
+          <span id="ptf-msg" style="font-size:12.5px;color:var(--text-muted);"></span>
+        </div>
+        <div style="font-size:11.5px;color:var(--text-muted);margin-top:8px;">They install the VYVE app from the invite, accept data sharing with you, and their Rehab tab appears with whatever plan you have sent. <span style="color:var(--gold);">[Invite email copy: Lewis]</span></div>
+      </div>
       <div id="pt-count" style="font-size:12px;color:var(--text-muted);margin-bottom:6px;"></div>
       <div id="pt-list"></div>
     </div>
   </div>
   <div id="view-plans" style="display:none;">
-    <div class="card"><div class="card-title">Rehab plans</div><div class="empty-state"><h3>Plan builder &mdash; next</h3><p>Plan name, patient, start date, duration, exercises with their rehab prescription (hold, repeat, times daily, rest, days per week, both sides), your note, safety netting and the Monitor questions. This is the next build.</p></div></div>
+    <div class="card" id="rh-list-card">
+      <div class="card-title">Rehab plans <button class="btn btn-primary" id="rh-new" type="button" style="margin-left:auto;font-size:12px;">+ New plan</button></div>
+      <div id="rh-filter" style="font-size:12.5px;color:var(--text-muted);margin-bottom:8px;"></div>
+      <div id="rh-list"></div>
+    </div>
+    <div class="card" id="rh-editor" style="display:none;">
+      <div class="card-title"><button class="btn" id="rh-back" type="button" style="font-size:12px;">&larr; Plans</button><span id="rh-title">New rehab plan</span><span id="rh-status" style="margin-left:auto;"></span></div>
+      <div class="field-row">
+        <div class="field"><label>Plan name</label><input id="rhf-name" type="text" maxlength="120" placeholder="e.g. Knee &mdash; phase 1"/></div>
+        <div class="field"><label>Patient</label><select id="rhf-patient"></select></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Start date</label><input id="rhf-start" type="date"/></div>
+        <div class="field"><label>Duration (weeks)</label><input id="rhf-weeks" type="number" min="1" max="52" value="4"/></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin:14px 0 8px;"><div style="font-size:13px;font-weight:600;">Exercises</div><span id="rh-total" style="font-size:12px;color:var(--text-muted);"></span><button class="btn btn-primary" id="rh-add-ex" type="button" style="margin-left:auto;font-size:12px;">+ Add from library</button></div>
+      <div id="rh-items"></div>
+      <div class="field" style="margin-top:14px;"><label>Note to your patient</label><textarea id="rhf-note" rows="3" class="rh-ta" placeholder="What this plan is for, how it should feel, when to ease off"></textarea></div>
+      <div class="field" style="margin-top:12px;"><label>Safety netting (fixed paragraph shown on every plan)</label><textarea id="rhf-safety" rows="3" class="rh-ta"></textarea><div class="rh-ph">Placeholder &mdash; clinical copy is Phil&rsquo;s, not editable per plan once he signs it off.</div></div>
+      <div class="field" style="margin-top:12px;"><label>Red flags for this plan (optional)</label><textarea id="rhf-redflags" rows="2" class="rh-ta" placeholder="Specific to this patient or condition"></textarea><div class="rh-ph">Placeholder &mdash; red flag framing is Phil&rsquo;s.</div></div>
+      <div style="font-size:13px;font-weight:600;margin:16px 0 2px;">Monitor</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">Tick what you want to track. Your patient answers these once a day after their session, 0&ndash;10.</div>
+      <div class="rh-mon" id="rh-monitor"></div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">What your patient will be asked <span class="rh-ph" style="display:inline;">[question wording: Phil]</span></div>
+      <div id="rh-preview"></div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:18px;">
+        <button class="btn btn-primary" id="rh-send" type="button">Send to patient</button>
+        <button class="btn" id="rh-save" type="button">Save draft</button>
+        <button class="btn" id="rh-tpl-save" type="button" style="font-size:12.5px;">Save as template</button>
+        <button class="btn" id="rh-archive" type="button" style="font-size:12.5px;margin-left:auto;color:var(--text-muted);">Archive</button>
+      </div>
+      <div id="rh-msg" style="font-size:12.5px;color:var(--text-muted);margin-top:8px;min-height:18px;"></div>
+    </div>
   </div>
   <div id="view-exercises" style="display:none;">
     <div class="card">
@@ -102,7 +147,7 @@
     </div>
   </div>
   <div id="view-templates" style="display:none;">
-    <div class="card"><div class="card-title">Templates</div><div class="empty-state"><h3>Phased, diagnosis-named templates</h3><p>Save a plan as a template and reuse it by condition and phase. Arrives with the plan builder.</p></div></div>
+    <div class="card"><div class="card-title">Templates</div><p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Reusable plans by condition and phase. Yours, plus the VYVE set as it grows. &ldquo;Use&rdquo; opens a new plan pre-filled &mdash; pick the patient and send.</p><div id="rh-tpl-list"></div></div>
   </div>
   <div id="view-msgs" style="display:none;">
     <div class="card"><div class="card-title">Messages</div><div class="empty-state"><h3>Patient messages</h3><p>Questions your patients send after a session land here. Arrives with the patient side of the app.</p></div></div>

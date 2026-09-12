@@ -39,6 +39,7 @@
     opts = opts || {};
     var t = await jwt();
     var h = { 'apikey': SUPA_ANON, 'Authorization': 'Bearer ' + t, 'Content-Type': 'application/json' };
+    if (opts.prefer) h['Prefer'] = opts.prefer; /* PM-1211: e.g. 'return=representation' so a POST/PATCH hands back the row */
     var r = await fetch(REST + path, { method: opts.method || 'GET', headers: h, body: opts.body ? JSON.stringify(opts.body) : undefined });
     if (!r.ok) throw new Error('HTTP ' + r.status);
     var txt = await r.text();

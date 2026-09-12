@@ -16,6 +16,8 @@
     document.querySelectorAll('.cp-item').forEach(function(b){ b.classList.toggle('active', b.dataset.go === view); });
     $c('cp-side').classList.remove('open'); $c('cp-overlay').classList.remove('show');
     if (view === 'exercises'){ exInit().catch(function(){}); }
+    if (view === 'plans'){ rhInit(false); }
+    if (view === 'templates'){ rhTplInit(false); }
     try { history.replaceState(null, '', '#' + view); } catch(_){}
   }
   document.querySelectorAll('.cp-item').forEach(function(b){ b.addEventListener('click', function(){ go(b.dataset.go); }); });
@@ -34,6 +36,7 @@
         ms.forEach(function(m){ memberMap[(m.email || '').toLowerCase()] = m; });
       } catch(_){ /* unconsented rows are simply not visible */ }
     }
+    try { rhPlans = await rest('/rehab_plans?partner_id=eq.' + partnerId + '&select=' + RH_SEL + '&order=updated_at.desc') || []; rhPlansLoaded = true; } catch(_){}
     renderPatients();
   }
   function ptName(c){
@@ -49,13 +52,16 @@
   function renderPatients(){
     var list = $c('pt-list'), n = roster.length;
     $c('pt-count').textContent = n ? (n + ' patient' + (n === 1 ? '' : 's')) : '';
-    if (!n){ list.innerHTML = '<div class="empty-state"><h3>No patients yet</h3><p>Your patients appear here once you prescribe their first plan.</p></div>'; return; }
+    if (!n){ list.innerHTML = '<div class="empty-state"><h3>No patients yet</h3><p>Add a patient above \u2014 they get the VYVE app invite, and their plan is waiting when they open it.</p></div>'; return; }
+    var counts = rhPlanCounts();
     list.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="text-align:left;color:var(--text-muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;"><th style="padding:6px 8px;">Patient</th><th style="padding:6px 8px;">Status</th><th style="padding:6px 8px;">Last active</th><th style="padding:6px 8px;">Plans</th></tr></thead><tbody>' +
       roster.map(function(c){
         var m = memberMap[(c.member_email || '').toLowerCase()];
-        return '<tr style="border-top:1px solid var(--border);"><td style="padding:9px 8px;"><div style="font-weight:600;">' + esc(ptName(c)) + '</div><div style="font-size:11.5px;color:var(--text-muted);">' + esc(c.member_email) + '</div></td>' +
-          '<td style="padding:9px 8px;">' + esc(c.status || '') + '</td><td style="padding:9px 8px;">' + esc(ptWhen(m && m.last_active_at)) + '</td><td style="padding:9px 8px;color:var(--text-muted);">\u2014</td></tr>';
+        var pc = counts[(c.member_email || '').toLowerCase()] || 0;
+        return '<tr data-pt-plans="' + esc((c.member_email || '').toLowerCase()) + '" style="border-top:1px solid var(--border);cursor:pointer;"><td style="padding:9px 8px;"><div style="font-weight:600;">' + esc(ptName(c)) + '</div><div style="font-size:11.5px;color:var(--text-muted);">' + esc(c.member_email) + '</div></td>' +
+          '<td style="padding:9px 8px;">' + esc(c.status || '') + '</td><td style="padding:9px 8px;">' + esc(ptWhen(m && m.last_active_at)) + '</td><td style="padding:9px 8px;color:' + (pc ? 'var(--text)' : 'var(--text-muted)') + ';">' + (pc ? pc : 'none') + '</td></tr>';
       }).join('') + '</tbody></table>';
+    list.querySelectorAll('[data-pt-plans]').forEach(function(tr){ tr.addEventListener('click', function(){ rhFilterEmail = tr.getAttribute('data-pt-plans'); go('plans'); }); });
   }
 
   async function init(){
@@ -66,6 +72,14 @@
       partnerId = await r.json();
       if (!partnerId){
         $c('pt-list').innerHTML = '<div class="empty-state"><h3>Not linked</h3><p>Your login isn\u2019t linked to a partner record \u2014 contact the VYVE team.</p></div>';
+        return;
+      }
+      /* PM-1211: the rehab face is a capability VYVE grants (partner_partners.capabilities.rehab), not something a coach opts into */
+      var caps = null;
+      try { var pr = await rest('/partner_partners?id=eq.' + partnerId + '&select=capabilities'); caps = pr && pr[0] && pr[0].capabilities; } catch(_){}
+      if (!caps || !caps.rehab){
+        $c('pt-list').innerHTML = '<div class="empty-state"><h3>Physio access not switched on</h3><p>Your partner account doesn\u2019t have the rehab tools enabled yet \u2014 contact the VYVE team.</p></div>';
+        $c('pt-add-toggle').style.display = 'none';
         return;
       }
       await loadPatients();
