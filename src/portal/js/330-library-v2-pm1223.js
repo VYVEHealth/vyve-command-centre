@@ -335,6 +335,8 @@
   var _exv2RDE = renderDayEditor;
   renderDayEditor = function(container, day){
     _exv2RDE.apply(this, arguments);
+    /* PM-1237: Dean — no Rest block button on the builder (rest lives on each row) */
+    var rb = container.querySelector('.de-add-rest'); if (rb) rb.remove();
     /* PM-1226: a new day no longer opens with one blank typed row — the drawer button is the path.
        The base editor renders [{}] when there are no exercises; drop that row if it is empty. */
     var named = day && (day.exercises || []).some(function(x){ return x && x.name; });
