@@ -62,6 +62,14 @@
   .cp-side::-webkit-scrollbar{width:8px;}
   .cp-side::-webkit-scrollbar-track{background:transparent;}
   .cp-side::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px;}
+  /* PM-1230 (Dean): in light mode the sidebar and top bar keep the brand-dark treatment (CC design-system law: sidebar is brand-dark in both themes).
+     Scoped token overrides re-colour every child that reads --text / --text-muted / --surface / --surface-2 / --border. Dark theme untouched. */
+  html[data-theme="light"] .cp-side, html[data-theme="light"] .cp-topbar{--text:#EAF5F5;--text-muted:rgba(245,242,236,.75);--text-dim:rgba(245,242,236,.45);--surface:#132C2C;--surface-2:rgba(255,255,255,.07);--surface-3:rgba(255,255,255,.12);--border:rgba(255,255,255,.10);--border-strong:rgba(255,255,255,.18);color:#EAF5F5;}
+  html[data-theme="light"] .cp-side{background:#0D2B2B;border-right-color:rgba(255,255,255,.10);scrollbar-color:rgba(255,255,255,.14) transparent;}
+  html[data-theme="light"] .cp-topbar{background:#0D2B2B;border-bottom-color:rgba(255,255,255,.10);}
+  html[data-theme="light"] .cp-side .cp-item.active, html[data-theme="light"] .cp-side .cp-subitem.active{background:rgba(77,170,170,.18);color:#EAF5F5;box-shadow:inset 3px 0 0 var(--vyve-teal-light,#4DAAAA);}
+  html[data-theme="light"] .cp-side .cp-item:hover, html[data-theme="light"] .cp-side .cp-ghead:hover{background:rgba(255,255,255,.06);color:#EAF5F5;}
+  html[data-theme="light"] .cp-side .side-brand{color:#4DAAAA;}
   .cp-side .side-brand{font-family:Georgia,serif;font-size:19px;letter-spacing:5px;color:var(--teal-lt);padding:6px 12px 14px;}
   .cp-item{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:8px;font-size:13.5px;color:var(--text-muted);cursor:pointer;border:none;background:none;width:100%;text-align:left;font-family:inherit;}
   .cp-item svg{width:16px;height:16px;flex:none;}
