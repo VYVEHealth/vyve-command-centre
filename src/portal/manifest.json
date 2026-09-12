@@ -1,0 +1,45 @@
+{
+  "_comment": "Ordered slice lists per generated page. Edit slices under src/portal/, run `node tools/build-portals.js`, commit sources AND outputs. Never edit the generated html directly.",
+  "pages": {
+    "coach-portal.html": {
+      "head": "coach/head.html",
+      "body": "coach/body.html",
+      "tail": "coach/tail.html",
+      "js": [
+        "000-open.js",
+        "010-core.js",
+        "020-roster.js",
+        "030-init.js",
+        "040-bulk-import.js",
+        "050-plans.js",
+        "060-leads-cal-notifs.js",
+        "070-checkins.js",
+        "080-library-programme.js",
+        "090-messaging.js",
+        "100-nav-auth-boot.js",
+        "110-w1-pm983.js",
+        "120-w2-pm984.js",
+        "130-w3-pm985.js",
+        "140-w4-pm986.js",
+        "150-w5-pm987.js",
+        "160-w6-pm989.js",
+        "170-w7-pm990.js",
+        "180-w4b-pm1036.js",
+        "190-tz-w0-pm1073.js",
+        "200-tz-w1-pm1075.js",
+        "210-tz-w2-pm1077.js",
+        "220-tz-w3-pm1080.js",
+        "230-tz-w2b-pm1083.js",
+        "240-tz-w4-pm1086.js",
+        "250-tz-w5-pm1090.js",
+        "260-tz-w6-pm1094.js",
+        "270-w7-pm1098.js",
+        "280-w6b-pm1103.js",
+        "290-boot-call.js",
+        "300-tz-w9a-pm1112.js",
+        "310-tz-w9b-pm1125.js",
+        "999-close.js"
+      ]
+    }
+  }
+}

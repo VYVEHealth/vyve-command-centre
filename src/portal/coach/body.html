@@ -1,0 +1,503 @@
+<div id="login-overlay" class="show">
+  <div class="login-card">
+    <div class="login-logo">VYVE</div>
+    <div class="login-sub">Coach Portal</div>
+    <h2>Welcome back</h2>
+    <p id="cp-login-lead">Sign in with your VYVE coach login.</p>
+    <div id="cp-login-fields">
+    <label for="cp-email">Email</label>
+    <input id="cp-email" type="email" placeholder="you@example.com" autocomplete="username"/>
+    <label for="cp-password">Password</label>
+    <input id="cp-password" type="password" placeholder="Password" autocomplete="current-password"/>
+    <button class="btn btn-primary" id="cp-login-btn" type="button" style="width:100%;">Sign in</button>
+    <div style="text-align:center;margin-top:12px;"><a id="cp-forgot" href="#" style="font-size:12.5px;color:var(--text-muted);text-decoration:underline;">Forgot your password?</a></div>
+    </div>
+    <!-- PM-1158: password recovery lands back on this page (#type=recovery) and completes here -->
+    <div id="cp-reset" style="display:none;">
+    <label for="cp-new-pw">New password</label>
+    <input id="cp-new-pw" type="password" placeholder="At least 8 characters" autocomplete="new-password"/>
+    <label for="cp-new-pw2">Confirm new password</label>
+    <input id="cp-new-pw2" type="password" placeholder="Type it again" autocomplete="new-password"/>
+    <button class="btn btn-primary" id="cp-reset-btn" type="button" style="width:100%;">Set password &amp; sign in</button>
+    </div>
+    <div id="login-msg"></div>
+  </div>
+</div>
+
+<div id="shell">
+  <div class="cp-topbar">
+    <button class="cp-burger" id="cp-burger" type="button" aria-label="Menu">&#9776;</button><div class="cp-brand"><div class="cp-logo">VYVE</div><div class="cp-label">Coach Portal</div></div>
+    <div class="cp-right">
+      <span class="cp-user" id="cp-user-email"></span>
+      <div style="position:relative;display:inline-block;">
+        <button class="cp-theme" id="cp-bell" type="button" title="Notifications" aria-label="Notifications">&#128276;<span id="cp-bell-badge" style="display:none;position:absolute;top:-6px;right:-6px;background:#E8834A;color:#fff;border-radius:99px;font-size:9px;font-weight:800;padding:1px 5px;">0</span></button>
+        <div id="cp-bell-pop" style="display:none;position:absolute;right:0;top:40px;width:min(360px,90vw);max-height:440px;overflow-y:auto;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 34px rgba(0,0,0,.28);z-index:120;padding:12px;"></div>
+      </div>
+      <button class="cp-theme" id="cp-theme-toggle" type="button" title="Toggle theme">&#9790;</button>
+      <button class="cp-signout" id="cp-signout" type="button">Sign out</button>
+    </div>
+  </div>
+  <aside class="cp-side" id="cp-side">
+    <div class="side-brand">VYVE</div>
+    <button class="cp-item" data-go="profile" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Profile</span></button>
+    <button class="cp-item" data-go="messages" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Messages</span><span class="cp-nbadge" id="cp-msg-badge" style="display:none;margin-left:auto;background:#E8834A;color:#fff;border-radius:99px;font-size:10px;font-weight:800;padding:2px 8px;">0</span></button>
+    <button class="cp-item" data-go="notifications" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span>Notifications</span><span class="cp-nbadge" id="cp-notif-badge" style="display:none;margin-left:auto;background:#E8834A;color:#fff;border-radius:99px;font-size:10px;font-weight:800;padding:2px 8px;">0</span></button>
+    <button class="cp-item active" data-go="dashboard" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg><span>Dashboard</span></button>
+    <button class="cp-ghead" data-grp="clients" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Clients</span><span class="ghead-caret">›</span></button>
+    <div class="cp-sub" data-sub="clients">
+      <button class="cp-item cp-subitem" data-go="clients" type="button"><span>All clients</span></button>
+      <button class="cp-item cp-subitem" data-go="clients_checkins" type="button"><span>Check-ins</span></button>
+      <button class="cp-item cp-subitem" data-go="clients_daily" type="button"><span>Daily check-ins</span></button>
+      <button class="cp-item cp-subitem" data-go="clients_batch" type="button"><span>Batch assign</span></button>
+    </div>
+    <button class="cp-item" data-go="leads" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg><span>Leads</span></button>
+    <button class="cp-ghead" data-grp="nutrition" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4z"/></svg><span>Nutrition</span><span class="ghead-caret">›</span></button>
+    <div class="cp-sub" data-sub="nutrition">
+      <button class="cp-item cp-subitem" data-go="kindsel:nutrition" type="button"><span>Plans</span></button>
+      <button class="cp-item cp-subitem" data-go="kindsel:meal" type="button"><span>Meals</span></button>
+      <button class="cp-item cp-subitem" data-go="kindsel:food" type="button"><span>Foods</span></button>
+      <button class="cp-item cp-subitem" data-go="kindsel:supplements" type="button"><span>Supplements</span></button>
+    </div>
+    <button class="cp-ghead" data-grp="workouts" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11"/><path d="M17.5 6.5v11"/><path d="M3 9v6"/><path d="M21 9v6"/><path d="M6.5 12h11"/></svg><span>Workouts</span><span class="ghead-caret">›</span></button>
+    <div class="cp-sub" data-sub="workouts">
+      <button class="cp-item cp-subitem" data-go="kindsel:program" type="button"><span>Programmes</span></button>
+      <button class="cp-item cp-subitem" data-go="kindsel:workout" type="button"><span>Weekly workouts</span></button>
+      <button class="cp-item cp-subitem" data-go="kindsel:workout_day" type="button"><span>Day templates</span></button>
+    </div>
+    <button class="cp-item" data-go="exercises" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 6v12"/><path d="M7 10v4"/><path d="M17 10v4"/></svg><span>Exercise Library</span></button>
+    <button class="cp-item" data-go="calendar" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>Calendar</span></button>
+    <button class="cp-item" data-go="content" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m10 9 5 3-5 3z"/></svg><span>Content Library</span></button>
+    <button class="cp-item" data-go="automations" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span>Automations</span></button>
+    <button class="cp-ghead" data-grp="forms" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span>Forms</span><span class="ghead-caret">›</span></button>
+    <div class="cp-sub" data-sub="forms">
+      <button class="cp-item cp-subitem" data-go="kindsel:onboarding" type="button"><span>Questionnaires</span></button>
+      <button class="cp-item cp-subitem" data-go="kindsel:checkin" type="button"><span>Check-in forms</span></button>
+      <button class="cp-item cp-subitem" data-go="kindsel:habits" type="button"><span>Daily habits</span></button>
+      <button class="cp-item cp-subitem" data-go="kindsel:lead" type="button"><span>Lead forms</span></button>
+      <button class="cp-item cp-subitem" data-go="terms" type="button"><span>Terms &amp; Conditions</span></button>
+    </div>
+    <button class="cp-item" data-go="settings" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><circle cx="9" cy="7" r="2"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="15" cy="17" r="2"/></svg><span>Settings</span></button>
+    <div class="cp-foot">
+      <a href="https://www.vyvehealth.co.uk/terms.html" target="_blank" rel="noopener">Terms</a>
+      <span>·</span>
+      <a href="https://www.vyvehealth.co.uk/privacy.html" target="_blank" rel="noopener">Privacy</a>
+    </div>
+  </aside>
+  <div class="cp-overlay" id="cp-overlay"></div>
+  <div class="cp-content">
+  <div id="view-clients" style="display:none;">
+      <div class="card">
+        <div class="card-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Your clients
+          <button class="btn" id="cl-bulk-btn" type="button" style="margin-left:auto;font-size:12px;">Bulk upload</button>
+          <button class="btn btn-primary" id="cl-add-btn" type="button" style="font-size:12px;">+ Add client</button>
+        </div>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">Create a VYVE account for each of your clients. They get an email invite, 7 days free, then &pound;10/month &mdash; and you earn &pound;5/month for every month they stay a member. You can only ever see your own clients&rsquo; training data, and only after they accept data sharing on first login.</p>
+        <div class="dash-tiles" id="cl-stats" style="margin-bottom:14px;"></div>
+        <div id="cl-toolbar" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+          <input id="cl-q" type="search" placeholder="Search name or email" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:13px;font-family:inherit;outline:none;min-width:180px;flex:1;max-width:280px;"/>
+          <button class="btn cl-st active btn-primary" data-st="all" type="button" style="font-size:12px;">All</button>
+          <button class="btn cl-st" data-st="active" type="button" style="font-size:12px;">Active</button>
+          <button class="btn cl-st" data-st="invited" type="button" style="font-size:12px;">Invited</button>
+          <button class="btn cl-st" data-st="archived" type="button" style="font-size:12px;">Archived</button>
+          <button class="btn" id="cl-mode" type="button" style="font-size:12px;margin-left:auto;" title="Toggle list / grid">Grid view</button>
+        </div>
+
+        <div id="cl-editor" style="display:none;margin-bottom:16px;border:1px solid var(--border);border-radius:10px;padding:16px;">
+          <div style="font-weight:700;font-size:14px;margin-bottom:12px;">New client</div>
+          <div class="field-row">
+            <div class="field"><label>First name</label><input id="clf-first" type="text" maxlength="60" placeholder="e.g. Michael"/></div>
+            <div class="field"><label>Last name</label><input id="clf-last" type="text" maxlength="60" placeholder="Surname"/></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Email</label><input id="clf-email" type="email" placeholder="client@example.com"/></div>
+            <div class="field"><label>Date of birth (optional)</label><input id="clf-dob" type="date"/></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Gender (optional)</label>
+              <select id="clf-gender"><option value="">Prefer not to say</option><option>Male</option><option>Female</option><option>Non-binary</option></select>
+            </div>
+            <div class="field"></div>
+          </div>
+          <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin:10px 0 8px;text-transform:uppercase;letter-spacing:.05em;">Assign from your saved plans (optional)</div>
+          <div class="field-row">
+            <div class="field"><label>Onboarding questionnaire</label><select id="asg-onboarding"><option value="">None</option></select></div>
+            <div class="field"><label>Check-in form</label><select id="asg-checkin"><option value="">None</option></select></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Habits plan</label><select id="asg-habits"><option value="">None</option></select></div>
+            <div class="field"><label>Workout plan</label><select id="asg-workout"><option value="">None</option></select></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Nutrition plan</label><select id="asg-nutrition"><option value="">None</option></select></div>
+            <div class="field"><label>Supplement plan</label><select id="asg-supplements"><option value="">None</option></select></div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;margin-top:6px;">
+            <button class="btn btn-primary" id="clf-save" type="button">Create &amp; send invite</button>
+            <button class="btn" id="clf-cancel" type="button">Cancel</button>
+            <span id="clf-msg" style="font-size:12.5px;color:var(--text-muted);"></span>
+          </div>
+        </div>
+
+        <div id="wz-card" style="display:none;margin-bottom:16px;border:1px solid var(--border);border-radius:10px;padding:16px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+            <div style="font-weight:700;font-size:14px;flex:1;" id="wz-title">New client</div>
+            <div id="wz-steps" style="display:flex;gap:6px;"></div>
+            <button class="btn" id="wz-close" type="button" style="font-size:12px;">Close</button>
+          </div>
+          <div class="wz-step" data-step="1">
+            <div class="field-row">
+              <div class="field"><label>First name</label><input id="wzf-first" type="text" maxlength="60" placeholder="e.g. Michael"/></div>
+              <div class="field"><label>Last name</label><input id="wzf-last" type="text" maxlength="60" placeholder="Surname"/></div>
+            </div>
+            <div class="field-row">
+              <div class="field"><label>Email</label><input id="wzf-email" type="email" placeholder="client@example.com"/></div>
+              <div class="field"><label>Phone (optional)</label><input id="wzf-phone" type="tel" maxlength="40" placeholder="07…"/></div>
+            </div>
+            <div class="field-row">
+              <div class="field"><label>Date of birth (optional)</label><input id="wzf-dob" type="date"/></div>
+              <div class="field"><label>Gender (optional)</label><select id="wzf-gender"><option value="">Prefer not to say</option><option>Male</option><option>Female</option><option>Non-binary</option></select></div>
+            </div>
+            <div class="field-row">
+              <div class="field"><label>Weight unit</label><select id="wzf-wu"><option value="kg">kg</option><option value="lb">lb</option><option value="st">st &amp; lb</option></select></div>
+              <div class="field"></div>
+            </div>
+          </div>
+          <div class="wz-step" data-step="2" style="display:none;">
+            <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:12px;">Assign training plans from your saved library. All optional — you can add or change these any time.</p>
+            <div class="field-row">
+              <div class="field"><label>Workout plan / programme</label><select id="wza-workout"><option value="">None</option></select></div>
+              <div class="field"><label>Habits plan</label><select id="wza-habits"><option value="">None</option></select></div>
+            </div>
+            <div class="field-row">
+              <div class="field"><label>Nutrition plan</label><select id="wza-nutrition"><option value="">None</option></select></div>
+              <div class="field"><label>Supplement plan</label><select id="wza-supplements"><option value="">None</option></select></div>
+            </div>
+          </div>
+          <div class="wz-step" data-step="3" style="display:none;">
+            <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:12px;">Forms and check-in rhythm. Your default forms are pre-selected.</p>
+            <div class="field-row">
+              <div class="field"><label>Onboarding questionnaire</label><select id="wza-onboarding"><option value="">None</option></select></div>
+              <div class="field"><label>Check-in form</label><select id="wza-checkin"><option value="">None</option></select></div>
+            </div>
+            <div class="field-row">
+              <div class="field"><label>Check-in day</label><select id="wzf-ciday"><option value="">Not set</option><option value="0">Monday</option><option value="1">Tuesday</option><option value="2">Wednesday</option><option value="3">Thursday</option><option value="4">Friday</option><option value="5">Saturday</option><option value="6">Sunday</option></select></div>
+              <div class="field"><label>Check-in frequency</label><select id="wzf-cifreq"><option value="weekly">Weekly</option><option value="fortnightly">Fortnightly</option><option value="monthly">Monthly</option></select></div>
+            </div>
+            <div class="field" style="margin-bottom:6px;"><label>Welcome pack PDF (optional — linked in their invite email)</label>
+              <input id="wzf-pack" type="file" accept="application/pdf" style="font-size:12.5px;"/>
+              <div id="wzf-pack-status" style="font-size:11.5px;color:var(--text-muted);margin-top:4px;"></div>
+            </div>
+          </div>
+          <div class="wz-step" data-step="4" style="display:none;">
+            <div id="wz-review" style="font-size:13px;margin-bottom:14px;"></div>
+            <div id="wz-timing" style="margin-bottom:8px;">
+              <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;">Invite timing</div>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:6px;cursor:pointer;"><input type="radio" name="wz-when" value="now" checked style="accent-color:#1B7878;"/> Send the invite now</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="radio" name="wz-when" value="later" style="accent-color:#1B7878;"/> Schedule for <input id="wzf-sendat" type="datetime-local" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:12.5px;font-family:inherit;"/></label>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;margin-top:14px;">
+            <button class="btn" id="wz-back" type="button" style="font-size:12.5px;display:none;">&larr; Back</button>
+            <button class="btn btn-primary" id="wz-next" type="button" style="font-size:12.5px;">Next &rarr;</button>
+            <button class="btn btn-primary" id="wz-submit" type="button" style="font-size:12.5px;display:none;">Create &amp; send invite</button>
+            <span id="wz-msg" style="font-size:12.5px;color:var(--text-muted);"></span>
+          </div>
+        </div>
+
+        <div id="cl-list"><div class="empty-state"><h3>No clients yet</h3><p>Add your first client to send them their VYVE login.</p></div></div>
+        <div id="cl-link-row" style="display:none;margin-top:12px;">
+          <label style="font-size:12px;color:var(--text-muted);">Activation link (share directly if their email hasn&rsquo;t arrived)</label>
+          <input id="cl-link-input" type="text" readonly style="width:100%;margin-top:4px;font-size:12px;" onclick="this.select()"/>
+        </div>
+      </div>
+
+      <div class="card" id="cl-bulk-card" style="display:none;">
+        <div class="card-title">Bulk upload clients
+          <button class="btn" id="bu-close" type="button" style="margin-left:auto;font-size:12px;">Close</button>
+        </div>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">Download your template &mdash; it comes pre-loaded with dropdowns of your saved questionnaires and plans. Fill a row per client (up to 100), then upload it back. Excel or CSV accepted.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
+          <button class="btn btn-primary" id="bu-template" type="button">Download template (.xlsx)</button>
+          <label class="btn" for="bu-file" style="cursor:pointer;">Upload filled file</label>
+          <input id="bu-file" type="file" accept=".xlsx,.csv" style="display:none;"/>
+        </div>
+        <div id="bu-preview"></div>
+        <div id="bu-actions" style="display:none;margin-top:12px;">
+          <button class="btn btn-primary" id="bu-confirm" type="button">Create these clients &amp; send invites</button>
+          <span id="bu-msg" style="font-size:12.5px;color:var(--text-muted);margin-left:8px;"></span>
+        </div>
+        <div id="bu-results" style="margin-top:12px;"></div>
+      </div>
+
+      <div class="card" id="cl-detail-card" style="display:none;">
+        <div class="card-title">
+          <span id="cl-detail-name">Client</span>
+          <button class="btn" id="cl-detail-close" type="button" style="margin-left:auto;font-size:12px;">Close</button>
+        </div>
+        <div id="cl-detail-body" style="font-size:13.5px;color:var(--text);"></div>
+      </div>
+  </div>
+
+  <div id="view-dashboard">
+    <div class="dash-2col">
+    <div class="card">
+      <h2 style="margin:0 0 14px;font-size:17px;">Dashboard</h2>
+      <div id="dash-qa" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+        <button class="btn btn-primary" id="qa-client" type="button" style="font-size:12.5px;">+ Add client</button>
+        <button class="btn" id="qa-workout" type="button" style="font-size:12.5px;">+ New workout</button>
+        <button class="btn" id="qa-nutrition" type="button" style="font-size:12.5px;">+ New nutrition plan</button>
+      </div>
+      <div class="dash-tiles" id="dash-tiles"><div class="dash-tile"><div class="n">&ndash;</div><div class="l">Loading</div></div></div>
+      <h3 style="margin:6px 0 4px;font-size:13px;letter-spacing:.5px;text-transform:uppercase;color:var(--text-muted);">Latest clients</h3>
+      <div id="dash-recent" style="font-size:13.5px;"></div>
+    </div>
+    <div class="card">
+      <h3 style="margin:0 0 10px;font-size:13px;letter-spacing:.5px;text-transform:uppercase;color:var(--text-muted);">Latest check-ins</h3>
+      <div id="dash-checkins" style="font-size:13.5px;"><p style="font-size:12.5px;color:var(--text-muted);">Loading…</p></div>
+    </div>
+    </div>
+    <div class="card">
+      <h3 style="margin:0 0 10px;font-size:13px;letter-spacing:.5px;text-transform:uppercase;color:var(--text-muted);">Latest messages</h3>
+      <div id="dash-msgs" style="font-size:13.5px;"><p style="font-size:12.5px;color:var(--text-muted);">Loading…</p></div>
+    </div>
+  </div>
+  <div id="view-profile" style="display:none;">
+    <div class="card" style="max-width:860px;margin:18px 0;">
+      <h2 style="margin:0 0 6px;font-size:17px;">Coach profile</h2>
+      <div id="prof-body"><div class="prof-row"><span class="k">Loading&hellip;</span><span></span></div></div>
+      <p style="font-size:12px;color:var(--text-muted);margin-top:14px;">Profile editing (photo, bio, display name your clients see) lands with the client-facing coach card.</p>
+    </div>
+  </div>
+  <div id="view-soon" style="display:none;">
+    <div class="soon-card"><h3 id="soon-title"></h3><p id="soon-desc"></p></div>
+  </div>
+  <div id="view-settings" style="display:none;">
+    <div class="card" style="max-width:860px;margin:18px 0;">
+      <h2 style="margin:0 0 14px;font-size:17px;">Settings</h2>
+      <div class="prof-row"><span class="k">Appearance</span><button class="btn" id="set-theme" type="button" style="font-size:12.5px;">Toggle light / dark</button></div>
+      <div class="prof-row"><span class="k">Account</span><button class="btn" id="set-signout" type="button" style="font-size:12.5px;">Sign out</button></div>
+    </div>
+    <div class="card" style="max-width:860px;margin:18px 0;">
+      <h2 style="margin:0 0 6px;font-size:17px;">Your coaching terms</h2>
+      <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:12px;">Every new client reads and accepts these on their first login, before they see your plans. Write your own or start from our example. Saving publishes a new version &mdash; clients who already accepted an earlier version aren't re-prompted.</p>
+      <div id="ct-status" style="font-size:12px;color:var(--text-muted);margin-bottom:8px;"></div>
+      <textarea id="ct-editor" rows="14" style="width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:13px;font-family:inherit;line-height:1.6;" placeholder="No terms yet &mdash; clients currently skip this step. Write yours here or load the example."></textarea>
+      <div style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap;">
+        <button class="btn btn-primary" id="ct-save" type="button" style="font-size:12.5px;">Save &amp; publish</button>
+        <button class="btn" id="ct-example" type="button" style="font-size:12.5px;">Use example template</button>
+        <button class="btn" id="ct-boiler" type="button" style="font-size:12.5px;">Create one for me (full template)</button>
+        <span id="ct-msg" style="font-size:12px;color:var(--text-muted);"></span>
+      </div>
+    </div>
+  </div>
+  <div id="view-msgs" style="display:none;">
+    <div class="card">
+      <div class="card-title">Messages
+        <button class="btn" id="msg-new" type="button" style="margin-left:auto;font-size:12px;">New message</button>
+        <button class="btn" id="msg-bcast" type="button" style="font-size:12px;">Broadcast</button>
+      </div>
+      <div id="bc-panel" style="display:none;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;background:var(--surface-2);">
+        <div style="font-size:12.5px;font-weight:700;margin-bottom:8px;">Broadcast to every active client</div>
+        <textarea id="bc-text" rows="3" placeholder="Your message…" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font:inherit;font-size:13.5px;"></textarea>
+        <div style="display:flex;gap:10px;align-items:center;margin-top:8px;">
+          <button class="btn btn-primary" id="bc-send" type="button" style="font-size:12px;">Send to all active clients</button>
+          <button class="btn" id="bc-cancel" type="button" style="font-size:12px;">Cancel</button>
+          <span id="bc-msg" style="font-size:12px;color:var(--text-muted);"></span>
+        </div>
+      </div>
+      <div id="nm-panel" style="display:none;gap:8px;align-items:center;margin-bottom:14px;">
+        <select id="nm-client" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:12.5px;font-family:inherit;"></select>
+        <button class="btn btn-primary" id="nm-open" type="button" style="font-size:12px;">Open conversation</button>
+      </div>
+      <div id="msg-wrap" style="display:flex;gap:0;min-height:420px;border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+        <div id="msg-threads" style="width:280px;min-width:220px;border-right:1px solid var(--border);overflow-y:auto;"></div>
+        <div id="msg-pane" style="flex:1;display:flex;flex-direction:column;min-width:0;">
+          <div id="msg-head" style="padding:12px 16px;border-bottom:1px solid var(--border);display:none;align-items:center;gap:10px;">
+            <button id="msg-back" class="btn" type="button" style="display:none;font-size:11.5px;">&larr;</button>
+            <div id="msg-head-name" style="font-weight:700;"></div>
+          </div>
+          <div id="msg-list" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;"></div>
+          <div id="msg-compose" style="display:none;padding:10px;border-top:1px solid var(--border);gap:8px;align-items:flex-end;">
+            <textarea id="msg-input" rows="1" placeholder="Message&hellip;" style="flex:1;resize:none;max-height:120px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:9px 12px;color:var(--text);font:inherit;font-size:13.5px;"></textarea>
+            <button id="msg-send" class="btn btn-primary" type="button" style="font-size:12.5px;">Send</button>
+          </div>
+          <div id="msg-empty" style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:13px;padding:24px;text-align:center;">Pick a client to start a conversation.</div>
+        </div>
+      </div>
+      <p style="font-size:12px;color:var(--text-muted);margin:12px 2px 0;">Messages reach your clients in the VYVE app. You can message any active client &mdash; invited clients join the list once they accept your terms.</p>
+    </div>
+  </div>
+  <div id="view-leads" style="display:none;">
+    <div class="card">
+      <div class="card-title">Leads</div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">People who filled in your public lead form. Build the form under Forms &rarr; Lead forms, then share your link anywhere &mdash; bio, posts, posters.</p>
+      <div id="lead-linkbar" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:14px;">
+        <span id="lead-link" style="font-size:12.5px;color:var(--teal-lt);word-break:break-all;flex:1;min-width:200px;">&hellip;</span>
+        <button class="btn" id="lead-copy" type="button" style="font-size:11.5px;">Copy link</button>
+      </div>
+      <div id="lead-list"><p style="font-size:12.5px;color:var(--text-muted);">Loading&hellip;</p></div>
+    </div>
+  </div>
+  <div id="view-cal" style="display:none;">
+    <div class="card">
+      <div class="card-title">Calendar</div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">Book calls with your clients. The call itself runs wherever you run it &mdash; Zoom, Meet, FaceTime &mdash; paste the link and your client joins straight from their VYVE app.</p>
+      <div style="margin-bottom:12px;"><button class="btn btn-primary" id="cal-new" type="button" style="font-size:12px;">+ Book a call</button></div>
+      <div class="card" id="cal-editor" style="display:none;background:var(--surface-2);">
+        <div class="field-row">
+          <div class="field"><label>Client</label><select id="calf-client"></select></div>
+          <div class="field"><label>Title</label><input id="calf-title" type="text" maxlength="120" placeholder="Monthly check-in call"/></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Date &amp; time</label><input id="calf-when" type="datetime-local"/></div>
+          <div class="field"><label>Length (mins)</label><input id="calf-mins" type="number" min="5" step="5" value="30"/></div>
+        </div>
+        <div class="field" style="margin-bottom:10px;"><label>Call link (Zoom, Meet&hellip;)</label><input id="calf-link" type="text" placeholder="https://zoom.us/j/&hellip;"/></div>
+        <div class="field"><label>Notes for your client (optional)</label><input id="calf-notes" type="text" maxlength="240"/></div>
+        <div style="display:flex;gap:10px;align-items:center;margin-top:10px;">
+          <button class="btn btn-primary" id="calf-save" type="button" style="font-size:12px;">Book it</button>
+          <button class="btn" id="calf-cancel" type="button" style="font-size:12px;">Cancel</button>
+          <span id="calf-msg" style="font-size:12px;color:var(--text-muted);"></span>
+        </div>
+      </div>
+      <div id="cal-list"></div>
+    </div>
+  </div>
+  <div id="view-autos" style="display:none;">
+    <div class="card">
+      <div class="card-title">Automations</div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:6px;">Automatic emails to a client the moment you change their plans. On by default with a ready-made message &mdash; switch any off, or make the wording yours.</p>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px;">Variables: <code style="background:var(--surface-2);padding:1px 6px;border-radius:5px;">{{first_name}}</code> <code style="background:var(--surface-2);padding:1px 6px;border-radius:5px;">{{coach_name}}</code> <code style="background:var(--surface-2);padding:1px 6px;border-radius:5px;">{{plan_name}}</code> &mdash; filled in automatically when it sends. Each automation can go as an email, an in-app message (lands in your Messages thread and pings their phone), or both.</p>
+      <div id="auto-list"><p style="font-size:12.5px;color:var(--text-muted);">Loading&hellip;</p></div>
+    </div>
+  </div>
+  <div id="view-notifs" style="display:none;">
+    <div class="card">
+      <div class="card-title">Notifications</div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Everything your clients have done, newest first. Check-ins wait here until you mark them reviewed.</p>
+      <div id="nf-filters" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">
+        <button class="btn nf-f active btn-primary" data-f="all" type="button" style="font-size:12px;">All</button>
+        <button class="btn nf-f" data-f="workout" type="button" style="font-size:12px;">Workouts</button>
+        <button class="btn nf-f" data-f="checkin" type="button" style="font-size:12px;">Check-ins</button>
+        <button class="btn nf-f" data-f="client" type="button" style="font-size:12px;">Clients</button>
+        <button class="btn nf-f" data-f="trial" type="button" style="font-size:12px;">Trials</button>
+      </div>
+      <div id="nf-feed"></div>
+    </div>
+  </div>
+  <div id="view-exercises" style="display:none;">
+    <div class="card">
+      <div class="card-title">Exercise library</div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">Use the VYVE library as-is, duplicate anything to make it your own, or add exercises with your own video. Your exercises are only ever visible to you and the clients you assign them to.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+        <button class="btn ex-scope active btn-primary" data-scope="all" type="button" style="font-size:12px;">All</button>
+        <button class="btn ex-scope" data-scope="mine" type="button" style="font-size:12px;">My exercises</button>
+        <button class="btn ex-scope" data-scope="vyve" type="button" style="font-size:12px;">VYVE library</button>
+        <input id="ex-f-q" type="search" placeholder="Search" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:13px;font-family:inherit;outline:none;min-width:150px;"/>
+        <select id="ex-f-cat" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:12.5px;font-family:inherit;"></select>
+        <select id="ex-f-eq" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:12.5px;font-family:inherit;"></select>
+        <select id="ex-f-vidsel" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:12.5px;font-family:inherit;"><option value="">Video: any</option><option value="has">Has a video</option><option value="none">Missing a video</option><option value="alt">Has an alt</option><option value="noalt">Missing an alt</option></select>
+        <button class="btn" id="ex-bulk-btn" type="button" style="font-size:12px;display:none;border-color:var(--gold);color:var(--gold);">&#8682; Bulk attach</button>
+        <button class="btn btn-primary" id="ex-new" type="button" style="font-size:12px;margin-left:auto;">+ New exercise</button>
+      </div>
+      <div id="ex-count" style="font-size:12px;color:var(--text-muted);margin-bottom:6px;"></div>
+      <div style="font-size:11.5px;color:var(--text-muted);margin-bottom:8px;">▶ marks exercises with a demo video — no video on one you need? Add your own (an unlisted YouTube link plays right in your client’s app), or duplicate it and attach yours.</div>
+      <div id="ex-list"></div>
+    </div>
+    <div class="card" id="ex-editor" style="display:none;">
+      <div class="card-title"><span id="ex-editor-title">New exercise</span>
+        <button class="btn" id="ex-cancel" type="button" style="margin-left:auto;font-size:12px;">Cancel</button>
+      </div>
+      <div class="field" style="margin-bottom:10px;"><label>Exercise name</label><input id="exf-name" type="text" maxlength="120" placeholder="e.g. Cable Fly"/></div>
+      <div class="field-row">
+        <div class="field"><label>Muscle group</label><input id="exf-cat" type="text" maxlength="60" list="ex-cat-names"/></div>
+        <div class="field"><label>Equipment</label><input id="exf-eq" type="text" maxlength="60" list="ex-eq-names"/></div>
+      </div>
+      <div class="field" style="margin-bottom:10px;"><label>Your video &mdash; unlisted YouTube link (optional)</label><input id="exf-video" type="text" placeholder="https://youtu.be/..."/>
+        <div id="exf-prev" style="display:none;align-items:center;gap:12px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:10px;margin-top:8px;">
+          <img id="exf-thumb" alt="" style="width:96px;height:54px;border-radius:6px;object-fit:cover;flex:none;"/>
+          <div><div style="font-size:12px;color:var(--teal-lt);">Video found &mdash; plays inside your client&rsquo;s workout screen.</div><div style="font-size:11px;color:var(--text-muted);">Keep it Unlisted on YouTube so only your clients see it.</div></div>
+        </div>
+        <div id="exf-vmsg" style="font-size:11.5px;color:var(--text-muted);margin-top:4px;">Leave blank to use the VYVE demo or library visual instead.</div>
+      </div>
+      <div class="field"><label>Coaching cues (shown to your client)</label><textarea id="exf-cues" rows="3" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:13px;font-family:inherit;"></textarea></div>
+      <datalist id="ex-cat-names"></datalist><datalist id="ex-eq-names"></datalist>
+      <div style="display:flex;gap:10px;align-items:center;margin-top:12px;">
+        <button class="btn btn-primary" id="ex-save" type="button">Save exercise</button>
+        <span id="ex-msg" style="font-size:12.5px;color:var(--text-muted);"></span>
+      </div>
+    </div>
+  </div>
+  <div id="view-plans" style="display:none;">
+    <div class="card">
+      <div class="card-title">My plans &amp; forms</div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">Build once, assign to any client &mdash; these are the options in your Add Client and bulk-upload dropdowns.</p>
+      <div id="pl-kinds" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;">
+        <button class="btn pl-kind active" data-kind="onboarding" type="button" style="font-size:12px;">Questionnaires</button>
+        <button class="btn pl-kind" data-kind="checkin" type="button" style="font-size:12px;">Check-ins</button>
+        <button class="btn pl-kind" data-kind="lead" type="button" style="font-size:12px;">Lead forms</button>
+        <button class="btn pl-kind" data-kind="habits" type="button" style="font-size:12px;">Habits</button>
+        <button class="btn pl-kind" data-kind="workout" type="button" style="font-size:12px;">Weekly workouts</button>
+        <button class="btn pl-kind" data-kind="workout_day" type="button" style="font-size:12px;">Day templates</button>
+        <button class="btn pl-kind" data-kind="program" type="button" style="font-size:12px;">Programmes</button>
+        <button class="btn pl-kind" data-kind="nutrition" type="button" style="font-size:12px;">Nutrition</button>
+        <button class="btn pl-kind" data-kind="meal" type="button" style="font-size:12px;">Meals</button>
+        <button class="btn pl-kind" data-kind="food" type="button" style="font-size:12px;">Foods</button>
+        <button class="btn pl-kind" data-kind="supplements" type="button" style="font-size:12px;">Supplements</button>
+      </div>
+      <div style="margin-bottom:12px;"><button class="btn btn-primary" id="pl-new" type="button" style="font-size:12px;">+ New</button></div>
+      <div id="pl-list"></div>
+    </div>
+    <div class="card" id="pl-editor" style="display:none;">
+      <div class="card-title"><span id="pl-editor-title">New</span>
+        <button class="btn" id="pl-cancel" type="button" style="margin-left:auto;font-size:12px;">Cancel</button>
+      </div>
+      <div class="field" style="margin-bottom:12px;"><label>Name</label><input id="plf-name" type="text" maxlength="120" placeholder="e.g. 12-Week Fat Loss"/></div>
+      <div id="pl-body"></div>
+      <div style="display:flex;gap:10px;align-items:center;margin-top:14px;">
+        <button class="btn btn-primary" id="pl-save" type="button">Save</button>
+        <span id="pl-msg" style="font-size:12.5px;color:var(--text-muted);"></span>
+      </div>
+    </div>
+    <div class="card" id="wiz-editor" style="display:none;">
+      <div class="card-title"><span id="wiz-title">New</span>
+        <button class="btn" id="wiz-cancel" type="button" style="margin-left:auto;font-size:12px;">Cancel</button>
+      </div>
+      <div id="wiz-chips" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;"></div>
+      <div id="wiz-body"></div>
+      <div style="display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap;">
+        <button class="btn" id="wiz-back" type="button">Back</button>
+        <button class="btn btn-primary" id="wiz-next" type="button">Next</button>
+        <button class="btn btn-primary" id="wiz-save" type="button" style="display:none;">Save &amp; publish</button>
+        <span id="wiz-msg" style="font-size:12.5px;color:var(--text-muted);"></span>
+      </div>
+    </div>
+  </div>
+  <div id="view-ci" style="display:none;">
+    <div class="card">
+      <div class="card-title">Client check-ins
+        <label style="margin-left:auto;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted);cursor:pointer;font-weight:400;"><input id="ci-unrev" type="checkbox" style="accent-color:#E8834A;"/> Needs review only</label>
+      </div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Every check-in and questionnaire your clients have submitted, newest first.</p>
+      <div id="ci-table"><p style="font-size:12.5px;color:var(--text-muted);">Loading…</p></div>
+    </div>
+  </div>
+  <div id="view-daily" style="display:none;">
+    <div class="card">
+      <div class="card-title">Daily check-ins
+        <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
+          <button class="btn" id="dg-prev" type="button" style="font-size:12px;">&larr;</button>
+          <span id="dg-range" style="font-size:12.5px;color:var(--text-muted);min-width:150px;text-align:center;"></span>
+          <button class="btn" id="dg-next" type="button" style="font-size:12px;">&rarr;</button>
+          <button class="btn" id="dg-today" type="button" style="font-size:12px;">This week</button>
+        </div>
+      </div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Daily habit completion across your roster — how many of their assigned habits each client logged, each day.</p>
+      <div id="dg-grid"><p style="font-size:12.5px;color:var(--text-muted);">Loading…</p></div>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
