@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VYVE — Running plan wizard (mockup, PM-1245)</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<style>
+[data-theme="dark"]{
+  --bg:#0A1F1F; --surface:#0F2A2A; --surface-2:#163535;
+  --border:rgba(77,170,170,0.18); --text:#E8F4F4; --text-muted:#7AADAD;
+  --teal:#1B7878; --teal-lt:#4DAAAA; --gold:#C9A84C;
+  --amber:#E8834A; --green:#3DB89F; --red:#E06060;
+  --card-shadow:0 2px 20px rgba(0,0,0,0.35);
+  --font-head:"Playfair Display",Georgia,serif;
+  --font-body:"DM Sans",system-ui,sans-serif;
+  --page:#061616; --frame:#000;
+}
+[data-theme="light"]{
+  --bg:#F0F9F9; --surface:#FFFFFF; --surface-2:#E8F4F4;
+  --border:rgba(27,120,120,0.15); --text:#0D2B2B; --text-muted:#4A7F7F;
+  --teal:#1B7878; --teal-lt:#4DAAAA; --gold:#C9A84C;
+  --amber:#E8834A; --green:#3DB89F; --red:#E06060;
+  --card-shadow:0 2px 16px rgba(13,43,43,0.08);
+  --font-head:"Playfair Display",Georgia,serif;
+  --font-body:"DM Sans",system-ui,sans-serif;
+  --page:#DCEEEE; --frame:#123;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-body);background:var(--page);color:var(--text);min-height:100dvh;padding:22px 16px 60px}
+button{font-family:inherit;cursor:pointer}
+
+/* ---------- page chrome (mockup only, not part of the design) ---------- */
+.doc{max-width:1120px;margin:0 auto}
+.doc-head{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;justify-content:space-between;margin-bottom:6px}
+.doc-title{font-family:var(--font-head);font-size:25px;line-height:1.15}
+.doc-sub{font-size:13px;color:var(--text-muted);margin-top:5px;max-width:70ch;line-height:1.5}
+.doc-tools{display:flex;gap:8px}
+.tbtn{background:var(--surface);border:1px solid var(--border);color:var(--text-muted);border-radius:10px;padding:8px 12px;font-size:12.5px;font-weight:500}
+.tbtn:hover{color:var(--text)}
+.note{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:12px;padding:11px 13px;font-size:12.5px;color:var(--text-muted);line-height:1.55;margin:16px 0 20px}
+.note b{color:var(--text);font-weight:700}
+.stage{display:flex;gap:26px;align-items:flex-start;flex-wrap:wrap}
+
+/* ---------- screen rail ---------- */
+.rail{flex:1 1 250px;min-width:230px;max-width:330px}
+.rail h2{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);margin:6px 0 9px}
+.rail ol{list-style:none;counter-reset:s}
+.rail li{counter-increment:s}
+.rail button{width:100%;text-align:left;display:flex;gap:10px;align-items:baseline;background:transparent;border:0;border-left:2px solid var(--border);color:var(--text-muted);padding:7px 10px;font-size:13px;line-height:1.35}
+.rail button::before{content:counter(s);font-size:11px;font-variant-numeric:tabular-nums;color:var(--text-muted);opacity:.6;min-width:14px}
+.rail button:hover{color:var(--text)}
+.rail button[aria-current="true"]{border-left-color:var(--green);color:var(--text);font-weight:700}
+.rail .gate{display:block;font-size:11px;color:var(--amber);font-weight:400;margin-top:2px}
+
+/* ---------- phone ---------- */
+.phone-wrap{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:10px}
+.phone{width:390px;height:800px;background:var(--bg);border:11px solid var(--frame);border-radius:42px;overflow:hidden;position:relative;box-shadow:0 24px 60px rgba(0,0,0,.35)}
+.status{height:34px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;font-size:11.5px;color:var(--text-muted);font-variant-numeric:tabular-nums}
+.appbar{display:flex;align-items:center;gap:12px;padding:2px 16px 10px}
+.back{background:var(--surface-2);border:1px solid var(--border);color:var(--text);border-radius:9px;width:32px;height:32px;font-size:15px;line-height:1}
+.prog{flex:1;height:4px;border-radius:4px;background:var(--surface-2);overflow:hidden}
+.prog span{display:block;height:100%;background:var(--green);border-radius:4px;transition:width .28s ease}
+.count{font-size:11.5px;color:var(--text-muted);font-variant-numeric:tabular-nums}
+.screen{padding:6px 18px 0;height:calc(100% - 34px - 44px - 86px);overflow-y:auto}
+.screen::-webkit-scrollbar{width:0}
+.q{font-family:var(--font-head);font-size:25px;line-height:1.18;margin-bottom:7px}
+.q-sub{font-size:13px;color:var(--text-muted);line-height:1.5;margin-bottom:16px}
+.foot{position:absolute;left:0;right:0;bottom:0;padding:12px 18px 26px;background:linear-gradient(to top,var(--bg) 70%,transparent)}
+.btn{width:100%;background:var(--teal);border:0;color:#fff;border-radius:12px;padding:14px;font-size:15px;font-weight:700}
+.btn.ghost{background:transparent;color:var(--text-muted);border:1px solid var(--border);margin-top:8px;padding:11px;font-size:13.5px;font-weight:500}
+.btn.gold{background:var(--gold);color:#231C05}
+
+/* ---------- option lists ---------- */
+.opt{width:100%;text-align:left;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 15px;margin-bottom:9px;color:var(--text);display:flex;gap:12px;align-items:flex-start}
+.opt:hover{border-color:var(--teal-lt)}
+.opt[aria-pressed="true"]{border-color:var(--green);background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--green)}
+.opt .mark{width:19px;height:19px;border-radius:50%;border:1.5px solid var(--border);flex:0 0 auto;margin-top:1px;position:relative}
+.opt[aria-pressed="true"] .mark{border-color:var(--green);background:var(--green)}
+.opt[aria-pressed="true"] .mark::after{content:"";position:absolute;inset:4px;border-radius:50%;background:var(--bg)}
+.opt-t{font-size:15px;font-weight:700;line-height:1.25}
+.opt-d{font-size:12.5px;color:var(--text-muted);margin-top:3px;line-height:1.45}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.chip{background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:11px;padding:11px 0;font-size:14.5px;font-weight:700;flex:1 1 0;min-width:46px;text-align:center}
+.chip[aria-pressed="true"]{background:var(--teal);border-color:var(--teal);color:#fff}
+.chip.wide{flex:1 1 30%;font-size:13.5px;font-weight:500;padding:11px 6px}
+
+/* ---------- cards, misc ---------- */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:15px;margin-bottom:12px;box-shadow:var(--card-shadow)}
+.card.quiet{box-shadow:none;background:var(--surface-2)}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--green);margin-bottom:5px}
+.eyebrow.gold{color:var(--gold)}
+.row{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--border);font-size:13.5px}
+.row:last-child{border-bottom:0}
+.row .k{color:var(--text-muted)}
+.row .v{font-weight:700;text-align:right}
+.edit{background:transparent;border:0;color:var(--teal-lt);font-size:12.5px;font-weight:700;padding:0}
+.hint{font-size:11.5px;color:var(--text-muted);line-height:1.5;margin-top:10px}
+.time{font-variant-numeric:tabular-nums}
+
+/* fitness entry */
+.big-time{display:flex;align-items:baseline;justify-content:center;gap:5px;font-family:var(--font-head);font-size:44px;letter-spacing:.01em;padding:10px 0 4px}
+.big-time small{font-size:15px;color:var(--text-muted);font-family:var(--font-body)}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+.key{background:var(--surface-2);border:1px solid var(--border);color:var(--text);border-radius:11px;padding:12px 0;font-size:18px;font-weight:500}
+
+/* week-shape strip — the thing PM-1244 actually bought us */
+.shape{display:flex;align-items:flex-end;gap:3px;height:78px;margin:4px 0 2px}
+.shape i{flex:1 1 0;background:var(--teal);border-radius:3px 3px 0 0;min-height:6px;transition:height .22s ease,background .22s ease}
+.shape i.peak{background:var(--gold)}
+.shape i.taper{background:var(--teal-lt);opacity:.55}
+.shape i.down{opacity:.68}
+.legend{display:flex;gap:14px;font-size:11px;color:var(--text-muted);margin-top:8px}
+.legend span{display:flex;align-items:center;gap:5px}
+.dot{width:8px;height:8px;border-radius:2px;display:inline-block}
+input[type=range]{width:100%;accent-color:var(--green);margin:6px 0 2px}
+.range-head{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--text-muted)}
+.range-head b{font-size:19px;color:var(--text);font-family:var(--font-head)}
+
+/* projection */
+.proj{text-align:center;padding:6px 0 2px}
+.proj-band{font-family:var(--font-head);font-size:37px;line-height:1.1;letter-spacing:.01em}
+.proj-from{font-size:13px;color:var(--text-muted);margin-top:8px}
+.axis{position:relative;height:56px;margin:20px 4px 4px}
+.axis .line{position:absolute;left:0;right:0;top:26px;height:2px;background:var(--border)}
+.axis .now,.axis .then{position:absolute;top:19px;width:16px;height:16px;border-radius:50%;border:2px solid var(--bg)}
+.axis .now{left:2%;background:var(--text-muted)}
+.axis .then{right:2%;background:var(--green)}
+.axis .band{position:absolute;top:22px;right:2%;width:22%;height:10px;border-radius:6px;background:var(--green);opacity:.28}
+.axis label{position:absolute;top:42px;font-size:11.5px;color:var(--text-muted)}
+.axis .l-now{left:0}
+.axis .l-then{right:0;text-align:right}
+
+/* injury / consent */
+.legal{font-size:11.5px;color:var(--text-muted);line-height:1.55;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:11px 12px;margin-bottom:12px}
+.gate-tag{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--amber);border:1px solid var(--amber);border-radius:6px;padding:2px 6px;margin-bottom:9px}
+
+/* knobs */
+.knob{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--border)}
+.knob:last-of-type{border-bottom:0}
+.knob-n{font-size:13.5px;font-weight:700}
+.knob-d{font-size:11.5px;color:var(--text-muted);margin-top:2px}
+.pill{background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:5px 11px;font-size:12.5px;font-weight:700;color:var(--teal-lt);white-space:nowrap}
+.pill.amber{color:var(--amber);border-color:var(--amber)}
+
+@media(max-width:900px){
+  .phone{width:100%;max-width:390px;height:720px}
+  .rail{max-width:none}
+}
+</style>
+</head>
+<body>
+<div class="doc">
+
+  <div class="doc-head">
+    <div>
+      <div class="doc-title">Running plan setup</div>
+      <div class="doc-sub">Wave 2 part 2 mockup. Ten single-question screens, a recommendation, a projection and a recap — every answer an enum or a number, so the plan appears instantly with no AI on the path. Nothing here is built.</div>
+    </div>
+    <div class="doc-tools">
+      <button class="tbtn" id="theme">Light</button>
+      <button class="tbtn" id="restart">Restart flow</button>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>All copy is placeholder — Lewis owns every string.</b> The injury screen is Phil's: wording, consent line, and whether an injury answer is allowed to change training at all. Shown here asking and storing only, with the plan untouched by the answer. Paces and the projection use a 27:40 5k so the numbers on screen are real engine output, not invented. Plan length options come from the live template ranges shipped in PM-1244.
+  </div>
+
+  <div class="stage">
+    <nav class="rail">
+      <h2>Screens</h2>
+      <ol id="rail"></ol>
+    </nav>
+
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="status"><span>9:41</span><span>VYVE</span><span>100%</span></div>
+        <div class="appbar">
+          <button class="back" id="back" aria-label="Back">‹</button>
+          <div class="prog"><span id="bar" style="width:9%"></span></div>
+          <div class="count" id="count">1 / 12</div>
+        </div>
+        <div class="screen" id="screen"></div>
+        <div class="foot" id="foot"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const S = {
+  goal:'5k', ability:'30min', race:'27:40', raceDist:'5k', prefill:true,
+  days:4, longDay:'Sun', weeks:12, start:'Mon 21 Sep', injury:null
+};
+
+/* Plan length ranges as shipped PM-1244. start-running is deliberately fixed. */
+const PLANS = {
+  start:{name:'Start Running', min:9, max:9, rec:9, fixed:true, head:0, cycle:0, tail:0},
+  '5k':{name:'5k Improver', min:6, max:20, rec:12, head:1, cycle:4, tail:3},
+  '10k':{name:'10k', min:8, max:24, rec:14, head:3, cycle:4, tail:3},
+  gen:{name:'General Training', min:4, max:26, rec:12, head:0, cycle:12, tail:0}
+};
+const plan = () => PLANS[S.goal] || PLANS['5k'];
+
+/* Week shape for the length slider: head, repeating cycle (down week every 4th),
+   then peak + taper. Mirrors weekScript() rather than guessing. */
+function shape(weeks){
+  const p = plan(), out = [];
+  for (let i=0;i<p.head;i++) out.push({h:.55+i*.07, cls:''});
+  const body = Math.max(0, weeks - p.head - p.tail);
+  for (let i=0;i<body;i++){
+    const inCycle = p.cycle ? i % p.cycle : 0;
+    const grow = p.cycle ? Math.min(1 + Math.floor(i/p.cycle)*.05, 1.20) : 1;
+    const down = p.cycle>1 && inCycle === p.cycle-1;
+    out.push({h:(down?.52:.72+inCycle*.06)*grow, cls:down?'down':''});
+  }
+  if (p.tail){
+    const grow = Math.min(1 + Math.max(0,Math.floor((body-1)/p.cycle))*.05, 1.20);
+    out.push({h:.62*grow, cls:'down'});
+    out.push({h:1*grow, cls:'peak'});
+    out.push({h:.42*grow, cls:'taper'});
+  }
+  return out.slice(0, weeks);
+}
+
+const opt = (id, t, d, sel) =>
+  `<button class="opt" data-pick="${id}" aria-pressed="${sel}"><span class="mark"></span><span><span class="opt-t">${t}</span>${d?`<span class="opt-d">${d}</span>`:''}</span></button>`;
+
+const SCREENS = [
+{ key:'goal', title:'What are you training for?', gate:'',
+  sub:'You can change this later without losing your history.',
+  body:()=>
+    opt('start','Start running','Run/walk to your first 30 unbroken minutes. Nine weeks, three days.', S.goal==='start')+
+    opt('5k','Get quicker over 5k','You already run 5k. Threshold and interval work to move the clock.', S.goal==='5k')+
+    opt('10k','Build up to 10k','Step up the long run and hold a steadier pace for longer.', S.goal==='10k')+
+    opt('gen','Just keep me running','No race in the diary. A rolling plan that carries on until you change it.', S.goal==='gen'),
+  next:'Continue' },
+
+{ key:'rec', title:'We\'d start you here', gate:'',
+  sub:'Based on your answers. Change it if you had something else in mind.',
+  body:()=>`
+    <div class="card">
+      <div class="eyebrow">Recommended</div>
+      <div class="opt-t" style="font-size:19px">${plan().name}</div>
+      <div class="opt-d">${S.goal==='5k'?'Eight to twenty weeks · 3–4 days a week · finishes on a 5k':'Chosen from your goal, current running and the days you have.'}</div>
+      <div class="row" style="margin-top:10px"><span class="k">Coach</span><span class="v">Calum Denham</span></div>
+      <div class="row"><span class="k">Sessions a week</span><span class="v">3 or 4</span></div>
+      <div class="row"><span class="k">Strength alongside</span><span class="v">Included in VYVE</span></div>
+      <div class="hint">Runners who lift twice a week get about half the overuse injuries. Your plan schedules it — it isn't a separate app.</div>
+    </div>`,
+  next:'Use this plan', ghost:'See all plans' },
+
+{ key:'ability', title:'Where are you starting from?', gate:'',
+  sub:'Pick the one that is true today, not the one you want to be true.',
+  body:()=>
+    opt('walk','I\'m starting from walking','Less than 10 minutes of continuous running.', S.ability==='walk')+
+    opt('30min','I can run 30 minutes','Continuous, at a pace where I could still talk.', S.ability==='30min')+
+    opt('5kfree','I can run 5k without stopping','Under about 35 minutes.', S.ability==='5kfree')+
+    opt('regular','I run three or more times a week','And I\'ve done a timed race or parkrun this year.', S.ability==='regular'),
+  next:'Continue' },
+
+{ key:'prefill', title:'We worked this out from your watch', gate:'',
+  sub:'Your last twelve weeks on Apple Health. Change anything that looks wrong.',
+  body:()=>`
+    <div class="card">
+      <div class="eyebrow">From Apple Health</div>
+      <div class="row"><span class="k">Runs a week</span><span class="v">3.2 <button class="edit">Edit</button></span></div>
+      <div class="row"><span class="k">Distance a week</span><span class="v time">18.4 km <button class="edit">Edit</button></span></div>
+      <div class="row"><span class="k">Longest run</span><span class="v time">7.2 km <button class="edit">Edit</button></span></div>
+      <div class="row"><span class="k">5k equivalent</span><span class="v time">27:40 <button class="edit">Edit</button></span></div>
+      <div class="hint">We use this to set your paces and your starting volume. It never leaves your plan.</div>
+    </div>
+    <button class="opt" data-pick="skip" aria-pressed="false"><span class="mark"></span><span><span class="opt-t">Don't use my health data</span><span class="opt-d">You'll enter a recent time yourself on the next screen.</span></span></button>`,
+  next:'That looks right' },
+
+{ key:'race', title:'Your most recent 5k time', gate:'',
+  sub:'One time sets every pace in the plan. A second, longer one makes them sharper — you can add that later.',
+  body:()=>`
+    <div class="chips">
+      <button class="chip" data-pick="5k" aria-pressed="${S.raceDist==='5k'}">5k</button>
+      <button class="chip" data-pick="10k" aria-pressed="${S.raceDist==='10k'}">10k</button>
+      <button class="chip" data-pick="half" aria-pressed="${S.raceDist==='half'}">Half</button>
+      <button class="chip" data-pick="mar" aria-pressed="${S.raceDist==='mar'}">Marathon</button>
+    </div>
+    <div class="card">
+      <div class="big-time time">27<small>min</small> 40<small>sec</small></div>
+      <div class="keypad">${[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map(k=>`<button class="key">${k}</button>`).join('')}</div>
+    </div>
+    <button class="opt" data-pick="unknown" aria-pressed="false"><span class="mark"></span><span><span class="opt-t">I don't know my time</span><span class="opt-d">We'll start you conservatively and set paces from your first few runs.</span></span></button>`,
+  next:'Continue' },
+
+{ key:'days', title:'How many days a week?', gate:'',
+  sub:'Three is enough for this plan. More days means shorter individual runs, not harder ones.',
+  body:()=>`
+    <div class="chips">${[3,4,5].map(d=>`<button class="chip" data-pick="${d}" aria-pressed="${S.days===d}">${d}</button>`).join('')}</div>
+    <div class="card quiet">
+      <div class="opt-d">At ${S.days} days your week looks like ${S.days===3?'long run, easy run, one quality session':S.days===4?'long run, two easy runs, one quality session':'long run, two easy runs, a recovery run and one quality session'}.</div>
+    </div>`,
+  next:'Continue' },
+
+{ key:'longDay', title:'Which day suits your long run?', gate:'',
+  sub:'Everything else spaces itself out from there, so any back-to-back days land after it rather than before.',
+  body:()=>`
+    <div class="chips">${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d=>`<button class="chip" data-pick="${d}" aria-pressed="${S.longDay===d}" style="font-size:12.5px;padding:11px 0">${d}</button>`).join('')}</div>
+    <div class="card quiet"><div class="opt-d">With ${S.days} runs and a ${S.longDay} long run: ${runDays()}.</div></div>`,
+  next:'Continue' },
+
+{ key:'weeks', title:'How long have you got?', gate:'',
+  sub:'The shape stays the same — build weeks, an easier week every fourth, then a peak and a taper. Longer plans build for longer.',
+  body:()=>`
+    <div class="card">
+      <div class="range-head"><span>Plan length</span><b>${S.weeks} weeks</b></div>
+      <input type="range" id="wk" min="${plan().min}" max="${plan().max}" value="${S.weeks}" ${plan().fixed?'disabled':''}>
+      <div class="range-head" style="font-size:11.5px"><span>${plan().min}</span><span>Recommended ${plan().rec}</span><span>${plan().max}</span></div>
+      <div class="shape" id="shape"></div>
+      <div class="legend">
+        <span><i class="dot" style="background:var(--teal)"></i>Build</span>
+        <span><i class="dot" style="background:var(--teal);opacity:.68"></i>Easier week</span>
+        <span><i class="dot" style="background:var(--gold)"></i>Peak</span>
+        <span><i class="dot" style="background:var(--teal-lt);opacity:.55"></i>Taper</span>
+      </div>
+      ${plan().fixed?'<div class="hint">Start Running is nine weeks and doesn\'t stretch. It follows the NHS Couch to 5K week by week, and that structure is the reason it works.</div>':`<div class="hint">Finishes ${finish()}. You can add a race date and we'll taper into it.</div>`}
+    </div>`,
+  next:'Continue' },
+
+{ key:'start', title:'When do you want to start?', gate:'',
+  sub:'Week one always begins on a Monday, so nothing lands in the past.',
+  body:()=>
+    opt('mon','Monday 21 September','This coming Monday.', S.start==='Mon 21 Sep')+
+    opt('next','Monday 28 September','Give yourself a week.', S.start==='Mon 28 Sep')+
+    opt('pick','Pick a date','', false)+
+    `<div class="card quiet" style="margin-top:4px">
+      <div class="opt-d">Running a race? Add the date and the plan tapers into it instead of finishing on an arbitrary week.</div>
+      <button class="edit" style="margin-top:8px">Add a race date</button>
+    </div>`,
+  next:'Continue' },
+
+{ key:'injury', title:'Anything we should train around?', gate:'Phil',
+  sub:'This is optional, and you can skip it.',
+  body:()=>`
+    <span class="gate-tag">Placeholder — Phil's wording</span>
+    <div class="legal">This isn't medical advice, and VYVE can't diagnose an injury. If something hurts when you run, see a physio or your GP. Your answer is stored with your plan and is only used to set how much running you start with.</div>
+    ${opt('none','Nothing right now','', S.injury==='none')}
+    ${opt('niggle','A niggle I\'m managing','Something I feel, but I\'m still running on it.', S.injury==='niggle')}
+    ${opt('recent','An injury in the last three months','I\'ve been off running for some of it.', S.injury==='recent')}
+    ${opt('skip','Prefer not to say','', S.injury==='skip')}
+    <div class="hint">Today this only sets your starting volume, and only after Phil signs the wording off. It never changes a session type.</div>`,
+  next:'Continue' },
+
+{ key:'projection', title:'Where this gets you', gate:'',
+  sub:'',
+  body:()=>`
+    <div class="card">
+      <div class="eyebrow">By ${finish()}</div>
+      <div class="proj">
+        <div class="proj-band time">24:10 – 25:00</div>
+        <div class="proj-from">over 5k, from 27:40 today</div>
+      </div>
+      <div class="axis">
+        <div class="line"></div><div class="band"></div>
+        <div class="now"></div><div class="then"></div>
+        <label class="l-now">Today<br><b class="time">27:40</b></label>
+        <label class="l-then">Week ${S.weeks}<br><b class="time">24:10–25:00</b></label>
+      </div>
+      <div class="hint">A range, not a promise — it assumes you get most of the sessions done. We've widened it because we only have one time from you. Add a second, longer one any time and it tightens.</div>
+    </div>`,
+  next:'Continue' },
+
+{ key:'recap', title:'Ready when you are', gate:'',
+  sub:'',
+  body:()=>`
+    <div class="card">
+      <div class="row"><span class="k">Plan</span><span class="v">${plan().name}</span></div>
+      <div class="row"><span class="k">Length</span><span class="v">${S.weeks} weeks · ${finish()}</span></div>
+      <div class="row"><span class="k">Starting</span><span class="v">${S.start}</span></div>
+      <div class="row"><span class="k">Days a week</span><span class="v">${S.days}, long run ${S.longDay}</span></div>
+      <div class="row"><span class="k">Current 5k</span><span class="v time">27:40</span></div>
+      <div class="row"><span class="k">Easy pace</span><span class="v time">6:48 – 7:36 /km</span></div>
+      <div class="row"><span class="k">Threshold pace</span><span class="v time">5:49 – 6:01 /km</span></div>
+    </div>
+    <div class="card">
+      <div class="eyebrow gold">We set these for you</div>
+      <div class="knob"><div><div class="knob-n">Training volume</div><div class="knob-d">How much you run in a week</div></div><span class="pill">Steady</span></div>
+      <div class="knob"><div><div class="knob-n">Difficulty</div><div class="knob-d">How hard the quality sessions are</div></div><span class="pill">Balanced</span></div>
+      <div class="knob"><div><div class="knob-n">Starting volume</div><div class="knob-d">Eased off for the niggle you mentioned</div></div><span class="pill amber">Adjusted</span></div>
+      <div class="hint">All three are yours to change later under Manage plan.</div>
+    </div>`,
+  next:'Build my plan', ghost:'Advanced settings' }
+];
+
+function runDays(){
+  const order=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const li=order.indexOf(S.longDay), out=[];
+  for(let i=0;i<S.days;i++) out.push(order[(li+Math.floor(i*7/S.days))%7]);
+  return out.sort((a,b)=>order.indexOf(a)-order.indexOf(b)).join(' · ');
+}
+function finish(){
+  const d=new Date(2026,8,21); d.setDate(d.getDate()+S.weeks*7-1);
+  return d.toLocaleDateString('en-GB',{day:'numeric',month:'long'});
+}
+
+let i = 0;
+const screenEl=document.getElementById('screen'), footEl=document.getElementById('foot'),
+      railEl=document.getElementById('rail'), barEl=document.getElementById('bar'), countEl=document.getElementById('count');
+
+function drawRail(){
+  railEl.innerHTML = SCREENS.map((s,n)=>
+    `<li><button data-go="${n}" aria-current="${n===i}">${s.title.replace(/\?$/,'')}${s.gate?`<span class="gate">${s.gate} signs this off</span>`:''}</button></li>`).join('');
+}
+function drawShape(){
+  const el=document.getElementById('shape'); if(!el) return;
+  el.innerHTML = shape(S.weeks).map(b=>`<i class="${b.cls}" style="height:${Math.min(100,b.h*100)}%"></i>`).join('');
+}
+function render(){
+  const s=SCREENS[i];
+  screenEl.innerHTML = `<div class="q">${s.title}</div>${s.sub?`<div class="q-sub">${s.sub}</div>`:''}${s.body()}`;
+  footEl.innerHTML = `<button class="btn ${i===SCREENS.length-1?'gold':''}" id="next">${s.next}</button>${s.ghost?`<button class="btn ghost">${s.ghost}</button>`:''}`;
+  barEl.style.width = ((i+1)/SCREENS.length*100)+'%';
+  countEl.textContent = `${i+1} / ${SCREENS.length}`;
+  screenEl.scrollTop=0;
+  drawShape(); drawRail();
+
+  const wk=document.getElementById('wk');
+  if(wk) wk.addEventListener('input',e=>{ S.weeks=+e.target.value; render(); });
+
+  screenEl.querySelectorAll('[data-pick]').forEach(b=>b.addEventListener('click',()=>{
+    const v=b.dataset.pick, k=SCREENS[i].key;
+    if(k==='goal'){ S.goal=v; S.weeks=Math.min(Math.max(plan().rec,plan().min),plan().max); }
+    if(k==='ability') S.ability=v;
+    if(k==='race') S.raceDist=v;
+    if(k==='days') S.days=+v;
+    if(k==='longDay') S.longDay=v;
+    if(k==='injury') S.injury=v;
+    if(k==='start') S.start = v==='next'?'Mon 28 Sep':'Mon 21 Sep';
+    render();
+  }));
+  document.getElementById('next').addEventListener('click',()=>{ if(i<SCREENS.length-1){i++;render();} });
+}
+document.getElementById('back').addEventListener('click',()=>{ if(i>0){i--;render();} });
+railEl.addEventListener('click',e=>{ const b=e.target.closest('[data-go]'); if(b){ i=+b.dataset.go; render(); }});
+document.getElementById('restart').addEventListener('click',()=>{ i=0; render(); });
+document.getElementById('theme').addEventListener('click',e=>{
+  const d=document.documentElement.dataset.theme==='dark';
+  document.documentElement.dataset.theme=d?'light':'dark';
+  e.target.textContent=d?'Dark':'Light';
+});
+render();
+</script>
+</body>
+</html>
