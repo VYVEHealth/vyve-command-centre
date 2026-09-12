@@ -501,6 +501,16 @@
           <div class="field">
             <label>Video title</label>
             <input id="upload-title" type="text" placeholder="e.g. Welcome to VYVE with Emma Clarke"/>
+            <div class="field-hint" id="upload-title-hint" style="display:none;color:var(--text-muted);">Give it a title members will recognise — the file name won’t do.</div>
+          </div>
+          <div class="field">
+            <label>Pillar</label>
+            <select id="upload-pillar">
+              <option value="mind">Mind</option>
+              <option value="body">Body</option>
+              <option value="connect">Connect</option>
+            </select>
+            <div class="field-hint">Where this video belongs in the app. Defaults to your space’s pillar.</div>
           </div>
           <div class="field">
             <label>Description</label>
@@ -1643,8 +1653,13 @@
         var v = document.createElement('video');
         v.preload = 'metadata'; v.muted = true; v.playsInline = true; v.src = url;
         var done = false;
-        var finish = function(b){ if (done) return; done = true; try { URL.revokeObjectURL(url); } catch(e){} resolve(b); };
-        v.onloadedmetadata = function(){ try { v.currentTime = Math.min(1, (v.duration || 2) / 2); } catch(e){ finish(null); } };
+        // PM-1199: the decode already tells us the shape and length — return them with the poster
+        var meta = { width: null, height: null, duration: null };
+        var finish = function(b){ if (done) return; done = true; try { URL.revokeObjectURL(url); } catch(e){} resolve({ blob: b, width: meta.width, height: meta.height, duration: meta.duration }); };
+        v.onloadedmetadata = function(){
+          try { meta.width = v.videoWidth || null; meta.height = v.videoHeight || null; meta.duration = (isFinite(v.duration) && v.duration > 0) ? Math.round(v.duration) : null; } catch(e){}
+          try { v.currentTime = Math.min(1, (v.duration || 2) / 2); } catch(e){ finish(null); }
+        };
         v.onseeked = function(){
           try {
             var w = 320, ratio = (v.videoHeight && v.videoWidth) ? v.videoHeight / v.videoWidth : 0.5625;
@@ -1655,9 +1670,19 @@
         };
         v.onerror = function(){ finish(null); };
         setTimeout(function(){ finish(null); }, 8000); // don't hang the upload if decode stalls
-      } catch(e){ resolve(null); }
+      } catch(e){ resolve({ blob: null, width: null, height: null, duration: null }); }
     });
   }
+  // PM-1199: a title a camera or an OS produced is not a title. Mirrors machineTitle() in the EF.
+  function humanTitle(name) {
+    var t = String(name || '').replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').replace(/\s+/g, ' ').trim();
+    if (t.length < 3 || !/[a-zA-Z]{2}/.test(t)) return '';
+    if (/^[0-9a-f]{8}[\s-][0-9a-f]{4}[\s-][0-9a-f]{4}[\s-][0-9a-f]{4}[\s-][0-9a-f]{12}$/i.test(t)) return '';
+    if (/^(img|vid|mov|dsc|dscf|pxl|mvi|gopr|dji|clip|rec|screen ?recording|screenrecording|whatsapp video|video)[\s_-]*[\d\s._-]*(\s*[-\u2013]\s*\d+\s*mb)?$/i.test(t)) return '';
+    if (/^(screen ?recording|whatsapp video)\b/i.test(t)) return '';
+    return t;
+  }
+  function defaultPillar() { var p = state.partnerRow && state.partnerRow.pillar; return (p === 'body' || p === 'connect') ? p : 'mind'; }
 
   function acceptUpload(file) {
     if (!file) return false;
@@ -1668,7 +1693,10 @@
     }
     state.uploadFile = file;
     $('upload-meta').style.display = 'block';
-    $('upload-title').value = file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g,' ');
+    var ht = humanTitle(file.name);
+    $('upload-title').value = ht;
+    var hint = $('upload-title-hint'); if (hint) hint.style.display = ht ? 'none' : 'block';
+    var ps = $('upload-pillar'); if (ps) ps.value = defaultPillar();
     $('upload-publish-at').min = minLeadInput();
     return true;
   }
@@ -1707,7 +1735,8 @@
       else if (st === 'finishing') pill = '<span class="mod-chip chip-scheduled">Finishing\u2026</span>';
       else pill = '<span class="mod-chip chip-approved">Waiting</span> <button class="btn btn-ghost" data-uq-remove="' + i + '" type="button" style="font-size:11.5px;padding:5px 10px;">Remove</button>';
       return '<div class="content-item" style="align-items:flex-start;">'
-        + '<div class="content-info"><input type="text" data-uq-title="' + i + '" value="' + escAttr(it.title) + '" maxlength="120" ' + (st === 'waiting' || st === 'failed' ? '' : 'disabled ') + 'style="width:100%;font-size:13.5px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);"/>'
+        + '<div class="content-info"><div style="display:flex;gap:6px;align-items:center;"><input type="text" data-uq-title="' + i + '" value="' + escAttr(it.title) + '" placeholder="Title members will recognise" maxlength="120" ' + (st === 'waiting' || st === 'failed' ? '' : 'disabled ') + 'style="flex:1;min-width:0;font-size:13.5px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);"/>'
+        + '<select data-uq-pillar="' + i + '" ' + (st === 'waiting' || st === 'failed' ? '' : 'disabled ') + 'style="font-size:12.5px;padding:8px 6px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);">' + ['mind','body','connect'].map(function(pv){ return '<option value="' + pv + '"' + (it.pillar === pv ? ' selected' : '') + '>' + pv.charAt(0).toUpperCase() + pv.slice(1) + '</option>'; }).join('') + '</select></div>'
         + '<div class="content-info-meta">' + escHtml(it.file.name) + ' \u00b7 ' + (it.file.size / 1048576).toFixed(0) + ' MB' + (it.error ? ' \u00b7 <span style="color:var(--danger)">' + escHtml(it.error) + '</span>' : '') + '</div>'
         + (st === 'uploading' ? '<div style="background:var(--surface-3);border-radius:4px;height:5px;overflow:hidden;margin-top:6px;"><div style="height:100%;background:var(--vyve-teal);width:' + (it.pct || 0) + '%;transition:width .3s;"></div></div>' : '')
         + '</div><div class="content-actions">' + pill + '</div></div>';
@@ -1716,12 +1745,13 @@
     $('uq-summary').textContent = uq.items.length + ' video' + (uq.items.length === 1 ? '' : 's') + (done ? ' \u00b7 ' + done + ' uploaded' : '') + (failed ? ' \u00b7 ' + failed + ' failed' : '');
     var start = $('uq-start'); if (start) { var pending = uq.items.some(function(i){ return i.status === 'waiting' || i.status === 'failed'; }); start.disabled = uq.running || !pending; start.textContent = uq.running ? 'Uploading\u2026' : (failed && !uq.items.some(function(i){ return i.status === 'waiting'; }) ? 'Retry failed' : 'Upload all'); }
     list.querySelectorAll('[data-uq-title]').forEach(function(inp){ inp.addEventListener('input', function(){ uq.items[+inp.getAttribute('data-uq-title')].title = inp.value; }); });
+    list.querySelectorAll('[data-uq-pillar]').forEach(function(sel){ sel.addEventListener('change', function(){ uq.items[+sel.getAttribute('data-uq-pillar')].pillar = sel.value; }); });
     list.querySelectorAll('[data-uq-remove]').forEach(function(b){ b.addEventListener('click', function(){ uq.items.splice(+b.getAttribute('data-uq-remove'), 1); if (!uq.items.length) uqClear(); else uqRender(); }); });
     list.querySelectorAll('[data-uq-retry]').forEach(function(b){ b.addEventListener('click', function(){ var it = uq.items[+b.getAttribute('data-uq-retry')]; it.status = 'waiting'; it.error = null; uqRender(); uqRun(); }); });
   }
   function acceptQueue(files) {
     var ok = [], rejected = 0;
-    files.forEach(function(f){ if (f.size > MAX_UPLOAD_BYTES) rejected++; else ok.push({ file: f, title: f.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' '), status: 'waiting', pct: 0, error: null }); });
+    files.forEach(function(f){ if (f.size > MAX_UPLOAD_BYTES) rejected++; else ok.push({ file: f, title: humanTitle(f.name), pillar: defaultPillar(), status: 'waiting', pct: 0, error: null }); });
     if (rejected) toast(rejected + ' file' + (rejected === 1 ? ' is' : 's are') + ' over the 2GB limit and ' + (rejected === 1 ? 'was' : 'were') + ' left out');
     if (!ok.length) return;
     state.welcomeMode = false; state.uploadFile = null;
@@ -1742,7 +1772,7 @@
         var xhr = new XMLHttpRequest();
         xhr.upload.onprogress = function(e){ if (e.lengthComputable) { it.pct = Math.round(e.loaded / e.total * 100);
           if (Date.now() - lastB > 15000) { lastB = Date.now(); beacon(sd.storage_path, 'uploading', it.pct); }
-          var f = document.activeElement; if (f && f.hasAttribute && f.hasAttribute('data-uq-title')) return; uqRender(); } }; // don't re-render while a title is being typed
+          var f = document.activeElement; if (f && f.hasAttribute && (f.hasAttribute('data-uq-title') || f.hasAttribute('data-uq-pillar'))) return; uqRender(); } }; // don't re-render while a title is being typed
         xhr.onload = function(){ if (xhr.status >= 200 && xhr.status < 300) resolve(); else reject(new Error('Upload failed: ' + xhr.status)); };
         xhr.onerror = function(){ reject(new Error('Network error during upload')); };
         xhr.open('PUT', sd.signed_url); xhr.setRequestHeader('Content-Type', it.file.type || 'video/mp4'); xhr.send(it.file);
@@ -1750,18 +1780,19 @@
     } catch (e) { beacon(sd.storage_path, 'failed', it.pct || 0, e.message); releaseAwake(wake); throw e; }
     releaseAwake(wake); beacon(sd.storage_path, 'uploaded', 100);
     it.status = 'finishing'; uqRender();
-    var thumbUrl = null;
+    var thumbUrl = null, cap = { width: null, height: null, duration: null };
     try {
-      var blob = await captureThumb(it.file);
-      if (blob) {
+      cap = await captureThumb(it.file);
+      if (cap.blob) {
         var tRes = await fetch(_SUPA_URL + '/functions/v1/partner-content-upload', { method: 'POST', headers: efHeaders(), body: JSON.stringify({ action: 'sign-thumb', partner_id: state.partnerId }) });
         var tData = await tRes.json();
-        if (tData.signed_url) { var pr = await fetch(tData.signed_url, { method: 'PUT', headers: { 'Content-Type': 'image/jpeg' }, body: blob }); if (pr.ok) thumbUrl = tData.public_url; }
+        if (tData.signed_url) { var pr = await fetch(tData.signed_url, { method: 'PUT', headers: { 'Content-Type': 'image/jpeg' }, body: cap.blob }); if (pr.ok) thumbUrl = tData.public_url; }
       }
     } catch (e) { /* thumbnail is best-effort */ }
     var ins = await fetch(_SUPA_URL + '/functions/v1/partner-content-upload', { method: 'POST', headers: efHeaders(), body: JSON.stringify({
-      action: 'commit', partner_id: state.partnerId, title: (it.title || '').trim() || it.file.name, description: null,
-      storage_path: sd.storage_path, pillar: state.partnerRow ? state.partnerRow.pillar : 'mind', publish_at: null, is_welcome: false, thumbnail_url: thumbUrl }) });
+      action: 'commit', partner_id: state.partnerId, title: (it.title || '').trim(), description: null,
+      storage_path: sd.storage_path, pillar: it.pillar || defaultPillar(), publish_at: null, is_welcome: false, thumbnail_url: thumbUrl,
+      width: cap.width, height: cap.height, duration_sec: cap.duration }) });
     var id = await ins.json().catch(function(){ return {}; });
     if (!ins.ok || id.error) throw new Error(id.error || ('Insert failed: ' + ins.status));
   }
@@ -1771,7 +1802,7 @@
     for (var i = 0; i < uq.items.length; i++) {
       var it = uq.items[i];
       if (it.status !== 'waiting') continue;
-      if (!(it.title || '').trim()) { it.status = 'failed'; it.error = 'Give it a title'; uqRender(); continue; }
+      if (!humanTitle((it.title || '').trim() + '.x')) { it.status = 'failed'; it.error = 'Give it a title members will recognise'; uqRender(); continue; }
       try { await uploadOne(it); it.status = 'done'; it.error = null; }
       catch (e) { it.status = 'failed'; it.error = /Upload failed: 0|NetworkError|Failed to fetch|network/i.test(e.message || '') ? 'Connection dropped \u2014 retry on wifi' : (e.message || 'Upload error'); reportError('video-upload-batch', e.message, { file_mb: +(it.file.size / 1048576).toFixed(1), file_type: it.file.type }); }
       uqRender();
@@ -1788,6 +1819,7 @@
     if (!state.uploadFile || !state.partnerId) return;
     var title = $('upload-title').value.trim();
     if (!title) { toast('Please enter a video title'); return; }
+    if (!humanTitle(title + '.x')) { toast('Give it a title members will recognise \u2014 the file name won\u2019t do'); return; }
     var publishLocal = $('upload-publish-at').value;
     if (publishLocal && tooSoonLocal(publishLocal)) { toast('Go-live must be at least 48 hours from now'); return; }
     var publishIso = publishLocal ? new Date(publishLocal).toISOString() : null;
@@ -1841,10 +1873,10 @@
       beacon(urlData.storage_path, 'uploaded', 100);
 
       // 2b. Best-effort poster frame -> public thumbnails bucket (ignore failures).
-      var thumbUrl = null;
+      var thumbUrl = null, cap = { width: null, height: null, duration: null };
       try {
-        var blob = await captureThumb(state.uploadFile);
-        if (blob) {
+        cap = await captureThumb(state.uploadFile);
+        if (cap.blob) {
           var tRes = await fetch(_SUPA_URL + '/functions/v1/partner-content-upload', {
             method: 'POST',
             headers: efHeaders(),
@@ -1852,7 +1884,7 @@
           });
           var tData = await tRes.json();
           if (tData.signed_url) {
-            var pr = await fetch(tData.signed_url, { method: 'PUT', headers: { 'Content-Type': 'image/jpeg' }, body: blob });
+            var pr = await fetch(tData.signed_url, { method: 'PUT', headers: { 'Content-Type': 'image/jpeg' }, body: cap.blob });
             if (pr.ok) thumbUrl = tData.public_url;
           }
         }
@@ -1868,10 +1900,11 @@
           title: title,
           description: $('upload-desc').value.trim() || null,
           storage_path: urlData.storage_path,
-          pillar: state.partnerRow ? state.partnerRow.pillar : 'mind',
+          pillar: ($('upload-pillar') && $('upload-pillar').value) || defaultPillar(),
           publish_at: publishIso,
           is_welcome: state.welcomeMode === true,
           thumbnail_url: thumbUrl,
+          width: cap.width, height: cap.height, duration_sec: cap.duration,   // PM-1199
         }),
       });
       var insData = await insertRes.json().catch(function(){ return {}; });
