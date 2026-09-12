@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="robots" content="noindex,nofollow"/>
+<title>VYVE Exercise Library — mockup (Calum Batch 2, PM-1220)</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+/* CC tokens inlined so this stands alone. A picture to react to — no schema, no code paths. */
+:root{--vyve-dark:#0D2B2B;--vyve-teal:#1B7878;--vyve-teal-light:#4DAAAA;--vyve-gold:#C9A84C;
+--bg:#F7F9F9;--surface:#FFFFFF;--surface-2:#F0F4F4;--surface-3:#E4EBEB;--border:rgba(13,43,43,.09);--border-strong:rgba(13,43,43,.18);--text:#0D2B2B;--text-muted:#4E6E6E;--text-dim:#8CA6A6;
+--success:#1F8F45;--warning:#E09B3D;--danger:#C64545;--accent:#1B7878;--accent-pale:#DEEFEF;--on-accent:#fff;--gold:#A8873A;--gold-pale:rgba(201,168,76,.14);
+--font:'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;--shadow-lg:0 24px 64px rgba(0,0,0,.18);}
+html[data-theme="dark"]{--bg:#081616;--surface:#0E2222;--surface-2:#132C2C;--surface-3:#1A3838;--border:rgba(141,196,196,.12);--border-strong:rgba(141,196,196,.22);--text:#E9F3F3;--text-muted:#93B3B3;--text-dim:#5E7D7D;
+--success:#4ADE80;--warning:#E8A855;--danger:#F87171;--accent:#4DAAAA;--accent-pale:rgba(77,170,170,.10);--on-accent:#081616;--gold:#D5B65E;--gold-pale:rgba(213,182,94,.12);--shadow-lg:0 24px 64px rgba(0,0,0,.6);}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}button{cursor:pointer;background:none;border:0}
+.btn{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border:1px solid var(--border-strong);border-radius:8px;background:var(--surface);font-weight:600;font-size:12.5px;white-space:nowrap}
+.btn:hover{background:var(--surface-2)}.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.sm{height:26px;padding:0 9px;font-size:11.5px}.btn.on{background:var(--accent-pale);border-color:var(--accent);color:var(--accent)}
+.muted{color:var(--text-muted)}.dim{color:var(--text-dim)}.small{font-size:12px}.xs{font-size:11px}
+/* ── mockup chrome ── */
+.mk-bar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;padding:10px 18px;background:var(--surface);border-bottom:1px solid var(--border)}
+.mk-bar strong{letter-spacing:4px;color:var(--vyve-teal-light)}
+.mk-bar .tabs{display:flex;gap:4px;margin-left:12px}
+.mk-bar .tabs button{padding:6px 12px;border-radius:8px;font-weight:600;font-size:12.5px;color:var(--text-muted)}
+.mk-bar .tabs button.on{background:var(--accent-pale);color:var(--accent)}
+.mk-note{margin-left:auto;font-size:11.5px;color:var(--text-dim);max-width:520px;text-align:right}
+/* ── page ── */
+.page{display:grid;grid-template-columns:250px 1fr;gap:16px;padding:16px 18px;max-width:1720px;margin:0 auto}
+.page.pick{grid-template-columns:250px 1fr 320px}
+.rail{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 8px;position:sticky;top:64px;max-height:calc(100vh - 80px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.rail .top{display:flex;flex-direction:column;gap:2px;margin-bottom:8px}
+.ri{display:flex;align-items:center;gap:8px;width:100%;padding:7px 10px;border-radius:8px;font-size:13px;color:var(--text-muted);text-align:left}
+.ri:hover{background:var(--surface-2);color:var(--text)}.ri.on{background:var(--accent-pale);color:var(--accent);font-weight:600}
+.ri .n{margin-left:auto;font-size:11px;color:var(--text-dim);font-variant-numeric:tabular-nums}
+.ri.on .n{color:var(--accent)}
+.grp{margin-top:6px;border-top:1px solid var(--border);padding-top:6px}
+.gh{display:flex;align-items:center;gap:6px;width:100%;padding:8px 10px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);text-align:left}
+.gh .car{margin-left:auto;transition:transform .15s}.gh.open .car{transform:rotate(90deg)}
+.gl{display:none;flex-direction:column;gap:1px;padding-bottom:4px}.gh.open+.gl{display:flex}
+.main{min-width:0}
+.tb{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.tb h1{font-size:18px;font-weight:700;margin-right:6px}
+.search{flex:1;min-width:220px;display:flex;align-items:center;gap:8px;height:36px;padding:0 12px;border:1px solid var(--border-strong);border-radius:10px;background:var(--surface-2)}
+.search input{flex:1;background:none;border:0;outline:0;font-size:13.5px}
+.chip{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 10px;border-radius:999px;border:1px solid var(--border-strong);background:var(--surface);font-size:12px;color:var(--text-muted)}
+.chip.on{border-color:var(--accent);background:var(--accent-pale);color:var(--accent);font-weight:600}
+.count{font-size:12px;color:var(--text-muted);margin:2px 0 10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.page.pick .grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
+.ex{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;transition:border-color .12s,transform .12s}
+.ex:hover{border-color:var(--border-strong);transform:translateY(-1px)}
+.th{position:relative;aspect-ratio:16/10;background:var(--surface-3);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.th .ph{font-size:34px;opacity:.35}
+.th .play{position:absolute;inset:auto 8px 8px auto;width:26px;height:26px;border-radius:50%;background:rgba(8,22,22,.75);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px}
+.th .fav{position:absolute;top:6px;left:6px;width:26px;height:26px;border-radius:50%;background:rgba(8,22,22,.55);color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center}
+.th .fav.on{color:var(--gold)}
+.th .src{position:absolute;top:8px;right:8px;font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border-radius:999px;background:rgba(8,22,22,.6);color:#fff}
+.th .src.own{background:var(--gold);color:#081616}
+.bd{padding:9px 10px 10px;display:flex;flex-direction:column;gap:6px;flex:1}
+.nm{font-weight:600;font-size:13px;line-height:1.3}
+.mt{font-size:11.5px;color:var(--text-muted)}
+.ac{display:flex;gap:6px;margin-top:auto}
+.ac .btn{flex:1;justify-content:center}
+/* picker column */
+.pk{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;position:sticky;top:64px;max-height:calc(100vh - 80px);display:flex;flex-direction:column}
+.pk h2{font-size:14px;font-weight:700}
+.pk .sub{font-size:12px;color:var(--text-muted);margin-bottom:10px}
+.pk .list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.pi{display:flex;align-items:center;gap:8px;padding:7px 8px;border:1px solid var(--border);border-radius:9px;background:var(--surface-2);font-size:12.5px}
+.pi .k{width:20px;height:20px;border-radius:6px;background:var(--surface-3);display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;color:var(--text-muted)}
+.pi .x{margin-left:auto;color:var(--text-dim);font-size:15px}
+.pk .empty{padding:24px 10px;text-align:center;color:var(--text-dim);font-size:12.5px;border:1px dashed var(--border-strong);border-radius:10px}
+/* sheet */
+.veil{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40;align-items:center;justify-content:center;padding:20px}
+.veil.on{display:flex}
+.sheet{width:100%;max-width:760px;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow-lg);overflow:hidden}
+.sheet .vid{aspect-ratio:16/9;background:var(--surface-3);display:flex;align-items:center;justify-content:center;font-size:44px;opacity:.5}
+.sheet .in{padding:16px 18px;display:flex;gap:18px}
+.sheet .in>div:first-child{flex:1}
+.sheet h3{font-size:16px;font-weight:700;margin-bottom:4px}
+.sheet .cues{font-size:13px;color:var(--text-muted);margin:8px 0}
+.sheet .side{width:220px;display:flex;flex-direction:column;gap:8px}
+.tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;background:var(--surface-2);border:1px solid var(--border);color:var(--text-muted);margin:0 4px 4px 0}
+.tag.pri{border-color:var(--accent);color:var(--accent);background:var(--accent-pale)}
+.note{background:var(--gold-pale);border:1px solid var(--gold);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--text);margin-bottom:12px}
+.note b{color:var(--gold)}
+@media(max-width:1100px){.page,.page.pick{grid-template-columns:1fr}.rail,.pk{position:static;max-height:none}}
+</style>
+</head>
+<body>
+<div class="mk-bar">
+  <strong>VYVE</strong><span class="muted small">Exercise library — mockup</span>
+  <div class="tabs">
+    <button id="t-lib" class="on" onclick="setMode('lib')">1 · Library page</button>
+    <button id="t-pick" onclick="setMode('pick')">2 · Picking into a session</button>
+    <button id="t-light" onclick="toggleTheme()">Light / dark</button>
+  </div>
+  <div class="mk-note">Same rail, same grid, same cards in both places — the picker just adds the session column on the right. Counts are the live library (977 VYVE + 478 stretches). Thumbnails are placeholders.</div>
+</div>
+
+<div class="page" id="page">
+  <!-- ── left rail ── -->
+  <aside class="rail">
+    <div class="top">
+      <button class="ri on" data-sel="all" onclick="sel('all',this)">All exercises <span class="n">1,455</span></button>
+      <button class="ri" data-sel="mine" onclick="sel('mine',this)">My exercises <span class="n">1</span></button>
+      <button class="ri" data-sel="fav" onclick="sel('fav',this)">★ Favourites <span class="n">6</span></button>
+      <button class="ri" data-sel="recent" onclick="sel('recent',this)">Recently used <span class="n">14</span></button>
+    </div>
+    <div class="grp">
+      <button class="gh open" onclick="this.classList.toggle('open')">Muscle group <span class="car">›</span></button>
+      <div class="gl" id="g-muscle"></div>
+    </div>
+    <div class="grp">
+      <button class="gh" onclick="this.classList.toggle('open')">Equipment <span class="car">›</span></button>
+      <div class="gl" id="g-eq"></div>
+    </div>
+    <div class="grp">
+      <button class="gh open" onclick="this.classList.toggle('open')">Stretching &amp; mobility <span class="car">›</span></button>
+      <div class="gl" id="g-str"></div>
+    </div>
+  </aside>
+
+  <!-- ── main ── -->
+  <main class="main">
+    <div class="note" id="pick-note" style="display:none"><b>Picking for:</b> Push A · Session 1 of 4 — tap <b>Add</b> on a card and it lands on the right with the exercise's default tracking (reps / secs / distance) already set. <b>Done</b> takes you back to the builder.</div>
+    <div class="tb">
+      <h1 id="title">All exercises</h1>
+      <div class="search">🔍 <input id="q" placeholder="Search by name — try “squat”, “hamstring”, “band”" oninput="paint()"/></div>
+      <button class="chip on" onclick="cyc(this,'vid')" data-v="any">Video: any</button>
+      <button class="chip" onclick="this.classList.toggle('on');paint()" id="c-own">VYVE video first</button>
+      <button class="chip" onclick="cyc(this,'sort')" data-s="az">Sort: A–Z</button>
+      <button class="btn primary" style="margin-left:auto" id="new-btn">+ New exercise</button>
+    </div>
+    <div class="count" id="count"></div>
+    <div class="grid" id="grid"></div>
+  </main>
+
+  <!-- ── picker column ── -->
+  <aside class="pk" id="pk" style="display:none">
+    <h2>Push A</h2>
+    <div class="sub">Week 1 · Session 1 of 4 · ~45 min</div>
+    <div class="list" id="pk-list"><div class="empty">Nothing added yet — tap Add on any card.</div></div>
+    <div style="display:flex;gap:8px"><button class="btn" style="flex:1;justify-content:center" onclick="setMode('lib')">Cancel</button><button class="btn primary" style="flex:1;justify-content:center" onclick="alert('Back to the builder with these rows (mockup)')">Done · <span id="pk-n">0</span></button></div>
+  </aside>
+</div>
+
+<!-- ── preview sheet ── -->
+<div class="veil" id="veil" onclick="if(event.target===this)this.classList.remove('on')">
+  <div class="sheet">
+    <div class="vid" id="sh-vid">▶</div>
+    <div class="in">
+      <div>
+        <h3 id="sh-name">Goblet Squat</h3>
+        <div class="muted small" id="sh-meta">Quads · Kettlebell · VYVE stock</div>
+        <div class="cues" id="sh-cues">Hold the bell at the chest, elbows in. Sit between the knees, chest tall, drive through the whole foot. Breathe out on the way up.</div>
+        <div id="sh-tags"></div>
+      </div>
+      <div class="side">
+        <button class="btn primary" id="sh-add" onclick="addFromSheet()">+ Add to session</button>
+        <button class="btn" onclick="alert('Copies it into My exercises so you can swap the video and change the tracking (mockup)')">Duplicate to my library</button>
+        <button class="btn" onclick="alert('Toggles ★ (mockup)')">★ Favourite</button>
+        <div class="xs dim" style="margin-top:auto">Plays inline: VYVE recording if we have one, otherwise the library visual. A coach's own unlisted YouTube link plays in the client's app too.</div>
+        <button class="btn" onclick="document.getElementById('veil').classList.remove('on')">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── live counts, taxonomy normalised (Batch 2 does the same to the data: 'Glutes'/'glutes', 'Quads / Glutes / Cardio' → one casing, one primary) ── */
+var MUSCLE = [['Quads',148],['Shoulders',129],['Abs & core',96],['Chest',85],['Hamstrings',80],['Triceps',76],['Glutes',33],['Biceps',54],['Lats',38],['Mid back',34],['Calves',28],['Lower back',27],['Forearms',25],['Traps',17],['Adductors',14],['Abductors',8],['Neck',8],['Full body',6],['Other',60]];
+var EQUIP  = [['Barbell',180],['Dumbbell',144],['Bodyweight',136],['Cable',95],['Machine',86],['Kettlebell',64],['Bands',20],['Medicine ball',17],['Swiss ball',12],['Foam roller',11],['EZ bar',9],['Other',199]];
+var STRETCH= [['All stretches',478],['Knee',51],['Hip',29],['Ankle',24],['Shoulder',19],['Wrist',17],['Hands & fingers',13],['Neck',7],['Lumbar spine',8],['Thoracic spine',3],['Elbow',4],['Toes',8],['Nerve glides',57],['Foam roller',12],['Senior',72],['General',47],['Other',59]];
+var EX = [
+ ['Goblet Squat','Quads','Kettlebell',1,0],['Single-Leg High Box Squat','Quads','Other',0,0],['Standing Leg Curl','Hamstrings','Machine',0,0],['Vertical Swing','Hamstrings','Dumbbell',0,0],
+ ['Pallof Press With Rotation','Abs & core','Cable',1,0],['Side Jackknife','Abs & core','Bodyweight',0,0],['Leg Pull-In','Abs & core','Bodyweight',0,0],['Front Raise And Pullover','Chest','Barbell',0,0],
+ ['Suspended Push-Up','Chest','Other',0,0],['Bench Press - With Bands','Chest','Bands',0,0],['Floor Press with Chains','Triceps','Barbell',0,0],['Seated Bent-Over Triceps Extension','Triceps','Dumbbell',0,0],
+ ['Arnold Dumbbell Press','Shoulders','Dumbbell',1,0],['Cuban Press','Shoulders','Dumbbell',0,0],['Barbell Rear Delt Row','Shoulders','Barbell',0,0],['Kettlebell Turkish Get-Up','Shoulders','Kettlebell',1,0],
+ ['Concentration Curls','Biceps','Dumbbell',0,0],['Machine Preacher Curls','Biceps','Machine',0,0],['Wide-Grip Rear Pull-Up','Lats','Bodyweight',1,0],['Assisted Pull-Up','Lats','Machine',1,0],
+ ['Rack Pulls','Lower back','Barbell',0,0],['Standing Pelvic Tilt','Lower back','Bodyweight',0,0],['Leverage Shrug','Traps','Machine',0,0],['Standing Calf Raises','Calves','Machine',0,0],
+ ['Band Hip Adductions','Adductors','Bands',0,0],['Calum: Trap Bar Deadlift (cue video)','Hamstrings','Barbell',1,1],
+ ['Hamstring stretch — standing','Stretch:Knee','Bodyweight',1,0],['Hip flexor psoas stretch','Stretch:Hip','Bodyweight',1,0],['Ankle mobilisation','Stretch:Ankle','Bodyweight',1,0],['Wrist flexion table stretch','Stretch:Wrist','Bodyweight',1,0],
+ ['Sciatic nerve glide — sitting','Stretch:Nerve glides','Bodyweight',1,0],['Teres major stretch — sitting','Stretch:Shoulder','Bodyweight',1,0],['Thoracic extension over foam roller','Stretch:Foam roller','Foam roller',1,0],['Calf stretch against wall','Stretch:Ankle','Bodyweight',1,0]
+];
+var FAV = {'Goblet Squat':1,'Arnold Dumbbell Press':1,'Wide-Grip Rear Pull-Up':1,'Pallof Press With Rotation':1,'Hip flexor psoas stretch':1,'Rack Pulls':1};
+var ICON = {'Quads':'🦵','Hamstrings':'🦵','Calves':'🦵','Glutes':'🦵','Adductors':'🦵','Abductors':'🦵','Chest':'💪','Shoulders':'💪','Triceps':'💪','Biceps':'💪','Forearms':'💪','Lats':'🔙','Mid back':'🔙','Lower back':'🔙','Traps':'🔙','Abs & core':'⭕','Neck':'⭕','Full body':'⚡','Other':'🏋️'};
+var mode = 'lib', cur = {k:'all', v:''}, vidF = 'any', sort = 'az', picked = [];
+
+function fillGroup(id, rows, kind){
+  var g = document.getElementById(id);
+  g.innerHTML = rows.map(function(r){ return '<button class="ri" data-sel="' + kind + ':' + r[0] + '" onclick="sel(\'' + kind + ':' + r[0].replace(/'/g,"\\'") + '\',this)">' + r[0] + ' <span class="n">' + r[1].toLocaleString() + '</span></button>'; }).join('');
+}
+fillGroup('g-muscle', MUSCLE, 'm'); fillGroup('g-eq', EQUIP, 'e'); fillGroup('g-str', STRETCH, 's');
+
+function sel(key, btn){
+  document.querySelectorAll('.ri').forEach(function(b){ b.classList.remove('on'); });
+  btn.classList.add('on');
+  var p = key.split(':'); cur = { k: p[0], v: p.slice(1).join(':') };
+  document.getElementById('title').textContent = cur.k === 'all' ? 'All exercises' : cur.k === 'mine' ? 'My exercises' : cur.k === 'fav' ? 'Favourites' : cur.k === 'recent' ? 'Recently used' : cur.k === 's' ? 'Stretching · ' + cur.v : cur.v;
+  paint();
+}
+function cyc(btn, what){
+  if (what === 'vid'){ var o = ['any','has','none'], l = { any:'Video: any', has:'Has a video', none:'Missing a video' }; vidF = o[(o.indexOf(vidF) + 1) % 3]; btn.textContent = l[vidF]; btn.classList.toggle('on', vidF !== 'any'); }
+  else { var s = ['az','used','new'], t = { az:'Sort: A–Z', used:'Sort: most used', new:'Sort: newest' }; sort = s[(s.indexOf(sort) + 1) % 3]; btn.textContent = t[sort]; }
+  paint();
+}
+function rows(){
+  var q = document.getElementById('q').value.trim().toLowerCase();
+  var r = EX.filter(function(e){
+    var isStr = e[1].indexOf('Stretch:') === 0, reg = isStr ? e[1].slice(8) : '';
+    if (cur.k === 'mine' && !e[4]) return false;
+    if (cur.k === 'fav' && !FAV[e[0]]) return false;
+    if (cur.k === 'recent' && !(FAV[e[0]] || e[4])) return false;
+    if (cur.k === 'm' && (isStr || e[1] !== cur.v)) return false;
+    if (cur.k === 'e' && (isStr || e[2] !== cur.v)) return false;
+    if (cur.k === 's' && (!isStr || (cur.v !== 'All stretches' && reg !== cur.v))) return false;
+    if (vidF === 'has' && !e[3]) return false;
+    if (vidF === 'none' && e[3]) return false;
+    if (q && e[0].toLowerCase().indexOf(q) < 0 && e[1].toLowerCase().indexOf(q) < 0 && e[2].toLowerCase().indexOf(q) < 0) return false;
+    return true;
+  });
+  if (sort === 'az') r.sort(function(a, b){ return a[0].localeCompare(b[0]); });
+  return r;
+}
+function paint(){
+  var r = rows(), g = document.getElementById('grid');
+  var vf = document.getElementById('c-own').classList.contains('on');
+  document.getElementById('count').textContent = r.length + ' shown' + (cur.k === 'all' && !document.getElementById('q').value ? ' of 1,455 (mockup carries a sample)' : '') + (vf ? ' · VYVE recordings shown first' : '');
+  if (!r.length){ g.innerHTML = '<div class="dim" style="grid-column:1/-1;padding:40px;text-align:center">Nothing matches — try a wider filter, or <b>+ New exercise</b> to add your own.</div>'; return; }
+  g.innerHTML = r.map(function(e, i){
+    var isStr = e[1].indexOf('Stretch:') === 0, mg = isStr ? 'Stretching' : e[1], reg = isStr ? e[1].slice(8) : '';
+    var src = e[4] ? 'own' : (isStr ? 'stretch' : 'vyve');
+    var inPick = picked.indexOf(e[0]) >= 0;
+    return '<div class="ex">' +
+      '<div class="th" onclick="openSheet(' + i + ')"><span class="ph">' + (isStr ? '🧘' : (ICON[mg] || '🏋️')) + '</span>' +
+        '<button class="fav' + (FAV[e[0]] ? ' on' : '') + '" onclick="event.stopPropagation();FAV[\'' + e[0].replace(/'/g,"\\'") + '\']=!FAV[\'' + e[0].replace(/'/g,"\\'") + '\'];paint()">★</button>' +
+        '<span class="src' + (src === 'own' ? ' own' : '') + '">' + (src === 'own' ? 'Mine' : src === 'stretch' ? 'Stretch' : 'VYVE') + '</span>' +
+        (e[3] ? '<span class="play">▶</span>' : '') + '</div>' +
+      '<div class="bd"><div class="nm">' + e[0] + '</div><div class="mt">' + mg + (reg ? ' › ' + reg : '') + ' · ' + e[2] + (e[3] ? '' : ' · <span class="dim">no video</span>') + '</div>' +
+      '<div class="ac">' + (mode === 'pick'
+        ? '<button class="btn sm primary" onclick="add(' + i + ')">' + (inPick ? '✓ Added' : '+ Add') + '</button><button class="btn sm" onclick="openSheet(' + i + ')">Preview</button>'
+        : '<button class="btn sm" onclick="openSheet(' + i + ')">Preview</button><button class="btn sm" onclick="alert(\'' + (e[4] ? 'Opens the editor (mockup)' : 'Copies into My exercises so you can attach your own video and change the tracking (mockup)') + '\')">' + (e[4] ? 'Edit' : 'Duplicate') + '</button>') +
+      '</div></div></div>';
+  }).join('');
+  window._rows = r;
+}
+var sheetIdx = -1;
+function openSheet(i){
+  var e = window._rows[i]; sheetIdx = i;
+  var isStr = e[1].indexOf('Stretch:') === 0;
+  document.getElementById('sh-name').textContent = e[0];
+  document.getElementById('sh-meta').textContent = (isStr ? 'Stretching › ' + e[1].slice(8) : e[1]) + ' · ' + e[2] + ' · ' + (e[4] ? 'Your exercise' : isStr ? 'Stretch library' : 'VYVE stock');
+  document.getElementById('sh-vid').textContent = e[3] ? '▶' : 'No video yet';
+  document.getElementById('sh-vid').style.fontSize = e[3] ? '44px' : '16px';
+  document.getElementById('sh-tags').innerHTML = (isStr ? '<span class="tag pri">Hold · secs</span><span class="tag">Both sides</span>' : '<span class="tag pri">Sets × reps</span><span class="tag">Primary: ' + e[1] + '</span><span class="tag">Secondary: ' + (e[1] === 'Quads' ? 'Glutes' : e[1] === 'Chest' ? 'Triceps' : 'Core') + '</span>') + '<span class="tag">' + e[2] + '</span>';
+  document.getElementById('sh-add').style.display = mode === 'pick' ? '' : 'none';
+  document.getElementById('veil').classList.add('on');
+}
+function addFromSheet(){ add(sheetIdx); document.getElementById('veil').classList.remove('on'); }
+function add(i){
+  var e = window._rows[i];
+  if (picked.indexOf(e[0]) >= 0) return;
+  picked.push(e[0]);
+  var isStr = e[1].indexOf('Stretch:') === 0;
+  var l = document.getElementById('pk-list');
+  if (picked.length === 1) l.innerHTML = '';
+  l.innerHTML += '<div class="pi"><span class="k">' + picked.length + '</span><span>' + e[0] + '</span><span class="dim xs" style="margin-left:6px">' + (isStr ? '30s hold' : '3 × 10') + '</span><span class="x" onclick="this.parentElement.remove();picked.splice(picked.indexOf(\'' + e[0].replace(/'/g,"\\'") + '\'),1);document.getElementById(\'pk-n\').textContent=picked.length;paint()">×</span></div>';
+  document.getElementById('pk-n').textContent = picked.length;
+  paint();
+}
+function setMode(m){
+  mode = m;
+  document.getElementById('page').classList.toggle('pick', m === 'pick');
+  document.getElementById('pk').style.display = m === 'pick' ? '' : 'none';
+  document.getElementById('pick-note').style.display = m === 'pick' ? '' : 'none';
+  document.getElementById('new-btn').style.display = m === 'pick' ? 'none' : '';
+  document.getElementById('t-lib').classList.toggle('on', m === 'lib');
+  document.getElementById('t-pick').classList.toggle('on', m === 'pick');
+  paint();
+}
+function toggleTheme(){ var h = document.documentElement; h.dataset.theme = h.dataset.theme === 'dark' ? 'light' : 'dark'; }
+paint();
+</script>
+</body>
+</html>
