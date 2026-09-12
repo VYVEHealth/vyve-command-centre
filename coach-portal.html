@@ -430,6 +430,7 @@
       <h2 style="margin:0 0 14px;font-size:17px;">Settings</h2>
       <div class="prof-row"><span class="k">Appearance</span><button class="btn" id="set-theme" type="button" style="font-size:12.5px;">Toggle light / dark</button></div>
       <div class="prof-row"><span class="k">Account</span><button class="btn" id="set-signout" type="button" style="font-size:12.5px;">Sign out</button></div>
+      <div class="prof-row"><span class="k">Exercise library</span><label style="display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer;"><input id="set-rehab-shelf" type="checkbox"/> Also show the rehab exercise set (the physio library) in my Exercise library</label></div>
     </div>
     <div class="card" style="max-width:860px;margin:18px 0;">
       <h2 style="margin:0 0 6px;font-size:17px;">Your coaching terms</h2>
@@ -2527,12 +2528,14 @@
      #access_token=…&type=recovery; the SDK fires SIGNED_IN with a session BEFORE PASSWORD_RECOVERY, so
      showApp() must not open the portal while a recovery is pending — the new password gets set first. */
   var cpRecovery = /type=recovery/.test(window.location.hash);
+  /* PM-1208: per-page copy — physio-portal reassigns these before boot(). */
+  var CP_LOGIN_LEAD = 'Sign in with your VYVE coach login.', CP_RESET_LEAD = 'Choose a new password for your VYVE login — it works for the coach portal and the app.';
   function showReset(){
     $g('shell').classList.remove('show');
     $g('login-overlay').classList.add('show');
     $g('cp-login-fields').style.display = 'none';
     $g('cp-reset').style.display = '';
-    $g('cp-login-lead').textContent = 'Choose a new password for your VYVE login — it works for the coach portal and the app.';
+    $g('cp-login-lead').textContent = CP_RESET_LEAD;
     $g('login-msg').textContent = '';
   }
   $g('cp-forgot').addEventListener('click', async function(ev){
@@ -2559,7 +2562,7 @@
     cpRecovery = false;
     try { history.replaceState(null, '', window.location.pathname + window.location.search); } catch(_){}
     $g('cp-reset').style.display = 'none'; $g('cp-login-fields').style.display = '';
-    $g('cp-login-lead').textContent = 'Sign in with your VYVE coach login.';
+    $g('cp-login-lead').textContent = CP_LOGIN_LEAD;
     var s = await sb().auth.getSession();
     if (s.data.session) showApp(s.data.session); else showLogin();
   });
@@ -3724,7 +3727,10 @@
      default_sets/reps/rest/duration, alternatives uuid[], image_url.
      ═══════════════════════════════════════════════════════════════════════ */
 
-  var W3_SEL = 'id,partner_id,name,category,equipment,video_url,media_url,cues,muscle_volumes,image_url,exercise_type,default_sets,default_reps,default_rest_seconds,default_duration_seconds,alternatives,video_url_alt,alt_label';
+  /* PM-1208: shelves. EX_SHELVES = the stock shelves this portal reads (coach: strength, + rehab on opt-in;
+     physio: rehab); EX_HOME_SHELF = the shelf a new exercise saved here lands on. Own rows always show. */
+  var EX_SHELVES = ['strength'], EX_HOME_SHELF = 'strength', EX_CAT_LABEL = 'All muscle groups';
+  var W3_SEL = 'id,partner_id,library,name,category,equipment,video_url,media_url,cues,muscle_volumes,image_url,exercise_type,default_sets,default_reps,default_rest_seconds,default_duration_seconds,alternatives,video_url_alt,alt_label';
   (function(){
     var st = document.createElement('style');
     st.textContent =
@@ -3824,8 +3830,10 @@
       /* PM-1207: page the library — PostgREST caps a single call at 1,000 rows, so 977 stock + any real
          private library silently lost everything after ~C. Pull 1,000 at a time until a short page. */
       cexRows = [];
+      /* PM-1208: staff at VYVE scope see every shelf; a partner sees its shelves plus its own rows. */
+      var exShelf = vyveScope ? '' : ('&or=(library.in.(' + EX_SHELVES.join(',') + ')' + (partnerId ? ',partner_id.eq.' + partnerId : '') + ')');
       for (var exOff = 0; ; exOff += 1000){
-        var exPg = await rest('/coach_exercises?active=eq.true&select=' + W3_SEL + '&order=name.asc,id.asc&limit=1000&offset=' + exOff) || [];
+        var exPg = await rest('/coach_exercises?active=eq.true' + exShelf + '&select=' + W3_SEL + '&order=name.asc,id.asc&limit=1000&offset=' + exOff) || [];
         cexRows = cexRows.concat(exPg);
         if (exPg.length < 1000) break;
       }
@@ -3833,7 +3841,7 @@
       var cats = {}, eqs = {};
       cexRows.forEach(function(r){ if (r.category) cats[r.category] = 1; if (r.equipment) eqs[r.equipment] = 1; });
       var co = Object.keys(cats).sort(), eo = Object.keys(eqs).sort();
-      if ($c('ex-f-cat')) $c('ex-f-cat').innerHTML = '<option value="">All muscle groups</option>' + co.map(function(c){ return '<option>' + esc(c) + '</option>'; }).join('');
+      if ($c('ex-f-cat')) $c('ex-f-cat').innerHTML = '<option value="">' + esc(EX_CAT_LABEL) + '</option>' + co.map(function(c){ return '<option>' + esc(c) + '</option>'; }).join('');
       if ($c('ex-f-eq')) $c('ex-f-eq').innerHTML = '<option value="">Any equipment</option>' + eo.map(function(c){ return '<option>' + esc(c) + '</option>'; }).join('');
       if ($c('ex-cat-names')) $c('ex-cat-names').innerHTML = co.map(function(c){ return '<option value="' + esc(c) + '">'; }).join('');
       if ($c('ex-eq-names')) $c('ex-eq-names').innerHTML = eo.map(function(c){ return '<option value="' + esc(c) + '">'; }).join('');
@@ -3875,7 +3883,7 @@
       var acts = mine
         ? '<button class="btn" data-ex-edit="' + r.id + '" style="font-size:11px;">Edit</button> <button class="btn" data-ex-del="' + r.id + '" style="font-size:11px;">Remove</button>'
         : '<button class="btn" data-ex-edit="' + r.id + '" style="font-size:11px;">View</button> <button class="btn" data-ex-dup="' + r.id + '" style="font-size:11px;">Duplicate</button>';
-      var dv = w3DirectVideo(r);
+      var dv = w3DirectVideo(r) || ytId(r.video_url) || ytId(r.media_url); /* PM-1208: YouTube links play too, in the preview sheet */
       return '<div class="w3-card"><div class="im"' + (dv ? ' data-ex-play="' + r.id + '" title="Play video"' : '') + '>' + w3ThumbImg(r, '') + (dv ? '<span class="w3-play">\u25b6</span>' : '') + '</div><div class="bd">' +
         '<div class="nm">' + esc(r.name) + ' <span class="src-tag ' + (mine ? 'src-mine' : 'src-vyve') + '">' + (mine ? 'Yours' : 'VYVE') + '</span></div>' +
         '<div>' + w3MvChips(r.muscle_volumes, 3) + dur + '</div>' +
@@ -3885,17 +3893,10 @@
         '</div></div>';
     }).join('');
     list.querySelectorAll('[data-ex-edit]').forEach(function(b){ b.addEventListener('click', function(){ exOpen(w3ById(b.dataset.exEdit), null); }); });
-    /* PM-1157: tap the thumbnail → the video is in the card and playing. One card plays at a time. */
+    /* PM-1208: tap the thumbnail → preview sheet (native <video> for a file, YouTube embed for a link), name + cues beside it.
+       Replaces PM-1157's in-card play, which only worked for direct files. */
     list.querySelectorAll('.im[data-ex-play]').forEach(function(im){
-      im.addEventListener('click', function(){
-        if (im.classList.contains('playing')) return;
-        var r = w3ById(im.dataset.exPlay), url = w3DirectVideo(r); if (!url) return;
-        list.querySelectorAll('.im.playing video').forEach(function(v){ try { v.pause(); } catch(_){} });
-        var poster = w3ThumbSrc(r);
-        im.classList.add('playing');
-        im.innerHTML = '<video controls autoplay playsinline preload="metadata"' + (poster ? ' poster="' + esc(poster) + '"' : '') + ' src="' + esc(url) + '"></video>';
-        var v = im.querySelector('video'); if (v) v.play().catch(function(){});
-      });
+      im.addEventListener('click', function(){ exPlaySheet(w3ById(im.dataset.exPlay)); });
     });
     list.querySelectorAll('[data-ex-dup]').forEach(function(b){ b.addEventListener('click', function(){ exOpen(null, w3ById(b.dataset.exDup)); }); });
     list.querySelectorAll('[data-ex-del]').forEach(function(b){ b.addEventListener('click', async function(){
@@ -3967,6 +3968,36 @@
     }).join('') || '<span style="font-size:11.5px;color:var(--text-muted);">None yet.</span>';
     box.querySelectorAll('[data-alt-x]').forEach(function(a){ a.addEventListener('click', function(){ w3AltIds = w3AltIds.filter(function(x){ return x !== a.dataset.altX; }); w3AltsPaint(); }); });
   }
+  /* \u2500\u2500 PM-1208 preview sheet: one modal, rebuilt per open, torn down on close so playback stops. \u2500\u2500 */
+  function exPlaySheet(r){
+    if (!r) return;
+    exPlayClose();
+    var url = w3DirectVideo(r), yid = url ? '' : (ytId(r.video_url) || ytId(r.media_url));
+    if (!url && !yid) return;
+    var poster = w3ThumbSrc(r);
+    var player = url
+      ? '<video controls autoplay playsinline preload="metadata" style="width:100%;aspect-ratio:16/9;background:#000;border-radius:10px;display:block;"' + (poster ? ' poster="' + esc(poster) + '"' : '') + ' src="' + esc(url) + '"></video>'
+      : '<div style="position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:10px;overflow:hidden;"><iframe src="https://www.youtube-nocookie.com/embed/' + esc(yid) + '?autoplay=1&rel=0&modestbranding=1&playsinline=1" title="' + esc(r.name) + '" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0;"></iframe></div>';
+    var meta = [r.category, r.equipment].filter(Boolean).map(esc).join(' \u00b7 ');
+    var m = document.createElement('div');
+    m.className = 'w3-modal'; m.id = 'ex-play-sheet';
+    m.innerHTML = '<div class="in" style="width:min(760px,96vw);max-height:92vh;display:flex;flex-direction:column;">' +
+      '<div class="hd"><div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:15px;line-height:1.25;">' + esc(r.name) + '</div>' + (meta ? '<div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;">' + meta + '</div>' : '') + '</div>' +
+      '<button class="btn" type="button" data-ex-play-close style="font-size:12px;">Close</button></div>' +
+      '<div class="sc">' + player + (r.cues ? '<div style="margin-top:12px;font-size:13px;line-height:1.5;white-space:pre-wrap;">' + esc(r.cues) + '</div>' : '') + '</div></div>';
+    m.addEventListener('click', function(e){ if (e.target === m || e.target.hasAttribute('data-ex-play-close')) exPlayClose(); });
+    document.body.appendChild(m);
+    document.addEventListener('keydown', exPlayEsc);
+    var v = m.querySelector('video'); if (v) v.play().catch(function(){});
+  }
+  function exPlayClose(){
+    var m = $c('ex-play-sheet'); if (!m) return;
+    var v = m.querySelector('video'); if (v){ try { v.pause(); } catch(_){} }
+    m.remove();
+    document.removeEventListener('keydown', exPlayEsc);
+  }
+  function exPlayEsc(e){ if (e.key === 'Escape') exPlayClose(); }
+
   function exOpen(row, dupFrom){
     cexEditing = row || null; cexDupFrom = dupFrom || null;
     var seed = row || dupFrom || {};
@@ -4031,7 +4062,7 @@
     var btn = $c('ex-save'); btn.disabled = true; msg.textContent = 'Saving\u2026';
     try {
       if (cexEditing){ body.updated_at = new Date().toISOString(); await rest('/coach_exercises?id=eq.' + cexEditing.id, { method: 'PATCH', body: body }); }
-      else { body.partner_id = partnerId; await rest('/coach_exercises', { method: 'POST', body: body }); }
+      else { body.partner_id = partnerId; body.library = EX_HOME_SHELF; await rest('/coach_exercises', { method: 'POST', body: body }); }
       $c('ex-editor').style.display = 'none';
       cexLoaded = false; await exLoad(); exRender();
     } catch(e){ msg.textContent = 'Save failed: ' + (String(e.message).indexOf('409') >= 0 ? 'you already have an exercise with that name.' : e.message); }
@@ -7777,6 +7808,7 @@
     try {
       var p = await rest('/partner_partners?id=eq.' + partnerId + '&select=coach_ui_prefs,coach_notification_prefs&limit=1');
       w0.prefs = (p && p[0] && p[0].coach_ui_prefs) || {};
+      exShelvesFromPrefs(); /* PM-1208 */
       w0.notifyPrefs = (p && p[0] && p[0].coach_notification_prefs) || null;
     } catch(_){ w0.prefs = w0.prefs || {}; }
     return w0.prefs;
@@ -11741,6 +11773,25 @@
   /* ========================== end PM-1103 W6 part 2 ========================== */
 
 
+  /* ============================ PM-1208: rehab shelf opt-in (coach) ============================
+     A coach never sees the rehab exercise set by default. The Settings checkbox stores
+     coach_ui_prefs.rehab_library (coach-owned, own-row PATCH via w0savePrefs); w0loadPrefs calls
+     exShelvesFromPrefs() so EX_SHELVES is right before the library is first opened. */
+  function exShelvesFromPrefs(){
+    var on = !!(w0.prefs && w0.prefs.rehab_library);
+    EX_SHELVES = on ? ['strength', 'rehab'] : ['strength'];
+    var t = $c('set-rehab-shelf'); if (t) t.checked = on;
+  }
+  (function(){
+    var t = $c('set-rehab-shelf'); if (!t) return;
+    t.addEventListener('change', async function(){
+      await w0savePrefs({ rehab_library: !!t.checked });
+      exShelvesFromPrefs();
+      cexLoaded = false;
+      if ($c('view-exercises') && $c('view-exercises').style.display !== 'none'){ await exLoad(); exRender(); }
+    });
+  })();
+  /* ============================ end PM-1208 ============================ */
   boot();
 
   /* ══════════════════════════════════════════════════════════════════════

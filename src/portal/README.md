@@ -19,5 +19,22 @@ Rules:
 - Slice order is the monolith's order. `js/` names are numbered for that reason; the manifest is the authority.
 - Moving a top-level `function` declaration between slices is semantically neutral (hoisting). Moving a top-level
   `var`, a nested IIFE, or any other executable statement is NOT — it changes execution order.
-- `shared/` slices (from Wave 0 phase 2) must not reference coaching-only names; `tools/build-portals.js`
-  will refuse to build a page whose slices reference a top-level name no included slice defines.
+- `tools/build-portals.js` refuses to build a page whose slices reference a top-level name no included slice
+  defines (the physio page must never pull in a coaching name). It scans every `.js` under `src/portal/`.
+- `node tools/smoke-portals.js` (needs `npm i jsdom`, dev only) executes each generated page in jsdom with a
+  stubbed supabase-js and fails on any load-time error or if the login screen is not reached. Run it before
+  every commit that touches a slice.
+
+## Pages
+
+| Page | Sources | Notes |
+|---|---|---|
+| `coach-portal.html` | `shared/head-*`, `coach/*`, every `js/*` slice in manifest order | Calum's portal. Slice order = the PM-1207 monolith's order. |
+| `physio-portal.html` | `shared/head-*`, `physio/*`, plus `js/010-core`, `080-library-v1`, `105-shared-auth`, `132-shared-library` | The physio face. `physio/app.js` declares the state the shared slices expect and its own init/nav/Patients; per-page copy is set by reassigning `CP_LOGIN_LEAD`, `CP_RESET_LEAD`, `EX_SHELVES`, `EX_HOME_SHELF`, `EX_CAT_LABEL` before `boot()`. |
+
+Shared slices today: `010-core.js` (Supabase client, `rest()`, `ef()`, scope helpers), `105-shared-auth.js`
+(login, forgot-password, recovery, boot), `080-library-v1.js` + `132-shared-library.js` (exercise library:
+load/page, card grid, preview sheet, editor, save). Everything else under `js/` is coaching-only. Carving
+more shared modules out of the wave zones follows the same rule: move `function` declarations only.
+
+`physio/tail.html` is `coach/tail.html` with the error-reporter `surface` changed — keep them in step.

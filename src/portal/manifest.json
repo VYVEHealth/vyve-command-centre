@@ -2,7 +2,11 @@
   "_comment": "Ordered slice lists per generated page. Edit slices under src/portal/, run `node tools/build-portals.js`, commit sources AND outputs. Never edit the generated html directly.",
   "pages": {
     "coach-portal.html": {
-      "head": "coach/head.html",
+      "head": [
+        "shared/head-open.html",
+        "coach/title.html",
+        "shared/head-styles.html"
+      ],
       "body": "coach/body.html",
       "tail": "coach/tail.html",
       "js": [
@@ -14,12 +18,16 @@
         "050-plans.js",
         "060-leads-cal-notifs.js",
         "070-checkins.js",
-        "080-library-programme.js",
+        "080-library-v1.js",
+        "085-programme-v1.js",
         "090-messaging.js",
-        "100-nav-auth-boot.js",
+        "100-nav-coach.js",
+        "105-shared-auth.js",
         "110-w1-pm983.js",
         "120-w2-pm984.js",
-        "130-w3-pm985.js",
+        "130-w3-prelude.js",
+        "132-shared-library.js",
+        "134-w3-workout-depth.js",
         "140-w4-pm986.js",
         "150-w5-pm987.js",
         "160-w6-pm989.js",
@@ -35,9 +43,29 @@
         "260-tz-w6-pm1094.js",
         "270-w7-pm1098.js",
         "280-w6b-pm1103.js",
+        "285-rehab-shelf-optin.js",
         "290-boot-call.js",
         "300-tz-w9a-pm1112.js",
         "310-tz-w9b-pm1125.js",
+        "999-close.js"
+      ]
+    },
+    "physio-portal.html": {
+      "head": [
+        "shared/head-open.html",
+        "physio/title.html",
+        "shared/head-styles.html"
+      ],
+      "body": "physio/body.html",
+      "tail": "physio/tail.html",
+      "js": [
+        "physio/open.js",
+        "010-core.js",
+        "080-library-v1.js",
+        "105-shared-auth.js",
+        "132-shared-library.js",
+        "physio/app.js",
+        "290-boot-call.js",
         "999-close.js"
       ]
     }

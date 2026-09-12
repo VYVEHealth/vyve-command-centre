@@ -44,6 +44,7 @@
     try {
       var p = await rest('/partner_partners?id=eq.' + partnerId + '&select=coach_ui_prefs,coach_notification_prefs&limit=1');
       w0.prefs = (p && p[0] && p[0].coach_ui_prefs) || {};
+      exShelvesFromPrefs(); /* PM-1208 */
       w0.notifyPrefs = (p && p[0] && p[0].coach_notification_prefs) || null;
     } catch(_){ w0.prefs = w0.prefs || {}; }
     return w0.prefs;

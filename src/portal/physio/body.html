@@ -1,0 +1,119 @@
+<div id="login-overlay" class="show">
+  <div class="login-card">
+    <div class="login-logo">VYVE</div>
+    <div class="login-sub">Physio Portal</div>
+    <h2>Welcome back</h2>
+    <p id="cp-login-lead">Sign in with your VYVE physio login.</p>
+    <div id="cp-login-fields">
+    <label for="cp-email">Email</label>
+    <input id="cp-email" type="email" placeholder="you@example.com" autocomplete="username"/>
+    <label for="cp-password">Password</label>
+    <input id="cp-password" type="password" placeholder="Password" autocomplete="current-password"/>
+    <button class="btn btn-primary" id="cp-login-btn" type="button" style="width:100%;">Sign in</button>
+    <div style="text-align:center;margin-top:12px;"><a id="cp-forgot" href="#" style="font-size:12.5px;color:var(--text-muted);text-decoration:underline;">Forgot your password?</a></div>
+    </div>
+    <div id="cp-reset" style="display:none;">
+    <label for="cp-new-pw">New password</label>
+    <input id="cp-new-pw" type="password" placeholder="At least 8 characters" autocomplete="new-password"/>
+    <label for="cp-new-pw2">Confirm new password</label>
+    <input id="cp-new-pw2" type="password" placeholder="Type it again" autocomplete="new-password"/>
+    <button class="btn btn-primary" id="cp-reset-btn" type="button" style="width:100%;">Set password &amp; sign in</button>
+    </div>
+    <div id="login-msg"></div>
+  </div>
+</div>
+
+<div id="shell">
+  <div class="cp-topbar">
+    <button class="cp-burger" id="cp-burger" type="button" aria-label="Menu">&#9776;</button><div class="cp-brand"><div class="cp-logo">VYVE</div><div class="cp-label">Physio Portal</div></div>
+    <div class="cp-right">
+      <span class="cp-user" id="cp-user-email"></span>
+      <button class="cp-theme" id="cp-theme-toggle" type="button" title="Toggle theme">&#9790;</button>
+      <button class="cp-signout" id="cp-signout" type="button">Sign out</button>
+    </div>
+  </div>
+  <aside class="cp-side" id="cp-side">
+    <div class="side-brand">VYVE</div>
+    <button class="cp-item active" data-go="patients" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Patients</span></button>
+    <button class="cp-item" data-go="plans" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11"/><path d="M17.5 6.5v11"/><path d="M3 9v6"/><path d="M21 9v6"/><path d="M6.5 12h11"/></svg><span>Plans</span></button>
+    <button class="cp-item" data-go="exercises" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 6v12"/><path d="M7 10v4"/><path d="M17 10v4"/></svg><span>Library</span></button>
+    <button class="cp-item" data-go="templates" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span>Templates</span></button>
+    <button class="cp-item" data-go="messages" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Messages</span></button>
+    <button class="cp-item" data-go="settings" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><circle cx="9" cy="7" r="2"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="15" cy="17" r="2"/></svg><span>Settings</span></button>
+    <div class="cp-foot">
+      <a href="https://www.vyvehealth.co.uk/terms.html" target="_blank" rel="noopener">Terms</a>
+      <span></span>
+      <a href="https://www.vyvehealth.co.uk/privacy.html" target="_blank" rel="noopener">Privacy</a>
+    </div>
+  </aside>
+  <div class="cp-overlay" id="cp-overlay"></div>
+  <div class="cp-content">
+  <div id="view-patients">
+    <div class="card">
+      <div class="card-title">Patients</div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Everyone you have prescribed to. Adding a patient sends them the VYVE app invite with their free rehab month applied &mdash; that arrives with the plan builder.</p>
+      <div id="pt-count" style="font-size:12px;color:var(--text-muted);margin-bottom:6px;"></div>
+      <div id="pt-list"></div>
+    </div>
+  </div>
+  <div id="view-plans" style="display:none;">
+    <div class="card"><div class="card-title">Rehab plans</div><div class="empty-state"><h3>Plan builder &mdash; next</h3><p>Plan name, patient, start date, duration, exercises with their rehab prescription (hold, repeat, times daily, rest, days per week, both sides), your note, safety netting and the Monitor questions. This is the next build.</p></div></div>
+  </div>
+  <div id="view-exercises" style="display:none;">
+    <div class="card">
+      <div class="card-title">Rehab exercise library</div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">The VYVE rehab library, plus exercises you add with your own video. Your exercises are only ever visible to you and the patients you prescribe them to. Tap a thumbnail to watch.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+        <button class="btn ex-scope active btn-primary" data-scope="all" type="button" style="font-size:12px;">All</button>
+        <button class="btn ex-scope" data-scope="mine" type="button" style="font-size:12px;">My exercises</button>
+        <button class="btn ex-scope" data-scope="vyve" type="button" style="font-size:12px;">VYVE rehab library</button>
+        <input id="ex-f-q" type="search" placeholder="Search" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:13px;font-family:inherit;outline:none;min-width:150px;"/>
+        <select id="ex-f-cat" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:12.5px;font-family:inherit;"></select>
+        <select id="ex-f-eq" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:12.5px;font-family:inherit;"></select>
+        <select id="ex-f-vidsel" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:12.5px;font-family:inherit;"><option value="">Video: any</option><option value="has">Has a video</option><option value="none">Missing a video</option><option value="alt">Has an alt</option><option value="noalt">Missing an alt</option></select>
+        <button class="btn" id="ex-bulk-btn" type="button" style="font-size:12px;display:none;border-color:var(--gold);color:var(--gold);">&#8682; Bulk attach</button>
+        <button class="btn btn-primary" id="ex-new" type="button" style="font-size:12px;margin-left:auto;">+ New exercise</button>
+      </div>
+      <div id="ex-count" style="font-size:12px;color:var(--text-muted);margin-bottom:6px;"></div>
+            <div id="ex-list"></div>
+    </div>
+    <div class="card" id="ex-editor" style="display:none;">
+      <div class="card-title"><span id="ex-editor-title">New exercise</span>
+        <button class="btn" id="ex-cancel" type="button" style="margin-left:auto;font-size:12px;">Cancel</button>
+      </div>
+      <div class="field" style="margin-bottom:10px;"><label>Exercise name</label><input id="exf-name" type="text" maxlength="120" placeholder="e.g. Cable Fly"/></div>
+      <div class="field-row">
+        <div class="field"><label>Body region</label><input id="exf-cat" type="text" maxlength="60" list="ex-cat-names"/></div>
+        <div class="field"><label>Equipment</label><input id="exf-eq" type="text" maxlength="60" list="ex-eq-names"/></div>
+      </div>
+      <div class="field" style="margin-bottom:10px;"><label>Your video &mdash; unlisted YouTube link (optional)</label><input id="exf-video" type="text" placeholder="https://youtu.be/..."/>
+        <div id="exf-prev" style="display:none;align-items:center;gap:12px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:10px;margin-top:8px;">
+          <img id="exf-thumb" alt="" style="width:96px;height:54px;border-radius:6px;object-fit:cover;flex:none;"/>
+          <div><div style="font-size:12px;color:var(--teal-lt);">Video found &mdash; plays inside your client&rsquo;s workout screen.</div><div style="font-size:11px;color:var(--text-muted);">Keep it Unlisted on YouTube so only your clients see it.</div></div>
+        </div>
+        <div id="exf-vmsg" style="font-size:11.5px;color:var(--text-muted);margin-top:4px;">Leave blank to use the VYVE demo or library visual instead.</div>
+      </div>
+      <div class="field"><label>Patient instruction (shown to your patient)</label><textarea id="exf-cues" rows="3" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-size:13px;font-family:inherit;"></textarea></div>
+      <datalist id="ex-cat-names"></datalist><datalist id="ex-eq-names"></datalist>
+      <div style="display:flex;gap:10px;align-items:center;margin-top:12px;">
+        <button class="btn btn-primary" id="ex-save" type="button">Save exercise</button>
+        <span id="ex-msg" style="font-size:12.5px;color:var(--text-muted);"></span>
+      </div>
+    </div>
+  </div>
+  <div id="view-templates" style="display:none;">
+    <div class="card"><div class="card-title">Templates</div><div class="empty-state"><h3>Phased, diagnosis-named templates</h3><p>Save a plan as a template and reuse it by condition and phase. Arrives with the plan builder.</p></div></div>
+  </div>
+  <div id="view-msgs" style="display:none;">
+    <div class="card"><div class="card-title">Messages</div><div class="empty-state"><h3>Patient messages</h3><p>Questions your patients send after a session land here. Arrives with the patient side of the app.</p></div></div>
+  </div>
+  <div id="view-settings" style="display:none;">
+    <div class="card" style="max-width:860px;margin:18px 0;">
+      <h2 style="margin:0 0 14px;font-size:17px;">Settings</h2>
+      <div class="prof-row"><span class="k">Appearance</span><button class="btn" id="set-theme" type="button" style="font-size:12.5px;">Toggle light / dark</button></div>
+      <div class="prof-row"><span class="k">Account</span><button class="btn" id="set-signout" type="button" style="font-size:12.5px;">Sign out</button></div>
+    </div>
+  </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
