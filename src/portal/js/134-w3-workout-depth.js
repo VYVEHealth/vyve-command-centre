@@ -31,7 +31,7 @@
       '<div class="field"><label>Tempo</label><input class="de-tempo" type="text" maxlength="8" placeholder="3010" value="' + esc(ex.tempo || '') + '"/></div>' +
       '<div class="field"><label>Rest s</label><input class="de-rest" type="number" min="0" value="' + (ex.rest_seconds != null ? ex.rest_seconds : 90) + '"/></div>' +
       '<div class="field"><label>RIR</label><input class="de-rir" type="text" maxlength="4" placeholder="2" value="' + esc(ex.rir != null ? ex.rir : '') + '"/></div>' +
-      '<div class="field"><label>Group</label><select class="de-grp">' + GRP_OPTS.map(function(g){ return '<option value="' + g + '"' + ((ex.group || '') === g ? ' selected' : '') + '>' + (g || '\u2014') + '</option>'; }).join('') + '</select></div>' +
+      '<div class="field"><label title="Give two or more exercises the same letter to run them back-to-back as a superset or circuit">Superset</label><select class="de-grp">' + GRP_OPTS.map(function(g){ return '<option value="' + g + '"' + ((ex.group || '') === g ? ' selected' : '') + '>' + (g || '\u2014') + '</option>'; }).join('') + '</select></div>' +
       '<div class="field"><label>Cue / note</label><input class="de-notes" type="text" value="' + esc(ex.notes || '') + '"/></div>' +
       '<button class="btn de-del" type="button" style="font-size:11px;padding:6px 8px;">&times;</button></div>';
     if (isDur) d.dataset.w3type = 'duration';
@@ -202,7 +202,13 @@
   var w3AsgEl = null, w3ClientsCache = null;
   async function w3Clients(){
     if (w3ClientsCache) return w3ClientsCache;
-    try { w3ClientsCache = await rest('/coach_clients?' + pscope() + '&select=member_email,first_name,last_name,status,assignments&order=first_name.asc&limit=500') || []; }
+    try {
+      /* PM-1217: coach_clients carries invited_first_name/invited_last_name — the old
+         select asked for first_name/last_name, PostgREST 400'd, the catch swallowed it
+         and every coach saw "No clients yet" on Assign to… (Calum, 12 Sep). */
+      w3ClientsCache = (await rest('/coach_clients?' + pscope() + '&select=member_email,invited_first_name,invited_last_name,status,assignments&order=invited_first_name.asc&limit=500') || [])
+        .map(function(c){ c.first_name = c.invited_first_name || ''; c.last_name = c.invited_last_name || ''; return c; });
+    }
     catch(e){ w3ClientsCache = []; }
     return w3ClientsCache;
   }
@@ -294,7 +300,6 @@
             '<div style="flex:1;min-width:170px;"><div style="font-weight:600;">' + esc(it.name) + '</div>' +
             '<div style="font-size:11.5px;color:var(--text-muted);">' + esc(wkMeta(it)) + ' \u00b7 edited ' + w3Rel(it.updated_at || it.created_at) + '</div></div>' +
             cBadge +
-            '<button class="btn" data-w3-qv="' + it.id + '" title="Quick view" style="font-size:11.5px;">\ud83d\udc41</button>' +
             '<button class="btn" data-w3-pv="' + it.id + '" style="font-size:11.5px;">Preview</button>' +
             '<button class="btn" data-w3-asg="' + it.id + '" style="font-size:11.5px;">Assign to\u2026</button>' +
             '<button class="btn" data-w3-dup="' + it.id + '" style="font-size:11.5px;">Duplicate</button>' +

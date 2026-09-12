@@ -966,7 +966,6 @@
             '<div style="flex:1;min-width:170px;"><div style="font-weight:600;">' + esc(it.name) + '</div>' +
             '<div style="font-size:11.5px;color:var(--text-muted);">' + esc(wkMeta(it)) + ' \u00b7 edited ' + w3Rel(it.updated_at || it.created_at) + '</div></div>' +
             cBadge +
-            '<button class="btn" data-w3-qv="' + it.id + '" title="Quick view" style="font-size:11.5px;">\ud83d\udc41</button>' +
             '<button class="btn" data-w3-pv="' + it.id + '" style="font-size:11.5px;">Preview</button>' +
             '<button class="btn" data-w3-asg="' + it.id + '" style="font-size:11.5px;">Assign to\u2026</button>' +
             '<button class="btn" data-w3-dup="' + it.id + '" style="font-size:11.5px;">Duplicate</button>' +

@@ -40,6 +40,7 @@
       '.de-row .de-grid{flex:1;min-width:0;}' +
       '.de-row .w3-drag{cursor:grab;color:var(--text-muted);font-size:14px;padding:6px 4px;user-select:none;flex:none;}' +
       '.de-row.w3-dragging{opacity:.45;}' +
+      '.w3-exthumb{width:56px;height:40px;border-radius:6px;object-fit:cover;flex:none;}' +
       '.de-row .w3-exthumb{width:40px;height:30px;border-radius:5px;object-fit:cover;flex:none;align-self:center;}';
     document.head.appendChild(st);
   })();

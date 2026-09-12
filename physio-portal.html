@@ -66,6 +66,10 @@
   </style>
 <style id="cp-side-css">
   .cp-side{position:fixed;top:0;left:0;bottom:0;width:228px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:14px 10px;gap:2px;z-index:60;overflow-y:auto;}
+  .cp-side{scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+  .cp-side::-webkit-scrollbar{width:8px;}
+  .cp-side::-webkit-scrollbar-track{background:transparent;}
+  .cp-side::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px;}
   .cp-side .side-brand{font-family:Georgia,serif;font-size:19px;letter-spacing:5px;color:var(--teal-lt);padding:6px 12px 14px;}
   .cp-item{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:8px;font-size:13.5px;color:var(--text-muted);cursor:pointer;border:none;background:none;width:100%;text-align:left;font-family:inherit;}
   .cp-item svg{width:16px;height:16px;flex:none;}
@@ -638,6 +642,7 @@
       '.de-row .de-grid{flex:1;min-width:0;}' +
       '.de-row .w3-drag{cursor:grab;color:var(--text-muted);font-size:14px;padding:6px 4px;user-select:none;flex:none;}' +
       '.de-row.w3-dragging{opacity:.45;}' +
+      '.w3-exthumb{width:56px;height:40px;border-radius:6px;object-fit:cover;flex:none;}' +
       '.de-row .w3-exthumb{width:40px;height:30px;border-radius:5px;object-fit:cover;flex:none;align-self:center;}';
     document.head.appendChild(st);
   })();
