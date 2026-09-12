@@ -21,10 +21,10 @@
       '.lt-pager button.on{background:rgba(27,120,120,.14);border-color:var(--teal);color:var(--teal-lt);font-weight:700;}' +
       '.lt-pager button:disabled{opacity:.4;cursor:default;}' +
       '#pl-list.lt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px;}' +
-      '#pl-list.lt-grid > *{flex-direction:column !important;align-items:stretch !important;border:1px solid var(--border) !important;border-radius:12px;padding:12px !important;background:var(--surface-2);}' +
-      '#pl-list.lt-grid > * .w3-exthumb{width:100%;height:120px;border-radius:8px;}' +
-      '#pl-list.lt-grid > * > div[style*="flex:1"]{min-width:0 !important;}' +
-      '#pl-list.lt-grid > * .btn{flex:1;justify-content:center;}' +
+      '#pl-list.lt-grid > *{display:flex !important;flex-wrap:wrap;align-items:center;gap:8px 10px;border:1px solid var(--border) !important;border-radius:12px;padding:12px !important;background:var(--surface-2);}' +
+      '#pl-list.lt-grid > * .w3-exthumb{width:64px;height:48px;border-radius:8px;}' +
+      '#pl-list.lt-grid > * > div[style*="flex:1"]{min-width:120px !important;}' +
+      '#pl-list.lt-grid > * > .btn{font-size:11px !important;padding:5px 9px !important;}' +
       '.lt-days{display:flex;gap:4px;flex-wrap:wrap;}' +
       '.lt-days .btn{font-size:11.5px;padding:5px 9px;}' +
       '.lt-days .btn.on{background:rgba(27,120,120,.14);border-color:var(--teal);color:var(--teal-lt);}';
@@ -81,13 +81,14 @@
     if (lt.kind !== plKind){ lt.kind = plKind; lt.q = ''; lt.page = 1; var qi = $c('lt-q'); if (qi) qi.value = ''; }
     var skip = !!LT_SKIP[plKind];
     ['lt-q', 'lt-sort', 'lt-view', 'lt-per', 'lt-count'].forEach(function(id){ var e = $c(id); if (e) e.style.display = skip ? 'none' : ''; });
-    if (skip){ list.classList.remove('lt-grid'); Array.prototype.forEach.call(list.children, function(c){ c.style.display = ''; }); var pg0 = $c('lt-pager'); if (pg0) pg0.innerHTML = ''; return; }
+    if (skip){ list.classList.remove('lt-grid'); Array.prototype.forEach.call(list.children, function(c){ c.style.display = c.dataset.ltDisp || ''; }); var pg0 = $c('lt-pager'); if (pg0) pg0.innerHTML = ''; return; }
     list.classList.toggle('lt-grid', lt.view === 'grid');
     var items = ltItems(list);
     lt.mute = true;
     try {
       /* remember the render order once, so "Newest first" survives an A–Z sort */
-      items.forEach(function(el, i){ if (!el.dataset.ltIdx) el.dataset.ltIdx = String(i); if (!el.dataset.ltName) el.dataset.ltName = ltName(el); });
+      /* rows carry display:flex INLINE — remember it, or hiding/showing would strip it and stack every row vertically (the 21:28 screenshot) */
+      items.forEach(function(el, i){ if (!el.dataset.ltIdx) el.dataset.ltIdx = String(i); if (!el.dataset.ltName) el.dataset.ltName = ltName(el); if (el.dataset.ltDisp === undefined) el.dataset.ltDisp = el.style.display === 'none' ? '' : el.style.display; });
       var vis = items.filter(function(el){ return !lt.q || el.dataset.ltName.indexOf(lt.q) >= 0 || (el.textContent || '').toLowerCase().indexOf(lt.q) >= 0; });
       var ordered = items.slice().sort(function(a, b){
         if (lt.sort === 'az') return a.dataset.ltName.localeCompare(b.dataset.ltName);
@@ -103,7 +104,7 @@
         var ok = vis.indexOf(el) >= 0;
         var inPage = ok && shown >= from && shown < to;
         if (ok) shown++;
-        el.style.display = inPage ? '' : 'none';
+        el.style.display = inPage ? (el.dataset.ltDisp || '') : 'none';
       });
       var cnt = $c('lt-count');
       if (cnt) cnt.textContent = items.length ? (total === items.length ? items.length + ' item' + (items.length === 1 ? '' : 's') : total + ' of ' + items.length) : '';
