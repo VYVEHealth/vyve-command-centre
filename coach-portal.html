@@ -13019,7 +13019,17 @@
       '.exv2-picks{display:flex;gap:6px;flex-wrap:wrap;align-items:center;min-height:30px;}' +
       '.exv2-pk{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 8px;border-radius:999px;background:rgba(27,120,120,.14);color:var(--teal-lt);font-size:11.5px;font-weight:600;}' +
       '.exv2-pk button{background:none;border:0;color:inherit;cursor:pointer;font-size:13px;padding:0;line-height:1;}' +
-      '.de-row .field label.exv2-tog{cursor:pointer;text-decoration:underline dotted;text-underline-offset:2px;}';
+      '.de-row .field label.exv2-tog{cursor:pointer;text-decoration:underline dotted;text-underline-offset:2px;}' +
+      /* PM-1229: blocks as separate panels, Kahunas-style — a heading, the rows, one wide add bar */
+      '.exv2-blk{border:1px solid var(--border);border-radius:12px;padding:12px 14px 12px;margin:12px 0 0;background:var(--surface-2);}' +
+      '.exv2-blk > .exv2-bh{font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text);margin:0 0 8px;display:flex;align-items:center;gap:8px;}' +
+      '.exv2-blk > .exv2-bh .opt{font-size:11px;font-weight:600;letter-spacing:0;text-transform:none;color:var(--text-dim);}' +
+      '.exv2-blk .de-row{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 10px;margin:0 0 6px;}' +
+      '.exv2-addbar{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;padding:12px;border:1px dashed var(--border-strong);border-radius:10px;margin-top:6px;background:var(--surface);}' +
+      '.exv2-addbar .btn{font-size:13px !important;padding:9px 18px !important;}' +
+      '.exv2-addbar .btn.btn-primary{min-width:220px;justify-content:center;}' +
+      '.w6-cfg .field{display:flex;flex-direction:column;justify-content:flex-end;max-width:170px !important;}' +
+      '.w6-cfg .field label{min-height:2.6em;display:flex;align-items:flex-end;}';
     document.head.appendChild(st);
   })();
 
@@ -13325,6 +13335,21 @@
       fresh.textContent = '+ ' + (spec[2] === 'Workout' ? 'Add exercises' : spec[2] + ' exercises');
       fresh.addEventListener('click', function(){ exv2PickerOpen(container.querySelector('.' + spec[1]), spec[2], spec[3]); });
       btn.parentElement.replaceChild(fresh, btn);
+      /* wrap heading + rows + add bar into one panel */
+      var rowsEl = container.querySelector('.' + spec[1]);
+      var heading = rowsEl && rowsEl.previousElementSibling;
+      var addWrap = fresh.parentElement;
+      if (rowsEl && heading && addWrap && !rowsEl.closest('.exv2-blk')){
+        var panel = document.createElement('div'); panel.className = 'exv2-blk';
+        heading.parentElement.insertBefore(panel, heading);
+        var h = document.createElement('div'); h.className = 'exv2-bh';
+        h.innerHTML = esc(spec[2]) + (spec[2] === 'Workout' ? '' : ' <span class="opt">optional</span>');
+        heading.remove();
+        panel.appendChild(h); panel.appendChild(rowsEl);
+        if (addWrap === container || addWrap.classList.contains('exv2-blk')){ /* cool-down button has no wrapper div */
+          var bar = document.createElement('div'); bar.className = 'exv2-addbar'; fresh.parentElement.insertBefore(bar, fresh); bar.appendChild(fresh); panel.appendChild(bar);
+        } else { addWrap.className = 'exv2-addbar'; addWrap.style.cssText = ''; panel.appendChild(addWrap); }
+      }
     });
   };
 
