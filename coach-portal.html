@@ -13304,6 +13304,12 @@
   var _exv2RDE = renderDayEditor;
   renderDayEditor = function(container, day){
     _exv2RDE.apply(this, arguments);
+    /* PM-1226: a new day no longer opens with one blank typed row — the drawer button is the path.
+       The base editor renders [{}] when there are no exercises; drop that row if it is empty. */
+    if (!day || !day.exercises || !day.exercises.length){
+      var mm = container.querySelector('.de-main');
+      if (mm && mm.children.length === 1){ var only = mm.children[0], nm = only.querySelector('.de-name'); if (nm && !nm.value) only.remove(); }
+    }
     /* PM-1225 (Dean): "+ Exercise" itself opens the library drawer — that is the add path. The
        blank typed row survives as a quiet secondary link for coaches who know the name. */
     [['de-add-warm', 'de-warm', 'Warm up', { sets: '1', reps: '', rest_seconds: 0 }], ['de-add-main', 'de-main', 'Workout', {}], ['de-add-cool', 'de-cool', 'Cool down', { sets: '1', reps: '', rest_seconds: 0 }]].forEach(function(spec){
