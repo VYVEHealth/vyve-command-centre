@@ -45,7 +45,7 @@
     .cp-user { font-size: 12px; color: var(--text-muted); }
     .cp-theme, .cp-signout { background: none; border: 1px solid var(--border); border-radius: 8px; color: var(--text-muted); cursor: pointer; padding: 5px 12px; font-size: 12px; font-family: inherit; }
     .cp-signout:hover, .cp-theme:hover { color: var(--text); background: var(--surface-2); }
-    .cp-content { width: 100%; max-width: 1500px; margin: 0 auto; padding: 24px 28px 60px; }
+    .cp-content { width: 100%; max-width: 1720px; margin: 0 auto; padding: 24px 28px 60px; }
     @media (max-width: 700px){ .cp-content { padding: 18px 14px 60px; } }
     .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 16px; }
     .card-title { font-size: 15px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
@@ -76,7 +76,8 @@
   .cp-item:hover{background:var(--surface-2,rgba(77,170,170,.08));color:var(--text);}
   .cp-item.active{background:rgba(27,120,120,.14);color:var(--teal-lt);font-weight:600;box-shadow:inset 3px 0 0 var(--teal);}
   .cp-item .soon{margin-left:auto;font-size:9px;font-weight:700;letter-spacing:.8px;color:var(--text-muted);border:1px solid var(--border);border-radius:99px;padding:2px 6px;}
-  .cp-content{margin-left:228px;}
+  /* PM-1218: centre the column in the space beside the sidebar — plain margin-left:228px pinned a 1500px column hard left on wide monitors */
+  .cp-content{margin-left:max(228px, calc(228px + (100% - 228px - 1720px) / 2));}
   .cp-header{margin-left:228px;}
   .cp-burger{display:none;background:none;border:none;color:var(--text);font-size:20px;cursor:pointer;padding:4px 10px 4px 0;}
   .cp-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:55;}
@@ -129,6 +130,8 @@
   .dg-cell{text-align:center;font-weight:700;font-size:12px;padding:7px 6px;border-top:1px solid var(--border);}
   .dash-2col{display:grid;grid-template-columns:1.45fr 1fr;gap:16px;align-items:start;}
   @media (max-width:1020px){ .dash-2col{grid-template-columns:1fr;} }
+  .dash-2col > .dash-msgs-card{grid-column:1 / -1;}
+  @media (min-width:1700px){ .dash-2col{grid-template-columns:1.45fr 1fr 1fr;} .dash-2col > .dash-msgs-card{grid-column:auto;} }
 </style>
 <style id="bv2-css">
   .ex-item{display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
@@ -413,10 +416,10 @@
       <h3 style="margin:0 0 10px;font-size:13px;letter-spacing:.5px;text-transform:uppercase;color:var(--text-muted);">Latest check-ins</h3>
       <div id="dash-checkins" style="font-size:13.5px;"><p style="font-size:12.5px;color:var(--text-muted);">Loading…</p></div>
     </div>
-    </div>
-    <div class="card">
+    <div class="card dash-msgs-card">
       <h3 style="margin:0 0 10px;font-size:13px;letter-spacing:.5px;text-transform:uppercase;color:var(--text-muted);">Latest messages</h3>
       <div id="dash-msgs" style="font-size:13.5px;"><p style="font-size:12.5px;color:var(--text-muted);">Loading…</p></div>
+    </div>
     </div>
   </div>
   <div id="view-profile" style="display:none;">
@@ -1823,7 +1826,14 @@
     (res[2] || []).forEach(function(m){
       if (!m.trial_ends_at || m.subscription_status !== 'trial') return;
       var days = Math.ceil((new Date(m.trial_ends_at) - Date.now()) / 864e5);
-      if (days <= 5) ev.push({ t: new Date().toISOString(), kind: 'trial', email: m.email, title: days < 0 ? 'Trial ended \u2014 \u00a310/month email sent' : ('Trial ends in ' + days + ' day' + (days === 1 ? '' : 's')), note: '' });
+      /* PM-1218: stamp the reminder with the moment it became due (5 days out, or the
+         trial end itself once passed) — new Date() made every trial row read as "just
+         now", sit at the top, stay highlighted and keep the badge lit for ever. */
+      if (days <= 5){
+        var te = new Date(m.trial_ends_at), due = days < 0 ? te : new Date(te.getTime() - 5 * 864e5);
+        if (due > new Date()) due = new Date();
+        ev.push({ t: due.toISOString(), kind: 'trial', email: m.email, title: days < 0 ? 'Trial ended \u2014 \u00a310/month email sent' : ('Trial ends in ' + days + ' day' + (days === 1 ? '' : 's')), note: '', when: (days < 0 ? 'Ended ' : 'Ends ') + te.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) });
+      }
     });
     nfEvents = ev.filter(function(e){ return e.t; }).sort(function(a, b){ return (b.t || '').localeCompare(a.t || ''); }).slice(0, 80);
     nfLoadedAt = now;
@@ -2998,7 +3008,7 @@
     var list = rows.length ? rows.map(function(e){
       var who = nameOf(roster.find(function(c){ return c.member_email === e.email; }) || { member_email: e.email });
       var fresh = !seen || e.t > seen;
-      return '<div style="padding:8px 6px;border-bottom:1px solid var(--border);' + (fresh ? 'background:rgba(27,120,120,.06);border-radius:8px;' : '') + '"><div style="font-size:12.5px;"><strong>' + esc(who) + '</strong> \u2014 ' + esc(e.title) + '</div><div style="font-size:10.5px;color:var(--text-muted);">' + new Date(e.t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ' ' + new Date(e.t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + '</div></div>';
+      return '<div style="padding:8px 6px;border-bottom:1px solid var(--border);' + (fresh ? 'background:rgba(27,120,120,.06);border-radius:8px;' : '') + '"><div style="font-size:12.5px;"><strong>' + esc(who) + '</strong> \u2014 ' + esc(e.title) + '</div><div style="font-size:10.5px;color:var(--text-muted);">' + (e.when ? esc(e.when) : new Date(e.t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ' ' + new Date(e.t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })) + '</div></div>';
     }).join('') : '<p style="font-size:12.5px;color:var(--text-muted);padding:8px 4px;">Nothing here yet.</p>';
     pop.innerHTML = tabs + list +
       '<div style="display:flex;gap:8px;margin-top:10px;"><button class="btn" id="bell-markread" type="button" style="font-size:11.5px;flex:1;">Mark all read</button><button class="btn" id="bell-feed" type="button" style="font-size:11.5px;flex:1;">Open feed</button></div>';
@@ -3024,7 +3034,10 @@
     pop.style.display = '';
     pop.innerHTML = '<p style="font-size:12.5px;color:var(--text-muted);padding:8px 4px;">Loading\u2026</p>';
     try { await notifLoad(false); } catch(_){}
-    bellRender(); bellBadge();
+    bellRender();
+    /* PM-1218: opening the bell counts as seeing it — highlight the new rows this once, then clear the mark so the badge drops and the next open is calm ("Mark all read" stays for the feed). */
+    try { localStorage.setItem(nfSeenKey(), new Date().toISOString()); } catch(_){}
+    bellBadge(); nfBadge();
   });
   document.addEventListener('click', function(e){
     var pop = $c('cp-bell-pop');
@@ -8810,7 +8823,7 @@
         (res[3] || []).forEach(function(x){ ev.push({ t: x.created_at, kind: 'message', email: x.member_email, title: x.read_at ? 'Sent you a message' : 'Sent you a message \u2014 unread', note: String(x.body || '').slice(0, 120) }); });
         (res[4] || []).forEach(function(x){ ev.push({ t: x.created_at, kind: 'goal', email: x.member_email, title: x.label || x.kind, note: '' }); });
         var t = w1thr();
-        Object.keys(w1.goals).forEach(function(em){ var g = w1.goals[em]; var gd = (new Date(g.target_date + 'T00:00:00Z') - now) / 864e5; if (gd >= -0.5 && gd <= t.soon_days) ev.push({ t: new Date().toISOString(), kind: 'goal', email: g.member_email, title: 'Goal due ' + (gd < 1 ? 'today' : 'in ' + Math.ceil(gd) + ' day' + (Math.ceil(gd) === 1 ? '' : 's')) + ': \u201c' + g.title + '\u201d', note: '' }); });
+        Object.keys(w1.goals).forEach(function(em){ var g = w1.goals[em]; var gd = (new Date(g.target_date + 'T00:00:00Z') - now) / 864e5; if (gd >= -0.5 && gd <= t.soon_days){ var gDue = new Date(g.target_date + 'T00:00:00Z'), gRaised = new Date(Math.min(now, gDue.getTime() - t.soon_days * 864e5)); /* PM-1218: raised when it entered the window, not at page load */ ev.push({ t: gRaised.toISOString(), kind: 'goal', email: g.member_email, title: 'Goal due ' + (gd < 1 ? 'today' : 'in ' + Math.ceil(gd) + ' day' + (Math.ceil(gd) === 1 ? '' : 's')) + ': \u201c' + g.title + '\u201d', note: '', when: 'Due ' + gDue.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) }); } });
         nfEvents = nfEvents.concat(ev).filter(function(e){ return e.t; }).sort(function(a, b){ return (b.t || '').localeCompare(a.t || ''); }).slice(0, 120);
         nfBadge();
         if (interactive) nfRender();
@@ -8839,7 +8852,7 @@
         '<div style="font-size:17px;flex:none;">' + (ICON[e.kind] || '\u2022') + '</div>' +
         '<div style="flex:1;min-width:0;"><div style="font-size:13px;"><strong>' + esc(who) + '</strong> \u2014 ' + esc(e.title) + (e.unreviewed ? ' <span style="color:#E8834A;font-size:11px;font-weight:700;">\u25cf needs review</span>' : '') + '</div>' +
         (e.note ? '<div style="font-size:12.5px;color:var(--text-muted);font-style:italic;">\u201c' + esc(e.note) + '\u201d</div>' : '') +
-        '<div style="font-size:11.5px;color:var(--text-muted);">' + new Date(e.t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + '</div></div>' +
+        '<div style="font-size:11.5px;color:var(--text-muted);">' + (e.when ? esc(e.when) : new Date(e.t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })) + '</div></div>' +
         '<button class="btn" data-nf-view="' + esc(e.email) + '" data-nf-kind="' + esc(e.kind) + '" style="font-size:11.5px;flex:none;">' + (e.kind === 'checkin' ? 'Review' : e.kind === 'message' ? 'Open' : 'View') + '</button></div>';
     });
     el.innerHTML = html;

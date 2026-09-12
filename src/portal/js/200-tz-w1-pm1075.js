@@ -790,7 +790,7 @@
         (res[3] || []).forEach(function(x){ ev.push({ t: x.created_at, kind: 'message', email: x.member_email, title: x.read_at ? 'Sent you a message' : 'Sent you a message \u2014 unread', note: String(x.body || '').slice(0, 120) }); });
         (res[4] || []).forEach(function(x){ ev.push({ t: x.created_at, kind: 'goal', email: x.member_email, title: x.label || x.kind, note: '' }); });
         var t = w1thr();
-        Object.keys(w1.goals).forEach(function(em){ var g = w1.goals[em]; var gd = (new Date(g.target_date + 'T00:00:00Z') - now) / 864e5; if (gd >= -0.5 && gd <= t.soon_days) ev.push({ t: new Date().toISOString(), kind: 'goal', email: g.member_email, title: 'Goal due ' + (gd < 1 ? 'today' : 'in ' + Math.ceil(gd) + ' day' + (Math.ceil(gd) === 1 ? '' : 's')) + ': \u201c' + g.title + '\u201d', note: '' }); });
+        Object.keys(w1.goals).forEach(function(em){ var g = w1.goals[em]; var gd = (new Date(g.target_date + 'T00:00:00Z') - now) / 864e5; if (gd >= -0.5 && gd <= t.soon_days){ var gDue = new Date(g.target_date + 'T00:00:00Z'), gRaised = new Date(Math.min(now, gDue.getTime() - t.soon_days * 864e5)); /* PM-1218: raised when it entered the window, not at page load */ ev.push({ t: gRaised.toISOString(), kind: 'goal', email: g.member_email, title: 'Goal due ' + (gd < 1 ? 'today' : 'in ' + Math.ceil(gd) + ' day' + (Math.ceil(gd) === 1 ? '' : 's')) + ': \u201c' + g.title + '\u201d', note: '', when: 'Due ' + gDue.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) }); } });
         nfEvents = nfEvents.concat(ev).filter(function(e){ return e.t; }).sort(function(a, b){ return (b.t || '').localeCompare(a.t || ''); }).slice(0, 120);
         nfBadge();
         if (interactive) nfRender();
@@ -819,7 +819,7 @@
         '<div style="font-size:17px;flex:none;">' + (ICON[e.kind] || '\u2022') + '</div>' +
         '<div style="flex:1;min-width:0;"><div style="font-size:13px;"><strong>' + esc(who) + '</strong> \u2014 ' + esc(e.title) + (e.unreviewed ? ' <span style="color:#E8834A;font-size:11px;font-weight:700;">\u25cf needs review</span>' : '') + '</div>' +
         (e.note ? '<div style="font-size:12.5px;color:var(--text-muted);font-style:italic;">\u201c' + esc(e.note) + '\u201d</div>' : '') +
-        '<div style="font-size:11.5px;color:var(--text-muted);">' + new Date(e.t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + '</div></div>' +
+        '<div style="font-size:11.5px;color:var(--text-muted);">' + (e.when ? esc(e.when) : new Date(e.t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })) + '</div></div>' +
         '<button class="btn" data-nf-view="' + esc(e.email) + '" data-nf-kind="' + esc(e.kind) + '" style="font-size:11.5px;flex:none;">' + (e.kind === 'checkin' ? 'Review' : e.kind === 'message' ? 'Open' : 'View') + '</button></div>';
     });
     el.innerHTML = html;

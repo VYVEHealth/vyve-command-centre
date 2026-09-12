@@ -385,7 +385,7 @@
     var list = rows.length ? rows.map(function(e){
       var who = nameOf(roster.find(function(c){ return c.member_email === e.email; }) || { member_email: e.email });
       var fresh = !seen || e.t > seen;
-      return '<div style="padding:8px 6px;border-bottom:1px solid var(--border);' + (fresh ? 'background:rgba(27,120,120,.06);border-radius:8px;' : '') + '"><div style="font-size:12.5px;"><strong>' + esc(who) + '</strong> \u2014 ' + esc(e.title) + '</div><div style="font-size:10.5px;color:var(--text-muted);">' + new Date(e.t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ' ' + new Date(e.t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + '</div></div>';
+      return '<div style="padding:8px 6px;border-bottom:1px solid var(--border);' + (fresh ? 'background:rgba(27,120,120,.06);border-radius:8px;' : '') + '"><div style="font-size:12.5px;"><strong>' + esc(who) + '</strong> \u2014 ' + esc(e.title) + '</div><div style="font-size:10.5px;color:var(--text-muted);">' + (e.when ? esc(e.when) : new Date(e.t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ' ' + new Date(e.t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })) + '</div></div>';
     }).join('') : '<p style="font-size:12.5px;color:var(--text-muted);padding:8px 4px;">Nothing here yet.</p>';
     pop.innerHTML = tabs + list +
       '<div style="display:flex;gap:8px;margin-top:10px;"><button class="btn" id="bell-markread" type="button" style="font-size:11.5px;flex:1;">Mark all read</button><button class="btn" id="bell-feed" type="button" style="font-size:11.5px;flex:1;">Open feed</button></div>';
@@ -411,7 +411,10 @@
     pop.style.display = '';
     pop.innerHTML = '<p style="font-size:12.5px;color:var(--text-muted);padding:8px 4px;">Loading\u2026</p>';
     try { await notifLoad(false); } catch(_){}
-    bellRender(); bellBadge();
+    bellRender();
+    /* PM-1218: opening the bell counts as seeing it — highlight the new rows this once, then clear the mark so the badge drops and the next open is calm ("Mark all read" stays for the feed). */
+    try { localStorage.setItem(nfSeenKey(), new Date().toISOString()); } catch(_){}
+    bellBadge(); nfBadge();
   });
   document.addEventListener('click', function(e){
     var pop = $c('cp-bell-pop');

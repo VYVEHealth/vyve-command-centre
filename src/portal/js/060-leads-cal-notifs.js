@@ -233,7 +233,14 @@
     (res[2] || []).forEach(function(m){
       if (!m.trial_ends_at || m.subscription_status !== 'trial') return;
       var days = Math.ceil((new Date(m.trial_ends_at) - Date.now()) / 864e5);
-      if (days <= 5) ev.push({ t: new Date().toISOString(), kind: 'trial', email: m.email, title: days < 0 ? 'Trial ended \u2014 \u00a310/month email sent' : ('Trial ends in ' + days + ' day' + (days === 1 ? '' : 's')), note: '' });
+      /* PM-1218: stamp the reminder with the moment it became due (5 days out, or the
+         trial end itself once passed) — new Date() made every trial row read as "just
+         now", sit at the top, stay highlighted and keep the badge lit for ever. */
+      if (days <= 5){
+        var te = new Date(m.trial_ends_at), due = days < 0 ? te : new Date(te.getTime() - 5 * 864e5);
+        if (due > new Date()) due = new Date();
+        ev.push({ t: due.toISOString(), kind: 'trial', email: m.email, title: days < 0 ? 'Trial ended \u2014 \u00a310/month email sent' : ('Trial ends in ' + days + ' day' + (days === 1 ? '' : 's')), note: '', when: (days < 0 ? 'Ended ' : 'Ends ') + te.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) });
+      }
     });
     nfEvents = ev.filter(function(e){ return e.t; }).sort(function(a, b){ return (b.t || '').localeCompare(a.t || ''); }).slice(0, 80);
     nfLoadedAt = now;
