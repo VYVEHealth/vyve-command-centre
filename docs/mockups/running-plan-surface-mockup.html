@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Running plan surface — Wave 3 mockup</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+[data-theme="dark"]{
+  --page:#061717; --bg:#0A1F1F; --surface:#0F2A2A; --surface-2:#163535;
+  --border:rgba(77,170,170,0.18); --text:#E8F4F4; --muted:#7AADAD; --faint:#4F7F7F;
+  --teal:#1B7878; --teal-lt:#4DAAAA; --gold:#C9A84C; --amber:#E8834A; --green:#3DB89F; --red:#E06060;
+  --sel:rgba(77,170,170,0.12);
+}
+[data-theme="light"]{
+  --page:#E4F2F2; --bg:#F0F9F9; --surface:#FFFFFF; --surface-2:#E8F4F4;
+  --border:rgba(27,120,120,0.15); --text:#0D2B2B; --muted:#4A7F7F; --faint:#7BA5A5;
+  --teal:#1B7878; --teal-lt:#4DAAAA; --gold:#C9A84C; --amber:#E8834A; --green:#3DB89F; --red:#E06060;
+  --sel:rgba(27,120,120,0.08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--page);color:var(--text);font-family:"DM Sans",system-ui,sans-serif;padding:28px 22px 60px}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+.doc{max-width:1180px;margin:0 auto}
+.doc-head{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:16px}
+.doc-title{font-family:"Playfair Display",serif;font-size:27px;font-weight:700}
+.doc-sub{font-size:13.5px;color:var(--muted);line-height:1.55;max-width:760px;margin-top:6px}
+.tbtn{border:1px solid var(--border);border-radius:10px;padding:8px 13px;font-size:12.5px;color:var(--muted);background:var(--surface)}
+.note{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--gold);
+  border-radius:12px;padding:13px 15px;font-size:12.5px;color:var(--muted);line-height:1.6;margin-bottom:24px}
+.note b{color:var(--text)}
+.stage{display:flex;gap:34px;align-items:flex-start}
+.rail{width:250px;flex:0 0 auto;position:sticky;top:24px}
+.rail h2{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:10px}
+.rail ol{list-style:none;counter-reset:n}
+.rail li{counter-increment:n}
+.rail button{display:block;width:100%;text-align:left;padding:10px 12px;border-radius:10px;font-size:13px;color:var(--muted);line-height:1.35}
+.rail button::before{content:counter(n) ". ";color:var(--faint)}
+.rail button[aria-current="true"]{background:var(--sel);color:var(--text)}
+.rail .gate{display:block;font-size:10.5px;color:var(--gold);margin-top:3px}
+.phone-wrap{flex:1;display:flex;justify-content:center}
+.phone{width:390px;height:800px;background:var(--bg);border:1px solid var(--border);border-radius:38px;
+  overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.status{display:flex;justify-content:space-between;padding:14px 24px 6px;font-size:11.5px;color:var(--faint)}
+.appbar{display:flex;align-items:center;gap:12px;padding:6px 16px 12px;border-bottom:1px solid var(--border)}
+.appbar .back{font-size:24px;color:var(--muted);width:30px}
+.appbar .ttl{font-size:14px;font-weight:600;flex:1}
+.appbar .act{font-size:12.5px;color:var(--teal-lt);font-weight:600}
+.screen{flex:1;overflow-y:auto;padding:16px 16px 26px}
+.tabbar{display:flex;border-top:1px solid var(--border);padding:9px 6px calc(9px + 6px)}
+.tabbar div{flex:1;text-align:center;font-size:10px;color:var(--faint)}
+.tabbar div.on{color:var(--teal-lt)}
+.tabbar i{display:block;width:18px;height:18px;border-radius:5px;border:1.5px solid currentColor;margin:0 auto 4px;opacity:.75}
+
+h1.s{font-family:"Playfair Display",serif;font-size:23px;line-height:1.15;margin-bottom:6px}
+.sub{font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:14px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px 15px;margin-bottom:11px}
+.card.quiet{background:transparent}
+.eyebrow{font-size:10px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:var(--teal-lt);margin-bottom:8px}
+.eyebrow.gold{color:var(--gold)}
+.row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.row:last-child{border-bottom:0}
+.k{color:var(--muted)}
+.v{font-weight:600;text-align:right}
+.tab{font-variant-numeric:tabular-nums}
+.hint{font-size:11.5px;color:var(--faint);line-height:1.5;margin-top:9px}
+
+/* plan header */
+.ph-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px}
+.ph-name{font-family:"Playfair Display",serif;font-size:21px;font-weight:700;line-height:1.15}
+.ph-coach{font-size:11.5px;color:var(--muted);margin-top:4px}
+.ph-stats{display:flex;gap:9px;margin-bottom:12px}
+.stat{flex:1;background:var(--surface-2);border-radius:12px;padding:10px 11px}
+.stat b{display:block;font-family:"Playfair Display",serif;font-size:19px;font-variant-numeric:tabular-nums}
+.stat span{display:block;font-size:10.5px;color:var(--muted);margin-top:2px;line-height:1.3}
+.bar{height:6px;border-radius:6px;background:var(--surface-2);overflow:hidden;margin:4px 0 8px}
+.bar i{display:block;height:100%;background:var(--teal-lt);border-radius:6px}
+.proj{background:linear-gradient(135deg,rgba(201,168,76,.12),rgba(77,170,170,.08));
+  border:1px solid rgba(201,168,76,.3);border-radius:14px;padding:13px 14px;margin-bottom:11px}
+.proj b{font-family:"Playfair Display",serif;font-size:21px;font-variant-numeric:tabular-nums;display:block;margin-top:3px}
+
+/* week strip */
+.weeks{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:4px}
+.wk{flex:0 0 auto;min-width:62px;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;
+  padding:9px 8px;text-align:center}
+.wk[aria-pressed="true"]{border-color:var(--teal-lt);background:var(--sel)}
+.wk b{display:block;font-size:12.5px;font-weight:700}
+.wk span{display:block;font-size:10px;color:var(--muted);margin-top:2px}
+.wk.done b{color:var(--green)}
+.wk.down{border-style:dashed}
+
+/* day cards */
+.day{display:flex;gap:11px;align-items:center;background:var(--surface);border:1px solid var(--border);
+  border-radius:14px;padding:12px 13px;margin-bottom:8px}
+.day.rest{background:transparent;border-style:dashed}
+.day .dot{width:4px;align-self:stretch;border-radius:4px;flex:0 0 auto}
+.d-easy{background:var(--teal-lt)} .d-thr{background:var(--gold)} .d-long{background:var(--amber)} .d-rest{background:var(--border)}
+.day .mid{flex:1;min-width:0}
+.day .dow{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+.day .nm{font-size:14px;font-weight:600;margin-top:2px}
+.day .meta{font-size:11.5px;color:var(--muted);margin-top:3px}
+.day .tick{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--border);flex:0 0 auto;
+  display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--faint)}
+.day.done .tick{background:var(--green);border-color:var(--green);color:#062018}
+.day.today{border-color:var(--teal-lt);box-shadow:0 0 0 1px var(--teal-lt) inset}
+.chipline{display:flex;gap:6px;margin-bottom:12px}
+.cl{flex:1;text-align:center;padding:8px 4px;border-radius:10px;background:var(--surface);border:1px solid var(--border);font-size:11.5px;color:var(--muted)}
+.cl[aria-pressed="true"]{background:var(--sel);border-color:var(--teal-lt);color:var(--teal-lt);font-weight:600}
+
+/* session detail */
+.blk{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal-lt);margin:16px 0 8px}
+.step{display:flex;gap:11px;background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:11px 12px;margin-bottom:7px}
+.step .n{width:22px;height:22px;border-radius:7px;background:var(--surface-2);display:flex;align-items:center;
+  justify-content:center;font-size:11.5px;font-weight:700;color:var(--muted);flex:0 0 auto}
+.step .body{flex:1}
+.step .main{font-size:13.5px;font-weight:600;line-height:1.3}
+.step .pace{font-size:12px;color:var(--muted);margin-top:3px;font-variant-numeric:tabular-nums}
+.step .tag{font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);
+  border:1px solid var(--border);border-radius:6px;padding:2px 5px;align-self:flex-start}
+.rep{border-left:2px solid var(--gold);padding-left:10px;margin-bottom:7px}
+.rep-h{font-size:11px;color:var(--gold);font-weight:700;margin-bottom:6px;letter-spacing:.05em}
+.limit{background:rgba(77,170,170,.08);border:1px solid var(--border);border-radius:11px;padding:10px 12px;
+  font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:10px}
+.seg{display:flex;background:var(--surface-2);border-radius:11px;padding:3px;margin-bottom:12px}
+.seg button{flex:1;padding:8px;border-radius:9px;font-size:12px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--teal);color:#fff;font-weight:600}
+.cta{width:100%;height:46px;border-radius:13px;background:var(--teal);color:#fff;font-weight:700;font-size:14.5px;
+  display:flex;align-items:center;justify-content:center;margin-top:6px}
+.cta.ghost{background:none;border:1px solid var(--border);color:var(--muted);font-weight:600}
+
+/* body stream row */
+.stream{display:flex;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--border);
+  border-radius:16px;padding:14px 15px;margin-bottom:10px}
+.stream .ic{width:40px;height:40px;border-radius:12px;background:var(--surface-2);display:flex;
+  align-items:center;justify-content:center;color:var(--teal-lt);flex:0 0 auto}
+.stream .t{font-size:14.5px;font-weight:600}
+.stream .s{font-size:11.5px;color:var(--muted);margin-top:2px}
+.stream .chev{color:var(--faint)}
+.legend{display:flex;flex-wrap:wrap;gap:11px;font-size:10.5px;color:var(--faint);margin-top:10px}
+.legend span{display:flex;align-items:center;gap:5px}
+.sq{width:8px;height:8px;border-radius:2px;display:inline-block}
+</style>
+</head>
+<body>
+<div class="doc">
+  <div class="doc-head">
+    <div>
+      <div class="doc-title">Running plan surface</div>
+      <div class="doc-sub">Wave 3 mockup. Where a built plan lives, how a member reads a week, and what a single session looks like when they open it. Every number on these screens is real output from <code>run-engine@0.6.0</code> for a 12-week 5k Improver, four days, Sunday long run, built from a 27:40 5k. Nothing here is built.</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="tbtn" id="theme">Light</button>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>All copy is placeholder — Lewis owns every string.</b> The plan lives inside Body as a stream, the same pattern as Physiotherapy — no nav change, no Home change. <code>running-plan.html</code> is soft-killed at the moment this links in, never deleted. Screen 5 is the Start Running case: that plan is authored in minutes, so the header must never render it as “0 km” (§23.349). Completion ticking, adherence and the auto-match from Apple Health are <b>Wave 4</b> — the ticks on screen 3 are shown for shape only and do nothing yet.
+  </div>
+
+  <div class="stage">
+    <nav class="rail">
+      <h2>Screens</h2>
+      <ol id="rail"></ol>
+      <div style="margin-top:18px;font-size:11.5px;color:var(--faint);line-height:1.6">
+        Catalogue growth — half, marathon, 10 mile, first-5k bridge, Return to Running — lands after this surface exists, with half and marathon gated on a CiRF reviewer.
+      </div>
+    </nav>
+
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="status"><span>9:41</span><span>VYVE</span><span>100%</span></div>
+        <div class="appbar">
+          <button class="back" id="back">&#8249;</button>
+          <div class="ttl" id="ttl"></div>
+          <div class="act" id="act"></div>
+        </div>
+        <div class="screen" id="screen"></div>
+        <div class="tabbar" id="tabs">
+          <div><i></i>Home</div><div class="on"><i></i>Body</div><div><i></i>Mind</div><div><i></i>Connect</div><div><i></i>More</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* Real engine output, 5k Improver · 12 weeks · 4 days · Sunday long run · 27:40 5k.
+   Weekly totals and every session below came back from a live `build`. */
+const WEEKS = [20.5,22.4,22.7,16.7,26.8,23.3,23.7,17.4,27.9,26.5,25.3,12.6];
+const DOWN = [4,8], TAPER = 12;
+const W1 = [
+  {dow:'Mon', d:'21 Sep', nm:'Threshold Blocks', typ:'thr',  km:5.36, min:37, max:40, done:true},
+  {dow:'Tue', d:'22 Sep', nm:'Easy Run',         typ:'easy', km:4.50, min:31, max:34, done:true},
+  {dow:'Wed', d:'23 Sep', nm:'Easy Run + Strides',typ:'easy',km:4.20, min:33, max:36, done:false, today:true},
+  {dow:'Sun', d:'27 Sep', nm:'Long Run',         typ:'long', km:6.48, min:44, max:49, done:false}
+];
+const W2 = [
+  {dow:'Mon', d:'28 Sep', nm:'Broken Miles',      typ:'thr',  km:5.60, min:38, max:40},
+  {dow:'Tue', d:'29 Sep', nm:'Easy Run',          typ:'easy', km:5.00, min:34, max:38},
+  {dow:'Wed', d:'30 Sep', nm:'Easy Run + Strides',typ:'easy', km:4.60, min:36, max:39},
+  {dow:'Sun', d:'4 Oct',  nm:'Long Run',          typ:'long', km:7.20, min:49, max:55}
+];
+let wkSel = 1, surface = 'outdoor';
+
+const dayCard = (s, i) => `
+  <div class="day ${s.done?'done':''} ${s.today?'today':''}" data-go="${i===null?'':'3'}">
+    <div class="dot d-${s.typ}"></div>
+    <div class="mid">
+      <div class="dow">${s.dow} ${s.d}${s.today?' · today':''}</div>
+      <div class="nm">${s.nm}</div>
+      <div class="meta">${s.km} km · ${s.min}\u2013${s.max} min</div>
+    </div>
+    <div class="tick">${s.done?'\u2713':''}</div>
+  </div>`;
+
+const restCard = (dow) => `
+  <div class="day rest"><div class="dot d-rest"></div>
+    <div class="mid"><div class="dow">${dow}</div><div class="nm" style="color:var(--faint);font-weight:500">Rest</div></div>
+  </div>`;
+
+const SCREENS = [
+
+{ key:'body', ttl:'Body', act:'', tabs:true, back:false,
+  rail:'Body \u2014 Running appears as a stream',
+  body:()=>`
+    <h1 class="s">Body</h1>
+    <div class="sub">Everything you do that moves. Placeholder copy.</div>
+    <div class="stream"><div class="ic">\u25B6</div><div class="mid" style="flex:1"><div class="t">Workouts</div><div class="s">8-week PPL \u00b7 week 3 of 8</div></div><div class="chev">\u203A</div></div>
+    <div class="stream" data-go="1"><div class="ic">\u2197</div><div class="mid" style="flex:1"><div class="t">Running</div><div class="s">5k Improver \u00b7 week 1 of 12 \u00b7 next run today</div></div><div class="chev">\u203A</div></div>
+    <div class="stream"><div class="ic">\u271A</div><div class="mid" style="flex:1"><div class="t">Physiotherapy</div><div class="s">No plan \u2014 ask your physio</div></div><div class="chev">\u203A</div></div>
+    <div class="stream"><div class="ic">\u25CE</div><div class="mid" style="flex:1"><div class="t">Movement</div><div class="s">Walks, stretching, yoga</div></div><div class="chev">\u203A</div></div>
+    <div class="card quiet"><div class="hint">Running slots in beside Physiotherapy as a stream. No new tab, no bottom-bar change, no Home change \u2014 the same decision as PM-1213. A member with no plan sees the row with a "Set up your plan" subtitle and it opens the wizard.</div></div>` },
+
+{ key:'plan', ttl:'Running', act:'Manage', tabs:false, back:true,
+  rail:'Plan header + training calendar',
+  body:()=>`
+    <div class="card">
+      <div class="ph-top">
+        <div>
+          <div class="ph-name">5k Improver</div>
+          <div class="ph-coach">Calum Denham \u00b7 Mon 21 Sep \u2013 Sun 13 Dec</div>
+        </div>
+      </div>
+      <div class="bar"><i style="width:6%"></i></div>
+      <div class="ph-stats">
+        <div class="stat"><b>1<span style="font-size:12px;color:var(--muted)">/12</span></b><span>Weeks</span></div>
+        <div class="stat"><b class="tab">266</b><span>km total</span></div>
+        <div class="stat"><b class="tab">2<span style="font-size:12px;color:var(--muted)">/48</span></b><span>Sessions done</span></div>
+      </div>
+    </div>
+
+    <div class="proj">
+      <div class="eyebrow gold" style="margin:0">Estimated 5k by 13 December</div>
+      <b class="tab">25:35 \u2013 26:53</b>
+      <div class="hint" style="margin-top:4px">From 27:40 today. A range, not a promise \u2014 it assumes you get most of the sessions done.</div>
+    </div>
+
+    <div class="eyebrow" style="margin-top:16px">Training calendar</div>
+    <div class="weeks" id="weeks"></div>
+    <div id="weekdays"></div>
+
+    <div class="card quiet">
+      <div class="legend">
+        <span><i class="sq" style="background:var(--teal-lt)"></i>Easy</span>
+        <span><i class="sq" style="background:var(--gold)"></i>Quality</span>
+        <span><i class="sq" style="background:var(--amber)"></i>Long run</span>
+        <span><i class="sq" style="background:var(--border)"></i>Rest</span>
+      </div>
+      <div class="hint">Week tiles carry their own distance, so the shape of the block is visible before a member opens anything \u2014 build weeks rising, a lighter week every fourth, the peak at 9 and the taper at 12. Dashed tiles are the easier weeks. Tapping a week swaps the days below it.</div>
+    </div>` },
+
+{ key:'session', ttl:'Threshold Blocks', act:'', tabs:false, back:true,
+  rail:'Session detail \u2014 blocks and numbered steps',
+  body:()=>`
+    <h1 class="s">Threshold Blocks</h1>
+    <div class="sub">Week 1 \u00b7 Monday 21 September \u00b7 5.36 km \u00b7 37\u201340 min</div>
+
+    <div class="seg">
+      <button data-surface="outdoor" aria-pressed="${surface==='outdoor'}">Outdoors</button>
+      <button data-surface="treadmill" aria-pressed="${surface==='treadmill'}">Treadmill</button>
+    </div>
+
+    <div class="blk">Warm-up</div>
+    <div class="step"><div class="n">1</div><div class="body">
+      <div class="main">1.08 km easy</div>
+      <div class="pace">${surface==='treadmill'?'8.0\u20138.8 km/h \u00b7 0% incline':'No faster than 6:48 \u2013 7:35 /km'}</div></div>
+      <div class="tag">Run</div></div>
+
+    <div class="blk">Session</div>
+    <div class="rep">
+      <div class="rep-h">2 \u00d7</div>
+      <div class="step"><div class="n">2</div><div class="body">
+        <div class="main">1.6 km at threshold</div>
+        <div class="pace">${surface==='treadmill'?'10.0\u201310.3 km/h \u00b7 0% incline':'5:49 \u2013 6:01 /km'}</div></div>
+        <div class="tag">Run</div></div>
+      <div class="step"><div class="n">3</div><div class="body">
+        <div class="main">2 min easy jog</div>
+        <div class="pace">Recovery \u2014 as slow as you like</div></div>
+        <div class="tag">Rest</div></div>
+    </div>
+
+    <div class="blk">Cool-down</div>
+    <div class="step"><div class="n">4</div><div class="body">
+      <div class="main">1.08 km easy</div>
+      <div class="pace">${surface==='treadmill'?'8.0\u20138.8 km/h \u00b7 0% incline':'No faster than 6:48 \u2013 7:35 /km'}</div></div>
+      <div class="tag">Run</div></div>
+
+    <div class="limit"><b style="color:var(--text)">This is a limit, not a target.</b> Run the easy parts at whatever pace feels truly easy \u2014 slower is usually better. The threshold blocks are the only part of this session with a number to hit.</div>
+
+    <div class="card" style="margin-top:12px">
+      <div class="eyebrow">From Calum</div>
+      <div style="font-size:13px;line-height:1.55;color:var(--muted)">Comfortably hard \u2014 you could say a short sentence, not hold a conversation.</div>
+    </div>
+
+    <button class="cta">Mark complete</button>
+    <button class="cta ghost">Swap or skip this session</button>
+    <div class="hint">Mark complete, swapping and skipping are Wave 4 and Wave 6. Shown here so the session page is designed with them in it rather than retrofitted.</div>` },
+
+{ key:'empty', ttl:'Running', act:'', tabs:false, back:true,
+  rail:'No plan yet \u2014 the door to the wizard',
+  body:()=>`
+    <h1 class="s">Running</h1>
+    <div class="sub">Placeholder copy \u2014 Lewis owns this screen.</div>
+    <div class="card">
+      <div class="eyebrow">Not started</div>
+      <div style="font-size:14px;font-weight:600;margin-bottom:4px">Build a running plan</div>
+      <div style="font-size:12.5px;color:var(--muted);line-height:1.55">Four goals, a few taps, and your plan appears straight away \u2014 paces worked out from a time you already have, and the strength work scheduled alongside it.</div>
+      <button class="cta" style="margin-top:12px">Set up my plan</button>
+    </div>
+    <div class="card quiet"><div class="hint">This is where the Wave 2 wizard finally gets its entry point. A member who already has an active plan never sees this screen \u2014 they land on the plan header instead.</div></div>
+    <div class="card">
+      <div class="eyebrow">Your old running plans</div>
+      <div style="font-size:12.5px;color:var(--muted);line-height:1.55">The AI plans you generated before are still here, read-only.</div>
+    </div>
+    <div class="card quiet"><div class="hint">Soft-kill, not deletion: <code>running-plan.html</code> comes out of the Body stream and the script loads on the same commit that links this surface in, and the file stays in the repo. Members with <code>exercise_stream = 'cardio'</code> get pointed here instead \u2014 one value, reversible.</div></div>` },
+
+{ key:'minutes', ttl:'Running', act:'Manage', tabs:false, back:true,
+  rail:'Start Running \u2014 minutes, never "0 km"',
+  body:()=>`
+    <div class="card">
+      <div class="ph-top"><div>
+        <div class="ph-name">Start Running</div>
+        <div class="ph-coach">Calum Denham \u00b7 NHS Couch to 5K \u00b7 9 weeks</div>
+      </div></div>
+      <div class="bar"><i style="width:11%"></i></div>
+      <div class="ph-stats">
+        <div class="stat"><b>1<span style="font-size:12px;color:var(--muted)">/9</span></b><span>Weeks</span></div>
+        <div class="stat"><b class="tab">4h 12m</b><span>Time on feet</span></div>
+        <div class="stat"><b class="tab">0<span style="font-size:12px;color:var(--muted)">/27</span></b><span>Sessions done</span></div>
+      </div>
+    </div>
+    <div class="eyebrow">Week 1</div>
+    <div class="day"><div class="dot d-easy"></div><div class="mid">
+      <div class="dow">Mon 21 Sep</div><div class="nm">Week 1 \u00b7 Run 1</div>
+      <div class="meta">27 min \u00b7 run/walk intervals</div></div><div class="tick"></div></div>
+    <div class="day"><div class="dot d-easy"></div><div class="mid">
+      <div class="dow">Wed 23 Sep</div><div class="nm">Week 1 \u00b7 Run 2</div>
+      <div class="meta">27 min \u00b7 run/walk intervals</div></div><div class="tick"></div></div>
+    <div class="day"><div class="dot d-easy"></div><div class="mid">
+      <div class="dow">Fri 25 Sep</div><div class="nm">Week 1 \u00b7 Run 3</div>
+      <div class="meta">27 min \u00b7 run/walk intervals</div></div><div class="tick"></div></div>
+
+    <div class="blk">Inside run 1</div>
+    <div class="step"><div class="n">1</div><div class="body"><div class="main">5 min brisk walk</div>
+      <div class="pace">Warm-up</div></div><div class="tag">Walk</div></div>
+    <div class="rep"><div class="rep-h">8 \u00d7</div>
+      <div class="step"><div class="n">2</div><div class="body"><div class="main">60 sec running</div>
+        <div class="pace">Easy \u2014 you should be able to talk</div></div><div class="tag">Run</div></div>
+      <div class="step"><div class="n">3</div><div class="body"><div class="main">90 sec walking</div>
+        <div class="pace">Recovery</div></div><div class="tag">Walk</div></div>
+    </div>
+    <div class="step"><div class="n">4</div><div class="body"><div class="main">5 min walk</div>
+      <div class="pace">Cool-down</div></div><div class="tag">Walk</div></div>
+
+    <div class="card quiet"><div class="hint"><b style="color:var(--text)">This is the \u00a723.349 case.</b> Start Running is authored in minutes, so its total distance is 0 by construction. The header shows time on feet instead of distance, sessions read as durations, and no screen anywhere renders "0 km". Pace bands are not shown on this plan at all \u2014 a beginner running 60 seconds does not need a target pace, and giving them one is how you get an injured beginner.</div></div>` }
+];
+
+const railEl=document.getElementById('rail'), screenEl=document.getElementById('screen');
+let i=0;
+
+function drawWeeks(){
+  const w=document.getElementById('weeks'); if(!w) return;
+  w.innerHTML = WEEKS.map((km,n)=>{
+    const wk=n+1, cls=[DOWN.includes(wk)||wk===TAPER?'down':'', wk===1?'':''].join(' ');
+    return `<button class="wk ${cls}" data-wk="${wk}" aria-pressed="${wkSel===wk}">
+      <b>W${wk}</b><span class="tab">${km} km</span></button>`;
+  }).join('');
+  const d=document.getElementById('weekdays');
+  const list = wkSel===1?W1:wkSel===2?W2:null;
+  if(!list){ d.innerHTML = `<div class="card quiet"><div class="hint">Week ${wkSel} \u2014 ${WEEKS[wkSel-1]} km across 4 sessions. Only weeks 1 and 2 are filled in on this mockup.</div></div>`; return; }
+  d.innerHTML = list.map((s,n)=>dayCard(s,n)).join('') + restCard('Thu') + restCard('Fri') + restCard('Sat');
+}
+
+function draw(){
+  const sc=SCREENS[i];
+  document.getElementById('ttl').textContent = sc.ttl;
+  document.getElementById('act').textContent = sc.act || '';
+  document.getElementById('back').style.visibility = sc.back?'visible':'hidden';
+  document.getElementById('tabs').style.display = sc.tabs?'flex':'none';
+  screenEl.innerHTML = sc.body();
+  screenEl.scrollTop=0;
+  drawWeeks();
+  railEl.innerHTML = SCREENS.map((s,n)=>`<li><button data-go="${n}" aria-current="${n===i}">${s.rail}</button></li>`).join('');
+}
+
+document.addEventListener('click',e=>{
+  const r=e.target.closest('[data-go]');
+  if(r){ i=parseInt(r.getAttribute('data-go'),10); draw(); return; }
+  const w=e.target.closest('[data-wk]');
+  if(w){ wkSel=parseInt(w.getAttribute('data-wk'),10); drawWeeks(); return; }
+  const s=e.target.closest('[data-surface]');
+  if(s){ surface=s.getAttribute('data-surface'); draw(); return; }
+});
+document.getElementById('back').addEventListener('click',()=>{ if(i>0){ i=0; draw(); } });
+document.getElementById('theme').addEventListener('click',e=>{
+  const el=document.documentElement, light=el.getAttribute('data-theme')==='light';
+  el.setAttribute('data-theme', light?'dark':'light');
+  e.target.textContent = light?'Light':'Dark';
+});
+draw();
+</script>
+</body>
+</html>
