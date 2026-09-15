@@ -6,7 +6,10 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const SB_URL = Deno.env.get('SUPABASE_URL')!;
 const SB_SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const STRIPE_KEY = Deno.env.get('STRIPE_SECRET_KEY')!;
+// PM-1264: coach Connect uses its OWN key. STRIPE_SECRET_KEY is VYVE's member billing (stripe-webhook
+// trial→£10 conversion, booking-paid-confirm) and must never be repurposed here — one wrong overwrite
+// stops member conversions. Falls back only if the Connect key is absent.
+const STRIPE_KEY = Deno.env.get('STRIPE_CONNECT_SECRET_KEY') ?? Deno.env.get('STRIPE_SECRET_KEY')!;
 const PORTAL_URL = Deno.env.get('COACH_PORTAL_URL') ?? 'https://admin.vyvehealth.co.uk/coach-portal';
 
 const cors = {
